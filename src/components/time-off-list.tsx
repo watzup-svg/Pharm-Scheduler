@@ -1,0 +1,176 @@
+import { useMemo, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import type { AddSeed } from "@/components/time-off-add";
+import { StatusPill } from "@/components/time-off-parts";
+import { announce } from "@/components/undo";
+import { useShowOnSchedule } from "@/components/use-show-on-schedule";
+import { useStoreTag } from "@/components/use-store-tag";
+import { Button } from "@/components/ui/button";
+import { HoldButton } from "@/components/ui/hold-button";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Segmented } from "@/components/ui/segmented";
+import { isoDate } from "@/lib/schedule/calendar";
+import { namePlacements } from "@/lib/schedule/coverage";
+import { formatDateList } from "@/lib/schedule/pto";
+import { entriesOf, firstDate, groupByDates, type TimeOffEntry } from "@/lib/schedule/timeoff-view";
+import { cn } from "@/lib/utils";
+import { useScheduleStore } from "@/store/schedule-store";
+
+type StatusFilter = "all" | "approved" | "requested" | "declined";
+
+export function ListTab({ onEdit }: { onEdit: (seed: AddSeed) => void }) {
+  const tag = useStoreTag();
+  const doc = useScheduleStore((s) => s.doc);
+  const remove = useScheduleStore((s) => s.removeTimeOff);
+  const setStatus = useScheduleStore((s) => s.setTimeOffStatus);
+  const showOnSchedule = useShowOnSchedule();
+  const [status, setFilter] = useState<StatusFilter>("all");
+  const [person, setPerson] = useState("");
+  const [group, setGroup] = useState<"person" | "date">("person");
+  const [sittingOnly, setSittingOnly] = useState(false);
+  const all = useMemo(() => entriesOf(doc), [doc]);
+  const monthPrefix = `${doc.year}-${String(doc.month).padStart(2, "0")}`;
+
+  // Who is still scheduled on a day they are off: only approved time off counts.
+  const sitting = useMemo(() => {
+    const m = new Map<number, ReturnType<typeof namePlacements>>();
+    for (const e of all) {
+      if (e.status !== "approved") continue;
+      const set = new Set(e.dates);
+      const hits = namePlacements(doc, e.t.name).filter((c) => set.has(isoDate(doc.year, doc.month, c.day)));
+      if (hits.length) m.set(e.index, hits);
+    }
+    return m;
+  }, [all, doc]);
+
+  const counts = {
+    approved: all.filter((e) => e.status === "approved").length,
+    requested: all.filter((e) => e.status === "requested").length,
+    declined: all.filter((e) => e.status === "declined").length,
+  };
+  const visible = all
+    .filter((e) => (status === "all" ? e.status !== "declined" : e.status === status))
+    .filter((e) => !person || e.t.name === person)
+    .filter((e) => !sittingOnly || sitting.has(e.index))
+    .sort((a, b) => (group === "person" ? a.t.name.localeCompare(b.t.name) || firstDate(a).localeCompare(firstDate(b)) : firstDate(a).localeCompare(firstDate(b))));
+  const people = [...new Set(all.map((e) => e.t.name))].sort();
+
+  function row(e: TimeOffEntry) {
+    const hits = sitting.get(e.index);
+    const inMonth = e.dates.some((d) => d.startsWith(monthPrefix));
+    return (
+      <li key={e.index} className="surface flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
+        <div className="min-w-0 flex-1 basis-56">
+          <p className="truncate font-medium">{e.t.name}</p>
+          {e.t.note ? <p className="truncate text-xs text-muted">{e.t.note}</p> : null}
+        </div>
+        <p className={cn("text-sm", inMonth ? "" : "text-muted")}>
+          {formatDateList(e.dates)} · {e.dates.length}d{inMonth ? "" : " · not this month"}
+        </p>
+        <StatusPill status={e.status} />
+        <div className="ml-auto flex items-center">
+          {e.status === "declined" ? (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setStatus(e.index, "requested")}>
+              Reopen
+            </Button>
+          ) : null}
+          <Button type="button" variant="ghost" size="icon" aria-label={`Edit ${e.t.name}, ${formatDateList(e.dates)}`} onClick={() => onEdit({ editIndex: e.index })}>
+            <Pencil />
+          </Button>
+          <HoldButton
+            variant="ghost"
+            size="icon"
+            aria-label={`Remove ${e.t.name}, ${formatDateList(e.dates)}. Press and hold.`}
+            title="Press and hold to remove"
+            onHold={() => {
+              remove(e.index);
+              announce(`Removed ${e.t.name}, ${formatDateList(e.dates)}`);
+            }}
+          >
+            <Trash2 />
+          </HoldButton>
+        </div>
+        {hits ? (
+          <p className="flex basis-full flex-wrap items-center gap-2 text-sm font-medium text-illegal">
+            Still on {hits.map((c) => `${tag(c.store)} ${c.day}`).join(", ")}; prints yellow.
+            <Button type="button" variant="ghost" size="sm" onClick={() => showOnSchedule(hits[0]!, true)}>
+              Show on schedule
+            </Button>
+          </p>
+        ) : null}
+      </li>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Segmented
+            tone="ink"
+          label="Status"
+          value={status}
+          onChange={setFilter}
+          options={[
+            { value: "all", label: "All" },
+            { value: "approved", label: "Approved", hint: String(counts.approved) },
+            { value: "requested", label: "Requested", hint: String(counts.requested) },
+            ...(counts.declined ? [{ value: "declined" as const, label: "Declined", hint: String(counts.declined) }] : []),
+          ]}
+        />
+        <NativeSelect aria-label="Show one person" className="sm:w-52" value={person} onChange={(e) => setPerson(e.target.value)}>
+          <option value="">Everyone</option>
+          {people.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </NativeSelect>
+        {sitting.size ? (
+          <button
+            type="button"
+            aria-pressed={sittingOnly}
+            onClick={() => setSittingOnly(!sittingOnly)}
+            className={cn("h-11 rounded-md px-3 text-sm font-semibold", sittingOnly ? "bg-ink text-cream" : "bg-white text-illegal ring-1 ring-illegal")}
+          >
+            Still scheduled ({sitting.size})
+          </button>
+        ) : null}
+        <Segmented
+            tone="ink"
+          className="ml-auto"
+          label="Group"
+          value={group}
+          onChange={setGroup}
+          options={[
+            { value: "person", label: "By person" },
+            { value: "date", label: "By date" },
+          ]}
+        />
+      </div>
+
+      {!visible.length ? (
+        <EmptyState
+          kind="timeoff"
+          title={all.length ? "Nothing matches these filters" : "No time off logged yet"}
+          hint={all.length ? "Clear a filter to see more." : "Every entry you add, approved or requested, is listed here. Use “Add time off” to start."}
+        />
+      ) : group === "person" ? (
+        <ul className="flex flex-col gap-2" aria-label="Time off">
+          {visible.map(row)}
+        </ul>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {groupByDates(visible).map((g) => (
+            <section key={g.key} aria-label={formatDateList(g.dates)}>
+              <h2 className="mb-2 text-sm font-semibold">
+                {formatDateList(g.dates)} · {g.entries.length} {g.entries.length === 1 ? "person" : "people"}
+              </h2>
+              <ul className="flex flex-col gap-2">{g.entries.map(row)}</ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

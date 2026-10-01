@@ -1,0 +1,24 @@
+import { createHashHistory, createRouter, RouterProvider } from "@tanstack/react-router";
+import { createRoot } from "react-dom/client";
+import "../../src/styles.css";
+import { routeTree } from "../../src/routeTree.gen";
+import { useScheduleStore } from "../../src/store/schedule-store";
+
+// The hosted viewer makes confirm() return false, which would silently cancel "replace this month?"
+// prompts. This is a trial copy with invented data, so accept them.
+window.confirm = () => true;
+
+// First visit to this trial opens on the demo month. After that, this browser's own autosave wins.
+const DEMO_SEEN = "hischool-trial-demo-v1";
+try {
+  if (!localStorage.getItem(DEMO_SEEN)) {
+    useScheduleStore.getState().loadDemo();
+    localStorage.setItem(DEMO_SEEN, "1");
+    localStorage.setItem("hischool-schedule-welcomed", "1");
+  }
+} catch {
+  useScheduleStore.getState().loadDemo();
+}
+
+const router = createRouter({ routeTree, history: createHashHistory() });
+createRoot(document.getElementById("root")!).render(<RouterProvider router={router} />);
