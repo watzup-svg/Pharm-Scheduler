@@ -73,8 +73,9 @@ export default async function run() {
     const { page } = await open(browser, "");
     const day = (d) => page.locator(`[data-ring-day="${d}"]`);
     check("a closed day with nothing wrong is hollow", (await day(4).getAttribute("fill")) === "none" && (await day(4).getAttribute("tabindex")) === "-1");
+    check("a closed day with nothing wrong just says closed", /All stores closed/.test((await day(4).getAttribute("aria-label")) ?? ""));
     const label18 = (await day(18).getAttribute("aria-label")) ?? "";
-    check("a closed day with a name on it says what is wrong", /1 to fix/.test(label18) && /All stores closed/.test(label18) && /Ines Calloway/.test(label18), label18);
+    check("a closed day with a name on it says what is wrong", /1 to fix/.test(label18) && /Someone is scheduled, but every store is closed/.test(label18) && !/All stores closed/.test(label18) && /Ines Calloway/.test(label18), label18);
     check("a closed day with a name on it can be opened", (await day(18).getAttribute("tabindex")) === "0");
     await day(18).click();
     await page.waitForTimeout(700);

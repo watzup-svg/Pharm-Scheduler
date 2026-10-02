@@ -50,7 +50,13 @@ function dayLines(doc: ScheduleDoc, day: number, steps: FixStep[], open: number,
   const head = `${weekdayShort(doc.year, doc.month, day)} ${MON(doc)} ${day}`;
   const here = steps.filter((s) => s.day === day);
   // A closed day only turns red when something on it is wrong (a name left on a closed day); say what, not just "closed".
-  if (open === 0) return here.length ? [`${head} · ${here.length} to fix`, "All stores closed", ...here.slice(0, 3).map((s) => s.headline), ...(here.length > 3 ? [`and ${here.length - 3} more`] : [])] : [head, "All stores closed"];
+  if (open === 0) {
+    if (!here.length) return [head, "All stores closed"];
+    // Say the problem, not just the closing: someone is on the schedule on a day nobody is open.
+    const people = new Set(here.flatMap((s) => s.names)).size || here.length;
+    const who = people === 1 ? "Someone is scheduled" : `${people} people are scheduled`;
+    return [`${head} · ${here.length} to fix`, `${who}, but every store is closed`, ...here.slice(0, 3).map((s) => s.headline), ...(here.length > 3 ? [`and ${here.length - 3} more`] : [])];
+  }
   if (!here.length) return [head, `All ${open} open ${open === 1 ? "store is" : "stores are"} covered`];
   return [`${head} · ${here.length} to fix`, ...here.slice(0, 3).map((s) => s.headline), ...(here.length > 3 ? [`and ${here.length - 3} more`] : []), covered < open ? "" : ""].filter(Boolean);
 }
