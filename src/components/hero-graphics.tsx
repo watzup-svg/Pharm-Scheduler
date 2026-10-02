@@ -167,27 +167,28 @@ export function MiniMonth({ doc, dotFor, onPick, dim }: { doc: ScheduleDoc; dotF
         {cells.map((d, i) => {
           if (d == null) return <span key={`b${i}`} />;
           const v = dotFor(d);
-          const size = v.tone === "none" ? 0 : 8 + Math.min(v.n, max) * 3;
+          // The mark sits behind the date, so a big day never covers its number or the row below (bigger = more).
+          const size = v.tone === "none" ? 0 : 16 + Math.min(v.n, max) * 2;
           const isToday = inMonth && today.day === d;
           return (
             <button
               key={d}
               type="button"
+              data-day={d}
               aria-label={v.lines.join(". ")}
               onClick={(e) => (v.tone !== "none" ? gate(`m${d}`, v.lines, e.currentTarget, () => onPick?.(d)) : gate(`m${d}`, v.lines, e.currentTarget, () => {}))}
               {...bind(v.lines)}
-              className={cn("relative flex size-full min-h-0 flex-col items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-white/70", isToday && "bg-white/15 ring-1 ring-white/30", dim?.(d) && "opacity-50")}
+              className={cn("relative grid size-full min-h-0 place-items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-white/70", isToday && "bg-white/15 ring-1 ring-white/30", dim?.(d) && "opacity-50")}
             >
-              <span className="grid h-4 place-items-center sm:h-5">
-                {v.tone === "none" ? null : (
-                  <span
-                    aria-hidden
-                    className={cn("block origin-center scale-[0.7] rounded-[4px] sm:scale-100", v.tone === "off" && "bg-warn-bg ring-1 ring-warn/35", v.tone === "bare" && "bg-illegal-bg ring-1 ring-illegal/40")}
-                    style={{ width: size, height: size, boxShadow: v.tone === "bare" ? "0 0 8px rgba(239,216,210,0.7)" : undefined }}
-                  />
-                )}
-              </span>
-              <span aria-hidden className={cn("text-[10px] leading-none tabular-nums", v.tone === "none" ? "text-white/45" : "font-semibold text-white/85", isToday && "font-bold text-white")}>{d}</span>
+              {v.tone === "none" ? null : (
+                <span
+                  aria-hidden
+                  data-mark={v.tone}
+                  className={cn("absolute inset-0 m-auto block origin-center scale-[0.65] rounded-[5px] sm:scale-100", v.tone === "off" && "bg-warn-bg ring-1 ring-warn/35", v.tone === "bare" && "bg-illegal-bg ring-1 ring-illegal/40")}
+                  style={{ width: size, height: size, boxShadow: v.tone === "bare" ? "0 0 8px rgba(239,216,210,0.7)" : undefined }}
+                />
+              )}
+              <span aria-hidden className={cn("relative text-[10px] leading-none tabular-nums", v.tone === "none" ? "text-white/45" : v.tone === "bare" ? "font-bold text-illegal" : "font-bold text-warn", isToday && v.tone === "none" && "font-bold text-white")}>{d}</span>
             </button>
           );
         })}
