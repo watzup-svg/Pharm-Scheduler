@@ -38,7 +38,9 @@ export function dropName(
   const moving = Boolean(from && !copy && !sameRef(from, to));
   const start = moving ? placeName(doc, from!.store, from!.slot, from!.day, "").doc : doc;
   const placed = placeName(start, to.store, to.slot, to.day, name);
-  return placed.ok ? placed.doc : doc;
+  // "noop" means nothing was written (the person is already in this store's other row): a move must then leave its source alone.
+  if (!placed.ok || (moving && placed.reason === "noop")) return doc;
+  return placed.doc;
 }
 
 export function dropCaption(

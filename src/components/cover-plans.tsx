@@ -86,7 +86,7 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
             <div className="flex flex-wrap items-center gap-2">
               <span data-tip={`Longest drive ${driveText(p.longest)} | ${p.moves.length} ${p.moves.length === 1 ? "person moves" : "people move"}, ${driveText(p.totalMinutes)} of driving in all`} className={cn("rounded-full px-2 py-0.5 text-xs font-bold", p.extreme ? "bg-warn-bg text-warn" : "bg-ok-bg text-ok")}>
                 {p.extreme ? "long drive " : "longest "}
-                {driveLabel(p.longest, p.estimated)}
+                {driveLabel(p.longest, p.longestEstimated)}
               </span>
               {p.mileageUnknown ? (
                 <span data-tip="A distance from a home store is unknown, so its mileage is not counted" className="rounded-full bg-warn-bg px-2 py-0.5 text-xs font-bold text-warn">mileage unknown</span>

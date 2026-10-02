@@ -7,10 +7,11 @@
 //   * Every open store needs one pharmacist. Every pharmacist who could work is a candidate for any store they are licensed for,
 //     are free to work, and (for people already placed) staying where they are costs nothing.
 //   * Moving someone costs their drive, made steeper the longer it is, so two 35-minute moves beat one 2-hour move. Floats are
-//     more willing to drive, so their drive costs less. Drives over 90 minutes are "extreme" and cost extra; over 2 hours are not offered.
+//     more willing to drive, so their drive costs less. Drives over 90 minutes are "extreme" and cost extra and rank last; over 150 minutes (2.5 hours) are not offered.
 //   * The lowest-total-cost way to give every open store someone is found exactly (the assignment problem, Hungarian method).
 //     When someone alone at a store moves, that store needs a replacement, so the answer can be a short chain of moves.
-//   * A second pharmacist at a store can move to a store with nobody. A plan that leaves another store bare is never offered.
+//   * A second pharmacist at a store can move to a store with nobody. A plan may leave ONE other store bare: it is labelled, ranked
+//     with a small penalty, and that store gets its own suggestions (or the district manager closes it).
 import { isoDate, weekdaySun0 } from "./calendar.ts";
 import { choicesFor, offerable, type HoleChoice } from "./dashboard.ts";
 import { effectiveTimeOff } from "./employment.ts";
@@ -77,6 +78,8 @@ export type CoverPlan = {
   totalMinutes: number;
   /** The longest single drive, in minutes. */
   longest: number;
+  /** True when that longest drive is itself an estimate (a short estimated leg does not make a measured long one a guess). */
+  longestEstimated: boolean;
   /** Stores this plan leaves with no pharmacist (at most one). The next hole gets its own suggestions, or the district manager closes it. */
   opens: string[];
   /** Any drive over LONG_DRIVE. */
@@ -216,7 +219,7 @@ function edgeUncached(ctx: Ctx, name: string, store: string): Edge {
   if (!float) cost += Math.min(16, load.away * 2);
   // A float is not penalised for covering, but the same float every day of a week is a tie-break: a small nudge per day already away.
   else cost += Math.min(6, load.weekAway * 1.5);
-  if (load.week + 1 > 5 + (doc.stores.find((s) => s.code === person.home)?.satOpen ? 1 : 0)) cost += 25;
+  if (load.week + (at ? 0 : 1) > 5 + (doc.stores.find((s) => s.code === person.home)?.satOpen ? 1 : 0)) cost += 25;
   if (doc.timeOff.some((t) => t.name === name && t.status === "requested" && timeOffDates(t).includes(ctx.date))) cost += 20;
   // Taking a store's second pharmacist away from a store that usually runs two is a reminder-level cost, not a block.
   if (at && at !== store && doc.stores.find((s) => s.code === at)?.twoPharmacistDays?.includes(ctx.weekday)) cost += 30;
@@ -295,6 +298,7 @@ function describe(ctx: Ctx, moves: CoverMove[], cost: number): CoverPlan {
     moves,
     totalMinutes: minutes.reduce((a, b) => a + b, 0),
     longest: Math.max(0, ...minutes),
+    longestEstimated: (moves.find((m) => (m.minutes ?? 60) === Math.max(0, ...minutes)) ?? moves[0])?.estimated ?? false,
     extreme: minutes.some((x) => x > LONG_DRIVE),
     estimated: moves.some((m) => m.estimated),
     opens: [],
@@ -311,8 +315,9 @@ export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves"> 
   let next = doc;
   for (const m of plan.moves) if (!doc.people.some((p) => p.name === m.name && isRphRole(p.role))) return { doc, ok: false, problem: `${m.name} is not a pharmacist on this month` };
   for (const m of plan.moves) {
-    // Clear the mover from where they are that day.
-    for (const s of next.stores) {
+    // Clear the mover only from the store the plan names. Someone booked at two stores keeps the other booking untouched
+    // (the rules engine already flags that double), so applying never changes a store the plan did not mention.
+    for (const s of next.stores.filter((st) => !m.from || st.code === m.from)) {
       for (const slot of RPH_SLOTS) {
         if (getCell(next.grid, s.code, slot, day).trim() === m.name) next = { ...next, grid: setCellValue(next.grid, s.code, slot, day, "") };
       }
