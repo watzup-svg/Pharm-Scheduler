@@ -7,7 +7,7 @@ import { createSample } from "./sample.ts";
 import type { Grid, Pattern, Person, ScheduleDoc, SlotId } from "./types.ts";
 
 /**
- * Test month for all 18 pharmacies: October 2026, invented pharmacists, and problems planted on
+ * Test month for all 16 pharmacies: October 2026, invented pharmacists, and problems planted on
  * purpose. Nobody here is a real person. The September sample (createSample) is untouched.
  */
 
@@ -22,11 +22,9 @@ const HOME: [string, string][] = [
   ["MOT", "Hollis Grey"],
   ["MOL", "Anders Kowal"],
   ["RR", "Sunita Marlow"],
-  ["SCA", "Rafael Ostrander"],
   ["SHE", "Winnie Takata"],
   ["SIL", "Cormac Bell"],
   ["WAL", "Odette Rasmussen"],
-  ["WL", "Jasper Lund"],
   ["WS", "Ines Calloway"],
   ["WIN", "Elliot Prewitt"],
   ["WOO", "Yara Bellamy"],
@@ -34,10 +32,12 @@ const HOME: [string, string][] = [
 
 const FLOATS: [string, string][] = [
   ["Fenn Ritter", "MOL"],
-  ["Greta Voss", "SCA"],
+  ["Greta Voss", "CLA"],
   ["Kip Alder", "WS"],
   ["Lena Sorensen", "IND"],
 ];
+
+const FAKE_NUMBER: Record<string, string> = { CAV: "9101", LEN: "9102", RR: "9103" };
 
 const YEAR = 2026;
 const MONTH = 10;
@@ -82,9 +82,10 @@ export function createDemo(): ScheduleDoc {
   const doc: ScheduleDoc = {
     ...base,
     // Silverton usually runs two pharmacists on Saturdays. The manager chooses this per store.
-    // Stores go by number (placeholder numbers from the store list until the real ones are known).
+    // Stores go by number (real numbers from the HSP Float Store List).
     storeLabels: "number",
-    stores: base.stores.map((st) => (st.code === "SIL" ? { ...st, twoPharmacistDays: [6] } : st)),
+    // Cave's, Len's and Rogue River have no real number yet (not on the Float Store List); the practice month gives them made-up ones.
+    stores: base.stores.map((st) => (st.code === "SIL" ? { ...st, twoPharmacistDays: [6] } : st.number ? st : { ...st, number: FAKE_NUMBER[st.code] ?? st.number })),
     year: YEAR,
     month: MONTH,
     people: [
@@ -93,7 +94,7 @@ export function createDemo(): ScheduleDoc {
     ],
     holidays: [
       ...base.holidays,
-      { date: "2026-10-12", store: "SCA", label: "Inventory day", repeat: false },
+      { date: "2026-10-12", store: "SHE", label: "Inventory day", repeat: false },
     ],
     timeOff: [],
   };
@@ -184,7 +185,7 @@ export function createDemo(): ScheduleDoc {
   req("Gideon Ashcroft", [30], "Wedding", "2026-09-29");
 
   // Hints, which are not errors. Elliot (WA) is out on the 13th and Fenn, who is licensed in
-  // Oregon only, covers Wind River (WA). Kip usually cannot work Mondays and covers Rick's on the
+  // Oregon only, covers Wind River (WA). Kip usually cannot work Mondays and covers Clatskanie on the
   // 19th (Monday). Lucia (Florence, weekdays only) picks up Estacada's Saturday the 17th, which
   // makes her sixth day that week.
   off("Elliot Prewitt", [13], "Sick day");
@@ -194,7 +195,7 @@ export function createDemo(): ScheduleDoc {
 
   // Planted mistakes that are not time off.
   grid = put(grid, "CAT", "pharmacist", 10, "Marisol Quenby"); // ERROR: Cathlamet is closed Saturdays
-  grid = put(grid, "SCA", "pharmacist", 12, "Rafael Ostrander"); // ERROR: inventory day, store closed
+  grid = put(grid, "SHE", "pharmacist", 12, "Winnie Takata"); // ERROR: inventory day, store closed
   grid = put(grid, "WS", "pharmacist", 18, "Ines Calloway"); // ERROR: a Sunday
   clear("EST", [24]); // hole: nobody on Saturday the 24th
   clear("WOO", [26, 27]); // holes: two days, no time off logged

@@ -14,13 +14,13 @@ export default async function run() {
   await dlg.getByRole("button", { name: "Add store" }).click();
   await p.waitForTimeout(400);
   const card = p.getByTestId("new-store-distances");
-  check("a collapsed notice names the new store", (await card.count()) === 1 && /Newtown Pharmacy has no measured distances to 18 stores/.test(await card.locator("summary").innerText()), await card.locator("summary").innerText().catch(() => ""));
+  check("a collapsed notice names the new store", (await card.count()) === 1 && /Newtown Pharmacy has no measured distances to 16 stores/.test(await card.locator("summary").innerText()), await card.locator("summary").innerText().catch(() => ""));
   await card.locator("summary").click();
   await card.getByLabel("Miles to Cathlamet Pharmacy").fill("42.5");
   await card.getByLabel("Minutes to Cathlamet Pharmacy").fill("55");
   await card.getByRole("button", { name: /^Save 1 distance/ }).click();
   await p.waitForTimeout(300);
-  check("saving drops that pair from the list", /to 17 stores/.test(await card.locator("summary").innerText()));
+  check("saving drops that pair from the list", /to 15 stores/.test(await card.locator("summary").innerText()));
   check("no script errors", !errors.length, errors.join("; "));
   await browser.close();
 }

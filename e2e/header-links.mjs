@@ -53,7 +53,7 @@ export default async function run() {
     await page.getByRole("button", { name: "Next issue" }).click();
     await page.waitForTimeout(400);
     const strip = header(page).locator("[data-day-strip='9']");
-    check("the day strip lists every store for the issue's day", (await strip.locator("[data-strip-store]").count()) === 18);
+    check("the day strip lists every store for the issue's day", (await strip.locator("[data-strip-store]").count()) === 16);
     const bad = await strip.locator("[data-state=bad]").evaluateAll((els) => els.map((e) => e.getAttribute("data-strip-store")).sort().join(","));
     check("the stores to fix that day are marked", bad === "EST,MOL", bad);
     check("the issue header has no store badge (the store row and day strip carry it)", (await header(page).getByRole("button", { name: /^Open .* and .*, Fri Oct 9$/ }).count()) === 0);

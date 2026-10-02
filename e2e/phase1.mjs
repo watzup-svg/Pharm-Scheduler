@@ -20,11 +20,11 @@ export default async function run() {
     check("the person just removed is not the best fit", (await d.getByRole("button", { name: /^Schedule Marisol Quenby/ }).count()) === 0);
     await p.keyboard.press("Escape");
     // 2. Inventory is a closure reason
-    const c2 = p.locator('#day-SCA-14');
+    const c2 = p.locator('#day-SHE-14');
     await c2.scrollIntoViewIfNeeded();
     await c2.click();
     await p.waitForTimeout(300);
-    await p.getByRole("dialog").getByRole("button", { name: /^Close Scappoose/ }).click();
+    await p.getByRole("dialog").getByRole("button", { name: /^Close Sheridan/ }).click();
     check("Inventory is offered as a reason to close a store", (await p.getByRole("menuitem", { name: "Inventory" }).count()) === 1);
     await p.keyboard.press("Escape");
     check("no page errors (schedule)", errors.length === 0, errors[0]);

@@ -22,8 +22,8 @@ describe("next month forecast", () => {
 
   it("names the practice month's November result", () => {
     const f = forecastNextMonth(doc, plan);
-    assert.deepEqual(f, { total: 28, byKind: { hole: 26, double: 2, leftover: 0, license: 0 } });
-    assert.equal(forecastLine("November", f), "November will start with 28 problems to fix: 26 shifts with no coverage and 2 people at two places.");
+    assert.deepEqual(f, { total: 26, byKind: { hole: 24, double: 2, leftover: 0, license: 0 } });
+    assert.equal(forecastLine("November", f), "November will start with 26 problems to fix: 24 shifts with no coverage and 2 people at two places.");
   });
 
   it("never changes the month on screen", () => {

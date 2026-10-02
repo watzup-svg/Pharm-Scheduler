@@ -70,7 +70,7 @@ describe("by-day roster", () => {
   const ev = evaluate(doc);
   it("lists every store, who is free, and who is off", () => {
     const r = dayRoster(doc, ev, 20);
-    assert.equal(r.stores.length, 18);
+    assert.equal(r.stores.length, 16);
     assert.equal(r.stores.find((s) => s.store === "MOT")?.hole, true);
     assert.ok(r.off.includes("Theo Brandvold"));
     assert.ok(!r.free.some((p) => r.off.includes(p.name)));
@@ -116,12 +116,12 @@ describe("store filter and weeks", () => {
   const doc = createDemo();
   const ev = evaluate(doc);
   it("filters by problems and by state", () => {
-    assert.equal(filterStores(doc, ev, "all").length, 18);
+    assert.equal(filterStores(doc, ev, "all").length, 16);
     const problems = filterStores(doc, ev, "problems").map((s) => s.code);
-    for (const code of ["CAT", "SCA", "WS", "EST", "MOL", "RR", "WAL", "MOT", "CLA", "WOO"]) assert.ok(problems.includes(code), code);
+    for (const code of ["CAT", "SHE", "WS", "EST", "MOL", "RR", "WAL", "MOT", "CLA", "WOO"]) assert.ok(problems.includes(code), code);
     assert.ok(!problems.includes("FLO"));
     assert.equal(filterStores(doc, ev, "WA").length, 5);
-    assert.equal(filterStores(doc, ev, "OR").length, 13);
+    assert.equal(filterStores(doc, ev, "OR").length, 11);
   });
   it("cuts October 2026 into Sunday-first weeks", () => {
     assert.deepEqual(weekRanges(2026, 10), [[1, 3], [4, 10], [11, 17], [18, 24], [25, 31]]);

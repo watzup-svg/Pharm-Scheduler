@@ -293,10 +293,10 @@ describe("district model", () => {
   it("summarizes without inventing numbers: every count comes from the rules", () => {
     const m = districtModel(demo, ev, { year: 2026, month: 10, day: 14 });
     assert.deepEqual(m.counts, { holes: 6, doubles: 2, closedNames: 3, unlicensed: 1, short: 4, requests: 2, away: 2, thin: 2, checks: 2 });
-    assert.equal(m.cards.length, 18);
+    assert.equal(m.cards.length, 16);
     assert.equal(m.cards.find((c) => c.code === "WAL")!.todayTone, "hole");
     assert.deepEqual(m.cards.find((c) => c.code === "EST")!.today, ["Gideon Ashcroft"]);
-    assert.equal(m.strip.length, 18);
+    assert.equal(m.strip.length, 16);
     assert.equal(m.strip[0]!.tones.length, 31);
     assert.equal(m.weekend.filter(Boolean).length, 9);
   });
