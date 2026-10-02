@@ -336,8 +336,8 @@ export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves"> 
   return { doc: next, ok: true, newlyBare: opened };
 }
 
-/** Order of preference before cost: plans that leave no gap (long drives last among them), then plans that leave one store bare. Moving a gap is never a fix, only an option. */
-const tier = (p: CoverPlan) => (p.opens.length ? 2 : p.extreme ? 1 : 0);
+/** Order of preference before cost: long drives last. A plan that leaves one store bare is allowed and competes on cost (it already carries the OPENS_HOLE penalty); it just creates another issue for the manager. */
+const tier = (p: CoverPlan) => (p.extreme ? 1 : 0);
 
 /**
  * Up to three ways to fill the empty shift at `store` on `day`, shortest drives first. Empty when the shift is not empty or
@@ -407,10 +407,8 @@ export function coverPlans(doc: ScheduleDoc, store: string, day: number, max = 3
     for (const donor of soloDonors) expand(rows, donor);
   }
   // The full "does this leave the day worse" check (a whole-month evaluation) runs only on the plans that would be shown.
-  // Plans that leave another store bare only move a gap from one store to another, so they are offered only when nothing cleaner exists.
-  const anyClean = [...found.values()].some((p) => !p.opens.length);
   const plans: CoverPlan[] = [];
-  for (const p of [...found.values()].filter((p) => !anyClean || !p.opens.length).sort((a, b) => tier(a) - tier(b) || a.cost - b.cost || a.id.localeCompare(b.id))) {
+  for (const p of [...found.values()].sort((a, b) => tier(a) - tier(b) || a.cost - b.cost || a.id.localeCompare(b.id))) {
     if (plans.length >= max) break;
     if (applyCoverPlan(doc, { moves: p.moves, opens: p.opens }, day).ok) plans.push(p);
   }
