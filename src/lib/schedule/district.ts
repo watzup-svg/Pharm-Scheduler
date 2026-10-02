@@ -1,4 +1,3 @@
-import { effectiveTimeOff } from "./employment.ts";
 import { daysInMonth, isStoreOpen, monthName, weekdayShort, weekdaySun0 } from "./calendar.ts";
 import { awayList, monthStatus, type MonthStatus } from "./dashboard.ts";
 import { shortStoreName } from "./fix.ts";
@@ -9,9 +8,7 @@ import { thinCoverDays } from "./thin.ts";
 import { workloadFlags } from "./workload.ts";
 import { getCell } from "./grid.ts";
 import { RPH_SLOTS } from "./slots.ts";
-import { personOnPto } from "./pto.ts";
 import { isWaiting } from "./timeoff-view.ts";
-import { isoDate } from "./calendar.ts";
 import type { Evaluation, ScheduleDoc } from "./types.ts";
 
 export type DayTone = "ok" | "hole" | "accepted" | "double" | "license" | "leftover" | "closed" | "off" | "away" | "cover";
@@ -132,8 +129,3 @@ export function districtModel(doc: ScheduleDoc, ev: Evaluation, today: { year: n
   };
 }
 
-/** Pharmacists on time off today, for the district page. */
-export function offToday(doc: ScheduleDoc, day: number): string[] {
-  const date = isoDate(doc.year, doc.month, day);
-  return doc.people.filter((p) => personOnPto(effectiveTimeOff(doc), p.name, date)).map((p) => p.name);
-}

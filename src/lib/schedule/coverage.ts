@@ -48,14 +48,6 @@ export function ptoOnDay(doc: ScheduleDoc, name: string, day: number): boolean {
   return personOnPto(effectiveTimeOff(doc), name, date);
 }
 
-export function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => w[0]!.toUpperCase())
-    .join("");
-}
-
 export function suggestedMonthFileName(year: number, month: number): string {
   const label = MONTH_NAMES[month - 1] ?? String(month);
   return `HiSchool_Pharmacy_${label}_${year}.hisp.json`;

@@ -2,7 +2,7 @@ import { SLOTS } from "./slots.ts";
 import type { CellRef, ScheduleDoc, SlotId } from "./types.ts";
 
 /** Rectangle of cells in one store between two corners (slot × day). */
-export function rectCells(doc: ScheduleDoc, a: CellRef, b: CellRef): CellRef[] {
+export function rectCells(_doc: ScheduleDoc, a: CellRef, b: CellRef): CellRef[] {
   if (a.store !== b.store) return [b];
   const slots = SLOTS.map((s) => s.id);
   const i1 = slots.indexOf(a.slot);

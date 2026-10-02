@@ -46,7 +46,7 @@ export function useIssueNav() {
 }
 
 /** Put the cursor on an issue, outline its cells and bring them into view, without opening anything. */
-export function selectIssue(doc: ScheduleDoc, step: FixStep) {
+function selectIssue(doc: ScheduleDoc, step: FixStep) {
   const view = useViewStore.getState();
   view.setIssue({ ...anchorOf(step), ym: ymOf(doc) });
   // With the day panel already open, it follows the cursor instead of showing a day the header has left.
@@ -79,7 +79,7 @@ export function selectIssue(doc: ScheduleDoc, step: FixStep) {
   });
 }
 
-export function clearIssue() {
+function clearIssue() {
   useViewStore.getState().setIssue(null);
 }
 

@@ -30,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 
 /** One place that says which picture means what. The icon guide reads this list, so it can never drift from the screens. */
-export const ICON = {
+const ICON = {
   home: House,
   float: LifeBuoy,
   drive: Car,

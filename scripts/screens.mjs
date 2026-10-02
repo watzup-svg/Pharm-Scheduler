@@ -7,10 +7,10 @@
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
-import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { serve } from "./serve.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ROUTES = ["district", "schedule", "time-off", "people", "stores", "holidays", "lists", "print"];
@@ -129,15 +129,8 @@ const baseDir = path.join(root, "test-logs", "baseline");
 fs.mkdirSync(outDir, { recursive: true });
 let server = null;
 if (!process.env.BASE) {
-  const dir = path.join(root, "dist-spa");
-  if (!fs.existsSync(path.join(dir, "spa.html"))) { console.log("Build first: npm run build:trial"); process.exit(2); }
-  server = http.createServer((req, res) => {
-    const f = path.join(dir, decodeURIComponent((req.url ?? "/").split("?")[0]).replace(/^\/+/, "") || "spa.html");
-    if (!f.startsWith(dir) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404).end(); return; }
-    res.writeHead(200, { "content-type": f.endsWith(".html") ? "text/html" : "application/octet-stream" }).end(fs.readFileSync(f));
-  });
-  await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
-  process.env.BASE = `http://127.0.0.1:${server.address().port}/spa.html`;
+  try { server = await serve(); } catch (e) { console.log(e.message); process.exit(2); }
+  process.env.BASE = server.base;
 }
 const jobsAt = args.indexOf("--jobs");
 const width = Math.max(1, Math.min(jobsAt >= 0 ? Number(args[jobsAt + 1]) : os.cpus().length - 1, ROUTES.length * WIDTHS.length));
