@@ -27,23 +27,18 @@ export function dropName(
   const from = payload.from;
   const inRange = range.length > 1 && range.some((c) => sameRef(c, to));
   if (inRange) {
-    let next = assignRange(doc, range, name).doc;
-    if (!copy && from && !range.some((c) => sameRef(c, from))) {
-      next = placeName(next, from.store, from.slot, from.day, "").doc;
-    }
-    return next;
+    // A move empties its source first, so moving within one store-day is never refused as "already here".
+    const start = !copy && from && !range.some((c) => sameRef(c, from)) ? placeName(doc, from.store, from.slot, from.day, "").doc : doc;
+    return assignRange(start, range, name).doc;
   }
   if (from && !copy && !sameRef(from, to)) {
     const dest = getCell(doc.grid, to.store, to.slot, to.day).trim();
     if (dest && dest !== name) return swapCells(doc, from, to);
   }
-  const placed = placeName(doc, to.store, to.slot, to.day, name);
-  if (!placed.ok) return doc;
-  let next = placed.doc;
-  if (from && !copy && !sameRef(from, to)) {
-    next = placeName(next, from.store, from.slot, from.day, "").doc;
-  }
-  return next;
+  const moving = Boolean(from && !copy && !sameRef(from, to));
+  const start = moving ? placeName(doc, from!.store, from!.slot, from!.day, "").doc : doc;
+  const placed = placeName(start, to.store, to.slot, to.day, name);
+  return placed.ok ? placed.doc : doc;
 }
 
 export function dropCaption(

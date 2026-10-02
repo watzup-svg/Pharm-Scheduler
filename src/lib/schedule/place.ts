@@ -1,6 +1,7 @@
 import { daysInMonth, isoDate, isStoreOpen } from "./calendar.ts";
 import { getCell, setCellValue } from "./grid.ts";
 import { unlicensedAt } from "./licence.ts";
+import { RPH_SLOTS } from "./slots.ts";
 import type { CellRef, ScheduleDoc, SlotId } from "./types.ts";
 
 export function cellKey(ref: CellRef): string {
@@ -14,7 +15,10 @@ export function isOpenDay(doc: ScheduleDoc, storeCode: string, day: number): boo
   return isStoreOpen(store, doc.year, doc.month, day, days, doc.holidays);
 }
 
-/** Single door for every name write. Clear always allowed. Names on shut days, and names outside a licensed state, rejected. */
+/**
+ * Single door for every name write. Clear always allowed. Names on shut days, and names outside a licensed state, rejected.
+ * A person is never written twice at one store on one day: if they already fill the other row there, nothing changes.
+ */
 export function placeName(
   doc: ScheduleDoc,
   store: string,
@@ -34,6 +38,7 @@ export function placeName(
   }
   const current = getCell(doc.grid, store, slot, day);
   if (current === trimmed) return { doc, ok: true, reason: "noop" };
+  if (trimmed && RPH_SLOTS.some((s) => s !== slot && getCell(doc.grid, store, s, day).trim() === trimmed)) return { doc, ok: true, reason: "noop" };
   return {
     doc: { ...doc, grid: setCellValue(doc.grid, store, slot, day, trimmed) },
     ok: true,
@@ -44,19 +49,32 @@ export function placeName(
 export function swapCells(doc: ScheduleDoc, a: CellRef, b: CellRef): ScheduleDoc {
   const nameA = getCell(doc.grid, a.store, a.slot, a.day);
   const nameB = getCell(doc.grid, b.store, b.slot, b.day);
-  let next = doc;
-  const first = placeName(next, a.store, a.slot, a.day, "");
-  next = first.doc;
+  // Empty both first, so swapping the two rows of one store-day never meets the "already here" rule half way.
+  let next = placeName(placeName(doc, a.store, a.slot, a.day, "").doc, b.store, b.slot, b.day, "").doc;
   const putB = placeName(next, a.store, a.slot, a.day, nameB);
-  if (!putB.ok) {
-    return placeName(next, a.store, a.slot, a.day, nameA).doc;
+  const putA = putB.ok ? placeName(putB.doc, b.store, b.slot, b.day, nameA) : putB;
+  return putB.ok && putA.ok ? putA.doc : doc;
+}
+
+/** A person listed in both pharmacist rows of one store on one day. */
+export type SameStoreRepeat = { store: string; day: number; name: string };
+
+/**
+ * Old files and the grid can hold the same person in both rows of one store-day. Keep the first row, clear the second,
+ * and say what was cleared. Pure; returns the same doc when there is nothing to clear.
+ */
+export function dropSameStoreRepeats(doc: ScheduleDoc): { doc: ScheduleDoc; removed: SameStoreRepeat[] } {
+  const removed: SameStoreRepeat[] = [];
+  let grid = doc.grid;
+  for (const [store, slots] of Object.entries(doc.grid)) {
+    const first = slots?.[RPH_SLOTS[0]!] ?? {};
+    const second = slots?.[RPH_SLOTS[1]!] ?? {};
+    for (const [d, name] of Object.entries(second)) {
+      const n = (name ?? "").trim();
+      if (!n || (first[d] ?? "").trim() !== n) continue;
+      grid = setCellValue(grid, store, RPH_SLOTS[1]!, Number(d), "");
+      removed.push({ store, day: Number(d), name: n });
+    }
   }
-  next = putB.doc;
-  const putA = placeName(next, b.store, b.slot, b.day, nameA);
-  if (!putA.ok) {
-    next = placeName(next, a.store, a.slot, a.day, nameA).doc;
-    next = placeName(next, b.store, b.slot, b.day, nameB).doc;
-    return next;
-  }
-  return putA.doc;
+  return removed.length ? { doc: { ...doc, grid }, removed } : { doc, removed };
 }

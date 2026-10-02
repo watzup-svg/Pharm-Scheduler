@@ -27,10 +27,10 @@ describe("demo month", () => {
 
   it("plants each kind of hard error where it says", () => {
     const at = (s: string, d: number) => ev.byKey[issueKey(s, d)]!;
-    // doubles across stores, and in both rows of one store
+    // doubles across stores (one store twice on a day can no longer be written)
     assert.deepEqual(at("EST", 9).doubledNames, ["Gideon Ashcroft"]);
     assert.deepEqual(at("MOL", 9).doubledNames, ["Gideon Ashcroft"]);
-    assert.deepEqual(at("LEN", 6).doubledNames, ["Petra Lindqvist"]);
+    assert.deepEqual(at("LEN", 6).doubledNames, []);
     assert.deepEqual(at("RR", 27).doubledNames, ["Kip Alder"]);
     // names on closed days: Saturday, a store holiday, a Sunday
     assert.equal(at("CAT", 10).leftover, true);
@@ -59,7 +59,7 @@ describe("demo month", () => {
 
   it("shows the front-door model: problems, next hole, who is off, and a short day", () => {
     const status = monthStatus(doc, ev);
-    assert.equal(status.steps.length, 13);
+    assert.equal(status.steps.length, 12);
     assert.equal(status.next?.kind, "leftover");
     assert.ok(!status.next?.headline.includes("Hi-School Pharmacy")); // short names in sentences
     const hole = nextHole(doc);

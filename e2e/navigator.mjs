@@ -24,17 +24,17 @@ export default async function run() {
     await page.getByRole("button", { name: "Next issue" }).click();
     await page.waitForTimeout(400);
     check("the first step lands on the first issue by date", (await position(page)) === `1 of ${total}`, await position(page));
-    check("the title names the issue", (await header(page).getByText("Two places · Petra Lindqvist · Tue Oct 6").count()) > 0);
-    check("the ring tick moves to the issue's day", (await tickDay(page)) === 6, String(await tickDay(page)));
-    check("the ring centre names the day", (await header(page).locator("svg text").allTextContents()).join(" ").includes("OCT 6th"));
-    check("the issue's cell is outlined on the grid", (await marked(page)) === "LEN|6", await marked(page));
+    check("the title names the issue", (await header(page).getByText("Two places · Gideon Ashcroft · Fri Oct 9").count()) > 0);
+    check("the ring tick moves to the issue's day", (await tickDay(page)) === 9, String(await tickDay(page)));
+    check("the ring centre names the day", (await header(page).locator("svg text").allTextContents()).join(" ").includes("OCT 9th"));
+    check("a person at two stores outlines both", (await marked(page)) === "EST|9,MOL|9", await marked(page));
     check("stepping does not open the day panel", (await page.getByRole("dialog").count()) === 0);
     check("stepping stays on the District page", page.url().endsWith("#/"), page.url());
     check("the header keeps its height while stepping", (await headerHeight(page)) === h0, `${h0} -> ${await headerHeight(page)}`);
 
     await page.getByRole("button", { name: "Next issue" }).click();
     await page.waitForTimeout(200);
-    check("a person at two stores outlines both", (await marked(page)) === "EST|9,MOL|9", await marked(page));
+    check("the next step outlines the next issue's cell", (await marked(page)) === "CAT|10", await marked(page));
 
     await page.getByRole("button", { name: "Previous issue" }).click();
     await page.getByRole("button", { name: "Previous issue" }).click();
@@ -59,11 +59,11 @@ export default async function run() {
     await page.getByRole("button", { name: "Open this issue" }).click();
     await page.waitForTimeout(700);
     const sheet = page.getByRole("dialog");
-    check("Fix opens the day the arrows are on", (await sheet.getByText(/Oct 10/).count()) > 0);
-    check("the open day panel drives the ring", (await tickDay(page)) === 10, String(await tickDay(page)));
+    check("Fix opens the day the arrows are on", (await sheet.getByText(/Oct 12/).count()) > 0);
+    check("the open day panel drives the ring", (await tickDay(page)) === 12, String(await tickDay(page)));
     await sheet.getByRole("button", { name: /^Next · \d+/ }).click();
     await page.waitForTimeout(700);
-    check("the day panel's Next goes to the next issue by date", (await page.getByRole("dialog").getByText(/Oct 12/).count()) > 0);
+    check("the day panel's Next goes to the next issue by date", (await page.getByRole("dialog").getByText(/Oct 13/).count()) > 0);
     check("the header position follows the day panel", (await position(page)).startsWith("4 of"), await position(page));
     await page.close();
   }

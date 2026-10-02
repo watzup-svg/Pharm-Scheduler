@@ -166,16 +166,13 @@ describe("month status and front-door model", () => {
     assert.equal(printGate(next, evaluate(next)).blocked, true);
   });
 
-  it("one person in both pharmacist rows of a store is a double, in the list and in the gate", () => {
-    let next = placeName(doc, "SCA", "pharmacist2", 8, "Priya Nair").doc;
-    const e = evaluate(next);
-    assert.equal(e.byKey[issueKey("SCA", 8)]?.doubledNames[0], "Priya Nair");
-    const status = monthStatus(next, e);
-    assert.ok(status.steps.some((s) => s.kind === "double" && s.store === "SCA" && s.day === 8));
-    assert.equal(printGate(next, e).blocked, true);
-    next = keepDouble(next, "Priya Nair", 8, "SCA");
-    assert.equal(getCell(next.grid, "SCA", "pharmacist", 8), "Priya Nair");
+  it("one person cannot fill both pharmacist rows of a store on one day", () => {
+    const first = getCell(doc.grid, "SCA", "pharmacist", 8);
+    assert.equal(first, "Priya Nair");
+    const next = placeName(doc, "SCA", "pharmacist2", 8, "Priya Nair").doc;
+    assert.equal(next, doc);
     assert.equal(getCell(next.grid, "SCA", "pharmacist2", 8), "");
+    assert.ok(!monthStatus(next, evaluate(next)).steps.some((s) => s.kind === "double" && s.store === "SCA" && s.day === 8));
   });
 
   it("problem list and rules engine never disagree about readiness", () => {

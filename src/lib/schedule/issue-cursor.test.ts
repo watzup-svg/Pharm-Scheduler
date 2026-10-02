@@ -16,7 +16,7 @@ describe("issue order", () => {
     assert.equal(ordered.length, steps.length);
     assert.equal(new Set(ordered.map(stepKey)).size, steps.length);
     for (let i = 1; i < ordered.length; i++) assert.ok(ordered[i - 1]!.day <= ordered[i]!.day);
-    assert.equal(ordered[0]!.day, 6);
+    assert.equal(ordered[0]!.day, 9);
   });
 
   it("puts same-day issues in store-list order", () => {
@@ -96,7 +96,7 @@ describe("issue titles", () => {
   });
 
   it("names the person for two places and licences", () => {
-    assert.equal(title("double"), "Two places · Petra Lindqvist · Tue Oct 6");
+    assert.equal(title("double"), "Two places · Gideon Ashcroft · Fri Oct 9");
     assert.equal(title("license"), "Not licensed · Fenn Ritter · Tue Oct 13");
   });
 
