@@ -186,6 +186,12 @@ export function FileMenu() {
                 : "Changes are also kept in this browser. That copy is not a file."}
             </p>
             {dirty ? <p className="font-medium text-warn">Unsaved changes</p> : null}
+            {typeof __BUILD__ !== "undefined" ? (
+              <p data-build-stamp className="mt-1 border-t border-line pt-1">
+                {__BUILD__.kind} build · {new Date(__BUILD__.at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                {__BUILD__.sha ? ` · ${__BUILD__.sha}` : ""}
+              </p>
+            ) : null}
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => void onOpen()}>

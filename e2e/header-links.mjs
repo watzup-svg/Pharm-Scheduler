@@ -105,5 +105,13 @@ export default async function run() {
     check("a problem day's note has the red edge and its mark", (await note.locator("[data-note-edge=bad]").count()) === 1 && (await note.locator("svg").count()) > 0);
     await page.close();
   }
+  {
+    // The File menu says which build this is, so a fresh build is easy to tell from an old one.
+    const { page } = await open(browser, "schedule");
+    await page.getByRole("button", { name: "File" }).click();
+    const stamp = (await page.locator("[data-build-stamp]").textContent())?.trim() ?? "";
+    check("the File menu names the build, its time and its version", /^Trial build · .+ · [0-9a-f]{7}$/.test(stamp), stamp);
+    await page.close();
+  }
   await browser.close();
 }
