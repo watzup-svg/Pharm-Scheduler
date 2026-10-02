@@ -668,7 +668,8 @@ describe("hand-set drive times", () => {
   it("beat the estimate, survive save/load and renames, and go when a store goes", async () => {
     const { driveBetween } = await import("./geo.ts");
     const { applyStore, removeStoreDoc } = await import("./identity.ts");
-    const doc = createDemo();
+    const demo = createDemo();
+    const doc = { ...demo, stores: demo.stores.map((s) => ({ ...s, address: `${s.address} (test)` })) }; // moved: the measured table would otherwise apply
     const [a, b] = [doc.stores[0]!.code, doc.stores[5]!.code];
     const est = driveBetween(doc, a, b)!;
     assert.equal(est.estimated, true);

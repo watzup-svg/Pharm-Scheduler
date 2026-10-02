@@ -2,6 +2,9 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Real drive distances between all 18 stores
+- The app now carries measured one-way road miles and drive minutes for every pair of the 18 stores (Google Maps, Oct 2, 2026; fastest route, 10 AM weekday, the temporary I-5 Rose Quarter closure left out). They replace the address-based estimates: no "~" on those times, and mileage pay uses the real miles. Order of use: a number you set by hand, then this table, then the estimate (used only if a store's address changes). Cathlamet to Clatskanie includes the Wahkiakum ferry (45 minutes plus 15 to be there before the boat). Some Waldport/Florence routes to the north are the fastest route, not the shortest (up to about 34 miles longer than going through another store); mileage pay follows the table.
+
 ## Names in laptop calendars, paste many drive distances
 - At laptop width (1024 px and up) a name in a store calendar cell may use two lines before it is cut, so "M. Quenby" no longer ends in "...". Phones keep one line. Display only.
 - Drive times between stores has a new "Paste many distances at once" box: one pair per line as store code, store code, one-way miles (CAT,CLA,31.4). Good lines are saved (Undo brings the old values back); bad lines are listed and skipped, never guessed.

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { DRIVE_TABLE_DATE, tableFor } from "@/lib/schedule/drive-table";
 import { driveBetween, pairMiles } from "@/lib/schedule/geo";
 import { parseMilesLines } from "@/lib/schedule/miles-import";
 import { paidMilesFor, freeMilesOf, rateOf, FEDERAL_RATE } from "@/lib/schedule/mileage";
@@ -41,6 +42,7 @@ export function DriveTimes() {
     [doc, from],
   );
   const hand = Object.entries(doc.driveMinutes ?? {});
+  const handMinutes = doc.driveMinutes?.[[from, to].sort().join("|")] != null;
   const pairM = from && to && from !== to ? pairMiles(doc, from, to) : null;
   const free = freeMilesOf(doc);
   const missing = useMemo(() => {
@@ -85,7 +87,7 @@ export function DriveTimes() {
           <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 ring-1 ring-line">
             <p className="min-w-0 flex-1 text-sm">
               <span className="font-semibold">{driveLabel(pair.minutes, pair.estimated)}</span>
-              <span className="text-muted">{pair.estimated ? " · estimated from the addresses" : " · set by you"}</span>
+              <span className="text-muted">{pair.estimated ? " · estimated from the addresses" : !handMinutes && tableFor(doc.stores, from, to) ? ` · measured in Google Maps, ${DRIVE_TABLE_DATE}` : " · set by you"}{tableFor(doc.stores, from, to)?.ferry ? " · includes the Wahkiakum ferry (waits up to an hour if missed)" : ""}</span>
             </p>
             <div className="flex flex-col gap-2">
               <Label htmlFor="dt-min">Minutes</Label>
@@ -103,7 +105,7 @@ export function DriveTimes() {
             >
               Set
             </Button>
-            {!pair.estimated ? (
+            {handMinutes ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -112,7 +114,7 @@ export function DriveTimes() {
                   announce(`${tag(from)} to ${tag(to)} back to the estimate`);
                 }}
               >
-                Use the estimate
+                Use the measured time
               </Button>
             ) : null}
           </div>
@@ -124,7 +126,7 @@ export function DriveTimes() {
             <p className="min-w-0 flex-1 text-sm">
               <span className="font-semibold">{pairM.miles == null ? "Miles unknown" : `${pairM.miles} mi one way`}</span>
               <span className="text-muted">
-                {pairM.source === "set" ? " · set by you" : pairM.source === "estimated" ? " · an estimate from the store locations" : " · no location, so no estimate"}
+                {pairM.source === "set" ? " · set by you" : pairM.source === "table" ? ` · measured in Google Maps, ${DRIVE_TABLE_DATE}` : pairM.source === "estimated" ? " · an estimate from the store locations" : " · no location, so no estimate"}
                 {pairM.miles != null && pairM.miles > free ? ` · ${paidMilesFor(pairM.miles, free)} paid mi a day if worked away from home` : ""}
               </span>
             </p>
