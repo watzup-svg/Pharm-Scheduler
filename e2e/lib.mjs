@@ -2,6 +2,8 @@
 //   BASE   where the built app is served (default http://127.0.0.1:3002/spa.html, from `vite build -c vite.spa.config.ts`)
 //   CHROME path to Chromium (default: Playwright's pre-installed one)
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 
@@ -46,4 +48,11 @@ export async function hold(page, locator, ms = 1100) {
   await page.mouse.down();
   await page.waitForTimeout(ms);
   await page.mouse.up();
+}
+
+/** A scratch file path private to this run, so two runs at the same time never write the same file. */
+let scratch = process.env.E2E_TMP;
+export function tmp(name) {
+  scratch ??= fs.mkdtempSync(path.join(os.tmpdir(), "hischool-e2e-"));
+  return path.join(scratch, name);
 }

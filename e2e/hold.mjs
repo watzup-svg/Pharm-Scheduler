@@ -1,4 +1,4 @@
-import { launch, open, hold } from "./lib.mjs";
+import { launch, open, hold, tmp } from "./lib.mjs";
 const b = await launch();
 let bad = 0; const ok = (c, m) => { if (!c) bad++; console.log(c ? "ok  " : "FAIL", m); };
 for (const w of [1366, 390]) {
@@ -9,7 +9,7 @@ for (const w of [1366, 390]) {
   // mid-hold screenshot
   const box = await leave.boundingBox();
   await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await p.mouse.down(); await p.waitForTimeout(380);
-  await p.screenshot({ path: `/tmp/hold_mid_${w}.png`, clip: { x: Math.max(0, box.x - 160), y: Math.max(0, box.y - 80), width: Math.min(w, 520), height: 200 } });
+  await p.screenshot({ path: tmp(`hold_mid_${w}.png`), clip: { x: Math.max(0, box.x - 160), y: Math.max(0, box.y - 80), width: Math.min(w, 520), height: 200 } });
   ok((await leave.getAttribute("data-holding")) !== null, `${w} holding state shows`);
   // release early
   await p.mouse.up(); await p.waitForTimeout(250);

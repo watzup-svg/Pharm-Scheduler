@@ -1,4 +1,4 @@
-import { launch, open, axeSource } from "./lib.mjs";
+import { launch, open, axeSource, BASE } from "./lib.mjs";
 import fs from "node:fs";
 const b = await launch();
 const routes = ["", "schedule", "time-off", "holidays", "print", "people", "stores"];
@@ -31,7 +31,7 @@ for (const r of routes) for (const w of [390, 1366]) {
   for (let i = 0; i < 80; i++) { await page.keyboard.press("Tab"); const d = await page.evaluate(() => { const a = document.activeElement; return a ? a.tagName + "|" + (a.getAttribute("aria-label") || a.textContent || "").trim().slice(0, 30) + "|" + (() => { const r = a.getBoundingClientRect(); return r.width > 0 && r.height > 0; })() : "none"; }); if (d === last) stuck++; last = d; seen.add(d); }
   say(seen.size > 30 && stuck < 3, `keyboard: ${seen.size} distinct stops, stuck ${stuck}`);
   // dialog focus: open Fill via keyboard, Esc returns focus to opener
-  await page.goto("http://127.0.0.1:3002/spa.html#/schedule"); await page.waitForTimeout(500);
+  await page.goto(`${BASE}#/schedule`); await page.waitForTimeout(500);
   const fill = page.getByRole("region", { name: "Month status" }).getByRole("button", { name: /^Fill/ });
   await fill.focus(); await page.keyboard.press("Enter"); await page.waitForTimeout(400);
   const inDialog = await page.evaluate(() => !!document.activeElement?.closest("[role=dialog]"));
