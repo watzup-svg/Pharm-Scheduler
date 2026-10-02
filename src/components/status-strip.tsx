@@ -4,7 +4,7 @@ import { ArrowRight, Printer } from "lucide-react";
 import { useMemo } from "react";
 import { confirmAction } from "@/components/confirm";
 import { HeroCount, HeroLayout } from "@/components/hero";
-import { IssueLead, IssueLeaf, IssueTitle, toggleIssueKind, useIssueNav, useOpenIssue } from "@/components/issue-nav";
+import { IssueLead, IssueTitle, toggleIssueKind, useIssueNav, useOpenIssue } from "@/components/issue-nav";
 import { DayStrip, HoverLinks, hoverProps, stepCells } from "@/components/header-links";
 import { monthName, weekdayShort } from "@/lib/schedule/calendar";
 import { MonthDial } from "@/components/hero-graphics";
@@ -88,10 +88,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
           <HoverLinks />
           {current ? (
             <div className="flex min-w-0 flex-col gap-2">
-              <div className="flex min-w-0 items-center gap-4 sm:gap-6">
-                <IssueLeaf step={current} />
-                <IssueTitle step={current} className="max-sm:hidden" />
-              </div>
+              <IssueTitle step={current} className="max-sm:hidden" />
               {/* The whole district on that day, one tag per store, on a laptop. */}
               <DayStrip doc={doc} day={current.day} steps={ordered} current={current} />
             </div>
