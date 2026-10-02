@@ -47,7 +47,7 @@ export function CalendarTab({
         />
       </div>
 
-      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted" aria-label="Legend">
+      <p className="grid grid-cols-2 items-center gap-x-4 gap-y-2 text-xs text-muted sm:flex sm:flex-wrap sm:gap-y-1" aria-label="Legend">
         <span className="inline-flex items-center gap-2"><Swatch kind="off" /> Time off</span>
         <span className="inline-flex items-center gap-2"><Swatch kind="conflict" /> Off, still scheduled</span>
         <span className="inline-flex items-center gap-2"><Swatch kind="pending" /> Requested</span>
