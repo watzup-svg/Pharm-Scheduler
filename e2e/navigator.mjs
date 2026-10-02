@@ -25,6 +25,7 @@ export default async function run() {
     await page.waitForTimeout(400);
     check("the first step lands on the first issue by date", (await position(page)) === `1 of ${total}`, await position(page));
     check("the title names the issue", (await header(page).getByText("Two places · Gideon Ashcroft · Fri Oct 9").count()) > 0);
+    check("the matching kind lights up in the tiles row", (await header(page).locator("li[data-current-kind]").count()) === 1 && /Two places/.test((await header(page).locator("li[data-current-kind]").first().innerHTML())));
     check("the ring tick moves to the issue's day", (await tickDay(page)) === 9, String(await tickDay(page)));
     check("the ring centre names the day", (await header(page).locator("svg text").allTextContents()).join(" ").includes("OCT 9th"));
     check("a person at two stores outlines both", (await marked(page)) === "EST|9,MOL|9", await marked(page));

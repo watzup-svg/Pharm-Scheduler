@@ -4,7 +4,6 @@ import { useMemo, useRef } from "react";
 import { dayDomId, shortNames } from "@/components/day-view";
 import { HexBadge } from "@/components/graphics";
 import { HeroLead } from "@/components/hero";
-import { AlarmMark } from "@/components/marks";
 import { useStoreTag } from "@/components/use-store-tag";
 import { monthName, weekdayShort } from "@/lib/schedule/calendar";
 import { monthStatus } from "@/lib/schedule/dashboard";
@@ -159,7 +158,7 @@ export function IssueLeaf({ step }: { step: FixStep }) {
   );
 }
 
-/** The short title of the issue the cursor is on: its mark, what is wrong and where, and a way to stop stepping. */
+/** The short title of the issue the cursor is on: what is wrong and where, and a way to stop stepping. Its kind lights up in the tiles row. */
 export function IssueTitle({ step, className }: { step: FixStep; className?: string }) {
   const { doc } = useIssueNav();
   const open = useOpenIssue();
@@ -167,7 +166,6 @@ export function IssueTitle({ step, className }: { step: FixStep; className?: str
   const title = issueTitle(doc, step, short);
   return (
     <div key={title} className={cn("hs-fade flex min-w-0 items-center gap-2", className)}>
-      <AlarmMark kind={step.kind} size={28} tip={false} onDark />
       <button type="button" onClick={() => open(doc, step)} data-tip={`${title} | Open this day`} className="min-w-0 rounded-md text-left text-lg leading-6 font-semibold text-white outline-offset-2 hover:underline max-sm:text-base max-sm:leading-5">
         {/* The date never breaks across lines ("Tue Oct 6" stays together). */}
         <span className="line-clamp-2">{title.replace(/(\w{3}) (\w{3}) (\d+)$/, "$1\u00a0$2\u00a0$3")}</span>

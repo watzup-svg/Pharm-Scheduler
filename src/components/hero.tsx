@@ -89,7 +89,11 @@ export function HeroLead({ n, tone = "plain", icon, mark, tip, onClick, done = f
 }
 
 /** A frosted tile for one mark and its count; the whole thing is the button when it has somewhere to go. */
-export function HeroCount({ n, tip, children, onClick, tone = "plain", label }: { n: number | string; tip: string; children?: React.ReactNode; onClick?: () => void; tone?: HeroTone; label?: string }) {
+/**
+ * `current`: the kind of issue the header arrows are on. It lights up (brighter, a white outline and a bar under it) while
+ * the other tiles step back, so the row says which kind is being worked on without colour alone.
+ */
+export function HeroCount({ n, tip, children, onClick, tone = "plain", label, current, dim }: { n: number | string; tip: string; children?: React.ReactNode; onClick?: () => void; tone?: HeroTone; label?: string; current?: boolean; dim?: boolean }) {
   const body = (
     <>
       {children}
@@ -97,9 +101,13 @@ export function HeroCount({ n, tip, children, onClick, tone = "plain", label }: 
       {label ? <span className="text-xs text-white/65">{label}</span> : null}
     </>
   );
-  const cls = "inline-flex h-11 items-center gap-1.5 rounded-xl bg-white/10 px-2 ring-1 ring-white/15 sm:gap-2.5 sm:px-2.5";
+  const cls = cn(
+    "relative inline-flex h-11 items-center gap-1.5 rounded-xl bg-white/10 px-2 ring-1 ring-white/15 transition-[opacity,box-shadow,background-color] sm:gap-2.5 sm:px-2.5",
+    current && "bg-white/20 ring-2 ring-white shadow-[0_0_20px_-2px_rgba(255,255,255,0.45)] after:absolute after:inset-x-3 after:-bottom-2 after:h-1 after:rounded-full after:bg-white",
+    dim && "opacity-50",
+  );
   return (
-    <li>
+    <li data-current-kind={current ? "" : undefined} aria-current={current ? "true" : undefined}>
       {onClick ? (
         <button type="button" onClick={onClick} data-tip={tip} aria-label={tip.replace(" | ", ". ")} className={cn(cls, "transition-colors hover:bg-white/15")}>
           {body}
