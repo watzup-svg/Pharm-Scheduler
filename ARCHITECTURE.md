@@ -37,7 +37,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 
 ## Checking your change
 - `npm run check`: type check + unit tests (about 10 s). Run after each edit.
-- `npm run e2e -- header-links`: one browser check by name (see `e2e/run.mjs` for names). Serve first: `python3 -m http.server 3002 -d dist-spa` after `npm run build:trial`.
+- `npm run e2e -- header-links`: one browser check by name (see `e2e/run.mjs` for names). Run `npm run build:trial` first; the runner serves the build itself.
 - `npm run e2e`: the whole browser suite; once per batch. CI runs the same on every PR.
 - Look at the spot you changed (a screenshot or a hover probe); don't re-check untouched pages.
 - Not covered by any test: real printers, iPhone Safari, real touch, real road times.
