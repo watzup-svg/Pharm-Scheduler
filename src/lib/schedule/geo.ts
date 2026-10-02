@@ -1,3 +1,4 @@
+import { tableFor } from "./drive-table.ts";
 import type { ScheduleDoc, Store } from "./types.ts";
 
 const EARTH_MILES = 3958.8;
@@ -62,25 +63,29 @@ function roadMilesEstimate(doc: Pick<ScheduleDoc, "stores">, from: string, to: s
 }
 
 /** Drive minutes between two stores: the manager's number if they set one, else a rough estimate (road miles at 45 mph). */
-export function driveBetween(doc: Pick<ScheduleDoc, "stores" | "driveMinutes"> & Partial<Pick<ScheduleDoc, "driveMiles">>, from: string, to: string): { minutes: number; estimated: boolean; miles: number | null; roadMiles?: number; via?: string | null } | null {
+export function driveBetween(doc: Pick<ScheduleDoc, "stores" | "driveMinutes"> & Partial<Pick<ScheduleDoc, "driveMiles">>, from: string, to: string): { minutes: number; estimated: boolean; miles: number | null; roadMiles?: number; via?: string | null; ferry?: boolean } | null {
   if (from === to) return { minutes: 0, estimated: false, miles: 0 };
   const miles = storeDistance(doc, from, to);
   const set = doc.driveMinutes?.[driveKey(from, to)];
   const road = roadMilesEstimate(doc, from, to);
   if (set != null) return { minutes: set, estimated: false, miles, roadMiles: road?.miles, via: road?.via };
   const handMiles = doc.driveMiles?.[driveKey(from, to)];
+  const measured = handMiles == null ? tableFor(doc.stores, from, to) : null;
+  if (measured) return { minutes: measured.minutes, estimated: false, miles, roadMiles: measured.miles, via: road?.via, ferry: measured.ferry };
   if (handMiles != null) return { minutes: Math.round((handMiles / 45) * 60), estimated: true, miles, roadMiles: handMiles, via: road?.via };
   if (miles == null || !road) return null;
   return { minutes: Math.round((road.miles / 45) * 60), estimated: true, miles, roadMiles: road.miles, via: road.via };
 }
 
-export type MilesSource = "set" | "estimated" | "missing";
+export type MilesSource = "set" | "table" | "estimated" | "missing";
 
 /** One-way road miles between two stores: the manager's number if set, else the estimate from addresses, else missing. */
 export function pairMiles(doc: Pick<ScheduleDoc, "stores" | "driveMiles">, from: string, to: string): { miles: number | null; source: MilesSource } {
   if (from === to) return { miles: 0, source: "set" };
   const set = doc.driveMiles?.[driveKey(from, to)];
   if (set != null) return { miles: set, source: "set" };
+  const measured = tableFor(doc.stores, from, to);
+  if (measured) return { miles: measured.miles, source: "table" };
   const road = roadMilesEstimate(doc, from, to);
   return road ? { miles: Math.round(road.miles * 10) / 10, source: "estimated" } : { miles: null, source: "missing" };
 }

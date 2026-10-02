@@ -172,13 +172,13 @@ export default async function run() {
     const to = p.locator("#dt-to");
     await from.selectOption({ index: 0 });
     await to.selectOption({ index: 2 });
-    check("estimate is labelled", (await p.getByText(/estimated from the addresses/).count()) === 1);
+    check("a measured time is labelled, with the ferry noted", (await p.getByText(/measured in Google Maps/).count()) >= 1 && (await p.getByText(/Wahkiakum ferry/).count()) === 1);
     await p.locator("#dt-min").fill("42");
     await p.getByRole("button", { name: "Set", exact: true }).click();
-    check("a set time replaces the estimate", (await p.getByText(/set by you/).count()) >= 1);
+    check("a set time replaces the measured one", (await p.getByText(/set by you/).count()) >= 1);
     await p.getByText("Undo").first().click();
     await p.waitForTimeout(300);
-    check("Undo brings the estimate back", (await p.getByText(/estimated from the addresses/).count()) === 1);
+    check("Undo brings the measured time back", (await p.getByText(/measured in Google Maps/).count()) >= 2);
     await p.close();
   }
 

@@ -60,11 +60,12 @@ function loadsOf(doc: ScheduleDoc): Loads {
 }
 
 /** Days this person already works in the month, and in the week (Sun–Sat) of `day`. */
-export function loadFor(doc: ScheduleDoc, name: string, day: number): { month: number; week: number; away: number } {
+export function loadFor(doc: ScheduleDoc, name: string, day: number): { month: number; week: number; away: number; weekAway: number } {
   const l = loadsOf(doc).get(name);
   const days = l?.days ?? new Set<number>();
   const week = monthWeeks(doc.year, doc.month).find((w) => w.includes(day)) ?? [];
-  return { away: l?.away.size ?? 0, month: days.size, week: week.filter((d): d is number => d != null && days.has(d)).length };
+  const away = l?.away ?? new Set<number>();
+  return { away: away.size, weekAway: week.filter((d): d is number => d != null && away.has(d)).length, month: days.size, week: week.filter((d): d is number => d != null && days.has(d)).length };
 }
 
 /** "~1 hr 30 min" for an estimate, "1 hr 30 min" when the manager set it. */

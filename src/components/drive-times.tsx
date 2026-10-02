@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { DRIVE_TABLE_DATE, tableFor } from "@/lib/schedule/drive-table";
 import { driveBetween, pairMiles } from "@/lib/schedule/geo";
+import { parseMilesLines } from "@/lib/schedule/miles-import";
 import { paidMilesFor, freeMilesOf, rateOf, FEDERAL_RATE } from "@/lib/schedule/mileage";
 import { driveLabel, driveText } from "@/lib/schedule/suggest";
 import { useScheduleStore } from "@/store/schedule-store";
@@ -25,6 +27,9 @@ export function DriveTimes() {
   const [rate, setRate] = useState("");
   const setMilesFor = useScheduleStore((s) => s.setDriveMiles);
   const setRateOf = useScheduleStore((s) => s.setMileageRate);
+  const importMiles = useScheduleStore((s) => s.importDriveMiles);
+  const [paste, setPaste] = useState("");
+  const [pasteNote, setPasteNote] = useState("");
   const pair = from && to && from !== to ? driveBetween(doc, from, to) : null;
   const nearest = useMemo(
     () =>
@@ -37,6 +42,7 @@ export function DriveTimes() {
     [doc, from],
   );
   const hand = Object.entries(doc.driveMinutes ?? {});
+  const handMinutes = doc.driveMinutes?.[[from, to].sort().join("|")] != null;
   const pairM = from && to && from !== to ? pairMiles(doc, from, to) : null;
   const free = freeMilesOf(doc);
   const missing = useMemo(() => {
@@ -81,7 +87,7 @@ export function DriveTimes() {
           <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 ring-1 ring-line">
             <p className="min-w-0 flex-1 text-sm">
               <span className="font-semibold">{driveLabel(pair.minutes, pair.estimated)}</span>
-              <span className="text-muted">{pair.estimated ? " · estimated from the addresses" : " · set by you"}</span>
+              <span className="text-muted">{pair.estimated ? " · estimated from the addresses" : !handMinutes && tableFor(doc.stores, from, to) ? ` · measured in Google Maps, ${DRIVE_TABLE_DATE}` : " · set by you"}{tableFor(doc.stores, from, to)?.ferry ? " · includes the Wahkiakum ferry (waits up to an hour if missed)" : ""}</span>
             </p>
             <div className="flex flex-col gap-2">
               <Label htmlFor="dt-min">Minutes</Label>
@@ -99,7 +105,7 @@ export function DriveTimes() {
             >
               Set
             </Button>
-            {!pair.estimated ? (
+            {handMinutes ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -108,7 +114,7 @@ export function DriveTimes() {
                   announce(`${tag(from)} to ${tag(to)} back to the estimate`);
                 }}
               >
-                Use the estimate
+                Use the measured time
               </Button>
             ) : null}
           </div>
@@ -120,7 +126,7 @@ export function DriveTimes() {
             <p className="min-w-0 flex-1 text-sm">
               <span className="font-semibold">{pairM.miles == null ? "Miles unknown" : `${pairM.miles} mi one way`}</span>
               <span className="text-muted">
-                {pairM.source === "set" ? " · set by you" : pairM.source === "estimated" ? " · an estimate from the store locations" : " · no location, so no estimate"}
+                {pairM.source === "set" ? " · set by you" : pairM.source === "table" ? ` · measured in Google Maps, ${DRIVE_TABLE_DATE}` : pairM.source === "estimated" ? " · an estimate from the store locations" : " · no location, so no estimate"}
                 {pairM.miles != null && pairM.miles > free ? ` · ${paidMilesFor(pairM.miles, free)} paid mi a day if worked away from home` : ""}
               </span>
             </p>
@@ -177,6 +183,29 @@ export function DriveTimes() {
               Use the IRS rate
             </Button>
           ) : null}
+        </div>
+        <div className="flex flex-col gap-2 rounded-xl bg-white p-3 ring-1 ring-line">
+          <Label htmlFor="mi-paste">Paste many distances at once</Label>
+          <p className="text-sm text-muted">One pair per line: store code, store code, one-way miles, and optionally minutes (CAT,CLA,31.4,45). Good lines are saved; bad ones are listed and skipped.</p>
+          <textarea id="mi-paste" rows={4} className="w-full rounded-lg bg-paper p-2 font-mono text-sm ring-1 ring-line" value={paste} onChange={(e) => setPaste(e.target.value)} />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!paste.trim()}
+              onClick={() => {
+                const r = parseMilesLines(paste, doc.stores.map((s) => s.code));
+                const n = Object.keys(r.pairs).length;
+                importMiles(r.pairs, r.minutes);
+                setPasteNote(`${n} distance${n === 1 ? "" : "s"} saved.${r.problems.length ? ` ${r.problems.length} skipped: ${r.problems.slice(0, 5).join("; ")}${r.problems.length > 5 ? "; …" : ""}` : ""}`);
+                if (n) announce(`${n} distances saved`);
+                if (!r.problems.length) setPaste("");
+              }}
+            >
+              Save distances
+            </Button>
+            {pasteNote ? <p className="min-w-0 flex-1 text-sm" role="status">{pasteNote}</p> : null}
+          </div>
         </div>
         {missing.length ? (
           <p className="text-sm text-muted" role="status">

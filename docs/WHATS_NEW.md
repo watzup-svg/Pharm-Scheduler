@@ -2,6 +2,24 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Fill suggestions: longer reach, a leave-closed choice, honest follow-on holes
+- Fill plans now reach up to 2.5 hours (was 2). Long drives (over 90 minutes) still rank last among plans that leave no gap. A plan is at most three moves.
+- When no one can reach a store within 2.5 hours (John Day, for example), the card says so and offers "Close <store> today…" with the usual reasons. Leaving a store closed is always your choice; nothing is closed for you.
+- A plan may take the only pharmacist from one nearby store to fill a hole. It says so ("Leaves <store> with no pharmacist. It will get its own suggestions, or you can close it."), ranks after plans that leave no gap, and the new hole then gets its own suggestions as usual. Never more than one new hole per plan.
+- Cathlamet to Clatskanie legs show a "ferry" tag (60 minutes, wait included).
+- `npm run fill -- --level low|medium|high` (no AI tokens) tests all of this: Grok's cases, random shifts checked against the hard rules and the mileage math, repeated accepting of top plans, and a 30/60/120-store month against time limits. The weekly cloud run includes them. A plan that leaves another store bare is allowed: it is labelled, ranked by the normal rules (it carries a small penalty, so a plan that leaves no gap usually comes first), and simply becomes the next issue to fill or close.
+- Ranking is unchanged otherwise: drive time (steeper the longer), floats cheaper, mileage dollars counted. Grok's seven test cases are unit tests (`fill-cases.test.ts`). Nothing is placed automatically.
+
+## Adding a store: its distances
+- When a store is added (or its address changes) so that it has no measured distances, Setup > Stores shows one collapsed line: "<store> has no measured distances to N stores. Add them". Open it for one row per other store (miles and minutes; blank keeps the estimate; miles without minutes works the minutes out). Saved numbers are "set by you" and take priority. Nothing appears while every store is covered. Closing a store needs nothing: removing it removes its distances and it leaves suggestions. The paste box also accepts an optional minutes column (CAT,CLA,31.4,45).
+
+## Real drive distances between all 18 stores
+- The app now carries measured one-way road miles and drive minutes for every pair of the 18 stores (Google Maps, Oct 2, 2026; fastest route, 10 AM weekday, the temporary I-5 Rose Quarter closure left out). They replace the address-based estimates: no "~" on those times, and mileage pay uses the real miles. Order of use: a number you set by hand, then this table, then the estimate (used only if a store's address changes). Cathlamet to Clatskanie includes the Wahkiakum ferry (45 minutes plus 15 to be there before the boat). Some Waldport/Florence routes to the north are the fastest route, not the shortest (up to about 34 miles longer than going through another store); mileage pay follows the table.
+
+## Names in laptop calendars, paste many drive distances
+- At laptop width (1024 px and up) a name in a store calendar cell may use two lines before it is cut, so "M. Quenby" no longer ends in "...". Phones keep one line. Display only.
+- Drive times between stores has a new "Paste many distances at once" box: one pair per line as store code, store code, one-way miles (CAT,CLA,31.4). Good lines are saved (Undo brings the old values back); bad lines are listed and skipped, never guessed.
+
 ## Checks (no visible change to the app)
 - Mileage pay: when a pharmacist works away from their home store, every mile past 20 (one way, store to store) is paid, both ways, at the federal (IRS) rate, 72.5 cents for 2026, which you can change under Drive times between stores. Fill and move suggestions count it: three short moves can beat one long drive, and plans show the paid miles or dollars. You can set miles per store pair (otherwise they are estimated from the addresses). Unknown distances show as "mileage unknown", never as zero. Display and ranking only: nothing is placed for you.
 - The pressure run gained security and stability tests: a source scan (no eval, no unsafe HTML, safe external links, no network calls), hostile files (prototype pollution, huge or deeply nested files), markup injection in names/notes, and time-zone/language checks. They found one real problem: opening a file with thousands of people was very slow (16,000 people: 4.8 s, now 0.07 s). Also a new undo/redo round-trip test.

@@ -9,7 +9,12 @@ import { evaluate } from "./rules.ts";
 import { FEDERAL_RATE, mileageFor, paidMilesFor } from "./mileage.ts";
 import type { ScheduleDoc } from "./types.ts";
 
-const base = (): ScheduleDoc => createDemo();
+// The built-in measured table applies only to the stores' real addresses; these tests are about the estimate and hand-set numbers,
+// so they move every address (see drive-table.test.ts for the table itself).
+const base = (): ScheduleDoc => {
+  const d = createDemo();
+  return { ...d, stores: d.stores.map((s) => ({ ...s, address: `${s.address} (test)` })) };
+};
 const withMiles = (doc: ScheduleDoc, a: string, b: string, miles: number, rate?: number): ScheduleDoc => ({
   ...doc,
   driveMiles: { ...(doc.driveMiles ?? {}), [driveKey(a, b)]: miles },

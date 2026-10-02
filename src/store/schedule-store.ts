@@ -176,6 +176,7 @@ export type ScheduleState = {
   /** Set (or with null clear) the drive time between two stores, in minutes. One undo step. */
   setDriveMinutes: (a: string, b: string, minutes: number | null) => void;
   setDriveMiles: (a: string, b: string, miles: number | null) => void;
+  importDriveMiles: (pairs: Record<string, number>, minutes?: Record<string, number>) => void;
   /** The per-mile rate (null clears it) for mileage pay. */
   setMileageRate: (rate: number | null) => void;
   /** Add the same days for several people in one undo step. Closed days and days already logged are skipped. */
@@ -203,7 +204,7 @@ export type ScheduleState = {
   /** Place several names at once (for "Fill the month"), refusing what typing would refuse. One undo step. */
   placeMany: (list: { store: string; slot: SlotId; day: number; name: string }[]) => number;
   /** Apply a cover plan as one undoable step. Returns "ok", or the reason it was refused (nothing changes then). */
-  applyCoverPlan: (moves: CoverMove[], day: number) => string;
+  applyCoverPlan: (moves: CoverMove[], day: number, opens?: string[]) => string;
   /** Add holidays in one undo step. Ones already there (same date and store) are skipped. Returns how many were added. */
   addHolidays: (list: Holiday[]) => number;
   /** Paste a spreadsheet block. One undo step. Never overwrites. */
@@ -472,6 +473,15 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     });
   },
 
+  importDriveMiles: (pairs, minutes = {}) => {
+    if (!Object.keys(pairs).length && !Object.keys(minutes).length) return;
+    withUndo(set, get, (d) => ({
+      ...d,
+      ...(Object.keys(pairs).length ? { driveMiles: { ...(d.driveMiles ?? {}), ...pairs } } : {}),
+      ...(Object.keys(minutes).length ? { driveMinutes: { ...(d.driveMinutes ?? {}), ...minutes } } : {}),
+    }));
+  },
+
   setMileageRate: (rate) => {
     withUndo(set, get, (d) => {
       const { mileage: _drop, ...rest } = d;
@@ -528,8 +538,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     return placed;
   },
 
-  applyCoverPlan: (moves, day) => {
-    const res = applyCoverPlanDoc(get().doc, { moves }, day);
+  applyCoverPlan: (moves, day, opens) => {
+    const res = applyCoverPlanDoc(get().doc, { moves, opens }, day);
     if (!res.ok) return res.problem ?? "That plan can't be applied";
     withUndo(set, get, () => res.doc);
     return "ok";
