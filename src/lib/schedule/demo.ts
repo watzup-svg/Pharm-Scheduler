@@ -185,7 +185,7 @@ export function createDemo(): ScheduleDoc {
   req("Gideon Ashcroft", [30], "Wedding", "2026-09-29");
 
   // Hints, which are not errors. Elliot (WA) is out on the 13th and Fenn, who is licensed in
-  // Oregon only, covers Wind River (WA). Kip usually cannot work Mondays and covers Rick's on the
+  // Oregon only, covers Wind River (WA). Kip usually cannot work Mondays and covers Clatskanie on the
   // 19th (Monday). Lucia (Florence, weekdays only) picks up Estacada's Saturday the 17th, which
   // makes her sixth day that week.
   off("Elliot Prewitt", [13], "Sick day");

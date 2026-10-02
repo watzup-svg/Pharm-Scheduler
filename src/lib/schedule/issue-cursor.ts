@@ -87,7 +87,7 @@ const KIND_TITLE: Record<FixStep["kind"], string> = PROBLEM_NAME;
 const TITLE_FULL_NAME_MAX = 40;
 
 /**
- * The short title for one issue, e.g. "No coverage · Rick's · Wed Oct 21" or "Two places · Gideon Ashcroft · Fri Oct 9".
+ * The short title for one issue, e.g. "No coverage · Clatskanie · Wed Oct 21" or "Two places · Gideon Ashcroft · Fri Oct 9".
  * Problems about a store name the store; problems about a person name the person. `short` is the house name rule
  * (`shortNames` in components/day-view.ts); full names are kept when the whole title stays short.
  */
