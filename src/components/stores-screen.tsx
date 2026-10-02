@@ -214,7 +214,7 @@ export function StoresScreen() {
             Open Sunday
           </label>
           <fieldset className="flex flex-col gap-1 sm:col-span-2">
-            <legend className="text-sm font-medium">Closed on (Monday to Friday)</legend>
+            <legend className="flex items-center gap-1.5 text-sm font-medium"><Mark icon="closed" tip={false} className="size-4 text-muted" />Closed on (Monday to Friday)</legend>
             <div className="flex flex-wrap gap-x-3">
               {["Mon", "Tue", "Wed", "Thu", "Fri"].map((d, i) => (
                 <label key={d} className="flex h-11 min-w-11 items-center gap-2 px-1 text-sm">
