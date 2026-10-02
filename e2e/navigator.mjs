@@ -67,6 +67,20 @@ export default async function run() {
     check("the header position follows the day panel", (await position(page)).startsWith("4 of"), await position(page));
     await page.close();
   }
+  {
+    // A day with every store closed is neutral on the ring; it is only red when a name was left on it, and then the
+    // note says which, and the day can be opened to fix it.
+    const { page } = await open(browser, "");
+    const day = (d) => page.locator(`[data-ring-day="${d}"]`);
+    check("a closed day with nothing wrong is hollow", (await day(4).getAttribute("fill")) === "none" && (await day(4).getAttribute("tabindex")) === "-1");
+    const label18 = (await day(18).getAttribute("aria-label")) ?? "";
+    check("a closed day with a name on it says what is wrong", /1 to fix/.test(label18) && /All stores closed/.test(label18) && /Ines Calloway/.test(label18), label18);
+    check("a closed day with a name on it can be opened", (await day(18).getAttribute("tabindex")) === "0");
+    await day(18).click();
+    await page.waitForTimeout(700);
+    check("opening it goes to that day's problem", (await page.getByRole("dialog").getByText(/Oct 18/).count()) > 0);
+    await page.close();
+  }
   for (const width of [390, 320]) {
     const { page, errors } = await open(browser, "", { width, height: 800 });
     const h0 = await headerHeight(page);

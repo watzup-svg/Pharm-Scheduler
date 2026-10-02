@@ -48,8 +48,9 @@ const MON = (doc: ScheduleDoc) => monthName(doc.year, doc.month).slice(0, 3);
 
 function dayLines(doc: ScheduleDoc, day: number, steps: FixStep[], open: number, covered: number): string[] {
   const head = `${weekdayShort(doc.year, doc.month, day)} ${MON(doc)} ${day}`;
-  if (open === 0) return [head, "All stores closed"];
   const here = steps.filter((s) => s.day === day);
+  // A closed day only turns red when something on it is wrong (a name left on a closed day); say what, not just "closed".
+  if (open === 0) return here.length ? [`${head} · ${here.length} to fix`, "All stores closed", ...here.slice(0, 3).map((s) => s.headline), ...(here.length > 3 ? [`and ${here.length - 3} more`] : [])] : [head, "All stores closed"];
   if (!here.length) return [head, `All ${open} open ${open === 1 ? "store is" : "stores are"} covered`];
   return [`${head} · ${here.length} to fix`, ...here.slice(0, 3).map((s) => s.headline), ...(here.length > 3 ? [`and ${here.length - 3} more`] : []), covered < open ? "" : ""].filter(Boolean);
 }
@@ -93,6 +94,8 @@ export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: Sch
           const p = by.get(d) ?? 0;
           const c = cover.find((x) => x.day === d);
           const closed = (c?.open ?? 0) === 0;
+          // A closed day with a problem on it can still be opened, so the problem can be fixed from here.
+          const inert = closed && !p;
           const ro = R + (p ? 4 + p * 3 : 0);
           const ri = R - (p ? 15 : 12);
           const lines = dayLines(doc, d, steps, c?.open ?? 0, c ? c.open - c.holes : 0);
@@ -101,12 +104,13 @@ export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: Sch
               key={d}
               d={`M${P(ro, a0)} A${ro} ${ro} 0 0 1 ${P(ro, a1)} L${P(ri, a1)} A${ri} ${ri} 0 0 0 ${P(ri, a0)}Z`}
               role="button"
-              tabIndex={closed ? -1 : 0}
+              tabIndex={inert ? -1 : 0}
               aria-label={lines.join(". ")}
-              onClick={(e) => !closed && gate(`d${d}`, lines, e.currentTarget, () => onPick(d))}
-              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && !closed && (e.preventDefault(), onPick(d))}
+              onClick={(e) => !inert && gate(`d${d}`, lines, e.currentTarget, () => onPick(d))}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && !inert && (e.preventDefault(), onPick(d))}
               {...bind(lines)}
-              className={cn("outline-none transition-opacity hover:opacity-80 focus-visible:stroke-white", !closed && "cursor-pointer")}
+              data-ring-day={d}
+              className={cn("outline-none transition-opacity hover:opacity-80 focus-visible:stroke-white", !inert && "cursor-pointer")}
               fill={p ? "#efd8d2" : closed ? "none" : "#6fb78d"}
               stroke={closed ? "rgba(255,255,255,0.28)" : "none"}
               strokeWidth={1}
