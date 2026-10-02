@@ -43,6 +43,7 @@ const deep = args.includes("--deep");
 const sweepSeeds = sweepAt >= 0 ? args[sweepAt + 1] ?? "40" : deep ? "30" : null;
 const jobs = [
   job("type check", "npx", ["tsc", "--noEmit"]),
+  job("lint", "npx", ["eslint", "src"]),
   job("unit tests", "npm", ["run", "test:schedule"]),
   job("browser suite", "node", ["e2e/run.mjs"]),
   job("guards", "node", ["scripts/guards.mjs"]),

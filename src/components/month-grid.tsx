@@ -115,6 +115,8 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
   const tag = useStoreTag();
   const today = todayParts();
   const inMonth = today.year === doc.year && today.month === doc.month;
+  // `today` is a new object every render, so its three numbers are the real dependencies.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const model = useMemo(() => districtModel(doc, ev, today), [doc, ev, today.year, today.month, today.day]);
   // Only what pressure reads: a note or a store address edit does not redo 31 days of lookups.
   const pressure = useMemo(() => dayPressure(doc), [doc.grid, doc.people, doc.stores, doc.timeOff, doc.holidays, doc.pattern, doc.year, doc.month]); // eslint-disable-line react-hooks/exhaustive-deps
