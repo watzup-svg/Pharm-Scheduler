@@ -4,7 +4,9 @@ import { ArrowRight, Printer } from "lucide-react";
 import { useMemo } from "react";
 import { confirmAction } from "@/components/confirm";
 import { HeroCount, HeroLayout } from "@/components/hero";
-import { IssueLead, IssueLeaf, IssueTitle, useIssueNav, useOpenIssue } from "@/components/issue-nav";
+import { IssueLead, IssueLeaf, IssueTitle, toggleIssueKind, useIssueNav, useOpenIssue } from "@/components/issue-nav";
+import { DayStrip, HoverLinks, hoverProps, stepCells } from "@/components/header-links";
+import { monthName, weekdayShort } from "@/lib/schedule/calendar";
 import { MonthDial } from "@/components/hero-graphics";
 import { Mark } from "@/components/icons";
 import { AlarmMark, StateMark, type AlarmKind } from "@/components/marks";
@@ -81,14 +83,21 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
         />
       }
       extra={
-        current ? (
-          <>
-            <IssueLeaf step={current} />
-            <IssueTitle step={current} className="max-sm:hidden" />
-          </>
-        ) : (
-          <NextGapLeaf doc={doc} steps={ordered} onOpen={fix} onDark />
-        )
+        <>
+          <HoverLinks />
+          {current ? (
+            <div className="flex min-w-0 flex-col gap-2">
+              <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+                <IssueLeaf step={current} />
+                <IssueTitle step={current} className="max-sm:hidden" />
+              </div>
+              {/* The whole district on that day, one tag per store, on a laptop. */}
+              <DayStrip doc={doc} day={current.day} steps={ordered} current={current} />
+            </div>
+          ) : (
+            <NextGapLeaf doc={doc} steps={ordered} onOpen={fix} onDark />
+          )}
+        </>
       }
       tilesClassName={current ? "max-sm:[&>li:not([data-issue])]:hidden" : undefined}
       tiles={
@@ -106,9 +115,10 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
                 key={k}
                 n={list.length}
                 tone="bad"
-                current={current?.kind === k}
-                tip={`${KIND_NAME[k]} · ${list.length} | ${list[0]!.headline}${marked(list) !== list.length ? ` | ${marked(list)} marks on the grid, one for each store involved` : ""}`}
-                onClick={() => fix(list[0]!)}
+                current={(nav.kind ?? current?.kind) === k}
+                hover={hoverProps([...new Set(list.map((s) => s.day))], stepCells(list), true)}
+                tip={`${KIND_NAME[k]} · ${list.length} | ${list[0]!.headline}${marked(list) !== list.length ? ` | ${marked(list)} marks on the grid, one for each store involved` : ""} | ${nav.kind === k ? "Click to step through every kind again" : "Click to step through only these"}`}
+                onClick={() => toggleIssueKind(doc, ordered, k)}
               >
                 <AlarmMark kind={k} size={28} tip={false} onDark />
               </HeroCount>
@@ -136,8 +146,9 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
       actions={
         <>
           {ordered[0] ? (
-            <Button type="button" variant="light" aria-label={current ? "Open this issue" : "Fix the next one"} onClick={() => fix(current ?? ordered[0]!)}>
-              Fix
+            <Button type="button" variant="light" aria-label={current ? undefined : "Fix the next one"} data-tip={current ? `Open ${weekdayShort(doc.year, doc.month, current.day)} ${monthName(doc.year, doc.month).slice(0, 3)} ${current.day} | The day panel for this issue` : undefined} onClick={() => fix(current ?? ordered[0]!)}>
+              {/* While stepping it says which day it opens. */}
+              {current ? `Open ${monthName(doc.year, doc.month).slice(0, 3)} ${current.day}` : "Fix"}
               <ArrowRight />
             </Button>
           ) : showPrint ? null : (

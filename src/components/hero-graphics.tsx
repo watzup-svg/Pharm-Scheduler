@@ -9,6 +9,8 @@ import { isOpenDay } from "@/lib/schedule/place";
 import { isRphRole } from "@/lib/schedule/slots";
 import type { ScheduleDoc } from "@/lib/schedule/types";
 import { cn } from "@/lib/utils";
+import { clearHover, setHover } from "@/components/header-links";
+import { useViewStore } from "@/store/view-store";
 
 /** Hover/focus handlers that show a note built from `lines`. Spread on any element. */
 function useHover() {
@@ -89,6 +91,12 @@ export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: Sch
   }
   const todayAngle = ((today.day - 0.5) / days) * Math.PI * 2 - Math.PI / 2;
   const showTodayDot = inMonth && sel != null && sel !== today.day;
+  // Days lit from elsewhere: a tile or store being pointed at, a date below, or the kind the arrows are narrowed to.
+  const hover = useViewStore((s) => s.hover);
+  const kind = useViewStore((s) => s.issueKind);
+  const kindDays = useMemo(() => (kind ? new Set(steps.filter((s) => s.kind === kind).map((s) => s.day)) : null), [steps, kind]);
+  const lit = hover ? new Set(hover.days) : kindDays && kindDays.size ? kindDays : null;
+  const dim = hover ? hover.dim : Boolean(kindDays?.size);
   return (
     <div className="relative size-full">
       <svg viewBox="0 0 240 240" className="size-full" role="group" aria-label={`${monthName(doc.year, doc.month)} as a ring of ${days} days; ${steps.length} to fix${sel != null ? `; showing ${weekdayShort(doc.year, doc.month, sel)} ${MON(doc)} ${sel}` : ""}`}>
@@ -105,6 +113,8 @@ export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: Sch
           const ro = R + (p ? 4 + p * 3 : 0);
           const ri = R - (p ? 15 : 12);
           const lines = dayLines(doc, d, steps, c?.open ?? 0, c ? c.open - c.holes : 0);
+          const b = bind(lines);
+          const on = lit?.has(d) ?? false;
           return (
             <path
               key={d}
@@ -114,12 +124,22 @@ export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: Sch
               aria-label={lines.join(". ")}
               onClick={(e) => !inert && gate(`d${d}`, lines, e.currentTarget, () => onPick(d))}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && !inert && (e.preventDefault(), onPick(d))}
-              {...bind(lines)}
+              {...b}
+              onPointerEnter={(e) => {
+                b.onPointerEnter(e);
+                if (e.pointerType !== "touch") setHover([d]);
+              }}
+              onPointerLeave={() => {
+                b.onPointerLeave();
+                clearHover();
+              }}
               data-ring-day={d}
+              data-lit={on || undefined}
+              opacity={dim && !on ? 0.28 : undefined}
               className={cn("outline-none transition-opacity hover:opacity-80 focus-visible:stroke-white", !inert && "cursor-pointer")}
               fill={p ? "#efd8d2" : closed ? "none" : "#6fb78d"}
-              stroke={closed ? "rgba(255,255,255,0.28)" : "none"}
-              strokeWidth={1}
+              stroke={on ? "#fff" : closed ? "rgba(255,255,255,0.28)" : "none"}
+              strokeWidth={on ? 2.5 : 1}
               style={p ? { filter: "drop-shadow(0 0 5px rgba(239,216,210,0.6))" } : undefined}
             />
           );

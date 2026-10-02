@@ -30,13 +30,19 @@ export function useIssueNav() {
   const ev = useScheduleStore((s) => s.evaluation);
   const anchor = useViewStore((s) => s.issue);
   const sheet = useViewStore((s) => s.sheet);
-  const ordered = useMemo(() => issueOrder(doc, monthStatus(doc, ev).steps), [doc, ev]);
+  const kind = useViewStore((s) => s.issueKind);
+  const all = useMemo(() => issueOrder(doc, monthStatus(doc, ev).steps), [doc, ev]);
+  // A clicked tile narrows the arrows to its kind. Once that kind is all fixed, they walk everything again.
+  const ordered = useMemo(() => {
+    const only = kind ? all.filter((s) => s.kind === kind) : all;
+    return only.length ? only : all;
+  }, [all, kind]);
   const live = anchor && anchor.ym === ymOf(doc) ? anchor : null;
   const current = useMemo(() => currentIssue(doc, ordered, live), [doc, ordered, live]);
   const index = current ? ordered.indexOf(current) : -1;
   /** The day everything else follows: the open day panel, else the issue she is on, else nothing. */
   const selectedDay = sheet?.day ?? current?.day ?? null;
-  return { doc, ordered, current, index, count: ordered.length, selectedDay };
+  return { doc, all, ordered, current, index, count: ordered.length, total: all.length, kind: kind && ordered !== all ? kind : null, selectedDay };
 }
 
 /** Put the cursor on an issue, outline its cells and bring them into view, without opening anything. */
@@ -77,6 +83,19 @@ export function clearIssue() {
   useViewStore.getState().setIssue(null);
 }
 
+/** A tile was clicked: walk only that kind, starting on its first issue. Clicking the same tile again walks everything. */
+export function toggleIssueKind(doc: ScheduleDoc, all: FixStep[], kind: FixStep["kind"]) {
+  const view = useViewStore.getState();
+  if (view.issueKind === kind) {
+    view.setIssueKind(null);
+    return;
+  }
+  const first = all.find((s) => s.kind === kind);
+  if (!first) return;
+  view.setIssueKind(kind);
+  selectIssue(doc, first);
+}
+
 /** Open the full day panel on an issue, the way Fix always has. */
 export function useOpenIssue() {
   const goTo = useViewStore((s) => s.goTo);
@@ -92,7 +111,7 @@ const ARROW = "grid size-11 shrink-0 place-items-center rounded-xl text-white/80
 
 /** ‹ 13 › : the count of issues with an arrow either side. "3 of 13" shows under it while she is stepping. */
 export function IssueLead({ tip }: { tip: string }) {
-  const { doc, ordered, current, index, count } = useIssueNav();
+  const { doc, ordered, current, index, count, total, kind } = useIssueNav();
   const open = useOpenIssue();
   const swipe = useRef<{ x: number; y: number } | null>(null);
   const done = count === 0;
@@ -124,13 +143,14 @@ export function IssueLead({ tip }: { tip: string }) {
       <button type="button" className={cn(ARROW, "-ml-2")} disabled={done} aria-label="Previous issue" data-tip="Previous issue | Steps back through the month. Nothing changes until you choose" onClick={() => step(-1)}>
         <ChevronLeft aria-hidden />
       </button>
-      <HeroLead n={count} tone="bad" done={done} tip={current ? `${issueTitle(doc, current)} | Open this day` : tip} onClick={ordered[0] ? () => open(doc, current ?? ordered[0]!) : undefined} />
+      <HeroLead n={total} tone="bad" done={done} tip={current ? `${issueTitle(doc, current)} | Open this day` : tip} onClick={ordered[0] ? () => open(doc, current ?? ordered[0]!) : undefined} />
       <button type="button" className={ARROW} disabled={done} aria-label="Next issue" data-tip="Next issue | Steps forward through the month. Nothing changes until you choose" onClick={() => step(1)}>
         <ChevronRight aria-hidden />
       </button>
       {current ? (
         <span aria-live="polite" className="pointer-events-none absolute inset-x-0 -bottom-4 text-center text-xs leading-4 font-semibold tabular-nums text-white/70">
           {index + 1} of {count}
+          {kind ? <span className="sr-only"> {kind === "hole" ? "with no coverage" : kind === "double" ? "at two places" : kind === "leftover" ? "on closed days" : "not licensed"}</span> : null}
         </span>
       ) : null}
     </div>
@@ -144,16 +164,21 @@ export function IssueLeaf({ step }: { step: FixStep }) {
   const tag = useStoreTag();
   const mon = monthName(doc.year, doc.month).slice(0, 3);
   const wd = weekdayShort(doc.year, doc.month, step.day);
-  const store = doc.stores.find((s) => s.code === step.store);
+  const names = [...new Set([step.store, ...step.stores])].map((c) => doc.stores.find((s) => s.code === c)?.name ?? c).join(" and ");
   return (
     <button
       type="button"
       onClick={() => open(doc, step)}
-      data-tip={`${store?.name ?? step.store} | ${wd} ${mon} ${step.day} | Open this day`}
-      aria-label={`Open ${store?.name ?? step.store}, ${wd} ${mon} ${step.day}`}
+      data-tip={`${names} | ${wd} ${mon} ${step.day} | Open this day`}
+      aria-label={`Open ${names}, ${wd} ${mon} ${step.day}`}
       className="relative flex shrink-0 items-center rounded-xl px-1 py-1 outline-offset-2 hover:bg-white/10 max-[359px]:hidden"
     >
-      <HexBadge code={tag(step.store)} tone="bad" className="h-12 max-sm:h-10" />
+      {/* "Two places" names both stores, the same ones boxed in the store row below. */}
+      <span className="flex items-center gap-1">
+        {[...new Set([step.store, ...step.stores])].map((code) => (
+          <HexBadge key={code} code={tag(code)} tone="bad" className="h-12 max-sm:h-10" />
+        ))}
+      </span>
     </button>
   );
 }

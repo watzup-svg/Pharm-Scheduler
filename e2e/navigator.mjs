@@ -57,7 +57,8 @@ export default async function run() {
     // Open from the cursor, then the day panel's Next and the header arrows are one stepper.
     const { page } = await open(browser, "");
     for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Next issue" }).click();
-    await page.getByRole("button", { name: "Open this issue" }).click();
+    check("Fix says which day it opens while stepping", (await page.getByRole("button", { name: /^Open Oct 12$/ }).count()) === 1);
+    await page.getByRole("button", { name: /^Open Oct 12$/ }).click();
     await page.waitForTimeout(700);
     const sheet = page.getByRole("dialog");
     check("Fix opens the day the arrows are on", (await sheet.getByText(/Oct 12/).count()) > 0);
