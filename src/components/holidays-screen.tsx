@@ -230,6 +230,7 @@ export function HolidaysScreen() {
         {rows.map((h, i) => {
           return (
             <li key={`${h.date}-${h.store}-${i}`} className="flex items-center gap-2 surface p-3">
+              <Mark icon="closed" tip={false} className="size-5 text-muted" />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{h.label || "Closed"}</p>
                 <p className="text-sm text-muted">
@@ -271,7 +272,7 @@ export function HolidaysScreen() {
                     key={`${h.date}-${h.store}-${i}`}
                     className={cn("border-b border-line last:border-0", inMonth && "bg-why/40")}
                   >
-                    <td className="px-4 py-3 font-medium tabular-nums whitespace-nowrap">{prettyDate(h.date)}</td>
+                    <td className="px-4 py-3 font-medium tabular-nums whitespace-nowrap"><span className="inline-flex items-center gap-2"><Mark icon="closed" tip={false} className="size-4 text-muted" />{prettyDate(h.date)}</span></td>
                     <td className="px-4 py-3">{h.store === "ALL" ? "ALL" : tag(h.store)}</td>
                     <td className="px-4 py-3">{h.label || "—"}{h.closure ? <span className="ml-2 rounded-sm bg-night px-2 py-0.5 text-xs font-semibold text-white">closure</span> : null}{impact(h)}</td>
                     <td className="px-4 py-3">{h.repeat ? "Every year" : "This date only"}</td>
