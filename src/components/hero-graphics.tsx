@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react";
 import { ordinal } from "@/lib/schedule/issue-cursor";
-import { useNote, type NoteMark, type NoteTone } from "@/components/hover-note";
+import { armMarker, clearMarker, longPress, menuPoint, useNote, type NoteMark, type NoteTone } from "@/components/hover-note";
 import { coverageByDay } from "@/lib/schedule/day-coverage";
 import { daysInMonth, monthName, todayParts, weekdayShort, weekdaySun0 } from "@/lib/schedule/calendar";
 import type { FixStep } from "@/lib/schedule/fix";
@@ -17,20 +17,37 @@ function useHover() {
   const { show, hide, card } = useNote();
   const touch = useRef(false);
   const last = useRef<string | null>(null);
-  const bind = (lines: string[], style?: { tone?: NoteTone; mark?: NoteMark }) => ({
-    "data-notip": true as const,
-    onPointerDown: (e: React.PointerEvent) => {
-      touch.current = e.pointerType === "touch";
-    },
-    onPointerEnter: (e: React.PointerEvent) => e.pointerType !== "touch" && show(e.clientX, e.clientY, lines, style),
-    onPointerMove: (e: React.PointerEvent) => e.pointerType !== "touch" && show(e.clientX, e.clientY, lines, style),
-    onPointerLeave: hide,
-    onFocus: (e: React.FocusEvent) => {
-      const r = (e.currentTarget as Element).getBoundingClientRect();
-      show(r.left + r.width / 2, r.top, lines, style);
-    },
-    onBlur: hide,
-  });
+  const bind = (lines: string[], style?: { tone?: NoteTone; mark?: NoteMark }) => {
+    const press = (el: Element) =>
+      longPress(() => {
+        const r = el.getBoundingClientRect();
+        show(r.left + r.width / 2, r.top, lines, style);
+      });
+    let held: ReturnType<typeof longPress> | null = null;
+    return {
+      "data-notip": true as const,
+      onPointerDown: (e: React.PointerEvent) => {
+        touch.current = e.pointerType === "touch";
+        held = press(e.currentTarget);
+        held.onPointerDown(e);
+      },
+      onPointerMove: (e: React.PointerEvent) => held?.onPointerMove(e),
+      onPointerUp: () => held?.onPointerUp(),
+      onPointerCancel: () => held?.onPointerCancel(),
+      // Pointing at it only draws the marker; the note opens on right click, the menu key, or a long press.
+      onPointerEnter: (e: React.PointerEvent) => e.pointerType !== "touch" && armMarker(e.currentTarget, style?.tone),
+      onPointerLeave: clearMarker,
+      onContextMenu: (e: React.MouseEvent) => {
+        e.preventDefault();
+        const { x, y } = menuPoint(e);
+        show(x, y, lines, style);
+      },
+      onFocus: (e: React.FocusEvent) => {
+        if ((e.currentTarget as Element).matches(":focus-visible")) armMarker(e.currentTarget, style?.tone);
+      },
+      onBlur: clearMarker,
+    };
+  };
   /** On touch the first tap on a mark reads its note, the second does what the mark does. Mouse and keyboard act at once. */
   const gate = (key: string, lines: string[], el: Element, action: () => void) => {
     if (touch.current && last.current !== key) {

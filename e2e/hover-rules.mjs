@@ -1,6 +1,6 @@
 // One hover note per spot: no note inside another note, no title beside a note, notes within their length, and a plain
 // control never borrows its card's note.
-import { check, launch, open } from "./lib.mjs";
+import { check, launch, open, rightClick } from "./lib.mjs";
 
 const audit = () => {
   const SEL = "[data-tip],[title]";
@@ -44,20 +44,16 @@ export default async function run() {
   {
     const cards = (p) => p.evaluate(() => [...document.querySelectorAll('div.fixed.z-\\[60\\]')].filter((e) => e.textContent.trim()).length);
     let { page } = await open(browser, "stores");
-    await page.getByRole("button", { name: /^Letters/ }).hover();
-    await page.waitForTimeout(250);
+    await rightClick(page.getByRole("button", { name: /^Letters/ }));
     check("a plain button shows no borrowed note", (await cards(page)) === 0);
     await page.close();
     ({ page } = await open(browser, ""));
-    await page.locator('[role="columnheader"]').nth(8).hover();
-    await page.waitForTimeout(200);
+    await rightClick(page.locator('[role="columnheader"]').nth(8));
     check("a column header shows one note", (await cards(page)) === 1);
-    await page.locator('[data-rc="3|8"]').hover();
-    await page.waitForTimeout(300);
-    check("moving onto a grid cell leaves exactly one note", (await cards(page)) === 1);
-    await page.getByRole("button", { name: /^Fill/ }).first().hover();
-    await page.waitForTimeout(250);
-    check("moving off to a plain button clears them", (await cards(page)) === 0);
+    await rightClick(page.locator('[data-rc="3|8"]'));
+    check("opening another leaves exactly one note leaves exactly one note", (await cards(page)) === 1);
+    await rightClick(page.getByRole("button", { name: /^Fill/ }).first());
+    check("a plain button closes them and opens none", (await cards(page)) === 0);
     await page.close();
   }
   // The panels and dialogs

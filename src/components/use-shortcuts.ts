@@ -24,6 +24,7 @@ export const SHORTCUTS: { keys: string; does: string }[] = [
   { keys: "]  /  [", does: "Next / previous problem" },
   { keys: ".", does: "Go to today" },
   { keys: "Ctrl+Z  /  Ctrl+Y", does: "Undo / redo" },
+  { keys: "Right click  /  Shift+F10", does: "More about anything that shows a small marker on its corner. Esc closes it. On a phone, press and hold." },
   { keys: "/", does: "Jump to a pharmacist, store or page (from any page)" },
   { keys: "?", does: "Show this list" },
 ];

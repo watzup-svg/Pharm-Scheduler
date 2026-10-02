@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNote } from "@/components/hover-note";
+import { armMarker, clearMarker, menuPoint, useNote } from "@/components/hover-note";
 import { daysInMonth, monthName, todayParts } from "@/lib/schedule/calendar";
 import { dayLoads, entriesOf, type TimeOffEntry } from "@/lib/schedule/timeoff-view";
 import type { ScheduleDoc } from "@/lib/schedule/types";
@@ -19,7 +19,7 @@ function runs(days: number[]): [number, number][] {
  * band down the days a store would be left with nobody. Every bar and band explains itself on hover.
  */
 export function TimeOffLanes({ doc, onPickDay }: { doc: ScheduleDoc; onPickDay: (day: number) => void }) {
-  const { show, hide, card } = useNote();
+  const { show, card } = useNote();
   const days = daysInMonth(doc.year, doc.month);
   const today = todayParts();
   const inMonth = today.year === doc.year && today.month === doc.month;
@@ -45,14 +45,21 @@ export function TimeOffLanes({ doc, onPickDay }: { doc: ScheduleDoc; onPickDay: 
   const storeName = (code: string) => doc.stores.find((s) => s.code === code)?.name.replace(/ (Hi-School )?Pharmacy$/i, "") ?? code;
   const hover = (lines: string[]) => ({
     "data-notip": true,
-    onPointerEnter: (e: React.PointerEvent) => show(e.clientX, e.clientY, lines),
-    onPointerMove: (e: React.PointerEvent) => show(e.clientX, e.clientY, lines),
-    onPointerLeave: hide,
-    onFocus: (e: React.FocusEvent) => {
-      const r = (e.currentTarget as Element).getBoundingClientRect();
-      show(r.left + r.width / 2, r.top, lines);
+    // Pointing at it draws the marker; right click or the menu key opens the note. On touch a tap opens it.
+    onPointerEnter: (e: React.PointerEvent) => e.pointerType !== "touch" && armMarker(e.currentTarget, "off"),
+    onPointerLeave: clearMarker,
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.pointerType === "touch") show(e.clientX, e.clientY, lines);
     },
-    onBlur: hide,
+    onContextMenu: (e: React.MouseEvent) => {
+      e.preventDefault();
+      const { x, y } = menuPoint(e);
+      show(x, y, lines);
+    },
+    onFocus: (e: React.FocusEvent) => {
+      if ((e.currentTarget as Element).matches(":focus-visible")) armMarker(e.currentTarget, "off");
+    },
+    onBlur: clearMarker,
   });
   return (
     <section aria-label="Who is away" className="surface accent-away overflow-x-auto p-3 pl-4 sm:p-4 sm:pl-5">
