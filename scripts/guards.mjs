@@ -1,5 +1,6 @@
 // `npm run guards`: quick promises about the build itself. Needs the builds (npm run build:trial, build:real).
 //   size     each built file is under its budget (scripts/budgets.json)
+//   tracked  no generated folders or files over 1.5 MB are committed
 //   hosts    the web addresses written inside the build are all on scripts/allowed-hosts.txt (library comments and XML names)
 //   offline  opening every page, a day popup and the print page makes no request except to the page itself
 //   docs     a source file added since the base branch is named in ARCHITECTURE.md; a src change with no WHATS_NEW line is noted
@@ -23,6 +24,11 @@ for (const [file, max] of Object.entries(budgets)) {
   const size = fs.statSync(path.join(root, file)).size;
   say(size <= max, `size ${file}`, `${(size / 1e6).toFixed(2)} MB of ${(max / 1e6).toFixed(2)} MB allowed`);
 }
+
+// tracked  nothing generated or oversized is committed (test logs, builds, screenshots over 1 MB)
+const tracked = execSync("git ls-files -z", { cwd: root, encoding: "utf8", maxBuffer: 1 << 28 }).split("\0").filter(Boolean);
+const bad = tracked.filter((f) => /^(test-logs|dist|dist-spa|dist-real|node_modules)\//.test(f) || (fs.existsSync(path.join(root, f)) && fs.statSync(path.join(root, f)).size > 1.5e6));
+say(!bad.length, "tracked files", bad.length ? `unwanted or over 1.5 MB: ${bad.slice(0, 5).join(", ")}` : `${tracked.length} files, none generated or oversized`);
 
 // hosts
 if (fs.existsSync(path.join(root, "dist-spa/spa.html"))) {

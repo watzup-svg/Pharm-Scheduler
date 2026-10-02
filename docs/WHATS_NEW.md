@@ -18,3 +18,8 @@ Newest first. One short block per batch: what changed, where to look, what was c
 - Stores are named by number everywhere (placeholder numbers 1101–1118 until the real ones are known). Stores page > Edit to change one.
 - Day cells on the store calendars have the same popup as the rest of the app: store and date, what is going on, its mark and colour edge, "Open this day".
 - Tooling: `npm run check`, run one browser check by name, CI on every PR, `ARCHITECTURE.md` (where things live).
+
+## Audit and small hardening
+- `npm run audit` runs the big read-only audit (size and complexity scan, engine and page timings, unit coverage, dependency scan, 300-seed sweep, full deep run) and writes `test-logs/audit-<stamp>/REPORT.md`.
+- New guard: no generated folders or files over 1.5 MB are committed.
+- Unit tests for the storage fallback; `@types/node` and `vite` patch updates; one export dropped.

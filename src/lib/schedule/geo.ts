@@ -43,7 +43,7 @@ const stateOf = (s: Store | undefined) => /,\s*([A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)
  * Estimated road miles between two stores. Straight line x 1.3, except where the Columbia River is between them (one store in
  * Washington, one in Oregon): then the trip goes through the best crossing, so it is never shorter than getting to a bridge and on.
  */
-export function roadMilesEstimate(doc: Pick<ScheduleDoc, "stores">, from: string, to: string): { miles: number; via: string | null } | null {
+function roadMilesEstimate(doc: Pick<ScheduleDoc, "stores">, from: string, to: string): { miles: number; via: string | null } | null {
   const a = doc.stores.find((s) => s.code === from);
   const b = doc.stores.find((s) => s.code === to);
   if (!hasPoint(a) || !hasPoint(b)) return null;
