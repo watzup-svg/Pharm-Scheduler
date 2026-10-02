@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
  * hovering or focusing the row shows "5 Saturdays and 27 total days" (the same words are the accessible name).
  * Put it inside an element with the `group/wb` class so the note can follow the pointer to the row.
  */
-export function workNote(days: number, saturdays: number, extra?: string): string {
+function workNote(days: number, saturdays: number, extra?: string): string {
   return `${saturdays} ${saturdays === 1 ? "Saturday" : "Saturdays"} and ${days} total ${days === 1 ? "day" : "days"}${extra ? ` · ${extra}` : ""}`;
 }
 

@@ -8,7 +8,7 @@ export type HeroTone = "plain" | "bad" | "warn";
 /** The dark shell: deep night colour, a soft glow from the top right and the hexagon texture. */
 const GLOW: Record<string, string> = { away: "radial-gradient(70% 100% at 0% 100%, rgba(244,226,163,0.16) 0%, rgba(244,226,163,0) 62%), " };
 
-export function Hero({ label, children, className, glow }: { label: string; children: React.ReactNode; className?: string; /** A warm corner glow for a page about one subject (away = yellow). */ glow?: "away" }) {
+function Hero({ label, children, className, glow }: { label: string; children: React.ReactNode; className?: string; /** A warm corner glow for a page about one subject (away = yellow). */ glow?: "away" }) {
   return (
     <section
       aria-label={label}

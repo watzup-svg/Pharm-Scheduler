@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const KIND_ICON: Record<FixStep["kind"], IconKey> = { hole: "noCoverage", double: "twice", leftover: "closed", license: "licence" };
 
-export const KIND_TAG: Record<FixStep["kind"], string> = { hole: "NO COVERAGE", double: "TWICE", leftover: "CLOSED", license: "LICENSE" };
+const KIND_TAG: Record<FixStep["kind"], string> = { hole: "NO COVERAGE", double: "TWICE", leftover: "CLOSED", license: "LICENSE" };
 
 /** Each kind reads differently at a glance: no coverage and licence are solid, a double is outlined, a closed-day name is neutral. */
 const TAG_STYLE: Record<FixStep["kind"], string> = {

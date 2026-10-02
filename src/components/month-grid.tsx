@@ -33,7 +33,7 @@ const first = (n: string) => n.split(" ")[0] ?? n;
 
 /** What is true about one store-day, as the lines of its hover note. No advice, only facts. */
 /** `brief` stops after who is scheduled: the free and would-break lines scan every pharmacist, so only hover note builders ask for them. */
-export function cellLines(doc: ScheduleDoc, store: string, day: number, tone: DayTone, brief = false): string[] {
+function cellLines(doc: ScheduleDoc, store: string, day: number, tone: DayTone, brief = false): string[] {
   const s = doc.stores.find((x) => x.code === store);
   const nameOf = (code: string) => doc.stores.find((x) => x.code === code)?.name.replace(/ (Hi-School )?Pharmacy$/i, "") ?? code;
   const lines = [`${nameOf(store)} · ${weekdayShort(doc.year, doc.month, day)} ${monthName(doc.year, doc.month).slice(0, 3)} ${day} · ${STATE_NAME[tone]}`];

@@ -50,7 +50,7 @@ export function weekdayLong(year: number, month: number, day: number): string {
   return WEEKDAYS_LONG[weekdaySun0(year, month, day)] ?? "";
 }
 
-export function monthName(year: number, month: number): string {
+export function monthName(_year: number, month: number): string {
   return MONTH_NAMES[month - 1] ?? "";
 }
 

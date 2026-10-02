@@ -1,4 +1,4 @@
-// `npm run e2e` (serve the built app first: `npx vite build -c vite.spa.config.ts && npx http-server dist-spa -p 3002`).
+// `npm run e2e` builds nothing: run `npm run build:trial` first. The runner serves dist-spa itself (see e2e/README.md).
 import { fileURLToPath } from "node:url";
 import { failed } from "./lib.mjs";
 import smoke from "./smoke.mjs";
@@ -44,21 +44,14 @@ if (serial) {
 const { spawn } = await import("node:child_process");
 const fs = await import("node:fs");
 const path = await import("node:path");
-const http = await import("node:http");
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 // Serve the built page ourselves on a free port, so a run needs no setup and two runs at once never share a port.
+const { serve } = await import("../scripts/serve.mjs");
 let server = null;
 if (!process.env.BASE) {
-  const dir = path.join(root, "dist-spa");
-  if (!fs.existsSync(path.join(dir, "spa.html"))) { console.log("Build first: npm run build:trial"); process.exit(2); }
-  server = http.createServer((req, res) => {
-    const f = path.join(dir, decodeURIComponent((req.url ?? "/").split("?")[0]).replace(/^\/+/, "") || "spa.html");
-    if (!f.startsWith(dir) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404).end(); return; }
-    res.writeHead(200, { "content-type": f.endsWith(".html") ? "text/html" : "application/octet-stream" }).end(fs.readFileSync(f));
-  });
-  await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
-  process.env.BASE = `http://127.0.0.1:${server.address().port}/spa.html`;
+  try { server = await serve(); } catch (e) { console.log(e.message); process.exit(2); }
+  process.env.BASE = server.base;
 }
 // Every group's full output goes to a log file; the screen gets the summary and any failure in full.
 const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15);

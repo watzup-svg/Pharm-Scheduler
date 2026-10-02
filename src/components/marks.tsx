@@ -45,7 +45,7 @@ export const MARKS: Record<MarkKind, { family: MarkFamily; icon: IconKey; name: 
 export const MARK_ORDER: MarkKind[] = ["hole", "double", "leftover", "license", "timeOff", "waiting", "covering", "asis"];
 
 /** Colours by family. These are the only places a state colour is chosen. */
-export const FAMILY_CLASS: Record<MarkFamily, string> = {
+const FAMILY_CLASS: Record<MarkFamily, string> = {
   problem: "bg-illegal-bg text-illegal ring-1 ring-inset ring-illegal/30",
   away: "bg-warn-bg text-warn ring-1 ring-inset ring-warn/35",
   cover: "bg-ok-bg text-ok ring-1 ring-inset ring-ok/35",
@@ -53,18 +53,9 @@ export const FAMILY_CLASS: Record<MarkFamily, string> = {
 };
 
 /** Four sizes only. Anything asked for snaps to the nearest one up, so marks never come in odd sizes. */
-export const MARK_SIZES = [16, 20, 24, 28] as const;
+const MARK_SIZES = [16, 20, 24, 28] as const;
 export type MarkSize = (typeof MARK_SIZES)[number];
-export const snapSize = (n: number): MarkSize => MARK_SIZES.find((s) => n <= s) ?? 28;
-
-/** Which mark a time-off reason gets. */
-export function reasonMarkKind(reason: string): MarkKind {
-  const r = reason.toLowerCase();
-  if (r.includes("sick")) return "sick";
-  if (r.includes("appointment")) return "appointment";
-  if (r.includes("family")) return "family";
-  return "timeOff";
-}
+const snapSize = (n: number): MarkSize => MARK_SIZES.find((s) => n <= s) ?? 28;
 
 export function StateMark({ kind, size = 20, className, tip = true }: { kind: MarkKind; size?: number; className?: string; tip?: boolean }) {
   const def = MARKS[kind];
@@ -92,13 +83,6 @@ export function MiniMark({ family, className }: { family: MarkFamily; className?
 // --- The older names, kept so call sites read the same. Both draw a StateMark. -----------------------------------------
 
 export type AlarmKind = "hole" | "double" | "leftover" | "license";
-
-export const ALARM_NAME: Record<AlarmKind, string> = {
-  hole: `${MARKS.hole.name} | ${MARKS.hole.meaning}`,
-  double: `${MARKS.double.name} | ${MARKS.double.meaning}`,
-  leftover: `${MARKS.leftover.name} | ${MARKS.leftover.meaning}`,
-  license: `${MARKS.license.name} | ${MARKS.license.meaning}`,
-};
 
 /** `onDark` is accepted and ignored: the light chip reads the same on a dark header. */
 export function AlarmMark({ kind, size = 20, className, tip = true }: { kind: AlarmKind; size?: number; className?: string; tip?: boolean; onDark?: boolean }) {
