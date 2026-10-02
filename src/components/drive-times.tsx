@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { driveBetween, pairMiles } from "@/lib/schedule/geo";
+import { parseMilesLines } from "@/lib/schedule/miles-import";
 import { paidMilesFor, freeMilesOf, rateOf, FEDERAL_RATE } from "@/lib/schedule/mileage";
 import { driveLabel, driveText } from "@/lib/schedule/suggest";
 import { useScheduleStore } from "@/store/schedule-store";
@@ -25,6 +26,9 @@ export function DriveTimes() {
   const [rate, setRate] = useState("");
   const setMilesFor = useScheduleStore((s) => s.setDriveMiles);
   const setRateOf = useScheduleStore((s) => s.setMileageRate);
+  const importMiles = useScheduleStore((s) => s.importDriveMiles);
+  const [paste, setPaste] = useState("");
+  const [pasteNote, setPasteNote] = useState("");
   const pair = from && to && from !== to ? driveBetween(doc, from, to) : null;
   const nearest = useMemo(
     () =>
@@ -177,6 +181,29 @@ export function DriveTimes() {
               Use the IRS rate
             </Button>
           ) : null}
+        </div>
+        <div className="flex flex-col gap-2 rounded-xl bg-white p-3 ring-1 ring-line">
+          <Label htmlFor="mi-paste">Paste many distances at once</Label>
+          <p className="text-sm text-muted">One pair per line: store code, store code, one-way miles (for example CAT,CLA,31.4). Good lines are saved; bad ones are listed and skipped.</p>
+          <textarea id="mi-paste" rows={4} className="w-full rounded-lg bg-paper p-2 font-mono text-sm ring-1 ring-line" value={paste} onChange={(e) => setPaste(e.target.value)} />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!paste.trim()}
+              onClick={() => {
+                const r = parseMilesLines(paste, doc.stores.map((s) => s.code));
+                const n = Object.keys(r.pairs).length;
+                importMiles(r.pairs);
+                setPasteNote(`${n} distance${n === 1 ? "" : "s"} saved.${r.problems.length ? ` ${r.problems.length} skipped: ${r.problems.slice(0, 5).join("; ")}${r.problems.length > 5 ? "; …" : ""}` : ""}`);
+                if (n) announce(`${n} distances saved`);
+                if (!r.problems.length) setPaste("");
+              }}
+            >
+              Save distances
+            </Button>
+            {pasteNote ? <p className="min-w-0 flex-1 text-sm" role="status">{pasteNote}</p> : null}
+          </div>
         </div>
         {missing.length ? (
           <p className="text-sm text-muted" role="status">

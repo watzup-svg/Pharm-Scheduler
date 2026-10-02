@@ -322,7 +322,7 @@ const DayCell = memo(function DayCell({
         view.leftover || view.leftoverAccepted ? (
           <span className="mt-0.5 min-w-0 text-xs leading-tight font-semibold">
             {view.names.map((n) => (
-              <span key={n.slot} className="block truncate line-through">
+              <span key={n.slot} className="block truncate line-through lg:line-clamp-2 lg:break-words lg:whitespace-normal">
                 {short(n.name)}
               </span>
             ))}
@@ -337,7 +337,7 @@ const DayCell = memo(function DayCell({
           {view.names.map((n: DayName, i) => (
             <span
               key={n.slot}
-              className={cn("block min-w-0 border-l-[3px] pl-0.5 truncate text-[10px] tracking-tight sm:pl-0.5 sm:text-[11px]", repeat && !tag && "font-normal text-muted")}
+              className={cn("block min-w-0 border-l-[3px] pl-0.5 truncate lg:line-clamp-2 lg:break-words lg:whitespace-normal text-[10px] tracking-tight sm:pl-0.5 sm:text-[11px]", repeat && !tag && "font-normal text-muted")}
               style={{ borderColor: n.color }}
             >
               {i > 0 ? "+" : ""}

@@ -2,6 +2,10 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Names in laptop calendars, paste many drive distances
+- At laptop width (1024 px and up) a name in a store calendar cell may use two lines before it is cut, so "M. Quenby" no longer ends in "...". Phones keep one line. Display only.
+- Drive times between stores has a new "Paste many distances at once" box: one pair per line as store code, store code, one-way miles (CAT,CLA,31.4). Good lines are saved (Undo brings the old values back); bad lines are listed and skipped, never guessed.
+
 ## Checks (no visible change to the app)
 - Mileage pay: when a pharmacist works away from their home store, every mile past 20 (one way, store to store) is paid, both ways, at the federal (IRS) rate, 72.5 cents for 2026, which you can change under Drive times between stores. Fill and move suggestions count it: three short moves can beat one long drive, and plans show the paid miles or dollars. You can set miles per store pair (otherwise they are estimated from the addresses). Unknown distances show as "mileage unknown", never as zero. Display and ranking only: nothing is placed for you.
 - The pressure run gained security and stability tests: a source scan (no eval, no unsafe HTML, safe external links, no network calls), hostile files (prototype pollution, huge or deeply nested files), markup injection in names/notes, and time-zone/language checks. They found one real problem: opening a file with thousands of people was very slow (16,000 people: 4.8 s, now 0.07 s). Also a new undo/redo round-trip test.

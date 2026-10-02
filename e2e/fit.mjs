@@ -16,7 +16,7 @@ const probe = (root) => {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     if (cs.textOverflow === "ellipsis" && !el.closest("[data-rc], [data-day]") && !el.classList.contains("line-through") && el.scrollWidth > el.clientWidth + 1) cut.push((el.textContent || "").trim().slice(0, 30));
-    if (cs.webkitLineClamp !== "none" && cs.webkitLineClamp && el.scrollHeight > el.clientHeight + 1) cut.push(`clamp:${(el.textContent || "").trim().slice(0, 30)}`);
+    if (cs.webkitLineClamp !== "none" && cs.webkitLineClamp && !el.closest("[data-day]") && el.scrollHeight > el.clientHeight + 1) cut.push(`clamp:${(el.textContent || "").trim().slice(0, 30)}`);
     if (root && (r.right > vw + 1 || r.left < -1)) out.push(`${el.tagName}.${String(el.className).slice(0, 30)}`);
     if (vw <= 430 && root && (el.tagName === "BUTTON" || el.tagName === "A" || el.getAttribute("role") === "button") && !el.closest("[data-notap]")) {
       if (r.height < 36 || r.width < 36) small.push(`${(el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 20)} ${Math.round(r.width)}x${Math.round(r.height)}`);

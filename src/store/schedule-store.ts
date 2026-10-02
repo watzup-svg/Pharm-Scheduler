@@ -176,6 +176,7 @@ export type ScheduleState = {
   /** Set (or with null clear) the drive time between two stores, in minutes. One undo step. */
   setDriveMinutes: (a: string, b: string, minutes: number | null) => void;
   setDriveMiles: (a: string, b: string, miles: number | null) => void;
+  importDriveMiles: (pairs: Record<string, number>) => void;
   /** The per-mile rate (null clears it) for mileage pay. */
   setMileageRate: (rate: number | null) => void;
   /** Add the same days for several people in one undo step. Closed days and days already logged are skipped. */
@@ -470,6 +471,11 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       const { driveMiles: _drop, ...rest } = d;
       return Object.keys(next).length ? { ...rest, driveMiles: next } : rest;
     });
+  },
+
+  importDriveMiles: (pairs) => {
+    if (!Object.keys(pairs).length) return;
+    withUndo(set, get, (d) => ({ ...d, driveMiles: { ...(d.driveMiles ?? {}), ...pairs } }));
   },
 
   setMileageRate: (rate) => {
