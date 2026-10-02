@@ -1,0 +1,5 @@
+{
+  "note": "Largest allowed size in bytes of each built single file (about 10% above the size when this was set). Raise it on purpose, in the PR that needs it.",
+  "dist-spa/spa.html": 2420000,
+  "dist-real/spa.html": 2420000
+}

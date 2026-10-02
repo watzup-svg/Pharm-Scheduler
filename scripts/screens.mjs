@@ -20,7 +20,7 @@ const args = process.argv.slice(2);
 // ---- one job -------------------------------------------------------------------------------------------------------
 if (args[0] === "--one") {
   const [route, width] = [args[1], Number(args[2])];
-  const { launch, open } = await import(path.join(root, "e2e/lib.mjs"));
+  const { launch, open, axeSource } = await import(path.join(root, "e2e/lib.mjs"));
   const { createDemo } = await import(path.join(root, "src/lib/schedule/demo.ts"));
   const codes = createDemo().stores.map((s) => s.code);
   const problems = [];
@@ -106,6 +106,14 @@ if (args[0] === "--one") {
       } else note("popup", `${id} opened no dialog`);
     }
   }
+  // Accessibility basics (axe): serious and critical findings only, minus the ones listed in scripts/axe-known.json.
+  {
+    const known = new Set(JSON.parse(fs.readFileSync(path.join(root, "scripts/axe-known.json"), "utf8"))[`${route}@${width}`] ?? []);
+    await page.addScriptTag({ content: axeSource() });
+    const found = await page.evaluate(async () => (await window.axe.run(document, { resultTypes: ["violations"] })).violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => ({ id: v.id, n: v.nodes.length, first: v.nodes[0]?.target?.join(" ").slice(0, 80) })));
+    if (process.env.AXE_LIST) console.log("AXE " + JSON.stringify({ page: `${route}@${width}`, ids: found.map((f) => f.id) }));
+    for (const f of found) if (!known.has(f.id)) note("accessibility", `${f.id} (${f.n}x) e.g. ${f.first}`);
+  }
   if (errors.length) note("script-error", errors[0]);
   if (consoleErrors.length) note("console-error", consoleErrors[0]);
 
@@ -143,6 +151,7 @@ const one = ([route, w]) =>
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (out += d));
     child.on("close", () => {
+      if (process.env.AXE_LIST) out.split("\n").filter((l) => l.startsWith("AXE ")).forEach((l) => console.log(l));
       const line = out.split("\n").find((l) => l.startsWith("RESULT "));
       rows.push(line ? JSON.parse(line.slice(7)) : { route, width: w, problems: [{ kind: "job-crashed", detail: out.trim().split("\n").slice(-3).join(" | ").slice(0, 200) }], hash: null });
       done();

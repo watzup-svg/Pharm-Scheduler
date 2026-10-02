@@ -35,7 +35,7 @@ function job(name, cmd, cmdArgs, extraEnv = {}) {
 
 const t0 = Date.now();
 if (!args.includes("--no-build")) {
-  const b = await job("build", "npm", ["run", "build:trial"]);
+  const b = await job("build", "sh", ["-c", "npm run build:trial && npm run build:real"]);
   if (b.code !== 0) { console.log(b.out.split("\n").slice(-25).join("\n")); process.exit(1); }
 }
 const sweepAt = args.indexOf("--sweep");
@@ -45,6 +45,7 @@ const jobs = [
   job("type check", "npx", ["tsc", "--noEmit"]),
   job("unit tests", "npm", ["run", "test:schedule"]),
   job("browser suite", "node", ["e2e/run.mjs"]),
+  job("guards", "node", ["scripts/guards.mjs"]),
   ...(sweepSeeds ? [job("sweep", "node", ["scripts/sweep.mjs", "--seeds", sweepSeeds, "--jobs", "2"])] : []),
   ...(deep ? [job("page sweep", "node", ["scripts/screens.mjs", "--jobs", "1"])] : []),
 ];
