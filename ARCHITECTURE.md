@@ -35,6 +35,8 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - **Add a problem type**: add it to `problem-kinds.ts`, the evaluation in `rules.ts`, a step in `fix.ts`, a mark in `marks.tsx`, its colours in `problem-row.tsx` and `day-view.ts`, and the print gate in `gate.ts`. Type errors on the `Record<…>` tables will point at what is missing.
 - **Add a saved setting**: make it optional in `file.ts` so old files still open, add a test that opens an older file.
 
+- **Add a page**: add a file in `src/routes/` (copy a small one such as `lists.tsx`); the build regenerates `src/routeTree.gen.ts` itself, so commit that file with it. `src/main.tsx` is the entry, `src/routes/__root.tsx` the shell, `vite.spa.config.ts` the only build config (`npm run dev` serves it on :3000).
+
 ## Checking your change
 - `npm run check`: type check + unit tests (about 10 s). Run after each edit.
 - `npm run e2e -- header-links`: one browser check by name (see `e2e/run.mjs` for names). Run `npm run build:trial` first; the runner serves the build itself.

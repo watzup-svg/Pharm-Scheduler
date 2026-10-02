@@ -1,8 +1,8 @@
 import { createHashHistory, createRouter, RouterProvider } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
-import "../../src/styles.css";
-import { routeTree } from "../../src/routeTree.gen";
-import { useScheduleStore } from "../../src/store/schedule-store";
+import "./styles.css";
+import { routeTree } from "./routeTree.gen";
+import { useScheduleStore } from "./store/schedule-store";
 
 // The real copy (`--mode real`) starts like a fresh install: the Welcome screen, nothing invented, and the browser's own
 // confirm() left alone. Everything below this line only applies to the trial copy.
