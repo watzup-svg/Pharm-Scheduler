@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
 jobs:
+  # The jobs run side by side: type check, unit tests and builds; the browser suite in two halves; and a sweep of random schedules; and the page sweep with the build guards.
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -12,18 +13,86 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run check
+      - run: npm run lint
+      - run: npm run coverage
       - run: npm run build:trial
       - run: npm run build:real
-      - name: Browser checks
-        run: |
-          npx playwright-core install --with-deps chromium
-          export CHROME="$(node -e "console.log(require('playwright-core').chromium.executablePath())")"
-          python3 -m http.server 3002 -d dist-spa >/dev/null 2>&1 &
-          sleep 1
-          npm run e2e
       - uses: actions/upload-artifact@v4
         with:
           name: builds
           path: |
             dist-spa/spa.html
             dist-real/spa.html
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/2", "2/2"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build:trial
+      - name: Browser checks ${{ matrix.shard }}
+        run: |
+          npx playwright-core install --with-deps chromium
+          export CHROME="$(node -e "console.log(require('playwright-core').chromium.executablePath())")"
+          npm run e2e -- --shard ${{ matrix.shard }}
+  # The Safari engine (WebKit). Not blocking yet: it is new, so a red here is read first and fixed or excused. Still not a real iPhone.
+  webkit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build:trial
+      - name: Browser checks in WebKit
+        run: |
+          npx playwright-core install --with-deps webkit
+          BROWSER=webkit npm run e2e -- smoke pages fit dialogs print "phone touch"
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webkit-logs
+          path: test-logs/
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run sweep -- --seeds 20
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sweep-results
+          path: test-logs/
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build:trial
+      - run: npm run build:real
+      - run: |
+          npx playwright-core install --with-deps chromium
+          echo "CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Build guards (size, addresses, offline, docs)
+        run: git fetch -q origin main:refs/remotes/origin/main || true; npm run guards
+      - name: Real build starts clean (Welcome screen, no sample data)
+        run: npm run real
+      - name: Page sweep (every page and popup, both widths)
+        run: npm run screens
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: page-sweep
+          path: test-logs/

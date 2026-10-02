@@ -3,6 +3,7 @@ import { timeOffDates } from "./pto.ts";
 import { choicesFor, offerable, type HoleChoice } from "./dashboard.ts";
 import { driveBetween } from "./geo.ts";
 import { getCell } from "./grid.ts";
+import { mileageFor, mileageText, rateOf, type Mileage } from "./mileage.ts";
 import { isOpenDay } from "./place.ts";
 import { RPH_SLOTS } from "./slots.ts";
 import type { ScheduleDoc, SlotId } from "./types.ts";
@@ -20,6 +21,8 @@ export type Suggestion = {
   score: number;
   reasons: string[];
   miles: number | null;
+  /** Mileage pay if they work here from their home store. */
+  mileage: Mileage;
   /** Rough one-way drive from their home store, in minutes (straight line × 1.3 at 45 mph). Null without locations. */
   driveMinutes: number | null;
   /** True when driveMinutes is the address estimate; false when the manager set it. */
@@ -98,6 +101,7 @@ export function rankCandidates(
     const miles = drive?.miles ?? null;
     const driveMinutes = drive ? drive.minutes : null;
     const driveEstimated = drive?.estimated ?? true;
+    const mileage = mileageFor(doc, c.home, store);
     const load = loadFor(doc, c.name, day);
     const usual = 5 + (doc.stores.find((s) => s.code === c.home)?.satOpen ? 1 : 0);
     const reasons: string[] = [];
@@ -147,6 +151,14 @@ export function rankCandidates(
         reasons.push(`${driveEstimated ? "About " : ""}${driveText(driveMinutes!)} drive from their home store${driveEstimated ? "" : " (set by you)"}`);
         if (driveMinutes! >= 90) cautions.push("Long drive");
       }
+      if (c.home !== store) {
+        // Mileage pay counts like drive time: one dollar about one minute (half a point). Unknown distance costs like a 15-minute guess.
+        if (mileage.paidMiles == null) score -= 7.5;
+        else if (mileage.paidMiles > 0) {
+          score -= mileage.paidMiles * (rateOf(doc)) * 0.5;
+          reasons.push(mileageText(mileage));
+        }
+      }
       score -= load.month;
       // Spread the covering around: someone who has already been away from home a lot this month comes a little lower.
       if (c.home !== store && load.away > 0) {
@@ -168,7 +180,7 @@ export function rankCandidates(
         cautions.push("Usual day off");
       }
     }
-    out.push({ name: c.name, home: c.home, float: c.float, state: c.state, score, reasons, miles, driveMinutes, driveEstimated, cautions });
+    out.push({ name: c.name, home: c.home, float: c.float, state: c.state, score, reasons, miles, mileage, driveMinutes, driveEstimated, cautions });
   }
   const order = { free: 0, double: 1, dayoff: 2, off: 3, blocked: 4 } as const;
   return out.sort((a, b) => order[a.state] - order[b.state] || b.score - a.score || a.name.localeCompare(b.name));

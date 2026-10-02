@@ -1,0 +1,48 @@
+name: deep check
+# The long, detailed sweep: everything in `npm run all`, plus the guards, 200 random-schedule seeds and the page sweep.
+# Runs by hand (Actions tab > deep check > Run workflow) and once a week. The full detail is in the test-logs artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: Random-schedule seeds to run
+        default: "200"
+  schedule:
+    - cron: "17 11 * * 1"
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Known vulnerabilities (fails on high or critical)
+        run: npm audit --audit-level=high
+      - if: always()
+        name: Outdated packages
+        run: |
+          { echo '### Outdated packages'; echo '```'; npm outdated || true; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+  deep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: |
+          npx playwright-core install --with-deps chromium
+          echo "CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Deep check
+        run: npm run deep -- --sweep "${{ github.event.inputs.seeds || '200' }}" | tee deep-summary.txt
+      - if: always()
+        name: Summary
+        run: |
+          { echo '### Deep check'; echo '```'; tail -n 20 deep-summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-check-logs
+          path: test-logs/

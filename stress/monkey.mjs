@@ -2,7 +2,7 @@
 // Drives the built app like an impatient person: random clicks, keys, typing, resizes and back/forward. Fails on any page
 // error, console error, blank screen, or a step that hangs. Prints the last actions before a failure so it can be replayed.
 import fs from "node:fs";
-import { BASE, launch } from "../e2e/lib.mjs";
+import { BASE, launch, tmp } from "../e2e/lib.mjs";
 
 const STEPS = Number(process.argv[2] ?? 300);
 let seed = Number(process.argv[3] ?? 1);
@@ -64,7 +64,7 @@ for (const device of [{ ...SIZES[1], isMobile: true, hasTouch: true }, SIZES[3]]
       failures++;
       console.log(`FAIL ${device.width}px step ${i}: ${problems.join(" | ")}`);
       console.log("  last actions:", log.slice(-8).join(" → "));
-      await page.screenshot({ path: `/tmp/claude-0/-home-user/9f340de3-b3ea-5e94-9595-e34276227330/scratchpad/monkey-fail-${device.width}.png` }).catch(() => {});
+      await page.screenshot({ path: tmp(`monkey-fail-${device.width}.png`) }).catch(() => {});
       break;
     }
   }

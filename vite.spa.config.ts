@@ -1,6 +1,7 @@
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { defineConfig } from "vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
@@ -25,14 +26,9 @@ export default defineConfig(({ mode }) => ({
   define: { __BUILD__: JSON.stringify(buildStamp(mode)) },
   resolve: {
     alias: [
-      { find: /^\.\/routes\/__root$/, replacement: r("harness/spa/root.tsx") },
-      { find: "@/lib/utils", replacement: r("harness/stubs/utils.ts") },
-      { find: "@/lib/auth/provider", replacement: r("harness/stubs/auth/provider.tsx") },
-      { find: "@/lib/error-component", replacement: r("harness/stubs/error-component.tsx") },
-      { find: "@/lib/preview-host-bridge", replacement: r("harness/stubs/preview-host-bridge.ts") },
       { find: /^@\//, replacement: r("src") + "/" },
     ],
   },
-  plugins: [viteReact(), tailwindcss(), viteSingleFile()],
+  plugins: [tanstackRouter({ target: "react", autoCodeSplitting: false }), viteReact(), tailwindcss(), viteSingleFile()],
   build: { outDir: mode === "real" ? "dist-real" : "dist-spa", emptyOutDir: true, rollupOptions: { input: r("spa.html") } },
 }));

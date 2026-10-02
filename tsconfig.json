@@ -7,6 +7,7 @@
     "jsx": "react-jsx",
     "strict": true,
     "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noEmit": true,
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
@@ -15,12 +16,8 @@
     "types": ["vite/client", "node"],
     "baseUrl": ".",
     "paths": {
-      "@/lib/utils": ["harness/stubs/utils.ts"],
-      "@/lib/auth/provider": ["harness/stubs/auth/provider.tsx"],
-      "@/lib/error-component": ["harness/stubs/error-component.tsx"],
-      "@/lib/preview-host-bridge": ["harness/stubs/preview-host-bridge.ts"],
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", "harness"]
+  "include": ["src"]
 }

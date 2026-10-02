@@ -20,16 +20,18 @@ import { buildDistrictSheet, buildEmployeeCalendar, buildStorePoster, cleanModel
 import { buildPackBytes } from "./pdf.ts";
 import { DEFAULT_PRINT_PREFS } from "./types.ts";
 
-let seed = 12345;
+// A sweep (`npm run sweep`) runs this file under many seeds at once; the defaults are the same fixed run as always.
+let seed = Number(process.env.FUZZ_SEED ?? 12345) >>> 0;
+const EDITS = Number(process.env.FUZZ_EDITS ?? 1500);
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
 const pick = <T,>(a: T[]): T => a[Math.floor(rnd() * a.length)]!;
 
 describe("fuzz: engine invariants", () => {
   for (const [label, make] of [["demo", createDemo], ["sample", createSample]] as const) {
-    it(`${label}: 1500 random edits never crash and never place an unlicensed person`, () => {
+    it(`${label}: ${EDITS} random edits never crash and never place an unlicensed person`, () => {
       let doc = make();
       const names = doc.people.map((p) => p.name);
-      for (let i = 0; i < 1500; i++) {
+      for (let i = 0; i < EDITS; i++) {
         const store = pick(doc.stores).code;
         const day = 1 + Math.floor(rnd() * daysInMonth(doc.year, doc.month));
         const slot = pick([...RPH_SLOTS]);

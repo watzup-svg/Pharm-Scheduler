@@ -38,7 +38,7 @@ export function issueOrder(doc: ScheduleDoc, steps: FixStep[]): FixStep[] {
 }
 
 /** Position of the anchored issue in an ordered list, or -1 when it is gone (fixed, or never existed). */
-export function indexOf(ordered: FixStep[], anchor: IssueAnchor | null): number {
+function indexOf(ordered: FixStep[], anchor: IssueAnchor | null): number {
   if (!anchor) return -1;
   return ordered.findIndex((s) => stepKey(s) === anchor.key);
 }
@@ -84,7 +84,7 @@ export function nextAfter(doc: ScheduleDoc, ordered: FixStep[], day: number, sto
 const KIND_TITLE: Record<FixStep["kind"], string> = PROBLEM_NAME;
 
 /** Longest title that keeps full names; past this the house short form ("M. Quenby") is used. */
-export const TITLE_FULL_NAME_MAX = 40;
+const TITLE_FULL_NAME_MAX = 40;
 
 /**
  * The short title for one issue, e.g. "No coverage · Rick's · Wed Oct 21" or "Two places · Gideon Ashcroft · Fri Oct 9".

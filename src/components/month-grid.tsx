@@ -33,7 +33,7 @@ const first = (n: string) => n.split(" ")[0] ?? n;
 
 /** What is true about one store-day, as the lines of its hover note. No advice, only facts. */
 /** `brief` stops after who is scheduled: the free and would-break lines scan every pharmacist, so only hover note builders ask for them. */
-export function cellLines(doc: ScheduleDoc, store: string, day: number, tone: DayTone, brief = false): string[] {
+function cellLines(doc: ScheduleDoc, store: string, day: number, tone: DayTone, brief = false): string[] {
   const s = doc.stores.find((x) => x.code === store);
   const nameOf = (code: string) => doc.stores.find((x) => x.code === code)?.name.replace(/ (Hi-School )?Pharmacy$/i, "") ?? code;
   const lines = [`${nameOf(store)} · ${weekdayShort(doc.year, doc.month, day)} ${monthName(doc.year, doc.month).slice(0, 3)} ${day} · ${STATE_NAME[tone]}`];
@@ -115,6 +115,8 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
   const tag = useStoreTag();
   const today = todayParts();
   const inMonth = today.year === doc.year && today.month === doc.month;
+  // `today` is a new object every render, so its three numbers are the real dependencies.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const model = useMemo(() => districtModel(doc, ev, today), [doc, ev, today.year, today.month, today.day]);
   // Only what pressure reads: a note or a store address edit does not redo 31 days of lookups.
   const pressure = useMemo(() => dayPressure(doc), [doc.grid, doc.people, doc.stores, doc.timeOff, doc.holidays, doc.pattern, doc.year, doc.month]); // eslint-disable-line react-hooks/exhaustive-deps

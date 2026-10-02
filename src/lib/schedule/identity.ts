@@ -68,10 +68,10 @@ export function removePersonDoc(doc: ScheduleDoc, name: string): ScheduleDoc {
   };
 }
 
-function rekeyDrive(doc: ScheduleDoc, from: string, to: string | null): Pick<ScheduleDoc, "driveMinutes"> {
-  if (!doc.driveMinutes) return {};
+function rekeyPairs(table: Record<string, number> | undefined, from: string, to: string | null): Record<string, number> | null {
+  if (!table) return null;
   const out: Record<string, number> = {};
-  for (const [k, v] of Object.entries(doc.driveMinutes)) {
+  for (const [k, v] of Object.entries(table)) {
     const [a, b] = k.split("|") as [string, string];
     if (a !== from && b !== from) {
       out[k] = v;
@@ -80,13 +80,19 @@ function rekeyDrive(doc: ScheduleDoc, from: string, to: string | null): Pick<Sch
     if (to == null) continue;
     out[driveKey(a === from ? to : a, b === from ? to : b)] = v;
   }
-  return Object.keys(out).length ? { driveMinutes: out } : {};
+  return Object.keys(out).length ? out : null;
+}
+
+function rekeyDrive(doc: ScheduleDoc, from: string, to: string | null): Pick<ScheduleDoc, "driveMinutes" | "driveMiles"> {
+  const minutes = rekeyPairs(doc.driveMinutes, from, to);
+  const miles = rekeyPairs(doc.driveMiles, from, to);
+  return { ...(minutes ? { driveMinutes: minutes } : {}), ...(miles ? { driveMiles: miles } : {}) };
 }
 
 export function applyStore(doc: ScheduleDoc, fromCode: string, store: Store): ScheduleDoc {
   const code = store.code;
   const accepted = rekeyAccepted(doc, fromCode, code, ["hole", "leftover"]);
-  const { driveMinutes: _old, ...rest } = doc;
+  const { driveMinutes: _old, driveMiles: _oldMiles, ...rest } = doc;
   return {
     ...rest,
     ...rekeyDrive(doc, fromCode, code),
@@ -107,7 +113,7 @@ export function removeStoreDoc(doc: ScheduleDoc, code: string): ScheduleDoc {
   delete pattern[code];
   const dayNotes = { ...doc.dayNotes };
   delete dayNotes[code];
-  const { driveMinutes: _old, ...rest } = doc;
+  const { driveMinutes: _old, driveMiles: _oldMiles, ...rest } = doc;
   return {
     ...rest,
     ...rekeyDrive(doc, code, null),

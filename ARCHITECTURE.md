@@ -24,7 +24,8 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 | Day panel (click a day) | `day-sheet.tsx` (panel + problem notices), `day-sheet-slot.tsx` (one slot), `day-sheet-picker.tsx` (who can cover), `day-sheet-extras.tsx` (not-offered list, impact list, out button) |
 | Printing | `lib/schedule/print-model.ts` (what), `pdf.ts` (PDF), `components/print-screen.tsx`, `letter-sheet.tsx` (on-screen preview) |
 | Saved file (format, old versions) | `lib/schedule/file.ts` (zod schema, v1 files expand on open) |
-| All app state and actions | `store/schedule-store.ts` (document), `store/view-store.ts` (UI only: selected issue, hover) |
+| Mileage pay (cost math, IRS rate, miles per store pair) | `lib/schedule/mileage.ts`, `pairMiles` in `geo.ts`; used by `cover-plan.ts` and `suggest.ts`; screen in `components/drive-times.tsx` |
+| All app state and actions | `store/schedule-store.ts` (document), `store/persistence.ts` (what this browser keeps: backups, archive, autosave), `store/view-store.ts` (UI only: selected issue, hover) |
 | Sample month | `lib/schedule/demo.ts` (used by the trial build; the real build opens empty) |
 
 ## Recipes
@@ -35,12 +36,16 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - **Add a problem type**: add it to `problem-kinds.ts`, the evaluation in `rules.ts`, a step in `fix.ts`, a mark in `marks.tsx`, its colours in `problem-row.tsx` and `day-view.ts`, and the print gate in `gate.ts`. Type errors on the `Record<…>` tables will point at what is missing.
 - **Add a saved setting**: make it optional in `file.ts` so old files still open, add a test that opens an older file.
 
+- **Add a page**: add a file in `src/routes/` (copy a small one such as `lists.tsx`); the build regenerates `src/routeTree.gen.ts` itself, so commit that file with it. `src/main.tsx` is the entry, `src/routes/__root.tsx` the shell, `vite.spa.config.ts` the only build config (`npm run dev` serves it on :3000).
+
 ## Checking your change
 - `npm run check`: type check + unit tests (about 10 s). Run after each edit.
-- `npm run e2e -- header-links`: one browser check by name (see `e2e/run.mjs` for names). Serve first: `python3 -m http.server 3002 -d dist-spa` after `npm run build:trial`.
+- `npm run e2e -- header-links`: one browser check by name (see `e2e/run.mjs` for names). Run `npm run build:trial` first; the runner serves the build itself.
 - `npm run e2e`: the whole browser suite; once per batch. CI runs the same on every PR.
 - Look at the spot you changed (a screenshot or a hover probe); don't re-check untouched pages.
 - Not covered by any test: real printers, iPhone Safari, real touch, real road times.
+
+- Everything at once: `npm run all` (or `npm run deep` for the long version); pieces are in `scripts/` (`guards.mjs`, `sweep.mjs`, `screens.mjs`, `builds.mjs`). Details: `e2e/README.md`.
 
 ## Builds
 `npm run build:trial` -> `dist-spa/spa.html` (opens on the fictional sample month). `npm run build:real` -> `dist-real/spa.html` (empty, Welcome screen). Neither is committed; CI attaches both to each run.

@@ -1,0 +1,9 @@
+www.w3.org
+json-schema.org
+react.dev
+github.com
+tailwindcss.com
+cdnjs.cloudflare.com
+localhost
+jspdf.default.namespaceuri
+www.irs.gov

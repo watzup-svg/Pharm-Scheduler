@@ -97,11 +97,23 @@ const DocSchema = z.object({
   accepted: z.array(z.object({ key: z.string().min(3).max(140), at: z.string().max(40) })).optional(),
   storeLabels: z.enum(["code", "number"]).optional(),
   driveMinutes: z.record(z.string().max(40), z.number().int().min(1).max(1440)).optional(),
+  driveMiles: z.record(z.string().max(40), z.number().min(0.1).max(2000)).optional(),
+  mileage: z.object({ rate: z.number().min(0).max(10).optional(), freeMiles: z.number().min(0).max(500).optional() }).optional(),
 });
 
+/** Keep the first of each key. A set, so a big file stays fast (a find per item made opening a huge file quadratic). */
+function firstOfEach<T>(items: T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const k = key(item);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 function normalizeDoc(raw: z.infer<typeof DocSchema>): ScheduleDoc {
-  const people: Person[] = raw.people
-    .filter((p, i, all) => all.findIndex((x) => x.name.trim().toLowerCase() === p.name.trim().toLowerCase()) === i)
+  const people: Person[] = firstOfEach(raw.people, (p) => p.name.trim().toLowerCase())
     .filter((p) => isRphRole(p.role))
     .map((p) => ({
       name: p.name,
@@ -138,7 +150,7 @@ function normalizeDoc(raw: z.infer<typeof DocSchema>): ScheduleDoc {
     year: raw.year,
     month: raw.month,
     // A store code or a person name can only appear once; a repeat in a hand-edited file is dropped.
-    stores: raw.stores.filter((s, i, all) => all.findIndex((x) => x.code === s.code) === i).map((s) => ({
+    stores: firstOfEach(raw.stores, (s) => s.code).map((s) => ({
       code: s.code,
       name: s.name,
       satOpen: s.satOpen,
@@ -161,6 +173,8 @@ function normalizeDoc(raw: z.infer<typeof DocSchema>): ScheduleDoc {
     ...(raw.accepted?.length ? { accepted: raw.accepted } : {}),
     ...(raw.storeLabels === "number" ? { storeLabels: "number" as const } : {}),
     ...(raw.driveMinutes && Object.keys(raw.driveMinutes).length ? { driveMinutes: Object.fromEntries(Object.entries(raw.driveMinutes).filter(([k]) => k !== "__proto__")) } : {}),
+    ...(raw.driveMiles && Object.keys(raw.driveMiles).length ? { driveMiles: Object.fromEntries(Object.entries(raw.driveMiles).filter(([k]) => k !== "__proto__")) } : {}),
+    ...(raw.mileage && (raw.mileage.rate != null || raw.mileage.freeMiles != null) ? { mileage: { ...(raw.mileage.rate != null ? { rate: raw.mileage.rate } : {}), ...(raw.mileage.freeMiles != null ? { freeMiles: raw.mileage.freeMiles } : {}) } } : {}),
     printPrefs: {
       paper: raw.printPrefs?.paper ?? DEFAULT_PRINT_PREFS.paper,
       typeSize: raw.printPrefs?.typeSize ?? DEFAULT_PRINT_PREFS.typeSize,
@@ -172,8 +186,9 @@ function normalizeDoc(raw: z.infer<typeof DocSchema>): ScheduleDoc {
   };
   // A from–to range (version 1) expands into dates here. Days the home store is closed are dropped,
   // the same as when time off is added by hand. Rows that already list dates are left as saved.
+  const rawKept = raw.timeOff.filter((t) => pharmacistNames.has(t.name));
   doc.timeOff = doc.timeOff.map((row, i) => {
-    const source = raw.timeOff.filter((t) => pharmacistNames.has(t.name))[i];
+    const source = rawKept[i];
     if (source?.dates?.length) return row;
     const { kept } = keepOpenPtoDates(doc, row.name, row.dates);
     return normalizeTimeOff({ name: row.name, dates: kept, note: row.note, status: row.status, requestedOn: row.requestedOn });
@@ -269,13 +284,14 @@ function pickWithInput(): Promise<{ text: string; name: string; handle: FileHand
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".hisp.json,.json,application/json";
-    input.addEventListener("change", async () => {
+    input.addEventListener("change", () => {
       const file = input.files?.[0];
       if (!file) {
         reject(Object.assign(new Error("cancelled"), { name: "AbortError" }));
         return;
       }
-      resolve({ text: await file.text(), name: file.name, handle: null });
+      // An unreadable file must end the wait too, not leave the Open button hanging.
+      file.text().then((text) => resolve({ text, name: file.name, handle: null }), reject);
     });
     input.addEventListener("cancel", () => {
       reject(Object.assign(new Error("cancelled"), { name: "AbortError" }));

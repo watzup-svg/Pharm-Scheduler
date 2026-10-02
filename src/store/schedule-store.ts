@@ -1,12 +1,12 @@
 import "../lib/safe-storage.ts";
+import { AUTOFILE_KEY, archiveNow, backupNow, readAutoFile, readAutosave } from "./persistence.ts";
 import { toast } from "sonner";
 import { create } from "zustand";
-import { addBackup, loadBackups, saveBackups, type Backup, type BackupReason } from "../lib/schedule/backup.ts";
+import { loadBackups } from "../lib/schedule/backup.ts";
 import { suggestedMonthFileName } from "../lib/schedule/coverage.ts";
 import {
   AUTOSAVE_KEY,
   isAbort,
-  isUsableAutosave,
   openLocalFile,
   parseDoc,
   saveLocalFile,
@@ -48,7 +48,7 @@ import { callInSickDoc } from "../lib/schedule/sick.ts";
 import { acceptKeys, openProblemKeys, pruneAccepted, unacceptKeys } from "../lib/schedule/accept.ts";
 import { closeStoreDayDoc, reopenStoreDayDoc } from "../lib/schedule/closure.ts";
 import { importGridText, type ImportResult } from "../lib/schedule/grid-import.ts";
-import { loadArchive, monthKey, putMonth, saveArchive } from "../lib/schedule/archive.ts";
+import { monthKey } from "../lib/schedule/archive.ts";
 import { PRINTED_KEY, snapshotOf } from "../lib/schedule/changes.ts";
 import type { TimeOffStatus } from "../lib/schedule/types.ts";
 import { dropSameStoreRepeats, isOpenDay, placeName, swapCells } from "../lib/schedule/place.ts";
@@ -71,46 +71,6 @@ import type {
 
 function clone<T>(v: T): T {
   return structuredClone(v);
-}
-
-function backupNow(doc: ScheduleDoc, fileName: string, reason: BackupReason) {
-  if (typeof localStorage === "undefined") return;
-  try {
-    const entry: Backup = { at: Date.now(), reason, fileName, year: doc.year, month: doc.month, json: serializeDoc(doc) };
-    saveBackups(localStorage, addBackup(loadBackups(localStorage), entry));
-  } catch {
-    /* backups are a convenience; never block an edit */
-  }
-}
-
-/** Keep one copy of each month in this browser for comparing and going back. Never blocks an edit. */
-function archiveNow(doc: ScheduleDoc, fileName: string, automatic = false) {
-  if (typeof localStorage === "undefined") return;
-  // The practice month and the September sample are made-up data. Their automatic copies must never
-  // replace a real month kept under the same year and month.
-  if (automatic && (fileName === DEMO_FILE_NAME || fileName === SAMPLE_FILE_NAME)) return;
-  try {
-    saveArchive(
-      localStorage,
-      putMonth(loadArchive(localStorage), {
-        ym: monthKey(doc.year, doc.month),
-        savedAt: Date.now(),
-        fileName,
-        json: serializeDoc(doc),
-      }),
-    );
-  } catch {
-    /* a convenience */
-  }
-}
-
-const AUTOFILE_KEY = "hischool-schedule-autofile";
-function readAutoFile(): boolean {
-  try {
-    return typeof localStorage !== "undefined" && localStorage.getItem(AUTOFILE_KEY) === "1";
-  } catch {
-    return false;
-  }
 }
 
 const INITIAL_DOC = createSample();
@@ -169,24 +129,6 @@ function withUndo(
   });
 }
 
-function readAutosave(): { doc: ScheduleDoc; fileName: string; dirty: boolean } | null {
-  if (typeof localStorage === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(AUTOSAVE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { doc: unknown; fileName?: string; dirty?: boolean };
-    const doc = parseDoc(JSON.stringify(parsed.doc));
-    if (!isUsableAutosave(doc)) return null;
-    return {
-      doc,
-      fileName: parsed.fileName || SAMPLE_FILE_NAME,
-      dirty: Boolean(parsed.dirty),
-    };
-  } catch {
-    return null;
-  }
-}
-
 export type ScheduleState = {
   doc: ScheduleDoc;
   evaluation: Evaluation;
@@ -233,6 +175,9 @@ export type ScheduleState = {
   removeTimeOff: (index: number) => void;
   /** Set (or with null clear) the drive time between two stores, in minutes. One undo step. */
   setDriveMinutes: (a: string, b: string, minutes: number | null) => void;
+  setDriveMiles: (a: string, b: string, miles: number | null) => void;
+  /** The per-mile rate (null clears it) for mileage pay. */
+  setMileageRate: (rate: number | null) => void;
   /** Add the same days for several people in one undo step. Closed days and days already logged are skipped. */
   addTimeOffMany: (input: { names: string[]; dates: string[]; note: string; status: "approved" | "requested" }) => {
     added: number;
@@ -513,6 +458,27 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       else next[key] = Math.max(1, Math.min(1440, Math.round(minutes)));
       const { driveMinutes: _drop, ...rest } = d;
       return Object.keys(next).length ? { ...rest, driveMinutes: next } : rest;
+    });
+  },
+
+  setDriveMiles: (a, b, miles) => {
+    const key = driveKey(a, b);
+    withUndo(set, get, (d) => {
+      const next = { ...(d.driveMiles ?? {}) };
+      if (miles == null) delete next[key];
+      else next[key] = Math.max(0.1, Math.min(2000, Math.round(miles * 10) / 10));
+      const { driveMiles: _drop, ...rest } = d;
+      return Object.keys(next).length ? { ...rest, driveMiles: next } : rest;
+    });
+  },
+
+  setMileageRate: (rate) => {
+    withUndo(set, get, (d) => {
+      const { mileage: _drop, ...rest } = d;
+      const next = { ...(d.mileage ?? {}) };
+      if (rate == null) delete next.rate;
+      else next.rate = Math.max(0, Math.min(10, Math.round(rate * 1000) / 1000));
+      return Object.keys(next).length ? { ...rest, mileage: next } : rest;
     });
   },
 
