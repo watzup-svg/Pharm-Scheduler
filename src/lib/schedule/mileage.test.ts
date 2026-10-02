@@ -6,7 +6,7 @@ import { parseDoc, serializeDoc } from "./file.ts";
 import { pairMiles, driveKey } from "./geo.ts";
 import { applyStore } from "./identity.ts";
 import { evaluate } from "./rules.ts";
-import { mileageFor, paidMilesFor } from "./mileage.ts";
+import { FEDERAL_RATE, mileageFor, paidMilesFor } from "./mileage.ts";
 import type { ScheduleDoc } from "./types.ts";
 
 const base = (): ScheduleDoc => createDemo();
@@ -41,11 +41,14 @@ describe("mileage pay math", () => {
     assert.equal(mileageFor({ ...doc, mileage: { rate: 0.333 } }, b!.code, a!.code).dollars, 3.33); // symmetric
   });
 
-  it("with no rate entered, shows miles and no dollars", () => {
+  it("with no rate entered, uses the federal rate (72.5 cents for 2026), and the manager's own rate replaces it", () => {
     const [a, b] = base().stores;
-    const m = mileageFor(withMiles(base(), a!.code, b!.code, 30), a!.code, b!.code);
+    const doc = withMiles(base(), a!.code, b!.code, 30);
+    const m = mileageFor(doc, a!.code, b!.code);
     assert.equal(m.paidMiles, 20);
-    assert.equal(m.dollars, null);
+    assert.equal(FEDERAL_RATE.dollarsPerMile, 0.725);
+    assert.equal(m.dollars, 14.5);
+    assert.equal(mileageFor({ ...doc, mileage: { rate: 0.7 } }, a!.code, b!.code).dollars, 14);
   });
 
   it("an unknown distance is unknown, never zero", () => {

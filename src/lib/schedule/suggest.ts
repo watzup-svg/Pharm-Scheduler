@@ -3,7 +3,7 @@ import { timeOffDates } from "./pto.ts";
 import { choicesFor, offerable, type HoleChoice } from "./dashboard.ts";
 import { driveBetween } from "./geo.ts";
 import { getCell } from "./grid.ts";
-import { mileageFor, mileageText, RANKING_RATE, type Mileage } from "./mileage.ts";
+import { mileageFor, mileageText, rateOf, type Mileage } from "./mileage.ts";
 import { isOpenDay } from "./place.ts";
 import { RPH_SLOTS } from "./slots.ts";
 import type { ScheduleDoc, SlotId } from "./types.ts";
@@ -155,7 +155,7 @@ export function rankCandidates(
         // Mileage pay counts like drive time: one dollar about one minute (half a point). Unknown distance costs like a 15-minute guess.
         if (mileage.paidMiles == null) score -= 7.5;
         else if (mileage.paidMiles > 0) {
-          score -= mileage.paidMiles * (doc.mileage?.rate ?? RANKING_RATE) * 0.5;
+          score -= mileage.paidMiles * (rateOf(doc)) * 0.5;
           reasons.push(mileageText(mileage));
         }
       }

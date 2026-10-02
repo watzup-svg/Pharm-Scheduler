@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { driveBetween, pairMiles } from "@/lib/schedule/geo";
-import { paidMilesFor, freeMilesOf } from "@/lib/schedule/mileage";
+import { paidMilesFor, freeMilesOf, rateOf, FEDERAL_RATE } from "@/lib/schedule/mileage";
 import { driveLabel, driveText } from "@/lib/schedule/suggest";
 import { useScheduleStore } from "@/store/schedule-store";
 
@@ -149,11 +149,16 @@ export function DriveTimes() {
         ) : null}
         <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 ring-1 ring-line">
           <p className="min-w-0 flex-1 text-sm text-muted">
-            Mileage pay: working away from the home store, every mile past {free} one way is paid, both ways, at the rate you enter. Until a rate is entered, the app shows miles instead of dollars.
+            Mileage pay: working away from the home store, every mile past {free} one way is paid, both ways, at the rate below.{" "}
+            {doc.mileage?.rate != null
+              ? "This is a rate you set. "
+              : `Using the ${FEDERAL_RATE.year} IRS standard business rate (effective ${FEDERAL_RATE.effective}, last checked ${FEDERAL_RATE.checked}). `}
+            The IRS changes it every year: check it each January at{" "}
+            <a className="underline" href={FEDERAL_RATE.source} target="_blank" rel="noopener noreferrer">irs.gov</a>.
           </p>
           <div className="flex flex-col gap-2">
             <Label htmlFor="mi-rate">Rate per mile ($)</Label>
-            <Input id="mi-rate" inputMode="decimal" className="w-28" value={rate} placeholder={doc.mileage?.rate != null ? doc.mileage.rate.toFixed(3).replace(/0$/, "") : "not set"} onChange={(e) => setRate(e.target.value.replace(/[^\d.]/g, "").slice(0, 6))} />
+            <Input id="mi-rate" inputMode="decimal" className="w-28" value={rate} placeholder={rateOf(doc).toFixed(3).replace(/0$/, "")} onChange={(e) => setRate(e.target.value.replace(/[^\d.]/g, "").slice(0, 6))} />
           </div>
           <Button
             type="button"
@@ -169,7 +174,7 @@ export function DriveTimes() {
           </Button>
           {doc.mileage?.rate != null ? (
             <Button type="button" variant="ghost" onClick={() => setRateOf(null)}>
-              Clear rate
+              Use the IRS rate
             </Button>
           ) : null}
         </div>

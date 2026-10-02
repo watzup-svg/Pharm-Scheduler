@@ -15,7 +15,7 @@ import { isoDate, weekdaySun0 } from "./calendar.ts";
 import { choicesFor, offerable, type HoleChoice } from "./dashboard.ts";
 import { effectiveTimeOff } from "./employment.ts";
 import { driveBetween } from "./geo.ts";
-import { mileageFor, RANKING_RATE, type Mileage } from "./mileage.ts";
+import { mileageFor, rateOf, type Mileage } from "./mileage.ts";
 import { getCell, setCellValue } from "./grid.ts";
 import { isOpenDay, placeName } from "./place.ts";
 import { personOnPto, timeOffDates } from "./pto.ts";
@@ -194,7 +194,7 @@ function edge(ctx: Ctx, name: string, store: string): Edge {
   // looks better just because it pays less than a day they were not changing. Unknown distance costs like an unknown drive.
   const mileage = mileageFor(doc, person.home, store);
   const now = at ? mileageFor(doc, person.home, at) : null;
-  const rate = doc.mileage?.rate ?? RANKING_RATE;
+  const rate = rateOf(doc);
   if (mileage.paidMiles == null) cost += 15;
   else cost += Math.max(0, mileage.paidMiles - (now?.paidMiles ?? 0)) * rate * MILEAGE_WEIGHT;
   return {
