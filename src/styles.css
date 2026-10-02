@@ -191,6 +191,30 @@
   animation: hs-fade 160ms ease-out 140ms backwards;
 }
 
+/* Noted things that draw no corner marker (the big header number) say "a note is here" with the cursor instead. */
+[data-tip-quiet] {
+  cursor: context-menu;
+  position: relative;
+}
+/* A hairline that fades in under the number on hover or focus: "there is more here", without a chip. */
+[data-tip-quiet]::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -6px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+  pointer-events: none;
+}
+[data-tip-quiet]:hover::after,
+[data-tip-quiet]:focus-visible::after {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
