@@ -12,17 +12,18 @@ import { dayPressure } from "@/lib/schedule/insight";
 import type { ScheduleDoc } from "@/lib/schedule/types";
 import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
+import { PROBLEM_NAME } from "@/lib/schedule/problem-kinds";
 
 const STATE_NAME: Record<DayTone, string> = {
   ok: "Covered",
   cover: "Covered by a float",
   away: "Covered from another store",
   off: "On time off, still scheduled",
-  hole: "No coverage",
+  hole: PROBLEM_NAME.hole,
   accepted: "Left as is",
-  double: "Two places",
-  license: "Not licensed",
-  leftover: "Name on a closed day",
+  double: PROBLEM_NAME.double,
+  license: PROBLEM_NAME.license,
+  leftover: PROBLEM_NAME.leftover,
   closed: "Closed",
 };
 

@@ -3,6 +3,7 @@ import type { FixStep } from "./fix.ts";
 import { applyNextMonthPlan, type NextMonthPlan } from "./next-month.ts";
 import { evaluate } from "./rules.ts";
 import type { ScheduleDoc } from "./types.ts";
+import { PROBLEM_KINDS } from "./problem-kinds.ts";
 
 export type NextMonthForecast = {
   /** Problems the new month would open with: the same count the header shows. */
@@ -32,7 +33,7 @@ const KIND_PHRASE: Record<FixStep["kind"], [string, string]> = {
 /** "November will start with 29 problems to fix: 26 shifts with no coverage and 3 people at two places." */
 export function forecastLine(monthLabel: string, f: NextMonthForecast): string {
   if (!f.total) return `${monthLabel} will start with nothing to fix.`;
-  const parts = (["hole", "double", "leftover", "license"] as const)
+  const parts = PROBLEM_KINDS
     .filter((k) => f.byKind[k])
     .map((k) => `${f.byKind[k]} ${KIND_PHRASE[k][f.byKind[k] === 1 ? 0 : 1]}`);
   const list = parts.length <= 1 ? parts.join("") : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;

@@ -21,9 +21,10 @@ import { type FixStep } from "@/lib/schedule/fix";
 import { issueOrder } from "@/lib/schedule/issue-cursor";
 import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
+import { PROBLEM_KINDS, PROBLEM_NAME } from "@/lib/schedule/problem-kinds";
 
-const KINDS: AlarmKind[] = ["hole", "double", "leftover", "license"];
-const KIND_NAME: Record<AlarmKind, string> = { hole: "No coverage", double: "Two places", leftover: "Name on a closed day", license: "Not licensed" };
+const KINDS: AlarmKind[] = [...PROBLEM_KINDS];
+const KIND_NAME: Record<AlarmKind, string> = PROBLEM_NAME;
 
 /** How many grid cells carry this kind of mark: a person at two stores is one problem but marks both stores. */
 const marked = (list: FixStep[]) => new Set(list.flatMap((s) => [s.store, ...s.stores].map((c) => `${c}|${s.day}`))).size;

@@ -31,7 +31,8 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - **Rename a label**: change the string where it renders; if it appears in several places, `grep` the old text, then update `artifacts/COPY_GUIDE.md`.
 - **Tweak a popup**: add or edit `data-tip` on the element; tone and mark come from `data-tip-tone` / `data-tip-mark`. Don't nest two noted elements (e2e "no note inside another note" fails).
 - **Show a store anywhere**: `const tag = useStoreTag(); tag(code)`. In pure code: `storeTag(doc, code)` from `lib/schedule/label.ts`.
-- **Add a problem type**: add it to the evaluation in `rules.ts`, a step in `fix.ts`, a mark in `marks.tsx`, a header tile in `status-strip.tsx`, and its place in `issue-cursor.ts` ordering and the print gate. About eight files today; see the problem-kinds note in `docs/WHATS_NEW.md` if that has been consolidated.
+- **Rename or reorder a problem kind**: `lib/schedule/problem-kinds.ts` (names and list order); tiles, print tiles, the issue titles, the grid legend, marks and the next-month summary all read from it.
+- **Add a problem type**: add it to `problem-kinds.ts`, the evaluation in `rules.ts`, a step in `fix.ts`, a mark in `marks.tsx`, its colours in `problem-row.tsx` and `day-view.ts`, and the print gate in `gate.ts`. Type errors on the `Record<…>` tables will point at what is missing.
 - **Add a saved setting**: make it optional in `file.ts` so old files still open, add a test that opens an older file.
 
 ## Checking your change
