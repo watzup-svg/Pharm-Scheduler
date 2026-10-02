@@ -1,4 +1,4 @@
-// `npm run sweep`: push many random schedules through the rules engine (the fuzz tests under different seeds), side by side.
+// `npm run sweep`: push many random schedules through the rules engine (the fuzz and invariant tests under different seeds), side by side.
 //   npm run sweep                         40 seeds, one process per core
 //   npm run sweep -- --seeds 200          more seeds
 //   npm run sweep -- --edits 5000         longer random runs per seed (default 1500)
@@ -27,7 +27,7 @@ const one = (seed) =>
   new Promise((done) => {
     const s0 = Date.now();
     let out = "";
-    const child = spawn(process.execPath, ["--experimental-strip-types", "--test", "src/lib/schedule/fuzz.test.ts"], { cwd: root, env: { ...process.env, FUZZ_SEED: String(seed), FUZZ_EDITS: String(edits) } });
+    const child = spawn(process.execPath, ["--experimental-strip-types", "--test", "src/lib/schedule/fuzz.test.ts", "src/lib/schedule/invariants.test.ts"], { cwd: root, env: { ...process.env, FUZZ_SEED: String(seed), FUZZ_EDITS: String(edits) } });
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (out += d));
     child.on("close", (code) => {
