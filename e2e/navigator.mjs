@@ -82,6 +82,20 @@ export default async function run() {
     check("opening it goes to that day's problem", (await page.getByRole("dialog").getByText(/Oct 18/).count()) > 0);
     await page.close();
   }
+  {
+    // On Schedule, the store row boxes the store(s) the current issue is at.
+    const { page, errors } = await open(browser, "schedule");
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    const boxed = await page.evaluate(() => [...document.querySelectorAll("[data-store-chip][data-current-issue]")].map((e) => e.getAttribute("data-store-chip")).sort().join(","));
+    check("the store row boxes the issue's stores", boxed === "EST,MOL", boxed);
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    const next = await page.evaluate(() => [...document.querySelectorAll("[data-store-chip][data-current-issue]")].map((e) => e.getAttribute("data-store-chip")).join(","));
+    check("the box moves with the next issue", next === "CAT", next);
+    check("no script errors on Schedule while stepping", errors.length === 0, errors.join(" | "));
+    await page.close();
+  }
   for (const width of [390, 320]) {
     const { page, errors } = await open(browser, "", { width, height: 800 });
     const h0 = await headerHeight(page);

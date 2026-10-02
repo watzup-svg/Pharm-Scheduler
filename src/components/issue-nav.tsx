@@ -56,6 +56,14 @@ export function selectIssue(doc: ScheduleDoc, step: FixStep) {
   // Bring the cell into view sideways (the phone grid scrolls left and right), but never scroll the page: the arrows
   // stay under her thumb so she can keep stepping. The header's leaf and title say where the issue is.
   window.requestAnimationFrame(() => {
+    // The store's chip in the Schedule store row, too: it carries the box that says which store this issue is at.
+    const chip = document.querySelector<HTMLElement>(`[data-store-chip="${step.store}"]`);
+    const row = chip?.closest<HTMLElement>(".overflow-x-auto");
+    if (chip && row) {
+      const c = chip.getBoundingClientRect();
+      const r = row.getBoundingClientRect();
+      if (c.left < r.left + 24 || c.right > r.right - 48) row.scrollLeft += c.left + c.width / 2 - (r.left + r.width / 2);
+    }
     const el =
       document.querySelector<HTMLElement>(`[data-cell="${step.store}|${step.day}"]`) ?? document.getElementById(dayDomId(step.store, step.day));
     const box = el?.closest<HTMLElement>(".overflow-x-auto");
@@ -130,7 +138,7 @@ export function IssueLead({ tip }: { tip: string }) {
   );
 }
 
-/** The calendar leaf and store badge for the issue the cursor is on. */
+/** The store badge for the issue the cursor is on. The date is in the ring and the title, so there is no calendar leaf. */
 export function IssueLeaf({ step }: { step: FixStep }) {
   const { doc } = useIssueNav();
   const open = useOpenIssue();
@@ -144,14 +152,9 @@ export function IssueLeaf({ step }: { step: FixStep }) {
       onClick={() => open(doc, step)}
       data-tip={`${store?.name ?? step.store} | ${wd} ${mon} ${step.day} | Open this day`}
       aria-label={`Open ${store?.name ?? step.store}, ${wd} ${mon} ${step.day}`}
-      className="relative flex shrink-0 items-center gap-3 rounded-xl px-1 py-0.5 outline-offset-2 hover:bg-white/10"
+      className="relative flex shrink-0 items-center rounded-xl px-1 py-1 outline-offset-2 hover:bg-white/10 max-[359px]:hidden"
     >
-      <span className="relative block w-14 shrink-0 overflow-hidden rounded-lg bg-white text-center shadow-[0_8px_18px_-8px_rgba(0,0,0,0.7)]">
-        <span className="block bg-illegal text-[10px] leading-4 font-bold tracking-widest text-white">{mon.toUpperCase()}</span>
-        <span className="block text-3xl leading-8 font-bold tabular-nums text-ink">{step.day}</span>
-        <span className="block pb-0.5 text-[10px] leading-3 font-semibold text-muted">{wd.toUpperCase()}</span>
-      </span>
-      <HexBadge code={tag(step.store)} tone="bad" className="h-8 max-[359px]:hidden" />
+      <HexBadge code={tag(step.store)} tone="bad" className="h-12 max-sm:h-10" />
     </button>
   );
 }
@@ -164,8 +167,8 @@ export function IssueTitle({ step, className }: { step: FixStep; className?: str
   const title = issueTitle(doc, step, short);
   return (
     <div key={title} className={cn("hs-fade flex min-w-0 items-center gap-2", className)}>
-      <AlarmMark kind={step.kind} size={24} tip={false} onDark />
-      <button type="button" onClick={() => open(doc, step)} data-tip={`${title} | Open this day`} className="min-w-0 rounded-md text-left text-[15px] leading-5 font-semibold text-white outline-offset-2 hover:underline">
+      <AlarmMark kind={step.kind} size={28} tip={false} onDark />
+      <button type="button" onClick={() => open(doc, step)} data-tip={`${title} | Open this day`} className="min-w-0 rounded-md text-left text-lg leading-6 font-semibold text-white outline-offset-2 hover:underline max-sm:text-base max-sm:leading-5">
         {/* The date never breaks across lines ("Tue Oct 6" stays together). */}
         <span className="line-clamp-2">{title.replace(/(\w{3}) (\w{3}) (\d+)$/, "$1\u00a0$2\u00a0$3")}</span>
       </button>
