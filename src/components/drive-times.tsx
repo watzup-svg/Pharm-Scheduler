@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { driveBetween } from "@/lib/schedule/geo";
+import { driveBetween, pairMiles } from "@/lib/schedule/geo";
+import { paidMilesFor, freeMilesOf } from "@/lib/schedule/mileage";
 import { driveLabel, driveText } from "@/lib/schedule/suggest";
 import { useScheduleStore } from "@/store/schedule-store";
 
@@ -20,6 +21,10 @@ export function DriveTimes() {
   const [from, setFrom] = useState(doc.stores[0]?.code ?? "");
   const [to, setTo] = useState(doc.stores[1]?.code ?? "");
   const [minutes, setMinutes] = useState("");
+  const [miles, setMiles] = useState("");
+  const [rate, setRate] = useState("");
+  const setMilesFor = useScheduleStore((s) => s.setDriveMiles);
+  const setRateOf = useScheduleStore((s) => s.setMileageRate);
   const pair = from && to && from !== to ? driveBetween(doc, from, to) : null;
   const nearest = useMemo(
     () =>
@@ -32,6 +37,14 @@ export function DriveTimes() {
     [doc, from],
   );
   const hand = Object.entries(doc.driveMinutes ?? {});
+  const pairM = from && to && from !== to ? pairMiles(doc, from, to) : null;
+  const free = freeMilesOf(doc);
+  const missing = useMemo(() => {
+    const out: string[] = [];
+    for (let i = 0; i < doc.stores.length; i++)
+      for (let j = i + 1; j < doc.stores.length; j++) if (pairMiles(doc, doc.stores[i]!.code, doc.stores[j]!.code).source === "missing") out.push(`${doc.stores[i]!.code} ↔ ${doc.stores[j]!.code}`);
+    return out;
+  }, [doc]);
   const name = (code: string) => doc.stores.find((s) => s.code === code)?.name ?? code;
 
   if (doc.stores.length < 2) return null;
@@ -102,6 +115,70 @@ export function DriveTimes() {
         ) : (
           <p className="text-sm text-muted">{from === to ? "Choose two different stores." : "One of these has no location, so there is no estimate. Set a time to use one."}</p>
         )}
+        {pairM ? (
+          <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 ring-1 ring-line">
+            <p className="min-w-0 flex-1 text-sm">
+              <span className="font-semibold">{pairM.miles == null ? "Miles unknown" : `${pairM.miles} mi one way`}</span>
+              <span className="text-muted">
+                {pairM.source === "set" ? " · set by you" : pairM.source === "estimated" ? " · an estimate from the store locations" : " · no location, so no estimate"}
+                {pairM.miles != null && pairM.miles > free ? ` · ${paidMilesFor(pairM.miles, free)} paid mi a day if worked away from home` : ""}
+              </span>
+            </p>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="dt-miles">Miles</Label>
+              <Input id="dt-miles" inputMode="decimal" className="w-28" value={miles} placeholder={pairM.miles != null ? String(pairM.miles) : ""} onChange={(e) => setMiles(e.target.value.replace(/[^\d.]/g, "").slice(0, 6))} />
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!(Number(miles) >= 0.1)}
+              onClick={() => {
+                setMilesFor(from, to, Number(miles));
+                announce(`${tag(from)} to ${tag(to)} set to ${miles} miles`);
+                setMiles("");
+              }}
+            >
+              Set miles
+            </Button>
+            {pairM.source === "set" && from !== to && doc.driveMiles?.[[from, to].sort().join("|")] != null ? (
+              <Button type="button" variant="ghost" onClick={() => setMilesFor(from, to, null)}>
+                Use the estimate
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 ring-1 ring-line">
+          <p className="min-w-0 flex-1 text-sm text-muted">
+            Mileage pay: working away from the home store, every mile past {free} one way is paid, both ways, at the rate you enter. Until a rate is entered, the app shows miles instead of dollars.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="mi-rate">Rate per mile ($)</Label>
+            <Input id="mi-rate" inputMode="decimal" className="w-28" value={rate} placeholder={doc.mileage?.rate != null ? doc.mileage.rate.toFixed(3).replace(/0$/, "") : "not set"} onChange={(e) => setRate(e.target.value.replace(/[^\d.]/g, "").slice(0, 6))} />
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={rate === "" || !Number.isFinite(Number(rate))}
+            onClick={() => {
+              setRateOf(Number(rate));
+              announce(`Mileage rate set to $${Number(rate)} a mile`);
+              setRate("");
+            }}
+          >
+            Set rate
+          </Button>
+          {doc.mileage?.rate != null ? (
+            <Button type="button" variant="ghost" onClick={() => setRateOf(null)}>
+              Clear rate
+            </Button>
+          ) : null}
+        </div>
+        {missing.length ? (
+          <p className="text-sm text-muted" role="status">
+            No distance known for {missing.length} pair{missing.length === 1 ? "" : "s"} ({missing.slice(0, 6).join(", ")}
+            {missing.length > 6 ? ", …" : ""}). Mileage for those shows as unknown, never as zero. Set miles above, or add the store locations.
+          </p>
+        ) : null}
         {nearest.length ? (
           <p className="text-sm text-muted">
             Nearest to {tag(from)}: {nearest.map((x) => `${tag(x.s.code)} ${driveLabel(x.d.minutes, x.d.estimated)}`).join(" · ")}

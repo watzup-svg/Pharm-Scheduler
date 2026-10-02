@@ -130,7 +130,7 @@ describe("cover plans", () => {
   it("refuses a plan that would break the day, and changes nothing", () => {
     const doc = createDemo();
     const h = holesOf(doc)[0]!;
-    const bogus = { moves: [{ name: "Nobody Real", float: false, from: null, origin: null, to: h.store, minutes: 10, miles: 5, estimated: true, fillsTarget: true }] };
+    const bogus = { moves: [{ name: "Nobody Real", float: false, from: null, origin: null, to: h.store, minutes: 10, miles: 5, estimated: true, mileage: { oneWay: 0, paidMiles: 0, dollars: null, source: "set" as const }, fillsTarget: true }] };
     const res = applyCoverPlan(doc, bogus, h.day);
     assert.equal(res.ok, false);
     assert.equal(res.doc, doc);

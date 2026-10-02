@@ -6,6 +6,7 @@ import { announce } from "@/components/undo";
 import { useStoreTag } from "@/components/use-store-tag";
 import { bestDirectDrive, coverPlans, type CoverMove, type CoverPlan } from "@/lib/schedule/cover-plan";
 import { shortStoreName } from "@/lib/schedule/fix";
+import { mileageText } from "@/lib/schedule/mileage";
 import { driveLabel, driveText } from "@/lib/schedule/suggest";
 import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
@@ -76,6 +77,13 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
                 {p.extreme ? "long drive " : "longest "}
                 {driveLabel(p.longest, p.estimated)}
               </span>
+              {p.mileageUnknown ? (
+                <span data-tip="A distance from a home store is unknown, so its mileage is not counted" className="rounded-full bg-warn-bg px-2 py-0.5 text-xs font-bold text-warn">mileage unknown</span>
+              ) : p.paidMiles > 0 ? (
+                <span data-tip={`${p.paidMiles} paid miles in all, both ways, past 20 miles from each home store`} className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-ink ring-1 ring-line">
+                  {p.mileageDollars != null ? `$${p.mileageDollars.toFixed(2)} mileage` : `${p.paidMiles} paid mi`}
+                </span>
+              ) : null}
               {p.unknown ? <span data-tip="No drive time is known for one of these moves, so 1 hour is assumed" className="rounded-full bg-warn-bg px-2 py-0.5 text-xs font-bold text-warn">time unknown</span> : null}
               <span className="flex-1" />
               <Button type="button" size="sm" variant={i === 0 ? "default" : "secondary"} onClick={() => use(p)}>
@@ -97,6 +105,7 @@ function MoveLine({ m, tag }: { m: CoverMove; tag: (code: string) => string }) {
       <span className="font-semibold">{first(m.name)}</span>
       <span className="text-muted">{m.float ? "float · " : ""}{leaves ? `${leaves} → ` : "→ "}<span className="font-semibold text-ink">{tag(m.to)}</span></span>
       <span className="text-muted">{m.minutes == null ? "time unknown" : m.minutes === 0 ? "home store" : driveLabel(m.minutes, m.estimated)}</span>
+      {m.mileage.paidMiles !== 0 ? <span className="text-xs text-muted">{mileageText(m.mileage)}</span> : null}
       {m.from && m.leftWith?.length ? <span className="basis-full text-xs text-muted">{tag(m.from)} keeps {m.leftWith.map(first).join(" and ")}</span> : null}
     </li>
   );

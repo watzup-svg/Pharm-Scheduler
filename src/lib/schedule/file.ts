@@ -97,6 +97,8 @@ const DocSchema = z.object({
   accepted: z.array(z.object({ key: z.string().min(3).max(140), at: z.string().max(40) })).optional(),
   storeLabels: z.enum(["code", "number"]).optional(),
   driveMinutes: z.record(z.string().max(40), z.number().int().min(1).max(1440)).optional(),
+  driveMiles: z.record(z.string().max(40), z.number().min(0.1).max(2000)).optional(),
+  mileage: z.object({ rate: z.number().min(0).max(10).optional(), freeMiles: z.number().min(0).max(500).optional() }).optional(),
 });
 
 /** Keep the first of each key. A set, so a big file stays fast (a find per item made opening a huge file quadratic). */
@@ -171,6 +173,8 @@ function normalizeDoc(raw: z.infer<typeof DocSchema>): ScheduleDoc {
     ...(raw.accepted?.length ? { accepted: raw.accepted } : {}),
     ...(raw.storeLabels === "number" ? { storeLabels: "number" as const } : {}),
     ...(raw.driveMinutes && Object.keys(raw.driveMinutes).length ? { driveMinutes: Object.fromEntries(Object.entries(raw.driveMinutes).filter(([k]) => k !== "__proto__")) } : {}),
+    ...(raw.driveMiles && Object.keys(raw.driveMiles).length ? { driveMiles: Object.fromEntries(Object.entries(raw.driveMiles).filter(([k]) => k !== "__proto__")) } : {}),
+    ...(raw.mileage && (raw.mileage.rate != null || raw.mileage.freeMiles != null) ? { mileage: { ...(raw.mileage.rate != null ? { rate: raw.mileage.rate } : {}), ...(raw.mileage.freeMiles != null ? { freeMiles: raw.mileage.freeMiles } : {}) } } : {}),
     printPrefs: {
       paper: raw.printPrefs?.paper ?? DEFAULT_PRINT_PREFS.paper,
       typeSize: raw.printPrefs?.typeSize ?? DEFAULT_PRINT_PREFS.typeSize,
