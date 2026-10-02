@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { issueCells, useIssueNav } from "@/components/issue-nav";
-import { useNote } from "@/components/hover-note";
+import { armMarker, clearMarker, useNote } from "@/components/hover-note";
 import { MARK_ORDER, StateMark, type AlarmKind } from "@/components/marks";
 import { useStoreTag } from "@/components/use-store-tag";
 import { weekdayShort, weekdaySun0, monthName, todayParts } from "@/lib/schedule/calendar";
@@ -143,13 +143,17 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
     const row = rows[r]!;
     return cellLines(doc, row.code, c + 1, row.tones[c]!);
   }
+  /** The note leads with the cell's own mark, and its edge says problem, off, covered or closed. */
+  function noteTone(r: number, c: number) {
+    const tone = rows[r]!.tones[c]!;
+    return ALARM[tone] ? "bad" : tone === "off" ? "off" : tone === "ok" || tone === "cover" || tone === "away" ? "ok" : "plain";
+  }
   function showFor(el: HTMLElement, r: number, c: number) {
     const b = el.getBoundingClientRect();
     const tone = rows[r]!.tones[c]!;
-    // The note leads with the cell's own mark, and its edge says problem, off, covered or closed.
     const alarm = ALARM[tone];
     show(b.left + b.width / 2, b.top, lines(r, c), {
-      tone: alarm ? "bad" : tone === "off" ? "off" : tone === "ok" || tone === "cover" || tone === "away" ? "ok" : "plain",
+      tone: noteTone(r, c),
       mark: alarm ? { kind: alarm } : tone === "off" ? { kind: "timeOff" } : tone === "cover" || tone === "away" ? { kind: "covering" } : tone === "accepted" ? { kind: "asis" } : null,
     });
   }
@@ -179,7 +183,7 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
 
   return (
     <div className="relative">
-    <div ref={root} className="overflow-x-auto" onPointerLeave={hide} onScroll={() => { hide(); measure(); }}>
+    <div ref={root} className="overflow-x-auto" onPointerLeave={clearMarker} onScroll={() => { hide(); measure(); }}>
       <div role="grid" aria-label={`${monthName(doc.year, doc.month)}, every store by day`} className="grid min-w-[34rem] gap-y-[3px]" style={{ gridTemplateColumns: `3rem repeat(${days}, minmax(0, 1fr))`, columnGap: 2 }}>
         <div role="row" className="contents">
         <span role="presentation" />
@@ -232,12 +236,16 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
                   tabIndex={cursor.r === r && cursor.c === c ? 0 : -1}
                   aria-label={cellLines(doc, row.code, c + 1, tone, true).slice(0, 2).join(". ")}
                   onPointerDown={(e) => (touch.current = e.pointerType === "touch")}
-                  onPointerEnter={(e) => e.pointerType !== "touch" && showFor(e.currentTarget, r, c)}
+                  onPointerEnter={(e) => e.pointerType !== "touch" && armMarker(e.currentTarget, noteTone(r, c))}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    showFor(e.currentTarget, r, c);
+                  }}
                   onFocus={(e) => {
                     setCursor({ r, c });
-                    if (e.currentTarget.matches(":focus-visible")) showFor(e.currentTarget, r, c);
+                    if (e.currentTarget.matches(":focus-visible")) armMarker(e.currentTarget, noteTone(r, c));
                   }}
-                  onBlur={hide}
+                  onBlur={clearMarker}
                   onKeyDown={(e) => onKey(e, r, c)}
                   onClick={(e) => {
                     if (touch.current && !selected) {

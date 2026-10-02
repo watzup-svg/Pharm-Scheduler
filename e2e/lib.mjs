@@ -32,6 +32,13 @@ export function check(name, ok, detail = "") {
 }
 export const failed = () => failures;
 
+/** Open a note: notes open on right click (hover only draws a small marker). */
+export async function rightClick(locator, options = {}) {
+  await locator.scrollIntoViewIfNeeded();
+  await locator.click({ button: "right", ...options });
+  await locator.page().waitForTimeout(250);
+}
+
 /** Press and hold a HoldButton long enough to fire it. */
 export async function hold(page, locator, ms = 1100) {
   const box = await locator.boundingBox();

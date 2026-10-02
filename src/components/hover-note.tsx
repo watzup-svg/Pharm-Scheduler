@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { StateMark, type MarkKind } from "@/components/marks";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +61,107 @@ export function noteStyleOf(el: Element): { tone: NoteTone; mark: NoteMark } {
   return { tone, mark };
 }
 
+/**
+ * Notes open on right click (the menu key / Shift+F10 on the keyboard, a long press on touch), never on hover. Pointing at
+ * something that has a note only draws a tiny marker on its corner, so you can tell more is there. One note at a time.
+ */
+const CLOSE = "hischool-close-notes";
+/** Close every open note. Anything about to open one calls this first. */
+export function closeNotes() {
+  window.dispatchEvent(new Event(CLOSE));
+}
+
+type Marker = { left: number; top: number; tone: NoteTone } | null;
+let marker: Marker = null;
+const markerListeners = new Set<() => void>();
+const setMarker = (m: Marker) => {
+  marker = m;
+  markerListeners.forEach((f) => f());
+};
+/** Draw the "more here" marker on a noted element's corner. Mouse, pen and keyboard focus only. */
+export function armMarker(el: Element, tone: NoteTone = "plain") {
+  const r = el.getBoundingClientRect();
+  if (!r.width && !r.height) return;
+  const next = { left: Math.min(Math.max(r.right - 11, 2), window.innerWidth - 20), top: Math.max(r.top - 5, 2), tone };
+  if (marker && marker.left === next.left && marker.top === next.top && marker.tone === tone) return;
+  setMarker(next);
+}
+export function clearMarker() {
+  if (marker) setMarker(null);
+}
+
+const DOT: Record<NoteTone, string> = { bad: "bg-illegal", off: "bg-warn", ok: "bg-ok", plain: "bg-ink/55" };
+
+/** The marker itself: a small white chip with three dots in the subject's colour. Mounted once, with the hover notes. */
+export function NoteMarker() {
+  const m = useSyncExternalStore(
+    (f) => (markerListeners.add(f), () => void markerListeners.delete(f)),
+    () => marker,
+  );
+  if (!m) return null;
+  return (
+    <span
+      aria-hidden
+      data-note-marker={m.tone}
+      style={{ left: m.left, top: m.top }}
+      className="note-marker pointer-events-none fixed z-[59] flex h-[11px] w-[17px] items-center justify-center gap-[2px] rounded-[4px] bg-white shadow-sm ring-1 ring-black/30 print:hidden"
+    >
+      {[0, 1, 2].map((i) => (
+        <span key={i} className={cn("size-[3px] rounded-full", DOT[m.tone])} />
+      ))}
+    </span>
+  );
+}
+
+/** A long press on touch, which has no right click. The click that follows the press is swallowed so it doesn't also act. */
+let swallowClickUntil = 0;
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "click",
+    (e) => {
+      if (Date.now() < swallowClickUntil) {
+        swallowClickUntil = 0;
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    },
+    true,
+  );
+}
+const HOLD_MS = 500;
+export function longPress(onFire: () => void) {
+  let timer = 0;
+  let sx = 0;
+  let sy = 0;
+  const stop = () => window.clearTimeout(timer);
+  return {
+    onPointerDown: (e: { pointerType: string; clientX: number; clientY: number }) => {
+      if (e.pointerType !== "touch") return;
+      sx = e.clientX;
+      sy = e.clientY;
+      stop();
+      timer = window.setTimeout(() => {
+        swallowClickUntil = Date.now() + 1200;
+        onFire();
+      }, HOLD_MS);
+    },
+    onPointerMove: (e: { clientX: number; clientY: number }) => {
+      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 10) stop();
+    },
+    onPointerUp: stop,
+    onPointerCancel: stop,
+  };
+}
+
+/** Where a right click opens a note: at the pointer, or on the element when the menu key started it (no pointer position). */
+export function menuPoint(e: { clientX: number; clientY: number; currentTarget: Element }): { x: number; y: number } {
+  if (e.clientX === 0 && e.clientY === 0) {
+    const r = e.currentTarget.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top };
+  }
+  return { x: e.clientX, y: e.clientY };
+}
+
 type Note = { x: number; y: number; dx: number; lines: string[]; tone: NoteTone; mark: NoteMark };
 
 /**
@@ -70,11 +171,29 @@ type Note = { x: number; y: number; dx: number; lines: string[]; tone: NoteTone;
 export function useNote() {
   const [note, setNote] = useState<Note | null>(null);
   const show = useCallback((x: number, y: number, lines: string[], style?: { tone?: NoteTone; mark?: NoteMark }) => {
+    closeNotes();
     const half = 136;
     const cx = Math.min(Math.max(x, half), Math.max(half, window.innerWidth - half));
     setNote({ x: cx, y, dx: x - cx, lines, tone: style?.tone ?? "plain", mark: style?.mark ?? null });
   }, []);
   const hide = useCallback(() => setNote(null), []);
+  // Open until you click elsewhere, press Escape, scroll, or another note opens.
+  const isOpen = note != null;
+  useEffect(() => {
+    if (!isOpen) return;
+    const off = () => setNote(null);
+    const key = (e: KeyboardEvent) => e.key === "Escape" && off();
+    document.addEventListener("pointerdown", off);
+    document.addEventListener("keydown", key);
+    window.addEventListener("scroll", off, true);
+    window.addEventListener(CLOSE, off);
+    return () => {
+      document.removeEventListener("pointerdown", off);
+      document.removeEventListener("keydown", key);
+      window.removeEventListener("scroll", off, true);
+      window.removeEventListener(CLOSE, off);
+    };
+  }, [isOpen]);
   const card = note ? (
     <div
       role="tooltip"
