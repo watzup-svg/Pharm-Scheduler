@@ -41,7 +41,7 @@ function SickBody({ seed, close }: { seed: { name: string; day: number }; close:
   const [name, setName] = useState(seed.name);
   const [picked, setPicked] = useState<string[]>([isoDate(doc.year, doc.month, Math.min(startDay, last))]);
   const loads = useMemo(() => dayLoads(doc), [doc]);
-  // Set once "Mark out sick" is pressed: from then on this list is what still needs cover.
+  // Set once "Add time off" is pressed: from then on this list is what still needs cover.
   const [reason, setReason] = useState<"Called in sick" | "Time off">("Called in sick");
   const [marked, setMarked] = useState<SickShift[] | null>(null);
   const [showDouble, setShowDouble] = useState<string>("");
@@ -64,7 +64,7 @@ function SickBody({ seed, close }: { seed: { name: string; day: number }; close:
     const list = sickShifts(doc, name, days);
     callInSick(name, days, reason);
     setMarked(list);
-    announce(`${name} marked out${reason === "Called in sick" ? " sick" : ""}, ${days.length === 1 ? dateLabel(days[0]!) : `${dateLabel(days[0]!)} to ${dateLabel(days[days.length - 1]!)}`}`);
+    announce(`${name} is out${reason === "Called in sick" ? " sick" : ""}, ${days.length === 1 ? dateLabel(days[0]!) : `${dateLabel(days[0]!)} to ${dateLabel(days[days.length - 1]!)}`}`);
   }
 
   function place(s: SickShift, who: string) {
@@ -154,14 +154,14 @@ function SickBody({ seed, close }: { seed: { name: string; day: number }; close:
               Cancel
             </Button>
             <Button type="button" variant="away" disabled={!name || !days.length} onClick={mark}>
-              {shifts.length ? "Mark out and find cover" : "Mark out"}
+              {shifts.length ? "Add time off and find cover" : "Add time off"}
             </Button>
           </div>
           {!name || !days.length ? <p className="-mt-1 text-right text-xs text-muted">{!name ? "Choose who is out." : "Choose at least one day."}</p> : null}
         </div>
       ) : (
         <div className="flex flex-col gap-3 text-sm">
-          {marked.length === 0 ? <p className="text-muted">{name} is marked out. No shifts need cover.</p> : null}
+          {marked.length === 0 ? <p className="text-muted">{name}’s time off is in. No shifts need cover.</p> : null}
           <ul className="-mx-1 flex max-h-[62dvh] flex-col gap-3 overflow-y-auto overscroll-contain px-1 py-1">
             {marked.map((s) => {
               const key = `${s.store}|${s.day}|${s.slot}`;

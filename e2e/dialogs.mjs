@@ -16,7 +16,7 @@ export default async function run() {
   for (const size of [{ width: 1366, height: 900 }, { width: 390, height: 844 }]) {
     const tag = `@${size.width}`;
     let { page: p } = await open(browser, "schedule", size);
-    await p.getByRole("button", { name: /Someone called in sick/ }).first().click();
+    await p.getByRole("button", { name: /Someone’s out/ }).first().click();
     await p.waitForTimeout(400);
     await scan(p, `sick dialog ${tag}`);
     await p.keyboard.press("Escape");

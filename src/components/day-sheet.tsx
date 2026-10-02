@@ -907,7 +907,7 @@ function OutButton({ name, knownReason }: { name: string; knownReason: boolean }
       }}
     >
       <Mark icon="timeOff" tip={false} />
-      {knownReason ? "Find cover…" : "Mark out…"}
+      {knownReason ? "Find cover…" : "Out that day…"}
     </Button>
   );
 }

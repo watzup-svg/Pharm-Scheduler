@@ -27,7 +27,7 @@ export default async function run() {
   {
     const YELLOW = "rgb(244, 226, 163)";
     let { page } = await open(browser, "");
-    check("Mark out is yellow", (await page.getByRole("button", { name: "Someone called in sick" }).first().evaluate((e) => getComputedStyle(e).backgroundColor)) === YELLOW);
+    check("Someone’s out is yellow", (await page.getByRole("button", { name: /^Someone’s out/ }).first().evaluate((e) => getComputedStyle(e).backgroundColor)) === YELLOW);
     await page.close();
     ({ page } = await open(browser, "time-off"));
     check("Add time off is yellow", (await page.getByRole("button", { name: "Add time off", exact: true }).evaluate((e) => getComputedStyle(e).backgroundColor)) === YELLOW);

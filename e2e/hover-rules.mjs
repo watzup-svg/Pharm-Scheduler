@@ -68,10 +68,10 @@ export default async function run() {
     let bad = await page.evaluate(audit);
     check(`the day panel has one note per spot @${width}`, !Object.values(bad).flat().length, Object.values(bad).flat().slice(0, 2).join(" | "));
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Someone called in sick" }).first().click();
+    await page.getByRole("button", { name: /^Someone’s out/ }).first().click();
     await page.waitForTimeout(400);
     bad = await page.evaluate(audit);
-    check(`the Mark out dialog has one note per spot @${width}`, !Object.values(bad).flat().length, Object.values(bad).flat().slice(0, 2).join(" | "));
+    check(`the Someone’s out dialog has one note per spot @${width}`, !Object.values(bad).flat().length, Object.values(bad).flat().slice(0, 2).join(" | "));
     await page.close();
     const t = await open(browser, "time-off", { width, height: 900 });
     await t.page.getByRole("button", { name: "Add time off", exact: true }).first().click();
