@@ -144,7 +144,13 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
   }
   function showFor(el: HTMLElement, r: number, c: number) {
     const b = el.getBoundingClientRect();
-    show(b.left + b.width / 2, b.top, lines(r, c));
+    const tone = rows[r]!.tones[c]!;
+    // The note leads with the cell's own mark, and its edge says problem, off, covered or closed.
+    const alarm = ALARM[tone];
+    show(b.left + b.width / 2, b.top, lines(r, c), {
+      tone: alarm ? "bad" : tone === "off" ? "off" : tone === "ok" || tone === "cover" || tone === "away" ? "ok" : "plain",
+      mark: alarm ? { kind: alarm } : tone === "off" ? { kind: "timeOff" } : tone === "cover" || tone === "away" ? { kind: "covering" } : tone === "accepted" ? { kind: "asis" } : null,
+    });
   }
   function focusCell(r: number, c: number) {
     const rr = Math.min(Math.max(r, 0), rows.length - 1);
@@ -206,7 +212,7 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
         </div>
         {rows.map((row, r) => (
           <div key={row.code} role="row" className="contents">
-            <span role="rowheader" data-tip={row.name} className="pr-1 text-xs leading-[24px] font-semibold text-muted">
+            <span role="rowheader" data-tip={row.name} className="pr-1 text-xs leading-[24px] font-bold text-ink/80">
               {tag(row.code)}
             </span>
             {row.tones.map((tone, c) => {

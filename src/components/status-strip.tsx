@@ -116,6 +116,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
                 n={list.length}
                 tone="bad"
                 current={(nav.kind ?? current?.kind) === k}
+                mark={k}
                 hover={hoverProps([...new Set(list.map((s) => s.day))], stepCells(list), true)}
                 tip={`${KIND_NAME[k]} · ${list.length} | ${list[0]!.headline}${marked(list) !== list.length ? ` | ${marked(list)} marks on the grid, one for each store involved` : ""} | ${nav.kind === k ? "Click to step through every kind again" : "Click to step through only these"}`}
                 onClick={() => toggleIssueKind(doc, ordered, k)}
@@ -126,6 +127,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
           })}
           {accepted.length ? (
             <HeroCount
+              mark="asis"
               n={accepted.length}
               tip={`Left as is · ${accepted.length} | Problems you decided to print as they are. ${accepted[0]!.label}`}
               onClick={() => {
@@ -137,7 +139,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
             </HeroCount>
           ) : null}
           {waiting ? (
-            <HeroCount n={waiting} tone="warn" tip={`Time off waiting · ${waiting} | Requests you have not decided`} onClick={() => void navigate({ to: "/time-off" })}>
+            <HeroCount mark="waiting" n={waiting} tone="warn" tip={`Time off waiting · ${waiting} | Requests you have not decided`} onClick={() => void navigate({ to: "/time-off" })}>
               <StateMark kind="waiting" size={28} tip={false} />
             </HeroCount>
           ) : null}
@@ -169,7 +171,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
               Clear
             </Button>
           ) : null}
-          <Button type="button" variant="away" aria-label="Someone’s out: called in sick or can’t come" data-tip="Someone’s out | Called in sick or can’t come. Logs the time off and finds cover for their shifts" onClick={() => openSick()}>
+          <Button type="button" variant="away" aria-label="Someone’s out: called in sick or can’t come" data-tip-tone="off" data-tip-mark="timeOff" data-tip="Someone’s out | Called in sick or can’t come. Logs the time off and finds cover for their shifts" onClick={() => openSick()}>
             <Mark icon="timeOff" tip={false} />
             Someone’s out
           </Button>

@@ -140,11 +140,11 @@ export function IssueLead({ tip }: { tip: string }) {
         if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(e.clientY - s.y) * 1.5) step(dx < 0 ? 1 : -1);
       }}
     >
-      <button type="button" className={cn(ARROW, "-ml-2")} disabled={done} aria-label="Previous issue" data-tip="Previous issue | Steps back through the month. Nothing changes until you choose" onClick={() => step(-1)}>
+      <button type="button" className={cn(ARROW, "-ml-2")} disabled={done} aria-label="Previous issue" data-tip-place="below" data-tip="Previous issue | Steps back through the month. Nothing changes until you choose" onClick={() => step(-1)}>
         <ChevronLeft aria-hidden />
       </button>
       <HeroLead n={total} tone="bad" done={done} tip={current ? `${issueTitle(doc, current)} | Open this day` : tip} onClick={ordered[0] ? () => open(doc, current ?? ordered[0]!) : undefined} />
-      <button type="button" className={ARROW} disabled={done} aria-label="Next issue" data-tip="Next issue | Steps forward through the month. Nothing changes until you choose" onClick={() => step(1)}>
+      <button type="button" className={ARROW} disabled={done} aria-label="Next issue" data-tip-place="below" data-tip="Next issue | Steps forward through the month. Nothing changes until you choose" onClick={() => step(1)}>
         <ChevronRight aria-hidden />
       </button>
       {current ? (
@@ -170,13 +170,15 @@ export function IssueLeaf({ step }: { step: FixStep }) {
       type="button"
       onClick={() => open(doc, step)}
       data-tip={`${names} | ${wd} ${mon} ${step.day} | Open this day`}
+      data-tip-tone="bad"
+      data-tip-mark={step.kind}
       aria-label={`Open ${names}, ${wd} ${mon} ${step.day}`}
       className="relative flex shrink-0 items-center rounded-xl px-1 py-1 outline-offset-2 hover:bg-white/10 max-[359px]:hidden"
     >
       {/* "Two places" names both stores, the same ones boxed in the store row below. */}
       <span className="flex items-center gap-1">
         {[...new Set([step.store, ...step.stores])].map((code) => (
-          <HexBadge key={code} code={tag(code)} tone="bad" className="h-12 max-sm:h-10" />
+          <HexBadge key={code} code={tag(code)} tone="muted" className="h-12 max-sm:h-10" />
         ))}
       </span>
     </button>
@@ -195,7 +197,7 @@ export function IssueTitle({ step, className }: { step: FixStep; className?: str
         {/* The date never breaks across lines ("Tue Oct 6" stays together). */}
         <span className="line-clamp-2">{title.replace(/(\w{3}) (\w{3}) (\d+)$/, "$1\u00a0$2\u00a0$3")}</span>
       </button>
-      <button type="button" onClick={clearIssue} aria-label="Stop stepping through issues" data-tip="Done | Back to the month at a glance" className="grid size-11 shrink-0 place-items-center rounded-xl text-white/60 outline-none hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70 [&_svg]:size-5">
+      <button type="button" onClick={clearIssue} aria-label="Stop stepping through issues" data-tip-place="below" data-tip="Done | Back to the month at a glance" className="grid size-11 shrink-0 place-items-center rounded-xl text-white/60 outline-none hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70 [&_svg]:size-5">
         <X aria-hidden />
       </button>
     </div>

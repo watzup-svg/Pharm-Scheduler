@@ -65,7 +65,7 @@ export function HeroLead({ n, tone = "plain", icon, mark, tip, onClick, done = f
   const aria = tip.replace(" | ", ". ");
   if (done) {
     return (
-      <span data-tip={tip} role="img" aria-label={aria} className="grid size-16 shrink-0 place-items-center rounded-full bg-ok-lite text-night shadow-[0_0_28px_rgba(111,183,141,0.45)]">
+      <span data-tip={tip} data-tip-tone={tone === "bad" ? "bad" : tone === "warn" ? "off" : undefined} data-tip-mark={mark} role="img" aria-label={aria} className="grid size-16 shrink-0 place-items-center rounded-full bg-ok-lite text-night shadow-[0_0_28px_rgba(111,183,141,0.45)]">
         <Check aria-hidden className="size-9" />
       </span>
     );
@@ -93,7 +93,7 @@ export function HeroLead({ n, tone = "plain", icon, mark, tip, onClick, done = f
  * `current`: the kind of issue the header arrows are on. It is drawn chosen, like a chosen store chip: solid light fill
  * with dark text, so the row says which kind is being worked on by fill and contrast, not hue alone.
  */
-export function HeroCount({ n, tip, children, onClick, tone = "plain", label, current, hover }: { n: number | string; tip: string; children?: React.ReactNode; onClick?: () => void; tone?: HeroTone; label?: string; current?: boolean; hover?: { onPointerEnter: (e: React.PointerEvent) => void; onPointerLeave: () => void } }) {
+export function HeroCount({ n, tip, children, onClick, tone = "plain", label, current, hover, mark }: { mark?: string; n: number | string; tip: string; children?: React.ReactNode; onClick?: () => void; tone?: HeroTone; label?: string; current?: boolean; hover?: { onPointerEnter: (e: React.PointerEvent) => void; onPointerLeave: () => void } }) {
   const body = (
     <>
       {children}
@@ -110,7 +110,7 @@ export function HeroCount({ n, tip, children, onClick, tone = "plain", label, cu
   return (
     <li data-current-kind={current ? "" : undefined} aria-current={current ? "true" : undefined}>
       {onClick ? (
-        <button type="button" onClick={onClick} {...hover} aria-pressed={current} data-tip={tip} aria-label={tip.replace(" | ", ". ")} className={cn(cls, !current && "hover:bg-white/15")}>
+        <button type="button" onClick={onClick} {...hover} aria-pressed={current} data-tip={tip} data-tip-tone={tone === "bad" ? "bad" : tone === "warn" ? "off" : undefined} data-tip-mark={mark} aria-label={tip.replace(" | ", ". ")} className={cn(cls, !current && "hover:bg-white/15")}>
           {body}
         </button>
       ) : (

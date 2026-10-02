@@ -105,6 +105,8 @@ export function DayStrip({ doc, day, steps, current }: { doc: ScheduleDoc; day: 
               data-strip-store={s.code}
               data-state={bad ? "bad" : open ? "ok" : "closed"}
               data-tip={`${s.name} | ${when} · ${state} | Open this day`}
+              data-tip-tone={bad ? "bad" : open ? "ok" : undefined}
+              data-tip-mark={`store:${tag(s.code)}`}
               aria-label={`${s.name}, ${when}: ${state}. Open this day`}
               {...hoverProps([day], [`${s.code}|${day}`])}
               onClick={() => {

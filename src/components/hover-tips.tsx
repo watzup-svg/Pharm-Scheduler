@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NoteBody, noteStyleOf, type NoteMark, type NoteTone } from "@/components/hover-note";
 
 /**
  * One hover note for the whole app. Anything with a `title` or `data-tip` shows it as a small card (the browser's own
@@ -26,7 +27,10 @@ function resolve(target: EventTarget | null): HTMLElement | null {
   return el;
 }
 
-type Note = { x: number; y: number; dx: number; below: boolean; lines: string[] };
+type Note = { x: number; y: number; dx: number; below: boolean; lines: string[]; tone: NoteTone; mark: NoteMark };
+
+/** `data-tip-place="below"`: the note hangs under the control instead of following the pointer, so it never covers what is above. */
+const below = (el: HTMLElement) => el.getAttribute("data-tip-place") === "below";
 
 function textOf(el: HTMLElement): { text: string; aria: boolean } | null {
   const t = el.getAttribute("data-tip");
@@ -58,8 +62,15 @@ export function HoverTips() {
         .slice(0, 4);
       if (!lines.length) return;
       const half = 128;
+      const style = noteStyleOf(el);
+      if (below(el)) {
+        const r = el.getBoundingClientRect();
+        const bx = Math.min(Math.max(r.left + r.width / 2, half), Math.max(half, window.innerWidth - half));
+        setNote({ x: bx, y: r.bottom - 8, dx: 0, below: true, lines, ...style });
+        return;
+      }
       const cx = Math.min(Math.max(x, half), Math.max(half, window.innerWidth - half));
-      setNote({ x: cx, y, dx: x - cx, below: y < 90, lines });
+      setNote({ x: cx, y, dx: x - cx, below: y < 90, lines, ...style });
     };
     const over = (e: PointerEvent) => {
       if (e.pointerType === "touch") return;
@@ -73,7 +84,7 @@ export function HoverTips() {
       show(el, e.clientX, e.clientY);
     };
     const move = (e: PointerEvent) => {
-      if (e.pointerType === "touch" || !current) return;
+      if (e.pointerType === "touch" || !current || below(current)) return;
       setNote((n) => { if (!n) return n; const cx = Math.min(Math.max(e.clientX, 128), Math.max(128, window.innerWidth - 128)); return { ...n, x: cx, dx: e.clientX - cx, y: e.clientY, below: e.clientY < 90 }; });
     };
     const focus = (e: FocusEvent) => {
@@ -121,13 +132,10 @@ export function HoverTips() {
     <div
       role="presentation"
       style={{ left: note.x, top: note.y }}
-      className={`pointer-events-none fixed z-[60] w-max max-w-[16rem] -translate-x-1/2 rounded-lg bg-white px-3 py-2 text-xs leading-snug text-ink shadow-xl ring-1 ring-black/10 print:hidden ${note.below ? "translate-y-4" : "-translate-y-[calc(100%+12px)]"}`}
+      data-hover-note
+      className={`pointer-events-none fixed z-[60] w-max max-w-[16rem] -translate-x-1/2 rounded-lg bg-white px-3 pt-2.5 pb-2 text-xs leading-snug text-ink shadow-xl ring-1 ring-black/10 print:hidden ${note.below ? "translate-y-4" : "-translate-y-[calc(100%+12px)]"}`}
     >
-      {note.lines.map((l, i) => (
-        <p key={i} className={i === 0 ? "font-semibold" : "text-muted"}>
-          {l}
-        </p>
-      ))}
+      <NoteBody lines={note.lines} tone={note.tone} mark={note.mark} />
       {note.below ? null : <span aria-hidden className="absolute -bottom-1 size-2 rotate-45 bg-white ring-1 ring-black/10 [clip-path:polygon(100%_0,100%_100%,0_100%)]" style={{ left: `calc(50% + ${note.dx}px - 4px)` }} />}
     </div>
   );
