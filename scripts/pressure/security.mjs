@@ -26,7 +26,8 @@ if (job === "scan") {
     [/insertAdjacentHTML/, "insertAdjacentHTML"],
     [/\bpostMessage\s*\(/, "postMessage"],
     [/localStorage\.setItem\([^)]*(password|token|secret|apikey)/i, "secret-looking value in storage"],
-    [/https?:\/\/(?!www\.w3\.org|localhost|127\.0\.0\.1)[a-z0-9.-]+\.[a-z]{2,}/i, "web address in source"],
+    // www.irs.gov is the one deliberate outside link: a plain link the manager clicks (Stores > mileage rate source); nothing is fetched.
+    [/https?:\/\/(?!www\.w3\.org|www\.irs\.gov|localhost|127\.0\.0\.1)[a-z0-9.-]+\.[a-z]{2,}/i, "web address in source"],
   ];
   const allowed = [/\/\/.*https?:/, /\*.*https?:/]; // addresses in comments are fine
   for (const f of src) {

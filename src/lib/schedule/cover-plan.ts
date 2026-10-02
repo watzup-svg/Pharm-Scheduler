@@ -38,6 +38,9 @@ const MUST_STAY_COVERED = 2e6;
 const CHANGE = 20;
 /** A plan that leaves one other store with no pharmacist (to be fixed next, or closed) ranks after cleaner plans by this much. */
 const OPENS_HOLE = 60;
+/** A month with more stores than this (the pressure tests use 120) searches only the nearest few; an ordinary month is never cut. */
+const SCOPE_AT = 30;
+const SCOPE_KEEP = 12;
 /** Inside the solver, what leaving the one allowed store bare costs, so it takes that store's only pharmacist when the move is short. */
 const OPEN_SLACK = 10;
 const FLOAT_WILLING = 0.6;
@@ -164,8 +167,8 @@ type Ctx = {
   memo: Map<string, Edge>;
 };
 
-function context(doc: ScheduleDoc, day: number): Ctx {
-  const open = doc.stores.filter((s) => isOpenDay(doc, s.code, day)).map((s) => s.code);
+function context(doc: ScheduleDoc, day: number, scope?: string[]): Ctx {
+  const open = scope ?? doc.stores.filter((s) => isOpenDay(doc, s.code, day)).map((s) => s.code);
   const placed = new Map<string, string | null>();
   for (const s of doc.stores) {
     for (const slot of RPH_SLOTS) {
@@ -173,7 +176,7 @@ function context(doc: ScheduleDoc, day: number): Ctx {
       if (n && !placed.has(n)) placed.set(n, s.code);
     }
   }
-  const people = doc.people.filter((p) => isRphRole(p.role)).map((p) => p.name);
+  const people = doc.people.filter((p) => isRphRole(p.role) && (!scope || !placed.get(p.name) || scope.includes(placed.get(p.name)!))).map((p) => p.name);
   const choice = new Map<string, Map<string, HoleChoice>>();
   for (const code of open) choice.set(code, new Map(choicesFor(doc, code, day).map((c) => [c.name, c])));
   return { doc, day, date: isoDate(doc.year, doc.month, day), open, placed, people, choice, weekday: weekdaySun0(doc.year, doc.month, day), memo: new Map() };
@@ -346,10 +349,13 @@ const tier = (p: CoverPlan) => (p.extreme ? 1 : 0);
  * nobody could reach it within MAX_DRIVE. Every plan returned has been checked to leave no store newly bare.
  */
 export function coverPlans(doc: ScheduleDoc, store: string, day: number, max = 3): CoverResult {
-  const open = doc.stores.filter((s) => isOpenDay(doc, s.code, day)).map((s) => s.code);
-  if (!open.includes(store)) return { plans: [], reason: "not-empty", leaveClosed: false };
+  const allOpen = doc.stores.filter((s) => isOpenDay(doc, s.code, day)).map((s) => s.code);
+  if (!allOpen.includes(store)) return { plans: [], reason: "not-empty", leaveClosed: false };
   if (RPH_SLOTS.some((sl) => getCell(doc.grid, store, sl, day).trim())) return { plans: [], reason: "not-empty", leaveClosed: false };
-  const ctx = context(doc, day);
+  // A very large month (the pressure tests use 120 stores): only the nearest stores can matter to a chain of three moves, so the
+  // search looks at those and people who are free. An ordinary month (30 stores or fewer) is searched whole, exactly as before.
+  const open = allOpen.length <= SCOPE_AT ? allOpen : [store, ...allOpen.filter((c) => c !== store).map((c) => ({ c, m: driveBetween(doc, store, c)?.minutes ?? INF })).sort((a, b) => a.m - b.m || a.c.localeCompare(b.c)).slice(0, SCOPE_KEEP - 1).map((x) => x.c)];
+  const ctx = context(doc, day, open === allOpen ? undefined : open);
 
   const holesNow = open.filter((c) => !RPH_SLOTS.some((sl) => getCell(doc.grid, c, sl, day).trim()));
   // Two views: the whole day (every empty shift competes for the same people) and this store alone.
@@ -419,7 +425,7 @@ export function coverPlans(doc: ScheduleDoc, store: string, day: number, max = 3
 
 /** The shortest one-way drive of anyone simply free that day (no chain), or null when nobody is. Used to decide when plans are worth showing. */
 export function bestDirectDrive(doc: ScheduleDoc, store: string, day: number): number | null {
-  const ctx = context(doc, day);
+  const ctx = context(doc, day, [store]); // only this store's choices, and people already placed are skipped below anyway
   let best: number | null = null;
   for (const name of ctx.people) {
     if (ctx.placed.has(name)) continue;
