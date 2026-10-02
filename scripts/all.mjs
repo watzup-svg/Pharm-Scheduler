@@ -46,7 +46,9 @@ const jobs = [
   job("unit tests", "npm", ["run", "test:schedule"]),
   job("browser suite", "node", ["e2e/run.mjs"]),
   job("guards", "node", ["scripts/guards.mjs"]),
+  job("real build", "node", ["scripts/with-server.mjs", "real", "node", "e2e/real-build.mjs"]),
   ...(sweepSeeds ? [job("sweep", "node", ["scripts/sweep.mjs", "--seeds", sweepSeeds, "--jobs", "2"])] : []),
+  ...(deep ? [job("random clicks", "node", ["scripts/with-server.mjs", "trial", "node", "stress/monkey.mjs", "120", "7"])] : []),
   ...(deep ? [job("page sweep", "node", ["scripts/screens.mjs", "--jobs", "1"])] : []),
 ];
 const results = await Promise.all(jobs);

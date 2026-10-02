@@ -66,6 +66,8 @@ jobs:
           echo "CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
       - name: Build guards (size, addresses, offline, docs)
         run: git fetch -q origin main:refs/remotes/origin/main || true; npm run guards
+      - name: Real build starts clean (Welcome screen, no sample data)
+        run: npm run real
       - name: Page sweep (every page and popup, both widths)
         run: npm run screens
       - if: failure()

@@ -16,7 +16,9 @@
     "sweep": "node scripts/sweep.mjs",
     "screens": "node scripts/screens.mjs",
     "deep": "node scripts/all.mjs --deep",
-    "guards": "node scripts/guards.mjs"
+    "guards": "node scripts/guards.mjs",
+    "real": "node scripts/with-server.mjs real node e2e/real-build.mjs",
+    "stress": "node scripts/with-server.mjs trial node stress/monkey.mjs"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",
