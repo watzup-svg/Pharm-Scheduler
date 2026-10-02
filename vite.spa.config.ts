@@ -6,8 +6,10 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 
 const r = (p: string) => path.resolve(import.meta.dirname, p);
 
-// One self-contained HTML file for trying the app as a static page. Harness only.
-export default defineConfig({
+// One self-contained HTML file. Two flavours from the same source:
+//   default      the trial copy (dist-spa/spa.html): opens on the practice month on a first visit, for trying it out
+//   --mode real  the copy for real use (dist-real/spa.html): opens on the Welcome screen with no invented data
+export default defineConfig(({ mode }) => ({
   resolve: {
     alias: [
       { find: /^\.\/routes\/__root$/, replacement: r("harness/spa/root.tsx") },
@@ -19,5 +21,5 @@ export default defineConfig({
     ],
   },
   plugins: [viteReact(), tailwindcss(), viteSingleFile()],
-  build: { outDir: "dist-spa", emptyOutDir: true, rollupOptions: { input: r("spa.html") } },
-});
+  build: { outDir: mode === "real" ? "dist-real" : "dist-spa", emptyOutDir: true, rollupOptions: { input: r("spa.html") } },
+}));
