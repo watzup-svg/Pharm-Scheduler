@@ -20,7 +20,8 @@
     "real": "node scripts/with-server.mjs real node e2e/real-build.mjs",
     "stress": "node scripts/with-server.mjs trial node stress/monkey.mjs",
     "lint": "eslint src",
-    "audit": "node scripts/audit.mjs"
+    "audit": "node scripts/audit.mjs",
+    "coverage": "node scripts/coverage.mjs"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",

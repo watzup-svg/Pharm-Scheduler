@@ -23,3 +23,5 @@ Newest first. One short block per batch: what changed, where to look, what was c
 - `npm run audit` runs the big read-only audit (size and complexity scan, engine and page timings, unit coverage, dependency scan, 300-seed sweep, full deep run) and writes `test-logs/audit-<stamp>/REPORT.md`.
 - New guard: no generated folders or files over 1.5 MB are committed.
 - Unit tests for the storage fallback; `@types/node` and `vite` patch updates; one export dropped.
+
+- Standard checks added: `npm run coverage` (floor 90% lines / 82% branches on the rules code, part of `npm run all`), a `phone touch` browser group (390 px, touch, 4x slow CPU), a non-blocking WebKit (Safari engine) CI job (`BROWSER=webkit npm run e2e`), and a weekly dependency scan in the deep check.

@@ -12,6 +12,8 @@ export const CHROME = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chro
 export const axeSource = () => fs.readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
 
 export async function launch() {
+  // BROWSER=webkit runs the same checks in Playwright's WebKit (the Safari engine). Chromium stays the default.
+  if (process.env.BROWSER === "webkit") return require("playwright-core").webkit.launch();
   const { chromium } = require("playwright-core");
   return chromium.launch({ executablePath: CHROME, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
 }

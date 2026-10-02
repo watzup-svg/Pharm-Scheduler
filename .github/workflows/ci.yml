@@ -14,6 +14,7 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run lint
+      - run: npm run coverage
       - run: npm run build:trial
       - run: npm run build:real
       - uses: actions/upload-artifact@v4
@@ -39,6 +40,25 @@ jobs:
           npx playwright-core install --with-deps chromium
           export CHROME="$(node -e "console.log(require('playwright-core').chromium.executablePath())")"
           npm run e2e -- --shard ${{ matrix.shard }}
+  # The Safari engine (WebKit). Not blocking yet: it is new, so a red here is read first and fixed or excused. Still not a real iPhone.
+  webkit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build:trial
+      - name: Browser checks in WebKit
+        run: |
+          npx playwright-core install --with-deps webkit
+          BROWSER=webkit npm run e2e -- smoke pages fit dialogs print "phone touch"
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webkit-logs
+          path: test-logs/
   sweep:
     runs-on: ubuntu-latest
     steps:

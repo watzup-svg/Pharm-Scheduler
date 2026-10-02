@@ -28,7 +28,7 @@ if (args[0] === "--one") {
   const browser = await launch();
   const { page, errors } = await open(browser, route === "district" ? "" : route, { width, height: width < 600 ? 844 : 900 });
   const consoleErrors = [];
-  page.on("console", (m) => m.type() === "error" && consoleErrors.push(m.text()));
+  page.on("console", (m) => m.type() === "error" && consoleErrors.push(`${m.text()} [${m.location().url}]`));
   await page.addStyleTag({ content: "*,*::before,*::after{animation:none!important;transition:none!important}" });
 
   const scan = async (where) => {
