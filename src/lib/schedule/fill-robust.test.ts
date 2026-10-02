@@ -48,7 +48,7 @@ describe("Grok's robust list, adopted parts", () => {
     assert.equal(fillerOf(first), "Fred Free");
     const applied = applyCoverPlan(doc, first, DAY);
     assert.ok(applied.ok, applied.problem ?? "applies");
-    for (const p of coverPlans(applied.doc, "MOL", DAY, 8).plans) assert.ok(!p.moves.some((m) => m.name === "Fred Free") || p.opens.includes("EST"), "Fred is placed at Estacada: moving him is only offered as opening Estacada");
+    for (const p of coverPlans(applied.doc, "MOL", DAY, 8).plans) for (const m of p.moves.filter((x) => x.name === "Fred Free")) assert.equal(m.from, "EST", "Fred is placed at Estacada: any move starts there, never from home");
   });
 
   it("a stale assignment on another day is not the origin: the leg is from home", () => {
