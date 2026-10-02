@@ -186,7 +186,7 @@ export function DriveTimes() {
         </div>
         <div className="flex flex-col gap-2 rounded-xl bg-white p-3 ring-1 ring-line">
           <Label htmlFor="mi-paste">Paste many distances at once</Label>
-          <p className="text-sm text-muted">One pair per line: store code, store code, one-way miles (for example CAT,CLA,31.4). Good lines are saved; bad ones are listed and skipped.</p>
+          <p className="text-sm text-muted">One pair per line: store code, store code, one-way miles, and optionally minutes (CAT,CLA,31.4,45). Good lines are saved; bad ones are listed and skipped.</p>
           <textarea id="mi-paste" rows={4} className="w-full rounded-lg bg-paper p-2 font-mono text-sm ring-1 ring-line" value={paste} onChange={(e) => setPaste(e.target.value)} />
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -196,7 +196,7 @@ export function DriveTimes() {
               onClick={() => {
                 const r = parseMilesLines(paste, doc.stores.map((s) => s.code));
                 const n = Object.keys(r.pairs).length;
-                importMiles(r.pairs);
+                importMiles(r.pairs, r.minutes);
                 setPasteNote(`${n} distance${n === 1 ? "" : "s"} saved.${r.problems.length ? ` ${r.problems.length} skipped: ${r.problems.slice(0, 5).join("; ")}${r.problems.length > 5 ? "; …" : ""}` : ""}`);
                 if (n) announce(`${n} distances saved`);
                 if (!r.problems.length) setPaste("");

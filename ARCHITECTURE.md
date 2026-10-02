@@ -24,7 +24,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 | Day panel (click a day) | `day-sheet.tsx` (panel + problem notices), `day-sheet-slot.tsx` (one slot), `day-sheet-picker.tsx` (who can cover), `day-sheet-extras.tsx` (not-offered list, impact list, out button) |
 | Printing | `lib/schedule/print-model.ts` (what), `pdf.ts` (PDF), `components/print-screen.tsx`, `letter-sheet.tsx` (on-screen preview) |
 | Saved file (format, old versions) | `lib/schedule/file.ts` (zod schema, v1 files expand on open) |
-| Mileage pay (cost math, IRS rate, miles per store pair) | `lib/schedule/mileage.ts`, `lib/schedule/drive-table.ts` (the measured Google Maps miles and minutes for all 153 store pairs, used before the estimate), `lib/schedule/miles-import.ts` (pasted "CODE,CODE,miles" lines), `pairMiles` in `geo.ts`; used by `cover-plan.ts` and `suggest.ts`; screen in `components/drive-times.tsx` |
+| Mileage pay (cost math, IRS rate, miles per store pair) | `lib/schedule/mileage.ts`, `lib/schedule/drive-table.ts` (the measured Google Maps miles and minutes for all 153 store pairs, used before the estimate), `lib/schedule/new-store.ts` + `components/new-store-distances.tsx` (the collapsed "add distances" notice for a store without measured ones), `lib/schedule/miles-import.ts` (pasted "CODE,CODE,miles" lines), `pairMiles` in `geo.ts`; used by `cover-plan.ts` and `suggest.ts`; screen in `components/drive-times.tsx` |
 | All app state and actions | `store/schedule-store.ts` (document), `store/persistence.ts` (what this browser keeps: backups, archive, autosave), `store/view-store.ts` (UI only: selected issue, hover) |
 | Sample month | `lib/schedule/demo.ts` (used by the trial build; the real build opens empty) |
 

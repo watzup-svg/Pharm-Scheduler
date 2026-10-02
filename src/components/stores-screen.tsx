@@ -18,6 +18,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { missingNumbers } from "@/lib/schedule/label";
 import { cn } from "@/lib/utils";
 import { DriveTimes } from "@/components/drive-times";
+import { NewStoreDistances } from "@/components/new-store-distances";
 import { announce } from "@/components/undo";
 import { confirmAction } from "@/components/confirm";
 import type { Store } from "@/lib/schedule/types";
@@ -358,6 +359,7 @@ export function StoresScreen() {
         </table>
       </div>
 
+      <NewStoreDistances />
       <DriveTimes />
     </div>
   );

@@ -22,3 +22,13 @@ describe("parseMilesLines", () => {
     assert.equal(r.problems.length, 1);
   });
 });
+
+describe("parseMilesLines minutes column", () => {
+  it("reads optional minutes and rejects bad ones", () => {
+    const r = parseMilesLines("CAT,CLA,10,25\nCAT,RR,40\nCLA,RR,5,0", codes);
+    assert.equal(r.minutes[driveKey("CAT", "CLA")], 25);
+    assert.equal(driveKey("CAT", "RR") in r.minutes, false);
+    assert.equal(driveKey("CLA", "RR") in r.pairs, false);
+    assert.equal(r.problems.length, 1);
+  });
+});

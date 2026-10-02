@@ -2,6 +2,9 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Adding a store: its distances
+- When a store is added (or its address changes) so that it has no measured distances, Setup > Stores shows one collapsed line: "<store> has no measured distances to N stores. Add them". Open it for one row per other store (miles and minutes; blank keeps the estimate; miles without minutes works the minutes out). Saved numbers are "set by you" and take priority. Nothing appears while every store is covered. Closing a store needs nothing: removing it removes its distances and it leaves suggestions. The paste box also accepts an optional minutes column (CAT,CLA,31.4,45).
+
 ## Real drive distances between all 18 stores
 - The app now carries measured one-way road miles and drive minutes for every pair of the 18 stores (Google Maps, Oct 2, 2026; fastest route, 10 AM weekday, the temporary I-5 Rose Quarter closure left out). They replace the address-based estimates: no "~" on those times, and mileage pay uses the real miles. Order of use: a number you set by hand, then this table, then the estimate (used only if a store's address changes). Cathlamet to Clatskanie includes the Wahkiakum ferry (45 minutes plus 15 to be there before the boat). Some Waldport/Florence routes to the north are the fastest route, not the shortest (up to about 34 miles longer than going through another store); mileage pay follows the table.
 
