@@ -180,13 +180,13 @@ function Timeline({ loads, onFocusDay, onAdd, focusDay }: { loads: DayLoad[]; on
                         className={cn(
                           "grid h-9 w-full place-items-center rounded-sm text-xs font-bold",
                           approved && "bg-warn-bg text-illegal",
-                          approved && store && "ring-2 ring-illegal",
+                          approved && store && "ring-2 ring-inset ring-illegal",
                           !approved && pending && "hatch border border-dashed border-warn bg-white",
                           !approved && !pending && (weekend ? "bg-shut/40 hover:bg-shut" : "bg-paper hover:bg-white hover:ring-1 hover:ring-line"),
                           focusDay === l.day && !approved && !pending && "ring-1 ring-ink/40",
                         )}
                       >
-                        {approved && store ? <span className="truncate px-px">{tag(store)}</span> : null}
+                        {approved && store ? <span className="text-[10px] leading-none tracking-tighter">{tag(store)}</span> : null}
                       </button>
                     </td>
                   );
