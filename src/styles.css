@@ -314,3 +314,10 @@
       0 12px 22px -14px rgb(28 25 23 / 0.38);
   }
 }
+
+/* Keyboard focus on the dark header: one clear white outline for every control (the browser's own ring is near-black
+   there). The ring's day segments draw their own white stroke. */
+section.bg-night :is(button, a, [role="button"], [tabindex]):not([data-ring-day]):focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

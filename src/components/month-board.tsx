@@ -252,7 +252,7 @@ export function MonthBoard() {
             <Chip key={c.store.code} code={c.store.code} current={onIssue.has(c.store.code)} active={tab === c.store.code} onClick={() => setStoreTab(c.store.code)}>
               {tag(c.store.code)}
               {n ? (
-                <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-illegal px-1 text-xs leading-5 font-bold text-cream">
+                <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-[5px] bg-illegal px-1 text-xs leading-5 font-bold text-cream">
                   {n}
                   <span className="sr-only"> to fix</span>
                 </span>

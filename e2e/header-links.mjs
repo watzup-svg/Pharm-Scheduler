@@ -63,5 +63,34 @@ export default async function run() {
     check("no script errors in the strip", errors.length === 0, errors.join(" | "));
     await page.close();
   }
+  {
+    // Notes lead with their subject's mark and edge, actions sit in a footer, and nothing covers the big number.
+    const { page, errors } = await open(browser, "");
+    const note = page.locator("[data-hover-note]");
+    await header(page).getByRole("button", { name: /^Two places · 2/ }).hover();
+    await page.waitForTimeout(200);
+    check("a tile's note has a problem edge", (await note.locator("[data-note-edge=bad]").count()) === 1);
+    check("a tile's note leads with its mark", (await note.locator("p").first().locator("svg, [data-note-store]").count()) > 0);
+    check("a tile's note puts the click in a footer", /step through only these/.test((await note.locator("[data-note-action]").textContent()) ?? ""));
+    const arrow = page.getByRole("button", { name: "Next issue" });
+    await arrow.hover();
+    await page.waitForTimeout(200);
+    const a = await arrow.boundingBox();
+    const n = await note.boundingBox();
+    check("the arrows' note hangs below them", n != null && a != null && n.y >= a.y + a.height - 1, `${n?.y} vs ${a?.y}+${a?.height}`);
+    await page.keyboard.press("Tab");
+    await page.locator("section.bg-night button").first().focus();
+    await page.keyboard.press("Tab");
+    const ring = await page.evaluate(() => getComputedStyle(document.activeElement).outlineColor);
+    check("keyboard focus in the header is a white outline", ring === "rgb(255, 255, 255)", ring);
+    check("no script errors in notes", errors.length === 0, errors.join(" | "));
+    await page.close();
+  }
+  {
+    const { page } = await open(browser, "schedule");
+    const radius = await page.locator("[data-store-chip] span").first().evaluate((e) => getComputedStyle(e).borderRadius);
+    check("store counts are rounded squares, not circles", parseFloat(radius) <= 6, radius);
+    await page.close();
+  }
   await browser.close();
 }

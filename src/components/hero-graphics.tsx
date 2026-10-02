@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react";
 import { ordinal } from "@/lib/schedule/issue-cursor";
-import { useNote } from "@/components/hover-note";
+import { useNote, type NoteMark, type NoteTone } from "@/components/hover-note";
 import { coverageByDay } from "@/lib/schedule/day-coverage";
 import { daysInMonth, monthName, todayParts, weekdayShort, weekdaySun0 } from "@/lib/schedule/calendar";
 import type { FixStep } from "@/lib/schedule/fix";
@@ -17,17 +17,17 @@ function useHover() {
   const { show, hide, card } = useNote();
   const touch = useRef(false);
   const last = useRef<string | null>(null);
-  const bind = (lines: string[]) => ({
+  const bind = (lines: string[], style?: { tone?: NoteTone; mark?: NoteMark }) => ({
     "data-notip": true as const,
     onPointerDown: (e: React.PointerEvent) => {
       touch.current = e.pointerType === "touch";
     },
-    onPointerEnter: (e: React.PointerEvent) => e.pointerType !== "touch" && show(e.clientX, e.clientY, lines),
-    onPointerMove: (e: React.PointerEvent) => e.pointerType !== "touch" && show(e.clientX, e.clientY, lines),
+    onPointerEnter: (e: React.PointerEvent) => e.pointerType !== "touch" && show(e.clientX, e.clientY, lines, style),
+    onPointerMove: (e: React.PointerEvent) => e.pointerType !== "touch" && show(e.clientX, e.clientY, lines, style),
     onPointerLeave: hide,
     onFocus: (e: React.FocusEvent) => {
       const r = (e.currentTarget as Element).getBoundingClientRect();
-      show(r.left + r.width / 2, r.top, lines);
+      show(r.left + r.width / 2, r.top, lines, style);
     },
     onBlur: hide,
   });
@@ -113,7 +113,8 @@ export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: Sch
           const ro = R + (p ? 4 + p * 3 : 0);
           const ri = R - (p ? 15 : 12);
           const lines = dayLines(doc, d, steps, c?.open ?? 0, c ? c.open - c.holes : 0);
-          const b = bind(lines);
+          const first = steps.find((s) => s.day === d);
+          const b = bind(lines, { tone: p ? "bad" : closed ? "plain" : "ok", mark: first ? { kind: first.kind } : null });
           const on = lit?.has(d) ?? false;
           return (
             <path
