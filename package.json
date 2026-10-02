@@ -7,7 +7,10 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test:schedule": "node --experimental-strip-types --test src/lib/schedule/*.test.ts src/store/schedule-store.test.ts",
-    "e2e": "node e2e/run.mjs"
+    "build:trial": "vite build -c vite.spa.config.ts",
+    "build:real": "vite build -c vite.spa.config.ts --mode real",
+    "e2e": "node e2e/run.mjs",
+    "e2e:real": "node e2e/real-build.mjs"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",
