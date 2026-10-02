@@ -44,9 +44,8 @@ Tokens in `src/styles.css` (colors, spacing, type scale, radius, motion keyframe
 ## Folder map
 - `dist-spa/spa.html` built app. `src/` source (`components/` UI, `lib/schedule/` rules + tests, `store/`, `routes/`, `styles.css`).
 - `e2e/` browser checks (`run.mjs` runs the suite; `*.mjs` standalone flows: hold, placing, history, dial, launch-sweep, launch-robustness).
-- `artifacts/` COPY_GUIDE.md, STYLE_GUIDE.md (partly stale), REVIEW_RUN_2026-09-30.md (prior QA log), DEMO data file. `artifacts/history/` OLD planning docs and the stale Claude Code prompt: context only, superseded by this handoff.
+- `artifacts/` COPY_GUIDE.md, STYLE_GUIDE.md (partly stale), REVIEW_RUN_2026-09-30.md (prior QA log), DEMO data file. (`artifacts/history/` no longer exists; old planning docs were removed.)
 - `handoff/` this file, `OPUS_PROMPT.md`, `screens/` fresh screenshots (laptop 1366x900 full page and phone 390x844 of every page, plus day panel and Add time off).
-- `harness/` build stubs needed by the vite config; ignore.
 
 ## Known gaps / unknowns (do not report these as discoveries; do weigh them)
 - Never used by the real district manager yet; no timed task tests. Real rules beyond licensing (max days in a row, weekend rotation, two-pharmacist days) are unknown.

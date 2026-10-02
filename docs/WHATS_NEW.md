@@ -2,6 +2,11 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Housekeeping for outside review
+- Added README.md and REVIEW_GUIDE.md (what the app is, what it deliberately is not, where to look, how to run the checks, known open items, and the questions most worth reviewing). Refreshed ARCHITECTURE.md and the handoff notes to match main. Docs only: no code or rules changed.
+- Since the last entry: hover text on the day strip was reworded (#43), the three-dot marker came off the big header number with a hairline on hover (#44), the time-off timeline and legend were tidied (#40, #41), the hexagon came off the issue header (#39), and QC fixes landed (#45: the security scan allows the one IRS link; the fill search is lighter in very large months).
+- Note: an older entry below says "18 stores". The list is now 16 (see "Store list updated").
+
 ## Store list updated to the HSP Float Store List
 - Real store numbers now come from the Float Store List (for example Cathlamet 1148, Clatskanie 1147, Estacada 1152, Medicine on Time 600). They replace the placeholder numbers 1101-1118 for a new or practice month.
 - Scappoose (1165) and West Linn (4900) are removed from the store list, the practice month and the measured drive table (16 stores, 120 pairs). Mt Angel Drug (1177) was never in the app. Every store on the list already had measured distances, so nothing is blank.
