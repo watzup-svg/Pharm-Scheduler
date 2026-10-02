@@ -1,4 +1,4 @@
-import { Route } from "lucide-react";
+import { Mark } from "@/components/icons";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -51,7 +51,7 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
   return (
     <section aria-label="Shorter drives" className="overflow-hidden rounded-xl bg-white ring-1 ring-ok/40">
       <header className="flex items-center gap-2 bg-ok-bg px-3 py-3">
-        <Route aria-hidden className="size-5 shrink-0 text-ok" />
+        <Mark icon="drive" tip={false} className="size-5 text-ok" />
         <h3 className="flex-1 text-base font-semibold">Shorter drives</h3>
         {direct != null ? (
           <span data-tip={`Sending the nearest free person is ${driveText(direct)} each way`} className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-ok">

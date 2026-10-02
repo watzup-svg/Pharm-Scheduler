@@ -1,6 +1,8 @@
 import { storeTag as labelOf } from "@/lib/schedule/label";
 import { Undo2 } from "lucide-react";
 import { useMemo } from "react";
+import { Mark } from "@/components/icons";
+import { StateMark } from "@/components/marks";
 import { announce } from "@/components/undo";
 import { Button } from "@/components/ui/button";
 import { acceptedItems } from "@/lib/schedule/accept";
@@ -28,6 +30,7 @@ export function AcceptedList({ onGo }: { onGo?: () => void }) {
     <ul className="flex flex-col gap-1">
       {closures.map((c) => (
         <li key={`c|${c.store}|${c.day}`} className="flex items-center gap-2 rounded-lg bg-white px-3 py-1 ring-1 ring-line">
+          <Mark icon="closed" tip={false} className="size-5 text-muted" />
           <button
             type="button"
             onClick={() => {
@@ -57,6 +60,7 @@ export function AcceptedList({ onGo }: { onGo?: () => void }) {
       ))}
       {items.map((it) => (
         <li key={it.key} className="flex items-center gap-2 rounded-lg bg-white px-3 py-1 ring-1 ring-line">
+          <StateMark kind="asis" size={20} tip={false} />
           <button
             type="button"
             onClick={() => {
