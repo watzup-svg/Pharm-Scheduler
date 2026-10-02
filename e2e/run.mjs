@@ -12,8 +12,9 @@ import marks from "./marks.mjs";
 import hoverRules from "./hover-rules.mjs";
 import navigator from "./navigator.mjs";
 import nextMonth from "./next-month.mjs";
+import miniMonth from "./mini-month.mjs";
 
-for (const [name, fn] of [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["next month", nextMonth]]) {
+for (const [name, fn] of [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["next month", nextMonth], ["small month", miniMonth]]) {
   console.log(`\n# ${name}`);
   await fn();
 }
