@@ -261,7 +261,7 @@ export function StoresScreen() {
             Cancel
           </Button>
           {editing ? (
-            <Button type="button" variant="ghost" className="ml-auto text-illegal" onClick={() => { const st = doc.stores.find((x) => x.code === editing); if (st) confirmRemove(st); }}>
+            <Button type="button" variant="ghost" className="ml-auto text-illegal" onClick={() => { const st = doc.stores.find((x) => x.code === editing); if (st) void confirmRemove(st); }}>
               Remove store
             </Button>
           ) : null}

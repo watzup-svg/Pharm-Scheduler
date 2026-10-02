@@ -18,7 +18,8 @@
     "deep": "node scripts/all.mjs --deep",
     "guards": "node scripts/guards.mjs",
     "real": "node scripts/with-server.mjs real node e2e/real-build.mjs",
-    "stress": "node scripts/with-server.mjs trial node stress/monkey.mjs"
+    "stress": "node scripts/with-server.mjs trial node stress/monkey.mjs",
+    "lint": "eslint src"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",
@@ -45,9 +46,12 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "axe-core": "^4.13.0",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "playwright-core": "^1.63.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.0",
     "vite": "^8.3.1",
     "vite-plugin-singlefile": "^2.3.3"
   }

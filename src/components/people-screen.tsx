@@ -332,7 +332,7 @@ export function PeopleScreen() {
             Cancel
           </Button>
           {editing ? (
-            <Button type="button" variant="ghost" className="ml-auto text-illegal" onClick={() => { const pp = doc.people.find((x) => x.name === editing); if (pp) confirmRemove(pp); }}>
+            <Button type="button" variant="ghost" className="ml-auto text-illegal" onClick={() => { const pp = doc.people.find((x) => x.name === editing); if (pp) void confirmRemove(pp); }}>
               Remove
             </Button>
           ) : null}

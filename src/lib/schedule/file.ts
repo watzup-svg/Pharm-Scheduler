@@ -269,13 +269,14 @@ function pickWithInput(): Promise<{ text: string; name: string; handle: FileHand
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".hisp.json,.json,application/json";
-    input.addEventListener("change", async () => {
+    input.addEventListener("change", () => {
       const file = input.files?.[0];
       if (!file) {
         reject(Object.assign(new Error("cancelled"), { name: "AbortError" }));
         return;
       }
-      resolve({ text: await file.text(), name: file.name, handle: null });
+      // An unreadable file must end the wait too, not leave the Open button hanging.
+      file.text().then((text) => resolve({ text, name: file.name, handle: null }), reject);
     });
     input.addEventListener("cancel", () => {
       reject(Object.assign(new Error("cancelled"), { name: "AbortError" }));

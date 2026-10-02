@@ -36,6 +36,8 @@ export function SinceLastPrint({
   version: number;
   onlyChanged: (stores: string[], people: string[]) => void;
 }) {
+  // `version` is not read inside, but a change means a print was just recorded, so read it again.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const snap = useMemo(() => readPrinted(monthKey(doc.year, doc.month)), [doc.year, doc.month, version]);
   const changes = useMemo(() => changesSince(doc, snap), [doc, snap]);
   const stores = Object.keys(changes.stores);
