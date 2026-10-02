@@ -104,4 +104,17 @@ describe("Grok's robust list, adopted parts", () => {
     assert.ok(ff === -1 || plans[ff]!.extreme, "a 140-minute float is flagged as a long drive");
     assert.ok(plans.some((p) => p.opens.length === 1 && !p.extreme), "the short opening move is offered");
   });
+
+  it("unavailable dates are already dropped before the search: approved time off, an employment start date, and 'don't suggest' all keep a person out", () => {
+    const base = scenario(["EST"], [{ p: person("Eli", "EST") }, { p: person("Flora Float", "WL", true) }]);
+    const date = `${base.year}-${String(base.month).padStart(2, "0")}-${String(DAY).padStart(2, "0")}`;
+    const names = (d: ScheduleDoc) => coverPlans(d, "EST", DAY, 8).plans.flatMap((p) => p.moves.map((m) => m.name));
+    assert.ok(names(base).includes("Eli"));
+    const pto = { ...base, timeOff: [{ name: "Eli", dates: [date], from: date, to: date, note: "", status: "approved" as const }] };
+    assert.ok(!names(pto).includes("Eli"), "on time off");
+    const notYet = { ...base, people: base.people.map((p) => (p.name === "Eli" ? { ...p, startsOn: `${base.year}-${String(base.month).padStart(2, "0")}-28` } : p)) };
+    assert.ok(!names(notYet).includes("Eli"), "not started yet");
+    const hidden = { ...base, people: base.people.map((p) => (p.name === "Eli" ? { ...p, noSuggest: true } : p)) };
+    assert.ok(!names(hidden).includes("Eli"), "marked do-not-suggest");
+  });
 });
