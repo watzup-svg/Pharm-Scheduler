@@ -40,8 +40,8 @@ npm run pressure -- --level low
 Details: `e2e/README.md`. CI runs these on every PR; a weekly cloud run does the long version.
 
 ## Known open items (do not report these as discoveries)
-- Three WebKit-only (Safari engine) findings in the non-blocking CI job.
-- A crash seen in a 120-store month is parked; a lighter fill search for very large months landed in #45. The real district has about 16 stores.
+- Three WebKit-only (Safari engine) findings in the non-blocking CI job: (1) a script error / ResizeObserver message tied to the undo label, in the pages group; (2) a text-contrast warning on the person form; (3) the day panel not staying inside the screen at 1366 px.
+- Parked crash: a synthetic 120-store, 500-person month crashes the browser tab at 1366 px desktop width (phone width passes). It appeared with the fill-suggestion work; #45 made the large-month search lighter but did not cure it. An 18-store month is unaffected, and the real district has about 16 stores.
 - Untested: real printers, iPhone Safari, real touch. Road miles and minutes are a one-time Google Maps measurement (2026-10-02), not live.
 - Never used yet by the real district manager. Real rules beyond licensing (max days in a row, weekend rotation) are unknown.
 - Three large functions are candidates for splitting; `jump.ts` and the store have thin tests (known, deferred).
