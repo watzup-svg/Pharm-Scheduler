@@ -24,7 +24,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 | Day panel (click a day) | `day-sheet.tsx` (panel + problem notices), `day-sheet-slot.tsx` (one slot), `day-sheet-picker.tsx` (who can cover), `day-sheet-extras.tsx` (not-offered list, impact list, out button) |
 | Printing | `lib/schedule/print-model.ts` (what), `pdf.ts` (PDF), `components/print-screen.tsx`, `letter-sheet.tsx` (on-screen preview) |
 | Saved file (format, old versions) | `lib/schedule/file.ts` (zod schema, v1 files expand on open) |
-| All app state and actions | `store/schedule-store.ts` (document), `store/view-store.ts` (UI only: selected issue, hover) |
+| All app state and actions | `store/schedule-store.ts` (document), `store/persistence.ts` (what this browser keeps: backups, archive, autosave), `store/view-store.ts` (UI only: selected issue, hover) |
 | Sample month | `lib/schedule/demo.ts` (used by the trial build; the real build opens empty) |
 
 ## Recipes

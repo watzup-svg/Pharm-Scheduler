@@ -1,12 +1,12 @@
 import "../lib/safe-storage.ts";
+import { AUTOFILE_KEY, archiveNow, backupNow, readAutoFile, readAutosave } from "./persistence.ts";
 import { toast } from "sonner";
 import { create } from "zustand";
-import { addBackup, loadBackups, saveBackups, type Backup, type BackupReason } from "../lib/schedule/backup.ts";
+import { loadBackups } from "../lib/schedule/backup.ts";
 import { suggestedMonthFileName } from "../lib/schedule/coverage.ts";
 import {
   AUTOSAVE_KEY,
   isAbort,
-  isUsableAutosave,
   openLocalFile,
   parseDoc,
   saveLocalFile,
@@ -48,7 +48,7 @@ import { callInSickDoc } from "../lib/schedule/sick.ts";
 import { acceptKeys, openProblemKeys, pruneAccepted, unacceptKeys } from "../lib/schedule/accept.ts";
 import { closeStoreDayDoc, reopenStoreDayDoc } from "../lib/schedule/closure.ts";
 import { importGridText, type ImportResult } from "../lib/schedule/grid-import.ts";
-import { loadArchive, monthKey, putMonth, saveArchive } from "../lib/schedule/archive.ts";
+import { monthKey } from "../lib/schedule/archive.ts";
 import { PRINTED_KEY, snapshotOf } from "../lib/schedule/changes.ts";
 import type { TimeOffStatus } from "../lib/schedule/types.ts";
 import { dropSameStoreRepeats, isOpenDay, placeName, swapCells } from "../lib/schedule/place.ts";
@@ -71,46 +71,6 @@ import type {
 
 function clone<T>(v: T): T {
   return structuredClone(v);
-}
-
-function backupNow(doc: ScheduleDoc, fileName: string, reason: BackupReason) {
-  if (typeof localStorage === "undefined") return;
-  try {
-    const entry: Backup = { at: Date.now(), reason, fileName, year: doc.year, month: doc.month, json: serializeDoc(doc) };
-    saveBackups(localStorage, addBackup(loadBackups(localStorage), entry));
-  } catch {
-    /* backups are a convenience; never block an edit */
-  }
-}
-
-/** Keep one copy of each month in this browser for comparing and going back. Never blocks an edit. */
-function archiveNow(doc: ScheduleDoc, fileName: string, automatic = false) {
-  if (typeof localStorage === "undefined") return;
-  // The practice month and the September sample are made-up data. Their automatic copies must never
-  // replace a real month kept under the same year and month.
-  if (automatic && (fileName === DEMO_FILE_NAME || fileName === SAMPLE_FILE_NAME)) return;
-  try {
-    saveArchive(
-      localStorage,
-      putMonth(loadArchive(localStorage), {
-        ym: monthKey(doc.year, doc.month),
-        savedAt: Date.now(),
-        fileName,
-        json: serializeDoc(doc),
-      }),
-    );
-  } catch {
-    /* a convenience */
-  }
-}
-
-const AUTOFILE_KEY = "hischool-schedule-autofile";
-function readAutoFile(): boolean {
-  try {
-    return typeof localStorage !== "undefined" && localStorage.getItem(AUTOFILE_KEY) === "1";
-  } catch {
-    return false;
-  }
 }
 
 const INITIAL_DOC = createSample();
@@ -167,24 +127,6 @@ function withUndo(
     redoStack: [],
     ...extra,
   });
-}
-
-function readAutosave(): { doc: ScheduleDoc; fileName: string; dirty: boolean } | null {
-  if (typeof localStorage === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(AUTOSAVE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { doc: unknown; fileName?: string; dirty?: boolean };
-    const doc = parseDoc(JSON.stringify(parsed.doc));
-    if (!isUsableAutosave(doc)) return null;
-    return {
-      doc,
-      fileName: parsed.fileName || SAMPLE_FILE_NAME,
-      dirty: Boolean(parsed.dirty),
-    };
-  } catch {
-    return null;
-  }
 }
 
 export type ScheduleState = {
