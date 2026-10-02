@@ -45,13 +45,14 @@ const holesOf = (doc: ScheduleDoc) => evaluate(doc).issues.filter((i) => i.hole)
 const bareStores = (d: ScheduleDoc, day: number) => d.stores.filter((s) => d.stores && !RPH_SLOTS.some((sl) => getCell(d.grid, s.code, sl, day).trim()) && evaluate(d).issues.some((i) => i.hole && i.store === s.code && i.day === day)).map((s) => s.code);
 
 describe("cover plans", () => {
-  it("never fills one shift by emptying another store (the gap must not just move)", () => {
+  it("never fills one shift by emptying another store, except the one store a plan says it opens", () => {
     const doc = createDemo();
     for (const h of holesOf(doc)) {
       for (const p of coverPlans(doc, h.store, h.day).plans) {
         const res = applyCoverPlan(doc, p, h.day);
         const before = new Set(bareStores(doc, h.day));
-        for (const c of bareStores(res.doc, h.day)) assert.ok(before.has(c), `${c} newly bare on day ${h.day}`);
+        for (const c of bareStores(res.doc, h.day)) assert.ok(before.has(c) || p.opens.includes(c), `${c} newly bare on day ${h.day}`);
+        assert.ok(p.opens.length <= 1 && p.moves.length <= 3);
         assert.ok(!bareStores(res.doc, h.day).includes(h.store));
       }
     }
@@ -93,7 +94,7 @@ describe("cover plans", () => {
     for (const p of coverPlans(doc, hole.store, hole.day).plans) assert.ok(applyCoverPlan(doc, p, hole.day).ok);
   });
 
-  it("never offers a plan that leaves another store bare (fuzz: 150 random months)", () => {
+  it("never offers a plan that leaves another store bare except the one it names (fuzz: 150 random months)", () => {
     for (let t = 0; t < 150; t++) {
       let doc = createDemo();
       for (let i = 0; i < 60; i++) {

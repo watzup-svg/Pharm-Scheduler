@@ -2,6 +2,13 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Fill suggestions: longer reach, a leave-closed choice, honest follow-on holes
+- Fill plans now reach up to 2.5 hours (was 2). Long drives (over 90 minutes) still rank last among plans that leave no gap. A plan is at most three moves.
+- When no one can reach a store within 2.5 hours (John Day, for example), the card says so and offers "Close <store> today…" with the usual reasons. Leaving a store closed is always your choice; nothing is closed for you.
+- A plan may take the only pharmacist from one nearby store to fill a hole. It says so ("Leaves <store> with no pharmacist. It will get its own suggestions, or you can close it."), ranks after plans that leave no gap, and the new hole then gets its own suggestions as usual. Never more than one new hole per plan.
+- Cathlamet to Clatskanie legs show a "ferry" tag (60 minutes, wait included).
+- Ranking is unchanged otherwise: drive time (steeper the longer), floats cheaper, mileage dollars counted. Grok's seven test cases are unit tests (`fill-cases.test.ts`). Nothing is placed automatically.
+
 ## Adding a store: its distances
 - When a store is added (or its address changes) so that it has no measured distances, Setup > Stores shows one collapsed line: "<store> has no measured distances to N stores. Add them". Open it for one row per other store (miles and minutes; blank keeps the estimate; miles without minutes works the minutes out). Saved numbers are "set by you" and take priority. Nothing appears while every store is covered. Closing a store needs nothing: removing it removes its distances and it leaves suggestions. The paste box also accepts an optional minutes column (CAT,CLA,31.4,45).
 
