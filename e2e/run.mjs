@@ -16,7 +16,9 @@ import nextMonth from "./next-month.mjs";
 import miniMonth from "./mini-month.mjs";
 import storeNumbers from "./store-numbers.mjs";
 
+const only = process.argv.slice(2).map((a) => a.toLowerCase().replace(/[-_]/g, " "));
 for (const [name, fn] of [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["header links", headerLinks], ["next month", nextMonth], ["small month", miniMonth], ["store numbers", storeNumbers]]) {
+  if (only.length && !only.some((o) => name.includes(o))) continue;
   console.log(`\n# ${name}`);
   await fn();
 }

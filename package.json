@@ -6,6 +6,7 @@
     "dev": "vite dev --host 0.0.0.0 --port 3000",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit && npm run test:schedule",
     "test:schedule": "node --experimental-strip-types --test src/lib/schedule/*.test.ts src/store/schedule-store.test.ts",
     "build:trial": "vite build -c vite.spa.config.ts",
     "build:real": "vite build -c vite.spa.config.ts --mode real",
