@@ -1,5 +1,7 @@
 # Where things live
 
+New here? Start with [README.md](README.md) and [REVIEW_GUIDE.md](REVIEW_GUIDE.md) (for an outside reviewer). This file is the map of where each piece of code lives.
+
 Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router (hash), Tailwind v4, Zustand. One HTML file per build.
 
 ## Rules that must hold
@@ -7,7 +9,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - **`placeName` (`src/lib/schedule/place.ts`) is the only write gate** for names in the grid. Drag, swap, bulk and paste all go through it.
 - **`src/lib/schedule/` is pure**: no React, no browser. Rules, wording of problems, print model, file format all live here and are tested without a browser.
 - **Hard problems block printing** (open store-day with nobody, same person at two stores one day, name on a closed day, not licensed in that state). One answer: `gate.ts`.
-- **Letters are a store's identity in the file; the display name is `storeTag` / `useStoreTag`** (number or letters, the district's choice). Never print `store.code` on screen. `store-letters.test.ts` fails if a screen does.
+- **Letters are a store's identity in the file; the display name is `storeTag` / `useStoreTag`** (number or letters, the district's choice). Never print `store.code` on screen. `house-rules.test.ts` fails if a screen does.
 - Don't change rules unless asked.
 
 ## Map
@@ -24,6 +26,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 | Day panel (click a day) | `day-sheet.tsx` (panel + problem notices), `day-sheet-slot.tsx` (one slot), `day-sheet-picker.tsx` (who can cover), `day-sheet-extras.tsx` (not-offered list, impact list, out button) |
 | Printing | `lib/schedule/print-model.ts` (what), `pdf.ts` (PDF), `components/print-screen.tsx`, `letter-sheet.tsx` (on-screen preview) |
 | Saved file (format, old versions) | `lib/schedule/file.ts` (zod schema, v1 files expand on open) |
+| Fill suggestions (who can cover a hole, ranking, chains, leave-closed card) | `lib/schedule/cover-plan.ts` (planner: up to 3 moves, 150-minute cap, away-count tiebreak), `suggest.ts`, `hints.ts`; tests `fill-cases.test.ts`, `fill-robust.test.ts`, `npm run fill` |
 | Mileage pay (cost math, IRS rate, miles per store pair) | `lib/schedule/mileage.ts`, `lib/schedule/drive-table.ts` (the measured Google Maps miles and minutes for all 120 store pairs, used before the estimate), `lib/schedule/new-store.ts` + `components/new-store-distances.tsx` (the collapsed "add distances" notice for a store without measured ones), `lib/schedule/miles-import.ts` (pasted "CODE,CODE,miles" lines), `pairMiles` in `geo.ts`; used by `cover-plan.ts` and `suggest.ts`; screen in `components/drive-times.tsx` |
 | Test-only stores (Scappoose and West Linn, closed, kept for tests built around them) | `lib/schedule/test-stores.ts` |
 | All app state and actions | `store/schedule-store.ts` (document), `store/persistence.ts` (what this browser keeps: backups, archive, autosave), `store/view-store.ts` (UI only: selected issue, hover) |
@@ -44,7 +47,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - `npm run e2e -- header-links`: one browser check by name (see `e2e/run.mjs` for names). Run `npm run build:trial` first; the runner serves the build itself.
 - `npm run e2e`: the whole browser suite; once per batch. CI runs the same on every PR.
 - Look at the spot you changed (a screenshot or a hover probe); don't re-check untouched pages.
-- Not covered by any test: real printers, iPhone Safari, real touch, real road times.
+- Not covered by any test: real printers, iPhone Safari, real touch. Road times and miles come from a measured table (`lib/schedule/drive-table.ts`), not a live map. Counts today: 372 unit tests (`npm run check`); the browser suite is the groups listed in `e2e/run.mjs`.
 
 - Everything at once: `npm run all` (or `npm run deep` for the long version); pieces are in `scripts/` (`guards.mjs`, `sweep.mjs`, `screens.mjs`, `builds.mjs`). Details: `e2e/README.md`.
 
