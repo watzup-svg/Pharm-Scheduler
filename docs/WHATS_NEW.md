@@ -2,6 +2,9 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Checks (no visible change to the app)
+- `npm run all` / `npm run deep` run every check side by side with a short summary (details in `test-logs/`); `npm run guards`, `npm run sweep`, `npm run screens` run one piece. A weekly cloud run does the long version. Red day-panel cards, holiday and left-as-is rows, the drive card and the store form's closed-weekday label gained their kind's mark; right click, Shift+F10 or a long press opens a note (hover only draws a small corner marker). Not checked: real touch, iPhone Safari, printers. See `e2e/README.md`.
+
 ## Structure (no visible change)
 - Day panel split into four files; problem kind names and order live in one file (`problem-kinds.ts`).
 

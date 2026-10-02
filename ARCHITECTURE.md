@@ -42,5 +42,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - Look at the spot you changed (a screenshot or a hover probe); don't re-check untouched pages.
 - Not covered by any test: real printers, iPhone Safari, real touch, real road times.
 
+- Everything at once: `npm run all` (or `npm run deep` for the long version); pieces are in `scripts/` (`guards.mjs`, `sweep.mjs`, `screens.mjs`, `builds.mjs`). Details: `e2e/README.md`.
+
 ## Builds
 `npm run build:trial` -> `dist-spa/spa.html` (opens on the fictional sample month). `npm run build:real` -> `dist-real/spa.html` (empty, Welcome screen). Neither is committed; CI attaches both to each run.

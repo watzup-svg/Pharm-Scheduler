@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
 jobs:
-  # The jobs run side by side: type check, unit tests and builds; the browser suite in two halves; and a sweep of random schedules.
+  # The jobs run side by side: type check, unit tests and builds; the browser suite in two halves; and a sweep of random schedules; and the page sweep with the build guards.
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -50,4 +50,26 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sweep-results
+          path: test-logs/
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build:trial
+      - run: npm run build:real
+      - run: |
+          npx playwright-core install --with-deps chromium
+          echo "CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Build guards (size, addresses, offline, docs)
+        run: git fetch -q origin main:refs/remotes/origin/main || true; npm run guards
+      - name: Page sweep (every page and popup, both widths)
+        run: npm run screens
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: page-sweep
           path: test-logs/
