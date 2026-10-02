@@ -10,12 +10,12 @@ export default async function run() {
   await page.getByRole("menuitem", { name: /Start November/ }).click();
   const dialog = page.getByRole("dialog");
   const forecast = (await dialog.locator("[data-forecast]").textContent()) ?? "";
-  check("the Start dialog says what November will start with", /November 2026 will start with 29 problems to fix: 26 shifts with no coverage and 3 people at two places\./.test(forecast), forecast);
+  check("the Start dialog says what November will start with", /November 2026 will start with 28 problems to fix: 26 shifts with no coverage and 2 people at two places\./.test(forecast), forecast);
   check("the end-of-month weekdays are one line, not a list", (await dialog.getByText(/names fall on a weekday November 2026 doesn’t have/).count()) === 1);
   await dialog.getByRole("button", { name: "Start November" }).click();
   await page.waitForTimeout(800);
   const count = (await page.locator("section.bg-night").first().getByRole("button", { name: /problems? to fix/ }).first().textContent())?.trim();
-  check("November opens with the number the dialog promised", count === "29", count);
+  check("November opens with the number the dialog promised", count === "28", count);
   check("November is on screen", (await page.getByText("November 2026").count()) > 0);
   check("no request badge after the month moves on", (await page.getByLabel(/requests waiting$/).count()) === 0);
   await page.goto(page.url().replace(/#\/.*$/, "#/time-off"));

@@ -55,7 +55,7 @@ function joinAnd(parts: string[]): string {
   return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
 }
 
-function weekdayDay(doc: ScheduleDoc, day: number): string {
+export function weekdayDay(doc: ScheduleDoc, day: number): string {
   return `${weekdayShort(doc.year, doc.month, day)} ${monthName(doc.year, doc.month).slice(0, 3)} ${day}`;
 }
 
@@ -129,6 +129,7 @@ function doubleSteps(doc: ScheduleDoc, ev: Evaluation): FixStep[] {
       const stores = doc.stores
         .filter((s) => namesOnStoreDay(doc.grid, s.code, issue.day).includes(name))
         .map((s) => s.code);
+      // Both rows of one store can't hold the same person (placeName and dropSameStoreRepeats), so a double is two stores.
       if (stores.length >= 2) {
         const storeNames = stores.map((c) => storeLabel(doc, c));
         const home = stores[0]!;
@@ -143,20 +144,6 @@ function doubleSteps(doc: ScheduleDoc, ev: Evaluation): FixStep[] {
         });
         continue;
       }
-      // Same person in both pharmacist rows of one store is still a double.
-      const only = stores[0];
-      if (!only) continue;
-      const rows = RPH_SLOTS.filter((slot) => getCell(doc.grid, only, slot, issue.day).trim() === name);
-      if (rows.length < 2) continue;
-      out.push({
-        kind: "double",
-        store: only,
-        day: issue.day,
-        slot: rows[rows.length - 1]!,
-        headline: `${name} is listed twice at ${storeLabel(doc, only)} on ${weekdayDay(doc, issue.day)}`,
-        names: [name],
-        stores: [only],
-      });
     }
   }
   return out;

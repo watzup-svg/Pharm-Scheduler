@@ -113,7 +113,9 @@ describe("spreadsheet cell helpers", () => {
     const clip = clipFromCells(doc, cells);
     const cut = clearRange(doc, cells);
     assert.equal(getCell(cut.grid, "EST", "pharmacist", 1), "");
-    const pasted = pasteClip(cut, { store: "EST", slot: "pharmacist2", day: 8 }, clip);
+    // Jane already works row 1 on the 8th and 9th; empty it so the paste is not refused as "already here".
+    const room = clearRange(cut, [8, 9].map((day) => ({ store: "EST" as const, slot: "pharmacist" as const, day })));
+    const pasted = pasteClip(room, { store: "EST", slot: "pharmacist2", day: 8 }, clip);
     assert.equal(getCell(pasted.doc.grid, "EST", "pharmacist2", 8), "Jane Smith");
     assert.equal(getCell(pasted.doc.grid, "EST", "pharmacist2", 9), "Jane Smith");
     assert.equal(getCell(pasted.doc.grid, "EST", "pharmacist", 1), "");

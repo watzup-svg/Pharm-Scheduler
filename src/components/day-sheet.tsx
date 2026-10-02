@@ -279,7 +279,7 @@ function SheetBody() {
             {steps.map((step) => (
               <div key={`${step.kind}|${step.store}|${step.names.join()}`} className="mt-1 first:mt-0">
                 {step.kind !== "hole" ? <p className="font-semibold text-pretty">{step.headline}</p> : null}
-                {step.kind === "double" && step.stores.length > 1 ? <p className="mt-2 font-semibold">Keep {step.names[0]!.split(" ")[0]} at</p> : null}
+                {step.kind === "double" ? <p className="mt-2 font-semibold">Keep {step.names[0]!.split(" ")[0]} at</p> : null}
                 <div className="mt-2 flex flex-wrap gap-2">
                   {step.kind === "double"
                     ? step.stores.map((code) => (
@@ -294,9 +294,7 @@ function SheetBody() {
                             finish();
                           }}
                         >
-                          {step.stores.length === 1
-                            ? "Keep one, remove the duplicate"
-                            : keepDoubleLabel(doc, step.names[0]!, day, code)}
+                          {keepDoubleLabel(doc, step.names[0]!, day, code)}
                         </HoldButton>
                       ))
                     : null}

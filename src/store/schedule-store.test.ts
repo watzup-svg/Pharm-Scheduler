@@ -170,6 +170,8 @@ describe("schedule store", () => {
     ];
     store.cutRange(cells);
     assert.equal(getCell(useScheduleStore.getState().doc.grid, "EST", "pharmacist", 1), "");
+    // Jane already works row 1 on the 8th and 9th; empty it so the paste is not refused as "already here".
+    for (const day of [8, 9]) store.setCell("EST", "pharmacist", day, "");
     store.pasteClip({ store: "EST", slot: "pharmacist2", day: 8 });
     const next = useScheduleStore.getState();
     assert.equal(getCell(next.doc.grid, "EST", "pharmacist2", 8), "Jane Smith");

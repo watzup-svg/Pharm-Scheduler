@@ -1,4 +1,5 @@
 import "../lib/safe-storage.ts";
+import { toast } from "sonner";
 import { create } from "zustand";
 import { addBackup, loadBackups, saveBackups, type Backup, type BackupReason } from "../lib/schedule/backup.ts";
 import { suggestedMonthFileName } from "../lib/schedule/coverage.ts";
@@ -12,7 +13,7 @@ import {
   serializeDoc,
   type FileHandle,
 } from "../lib/schedule/file.ts";
-import { clearLeftoverDay, clearNameOnStoreDay, holeSteps, keepDouble as keepDoubleFn, type FixStep } from "../lib/schedule/fix.ts";
+import { clearLeftoverDay, clearNameOnStoreDay, holeSteps, keepDouble as keepDoubleFn, storeLabel, weekdayDay, type FixStep } from "../lib/schedule/fix.ts";
 import {
   applyPerson,
   applyStore,
@@ -50,7 +51,7 @@ import { importGridText, type ImportResult } from "../lib/schedule/grid-import.t
 import { loadArchive, monthKey, putMonth, saveArchive } from "../lib/schedule/archive.ts";
 import { PRINTED_KEY, snapshotOf } from "../lib/schedule/changes.ts";
 import type { TimeOffStatus } from "../lib/schedule/types.ts";
-import { isOpenDay, placeName, swapCells } from "../lib/schedule/place.ts";
+import { dropSameStoreRepeats, isOpenDay, placeName, swapCells } from "../lib/schedule/place.ts";
 import { applyCoverPlan as applyCoverPlanDoc, type CoverMove } from "../lib/schedule/cover-plan.ts";
 import { evaluate } from "../lib/schedule/rules.ts";
 import { applyPlaces as applyPlacesFn, clipFromCells, pasteClip as pasteClipFn, type GridClip } from "../lib/schedule/sheet.ts";
@@ -138,7 +139,14 @@ type StoreShape = {
   hydrated: boolean;
 };
 
-function evaluated(doc: ScheduleDoc): { doc: ScheduleDoc; evaluation: Evaluation } {
+/** Every document the app holds passes here: a person in both rows of one store-day is cleared down to one, and said. */
+function evaluated(raw: ScheduleDoc): { doc: ScheduleDoc; evaluation: Evaluation } {
+  const { doc, removed } = dropSameStoreRepeats(raw);
+  if (removed.length) {
+    const r = removed[0]!;
+    const first = `${r.name} was listed twice at ${storeLabel(doc, r.store)} on ${weekdayDay(doc, r.day)}`;
+    toast(removed.length === 1 ? `${first}. The second entry was removed.` : `${first}, and ${removed.length - 1} more like it. The second entries were removed.`);
+  }
   return { doc, evaluation: evaluate(doc) };
 }
 
@@ -1061,7 +1069,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     if (!entries.length) return "nothing";
     if (!isOpenDay(get().doc, store, day)) return "shut";
     if (entries.some((e) => unlicensedAt(get().doc, e.name, store, isoDate(get().doc.year, get().doc.month, day)))) return "unlicensed";
-    withUndo(set, get, (doc) => entries.reduce((d, e) => placeName(d, store, e.slot, day, e.name).doc, doc));
+    // Empty the rows being written first, so swapping the two rows of a store-day is not refused as "already here".
+    withUndo(set, get, (doc) => entries.reduce((d, e) => placeName(d, store, e.slot, day, e.name).doc, entries.reduce((d, e) => placeName(d, store, e.slot, day, "").doc, doc)));
     return "ok";
   },
 

@@ -118,7 +118,7 @@ describe("store filter and weeks", () => {
   it("filters by problems and by state", () => {
     assert.equal(filterStores(doc, ev, "all").length, 18);
     const problems = filterStores(doc, ev, "problems").map((s) => s.code);
-    for (const code of ["CAT", "SCA", "WS", "EST", "MOL", "LEN", "RR", "WAL", "MOT", "CLA", "WOO"]) assert.ok(problems.includes(code), code);
+    for (const code of ["CAT", "SCA", "WS", "EST", "MOL", "RR", "WAL", "MOT", "CLA", "WOO"]) assert.ok(problems.includes(code), code);
     assert.ok(!problems.includes("FLO"));
     assert.equal(filterStores(doc, ev, "WA").length, 5);
     assert.equal(filterStores(doc, ev, "OR").length, 13);

@@ -192,7 +192,6 @@ export function createDemo(): ScheduleDoc {
   cover("EST", 17, "Lucia Denton", "pharmacist2");
 
   // Planted mistakes that are not time off.
-  cover("LEN", 6, "Petra Lindqvist", "pharmacist2"); // ERROR: in both rows of one store
   grid = put(grid, "CAT", "pharmacist", 10, "Marisol Quenby"); // ERROR: Cathlamet is closed Saturdays
   grid = put(grid, "SCA", "pharmacist", 12, "Rafael Ostrander"); // ERROR: inventory day, store closed
   grid = put(grid, "WS", "pharmacist", 18, "Ines Calloway"); // ERROR: a Sunday
