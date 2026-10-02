@@ -106,6 +106,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
                 key={k}
                 n={list.length}
                 tone="bad"
+                current={current?.kind === k}
                 tip={`${KIND_NAME[k]} · ${list.length} | ${list[0]!.headline}${marked(list) !== list.length ? ` | ${marked(list)} marks on the grid, one for each store involved` : ""}`}
                 onClick={() => fix(list[0]!)}
               >
@@ -157,9 +158,9 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
               Clear
             </Button>
           ) : null}
-          <Button type="button" variant="away" aria-label="Someone called in sick" onClick={() => openSick()}>
+          <Button type="button" variant="away" aria-label="Someone’s out: called in sick or can’t come" data-tip="Someone’s out | Called in sick or can’t come. Logs the time off and finds cover for their shifts" onClick={() => openSick()}>
             <Mark icon="timeOff" tip={false} />
-            Mark out
+            Someone’s out
           </Button>
         </>
       }

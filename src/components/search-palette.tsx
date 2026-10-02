@@ -93,7 +93,7 @@ function PaletteBody({ close }: { close: () => void }) {
       },
       {
         id: "action-sick",
-        label: "Someone called in sick",
+        label: "Someone’s out (called in sick or can’t come)",
         hint: "sick, call-in, absent, find cover",
         run: () => {
           close();

@@ -3,7 +3,7 @@
 One voice for every word in the app: what is on screen, what appears on hover, what is read out, what toasts say, and what prints. Written for a district manager who is busy and is not a scheduler by training. Agreed 2026-10-02.
 
 ## Voice
-- **Labels are neutral.** Buttons, tabs, counts and headings name the thing: "Mark out", "No coverage", "Time off". No "please", no jokes, no exclamation marks.
+- **Labels are neutral.** Buttons, tabs, counts and headings name the thing: "Someone’s out", "No coverage", "Time off". No "please", no jokes, no exclamation marks.
 - **Guidance is warm and direct.** Sentences that tell you what happened or what to do speak like a calm colleague: "Fenn is free that day." "Nobody is free on Tue Oct 20, so Yara would have to leave Woodland." Lead with the fact, then the consequence, then (if needed) what to do.
 - **Never scold, never explain the software.** Say what is true about the schedule, not how the app works.
 - **Names: full name when it fits.** "Fenn Ritter". When it won't, use the first initial and the whole last name: "F. Ritter". Never the first name alone. If the name still overflows its box, cut it short with "…". If two people would read the same ("A. Kowal" twice), both keep their full name. One helper does this everywhere (`shortNames` in `day-view.ts`); do not shorten names by hand.
@@ -17,7 +17,7 @@ One voice for every word in the app: what is on screen, what appears on hover, w
 | name on a closed day | leftover |
 | not licensed | license problem, licence mismatch |
 | time off | PTO (except the print legend), leave, vacation (unless it is the reason) |
-| mark out | call out, absence |
+| someone’s out (the button), out (the person) | mark out, call out, absence |
 | waiting | pending, requested (as a count) |
 | covering | float coverage, away |
 | find cover / cover | backfill, replace |
@@ -34,7 +34,7 @@ One voice for every word in the app: what is on screen, what appears on hover, w
 ## Length budgets
 | Kind | Budget |
 |---|---|
-| Button | 1 to 3 words, verb first. "Mark out", "Find cover…", "Leave as is" |
+| Button | 1 to 3 words, verb first. "Find cover…", "Leave as is", "Add time off" |
 | Heading, tab, count label | 1 to 3 words |
 | Hint under a control | one sentence, about 90 characters or fewer |
 | Banner or status line | one or two sentences; the fact first |

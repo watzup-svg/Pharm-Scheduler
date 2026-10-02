@@ -25,6 +25,7 @@ export default async function run() {
     await page.waitForTimeout(400);
     check("the first step lands on the first issue by date", (await position(page)) === `1 of ${total}`, await position(page));
     check("the title names the issue", (await header(page).getByText("Two places · Gideon Ashcroft · Fri Oct 9").count()) > 0);
+    check("the matching kind lights up in the tiles row", (await header(page).locator("li[data-current-kind]").count()) === 1 && /Two places/.test((await header(page).locator("li[data-current-kind]").first().innerHTML())));
     check("the ring tick moves to the issue's day", (await tickDay(page)) === 9, String(await tickDay(page)));
     check("the ring centre names the day", (await header(page).locator("svg text").allTextContents()).join(" ").includes("OCT 9th"));
     check("a person at two stores outlines both", (await marked(page)) === "EST|9,MOL|9", await marked(page));
@@ -80,6 +81,28 @@ export default async function run() {
     await day(18).click();
     await page.waitForTimeout(700);
     check("opening it goes to that day's problem", (await page.getByRole("dialog").getByText(/Oct 18/).count()) > 0);
+    await page.close();
+  }
+  {
+    // On Schedule, the store row boxes the store(s) the current issue is at.
+    const { page, errors } = await open(browser, "schedule");
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    const boxed = await page.evaluate(() => [...document.querySelectorAll("[data-store-chip][data-current-issue]")].map((e) => e.getAttribute("data-store-chip")).sort().join(","));
+    check("the store row boxes the issue's stores", boxed === "EST,MOL", boxed);
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    const next = await page.evaluate(() => [...document.querySelectorAll("[data-store-chip][data-current-issue]")].map((e) => e.getAttribute("data-store-chip")).join(","));
+    check("the box moves with the next issue", next === "CAT", next);
+    check("no script errors on Schedule while stepping", errors.length === 0, errors.join(" | "));
+    await page.close();
+  }
+  for (const width of [1066, 1366]) {
+    // Every store chip on Schedule is whole and on screen at laptop widths (they wrap instead of running off the edge).
+    const { page } = await open(browser, "schedule", { width, height: 800 });
+    const cut = await page.evaluate(() => [...document.querySelectorAll("[data-store-chip]")].filter((e) => { const r = e.getBoundingClientRect(); const box = e.parentElement.getBoundingClientRect(); return r.right > Math.min(window.innerWidth, box.right) + 0.5 || r.left < box.left - 0.5; }).map((e) => e.getAttribute("data-store-chip")));
+    const n = await page.locator("[data-store-chip]").count();
+    check(`every store chip is whole on screen @${width}`, n === 18 && cut.length === 0, `${n} chips, cut: ${cut.join(",")}`);
     await page.close();
   }
   for (const width of [390, 320]) {

@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { useStoreTag } from "@/components/use-store-tag";
 import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
+import { useIssueNav } from "@/components/issue-nav";
 
 /** Store chips, Today, Person, Tools, and one calendar per store. */
 export function MonthBoard() {
@@ -79,6 +80,8 @@ export function MonthBoard() {
   const filterKnown = ["all", "problems", ...statesInUse(doc)].includes(storeFilter) ? storeFilter : "all";
   const visibleStores = useMemo(() => filterStores(doc, ev, filterKnown), [doc, ev, filterKnown]);
   // A store tab that is gone or filtered out falls back to all.
+  const { current: onIssueStep } = useIssueNav();
+  const onIssue = useMemo(() => new Set(onIssueStep ? [onIssueStep.store, ...onIssueStep.stores] : []), [onIssueStep]);
   const tab = storeTab === "all" || visibleStores.some((s) => s.code === storeTab) ? storeTab : "all";
 
   const calendars: CalendarStore[] = useMemo(
@@ -235,7 +238,8 @@ export function MonthBoard() {
       <div
         ref={chipRow}
         onScroll={updateFade}
-        className={cn("flex gap-1", visibleCalendars.length > 6 ? "-mx-1 overflow-x-auto px-1 pb-1 contain-paint" : "flex-wrap", moreRight && "[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)]")}
+        // Laptop and up: every store chip wraps onto as many lines as it needs, so none is cut off. Phone: one row that scrolls.
+        className={cn("flex gap-1 sm:flex-wrap sm:pt-1", visibleCalendars.length > 6 ? "-mx-1 -mt-1 px-1 pt-1 pb-1 max-sm:overflow-x-auto max-sm:contain-paint" : "max-sm:flex-wrap", moreRight && "max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)]")}
         role="group"
         aria-label="Show store"
       >
@@ -245,7 +249,7 @@ export function MonthBoard() {
         {visibleCalendars.map((c) => {
           const n = c.holes + c.doubles + c.leftovers + c.licence;
           return (
-            <Chip key={c.store.code} active={tab === c.store.code} onClick={() => setStoreTab(c.store.code)}>
+            <Chip key={c.store.code} code={c.store.code} current={onIssue.has(c.store.code)} active={tab === c.store.code} onClick={() => setStoreTab(c.store.code)}>
               {tag(c.store.code)}
               {n ? (
                 <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-illegal px-1 text-xs leading-5 font-bold text-cream">
@@ -418,15 +422,20 @@ export function MonthBoard() {
   );
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({ active, onClick, children, code, current }: { active: boolean; onClick: () => void; children: React.ReactNode; code?: string; current?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
+      data-store-chip={code}
+      data-current-issue={current ? "" : undefined}
+      aria-description={current ? "The issue you are on is at this store" : undefined}
       className={cn(
         "inline-flex h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-3 text-sm font-medium",
         active ? "bg-ink text-cream shadow-[inset_0_1px_0_rgb(255_255_255/0.14)]" : "bg-cream text-ink ring-1 ring-edge hover:bg-paper",
+        // The issue the header arrows are on: a box round its store, the same mark as its cell on the grid.
+        current && "outline-2 outline-offset-2 outline-ink outline-solid",
       )}
     >
       {children}

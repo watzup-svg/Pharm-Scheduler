@@ -22,7 +22,7 @@ export default async function run() {
     check("Week view store column stays narrow", first.width < 200, `${Math.round(first.width)}px`);
     check("Week table fits its card", box.width > 300);
     await p.getByRole("button", { name: "Calendars", exact: true }).click();
-    await p.getByRole("button", { name: /Someone called in sick/ }).first().click();
+    await p.getByRole("button", { name: /Someone’s out/ }).first().click();
     const dlg = p.getByRole("dialog");
     check("sick call uses the shared day picker", (await dlg.getByRole("group", { name: "Days out" }).count()) === 1);
     check("and says what is missing", (await dlg.getByText("Choose who is out.").count()) === 1);
