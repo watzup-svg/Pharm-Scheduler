@@ -1,4 +1,4 @@
-// The copy for real use (`npm run build:real`, served from dist-real/ on :3003). It must start like a fresh install:
+// The copy for real use (`npm run build:real`; `npm run real` serves it for you). It must start like a fresh install:
 // the Welcome screen, no invented practice month, the browser's own confirm(), and no "Sample" marker once she starts.
 //   REAL_BASE  where it is served (default http://127.0.0.1:3003/spa.html)
 import { check, failed, launch } from "./lib.mjs";

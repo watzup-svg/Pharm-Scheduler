@@ -26,3 +26,4 @@ Fast loop while editing: `npm run check` (type check + unit tests). See `ARCHITE
 - The page sweep also runs axe and fails on any serious or critical finding not listed in `scripts/axe-known.json` (empty today).
 - `node scripts/builds.mjs publish` builds both single files from the current commit, copies them to /mnt/project-files/builds and checks the commit stamp inside; `verify` re-checks later. Use it instead of copying builds by hand.
 - Cloud: the `deep check` workflow (Actions tab, or every Monday) runs `npm run deep` with 200 seeds and uploads `test-logs/` as an artifact; its summary lists the last lines.
+- `npm run real` checks the REAL build (Welcome screen, no practice month) and runs in CI and in `all`. `npm run stress -- 250 7` is the random-click script (steps, seed): it runs in `deep` and the weekly cloud run (about a minute a seed at 120 steps), not on every PR.
