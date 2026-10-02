@@ -104,6 +104,12 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
           </li>
         ))}
       </ul>
+      {plans.every((p) => p.opens.length) ? (
+        <div className="flex flex-col gap-1 border-t border-line px-3 py-2 text-xs text-muted">
+          <span>Every option here leaves another store bare. Closing {storeName} for the day is also your call.</span>
+          <CloseStoreMenu store={store} day={day} variant="ghost" onDone={onDone} />
+        </div>
+      ) : null}
       {anyEstimated ? <p className="border-t border-line px-3 py-2 text-xs text-muted">~ means an estimated drive time. Exact times are set under Setup, Stores.</p> : null}
     </section>
   );

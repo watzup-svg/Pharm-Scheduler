@@ -2,6 +2,7 @@
 //   low     about 2 min   every change set: damaged files, odd data, speed limits, squeezed screens, short soak
 //   medium  about 10 min  nightly or before handing a build to someone
 //   high    about 30 min  weekly, or before a big release: everything at full scale (120 stores, 500 people)
+//   --only "fill*" runs just the four fill-suggestion tests (also: npm run fill -- --level low)
 // Same tests at every level, only the scale changes. Needs `npm run build:trial` first. Detail: test-logs/pressure-<stamp>/<test>.log
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -33,6 +34,10 @@ const jobs = [
   ["damaged files", node, [...strip, "scripts/pressure/node.mjs", "fuzz", level]],
   ["odd data", node, [...strip, "scripts/pressure/node.mjs", "hostile", level]],
   ["big month and PDF", node, [...strip, "--expose-gc", "scripts/pressure/node.mjs", "big", level]],
+  ["fill cases", node, [...strip, "scripts/pressure/fill.mjs", "cases", level]],
+  ["fill rules", node, [...strip, "scripts/pressure/fill.mjs", "rules", level]],
+  ["fill chains", node, [...strip, "scripts/pressure/fill.mjs", "chains", level]],
+  ["fill scale", node, [...strip, "scripts/pressure/fill.mjs", "scale", level]],
   ["random schedules", node, ["scripts/sweep.mjs", "--seeds", String([30, 300, 1000][L]), "--jobs", String(only ? os.cpus().length : 2)]],
   ["storage full or refused", ...withServer(node, "scripts/pressure/browser.mjs", "storage", level)],
   ["interrupted by reloads", ...withServer(node, "scripts/pressure/browser.mjs", "interrupts", level)],
@@ -62,7 +67,7 @@ const run = ([name, cmd, argv]) => new Promise((done) => {
   });
 });
 if (args.includes("--list")) { console.log(JSON.stringify(jobs.map((j) => j[0]))); process.exit(0); }
-const queue = jobs.filter((j) => !only || j[0] === only);
+const queue = jobs.filter((j) => !only || j[0] === only || (only.endsWith("*") && j[0].startsWith(only.slice(0, -1))));
 await Promise.all(Array.from({ length: width }, async () => { for (let j = queue.shift(); j; j = queue.shift()) await run(j); }));
 const failed = rows.filter((r) => !r.ok);
 fs.writeFileSync(path.join(dir, "summary.json"), JSON.stringify({ level, secs: Math.round((Date.now() - t0) / 1000), rows }, null, 1));

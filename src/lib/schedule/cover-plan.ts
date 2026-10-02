@@ -160,6 +160,8 @@ type Ctx = {
   people: string[];
   choice: Map<string, Map<string, HoleChoice>>;
   weekday: number;
+  /** edge() answers, kept for the length of one coverPlans call (the same pairs are priced many times over). */
+  memo: Map<string, Edge>;
 };
 
 function context(doc: ScheduleDoc, day: number): Ctx {
@@ -174,13 +176,22 @@ function context(doc: ScheduleDoc, day: number): Ctx {
   const people = doc.people.filter((p) => isRphRole(p.role)).map((p) => p.name);
   const choice = new Map<string, Map<string, HoleChoice>>();
   for (const code of open) choice.set(code, new Map(choicesFor(doc, code, day).map((c) => [c.name, c])));
-  return { doc, day, date: isoDate(doc.year, doc.month, day), open, placed, people, choice, weekday: weekdaySun0(doc.year, doc.month, day) };
+  return { doc, day, date: isoDate(doc.year, doc.month, day), open, placed, people, choice, weekday: weekdaySun0(doc.year, doc.month, day), memo: new Map() };
 }
 
 type Edge = { cost: number; move: Omit<CoverMove, "fillsTarget"> | null };
 
 /** What it costs for this person to cover this store: INF when they can't, 0 when they are already there. */
 function edge(ctx: Ctx, name: string, store: string): Edge {
+  const key = `${name}|${store}`;
+  const hit = ctx.memo.get(key);
+  if (hit) return hit;
+  const made = edgeUncached(ctx, name, store);
+  ctx.memo.set(key, made);
+  return made;
+}
+
+function edgeUncached(ctx: Ctx, name: string, store: string): Edge {
   const { doc } = ctx;
   const c = ctx.choice.get(store)?.get(name);
   if (!c) return { cost: INF, move: null };
@@ -291,7 +302,7 @@ function describe(ctx: Ctx, moves: CoverMove[], cost: number): CoverPlan {
 }
 
 /** Does applying these moves leave the day worse? Used as a safety net: holes and double-ups may only go down. */
-export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves"> & { opens?: string[] }, day: number): { doc: ScheduleDoc; ok: boolean; problem?: string; newlyBare?: string[] } {
+export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves"> & { opens?: string[] }, day: number, quick = false): { doc: ScheduleDoc; ok: boolean; problem?: string; newlyBare?: string[] } {
   let next = doc;
   for (const m of plan.moves) if (!doc.people.some((p) => p.name === m.name && isRphRole(p.role))) return { doc, ok: false, problem: `${m.name} is not a pharmacist on this month` };
   for (const m of plan.moves) {
@@ -316,6 +327,7 @@ export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves"> 
   // A plan may leave the one store it says it leaves (it then gets its own suggestions, or is closed); never any other.
   const surprise = opened.find((c) => !(plan.opens ?? []).includes(c));
   if (surprise) return { doc, ok: false, problem: `That would leave ${doc.stores.find((s) => s.code === surprise)?.name ?? surprise} with no pharmacist` };
+  if (quick) return { doc: next, ok: true, newlyBare: opened };
   const before = evaluate(doc);
   const after = evaluate(next);
   if (after.holes > before.holes || after.doubles > before.doubles || after.unlicensed > before.unlicensed || after.closed > before.closed) {
@@ -342,11 +354,16 @@ export function coverPlans(doc: ScheduleDoc, store: string, day: number, max = 3
   const views: string[][] = [open, open.filter((c) => c === store || !holesNow.includes(c))];
   // Stores with exactly one pharmacist whose pharmacist could reach this store: taking them leaves a new hole, which is allowed
   // for ONE store at a time and ranked after plans that leave none.
-  const soloDonors = open.filter((c) => {
-    if (c === store) return false;
-    const names = RPH_SLOTS.map((sl) => getCell(doc.grid, c, sl, day).trim()).filter(Boolean);
-    return names.length === 1 && edge(ctx, names[0]!, store).cost < INF;
-  });
+  const soloDonors = open
+    .filter((c) => c !== store)
+    .map((c) => {
+      const names = RPH_SLOTS.map((sl) => getCell(doc.grid, c, sl, day).trim()).filter(Boolean);
+      return { c, cost: names.length === 1 ? edge(ctx, names[0]!, store).cost : INF };
+    })
+    .filter((x) => x.cost < INF)
+    .sort((a, b) => a.cost - b.cost || a.c.localeCompare(b.c))
+    .slice(0, 6) // the nearest few: a distant store's only pharmacist is never a sensible way to move a gap
+    .map((x) => x.c);
 
   const found = new Map<string, CoverPlan>();
   const edgeCost = (c: Ctx, m: CoverMove) => edge(c, m.name, m.to).cost;
@@ -356,13 +373,13 @@ export function coverPlans(doc: ScheduleDoc, store: string, day: number, max = 3
     const chain = chainTo(ctx, s, store);
     if (!chain || chain.length > MAX_CHAIN) return null;
     const plan = describe(ctx, chain, chain.reduce((a, m) => a + edgeCost(ctx, m), 0));
-    const strict = applyCoverPlan(doc, plan, day);
+    const strict = applyCoverPlan(doc, plan, day, true);
     if (strict.ok) {
       if (!found.has(plan.id)) found.set(plan.id, plan);
       return plan;
     }
     if (!openOK) return null;
-    const loose = applyCoverPlan(doc, { moves: plan.moves, opens: [openOK] }, day);
+    const loose = applyCoverPlan(doc, { moves: plan.moves, opens: [openOK] }, day, true);
     if (!loose.ok || loose.newlyBare?.length !== 1 || loose.newlyBare[0] !== openOK) return null;
     plan.opens = [openOK];
     plan.cost += OPENS_HOLE;
@@ -389,7 +406,14 @@ export function coverPlans(doc: ScheduleDoc, store: string, day: number, max = 3
     expand(rows);
     for (const donor of soloDonors) expand(rows, donor);
   }
-  const plans = [...found.values()].sort((a, b) => tier(a) - tier(b) || a.cost - b.cost || a.id.localeCompare(b.id)).slice(0, max);
+  // The full "does this leave the day worse" check (a whole-month evaluation) runs only on the plans that would be shown.
+  // Plans that leave another store bare only move a gap from one store to another, so they are offered only when nothing cleaner exists.
+  const anyClean = [...found.values()].some((p) => !p.opens.length);
+  const plans: CoverPlan[] = [];
+  for (const p of [...found.values()].filter((p) => !anyClean || !p.opens.length).sort((a, b) => tier(a) - tier(b) || a.cost - b.cost || a.id.localeCompare(b.id))) {
+    if (plans.length >= max) break;
+    if (applyCoverPlan(doc, { moves: p.moves, opens: p.opens }, day).ok) plans.push(p);
+  }
   return { plans, reason: plans.length ? "ok" : "nobody", leaveClosed: plans.length === 0 };
 }
 

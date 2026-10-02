@@ -22,6 +22,10 @@ jobs:
           - odd data
           - big month and PDF
           - random schedules
+          - fill cases
+          - fill rules
+          - fill chains
+          - fill scale
           - storage full or refused
           - security scan
           - hostile files
