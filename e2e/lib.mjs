@@ -11,11 +11,13 @@ export const axeSource = () => fs.readFileSync(require.resolve("axe-core/axe.min
 
 export async function launch() {
   const { chromium } = require("playwright-core");
-  return chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
+  return chromium.launch({ executablePath: CHROME, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
 }
 
 export async function open(browser, route, size = { width: 1366, height: 900 }) {
   const page = await browser.newPage({ viewport: size });
+  // A real print dialog can crash headless Chromium on some machines (it did on the CI runner); the tests only need the app to ask.
+  await page.addInitScript(() => { window.print = () => {}; });
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(`${BASE}#/${route}`, { waitUntil: "load" });
