@@ -10,7 +10,11 @@ const HOLIDAY_NOTE = "No chainwide schedule published; call ahead";
  * closed everywhere. lat/lng are approximate town locations, used only for distance hints. No holiday closures are known, so none are added: enter them on the
  * Holidays page as they are confirmed.
  */
-export const HI_SCHOOL_STORES: Store[] = [
+/**
+ * Store numbers here are PLACEHOLDERS (1101, 1102 … in list order) until the district gives the real ones. Replace them
+ * here, or per store on the Stores page (Edit → Store number).
+ */
+export const HI_SCHOOL_STORES: Store[] = ([
   { code: "CAT", lat: 46.2029, lng: -123.3835, name: "Cathlamet Pharmacy", address: "74 Main St, Cathlamet, WA 98612", phone: "(360) 795-3691", hours: "Mon–Fri 9:00 AM–6:00 PM (lunch 12:30–1:30); Sat–Sun closed", holidayNote: HOLIDAY_NOTE, satOpen: false, sunOpen: false },
   { code: "CAV", lat: 42.1626, lng: -123.6481, name: "Cave’s Pharmacy", address: "333 S Redwood Hwy, Cave Junction, OR 97523", phone: "(541) 592-4560", hours: "Mon–Fri 9:00 AM–6:00 PM (lunch 1:00–2:00); Sat–Sun closed", holidayNote: HOLIDAY_NOTE, satOpen: false, sunOpen: false },
   { code: "CLA", lat: 46.1015, lng: -123.2068, name: "Rick’s Hi-School Pharmacy", address: "401 W Columbia River Hwy, Clatskanie, OR 97016", phone: "(503) 728-2102", hours: "Mon–Fri 9:30 AM–6:00 PM; Sat–Sun closed", holidayNote: HOLIDAY_NOTE, satOpen: false, sunOpen: false },
@@ -29,7 +33,7 @@ export const HI_SCHOOL_STORES: Store[] = [
   { code: "WS", lat: 45.7273, lng: -121.4862, name: "White Salmon Hi-School Pharmacy", address: "291 E Jewett Blvd, White Salmon, WA 98672", phone: "(509) 493-4842", hours: "Mon–Fri 9:00 AM–6:00 PM (lunch 12:30–1:30); Sat–Sun closed", holidayNote: HOLIDAY_NOTE, satOpen: false, sunOpen: false },
   { code: "WIN", lat: 45.6959, lng: -121.8848, name: "Wind River Pharmacy", address: "280 SW 2nd St, Stevenson, WA 98648", phone: "(509) 427-5480", hours: "Mon–Fri 9:00 AM–6:00 PM (lunch 12:30–1:30); Sat 9:00 AM–2:00 PM; Sun closed", holidayNote: HOLIDAY_NOTE, satOpen: true, sunOpen: false },
   { code: "WOO", lat: 45.9046, lng: -122.744, name: "Woodland Hi-School Pharmacy", address: "1365 Lewis River Rd, Woodland, WA 98674", phone: "(360) 225-9475", hours: "Mon–Fri 9:00 AM–7:00 PM (lunch 12:30–1:30); Sat 9:00 AM–2:00 PM; Sun closed", holidayNote: HOLIDAY_NOTE, satOpen: true, sunOpen: false },
-];
+] as Store[]).map((s, i) => ({ ...s, number: String(1101 + i) }));
 
 /** Every Hi-School pharmacy, no people and nobody placed. Repeating holidays carry over. */
 export function blankMonthWithStores(from: ScheduleDoc): ScheduleDoc {

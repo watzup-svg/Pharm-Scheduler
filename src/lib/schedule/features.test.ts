@@ -242,7 +242,7 @@ describe("calendar files and messages", () => {
     assert.equal(events, 27);
     assert.match(ics, /DTSTART;VALUE=DATE:20261009/);
     assert.match(ics, /DTEND;VALUE=DATE:20261010/);
-    assert.match(ics, /SUMMARY:Work: Cutter’s \(away from EST\)/);
+    assert.match(ics, new RegExp(`SUMMARY:Work: Cutter’s \\(away from ${demo.stores.find((s) => s.code === "EST")!.number}\\)`));
     for (const line of ics.split("\r\n")) assert.ok(new TextEncoder().encode(line).length <= 75, line);
     assert.ok(!/\n(?!\s)/.test(ics.replace(/\r\n/g, "\u0000")));
   });
@@ -312,7 +312,9 @@ describe("district model", () => {
 describe("poster away mark", () => {
   it("says where a regular pharmacist is from, never for floats, and keeps phone and lunch off", () => {
     const d = createDemo();
-    assert.deepEqual(posterLines(d, "MOL", 9).includes("RPh: Gideon Ashcroft (from EST)"), true);
+    const est = d.stores.find((s) => s.code === "EST")!.number;
+    assert.deepEqual(posterLines(d, "MOL", 9).includes(`RPh: Gideon Ashcroft (from ${est})`), true);
+    assert.deepEqual(posterLines({ ...d, storeLabels: "code" }, "MOL", 9).includes("RPh: Gideon Ashcroft (from EST)"), true);
     assert.equal(posterLines(d, "MOL", 8).some((l) => l.includes("from")), false); // Fenn is a float
     for (const l of posterLines(d, "MOL", 9)) assert.doesNotMatch(l, /\(\d{3}\)|lunch/i);
   });
@@ -577,9 +579,10 @@ describe("start and end dates are optional", () => {
 });
 
 describe("store numbers", () => {
-  it("shows letters by default and the number when chosen, falling back to letters where there is none", () => {
+  it("shows letters when chosen and the number by default in the sample month, falling back to letters where there is none", () => {
     const d = createDemo();
-    assert.equal(storeTag(d, "EST"), "EST");
+    assert.equal(d.storeLabels, "number");
+    assert.equal(storeTag({ ...d, storeLabels: "code" }, "EST"), "EST");
     const byNumber = { ...d, storeLabels: "number" as const };
     assert.equal(storeTag(byNumber, "EST"), d.stores.find((s) => s.code === "EST")!.number);
     const gap = { ...byNumber, stores: byNumber.stores.map((s) => (s.code === "MOL" ? { ...s, number: undefined } : s)) };

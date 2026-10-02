@@ -14,8 +14,9 @@ import navigator from "./navigator.mjs";
 import headerLinks from "./header-links.mjs";
 import nextMonth from "./next-month.mjs";
 import miniMonth from "./mini-month.mjs";
+import storeNumbers from "./store-numbers.mjs";
 
-for (const [name, fn] of [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["header links", headerLinks], ["next month", nextMonth], ["small month", miniMonth]]) {
+for (const [name, fn] of [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["header links", headerLinks], ["next month", nextMonth], ["small month", miniMonth], ["store numbers", storeNumbers]]) {
   console.log(`\n# ${name}`);
   await fn();
 }

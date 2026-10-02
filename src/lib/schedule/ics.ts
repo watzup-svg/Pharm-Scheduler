@@ -1,3 +1,4 @@
+import { storeTag } from "./label.ts";
 import { daysInMonth, isoDate, isStoreOpen, monthName, weekdayShort } from "./calendar.ts";
 import { awayFromHome } from "./dashboard.ts";
 import { shortStoreName } from "./fix.ts";
@@ -74,7 +75,7 @@ export function personIcs(doc: ScheduleDoc, name: string, now = new Date()): str
   for (const s of shiftsOf(doc, name)) {
     const date = isoDate(doc.year, doc.month, s.day);
     const desc = [
-      s.away ? `Working away from home store (${s.away}).` : "",
+      s.away ? `Working away from home store (${storeTag(doc, s.away)}).` : "",
       s.second ? "Second pharmacist." : "",
       s.phone ? `Store phone: ${s.phone}` : "",
     ]
@@ -86,7 +87,7 @@ export function personIcs(doc: ScheduleDoc, name: string, now = new Date()): str
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${compact(date)}`,
       `DTEND;VALUE=DATE:${compact(nextDay(date))}`,
-      `SUMMARY:${esc(`Work: ${shortStoreName(s.storeName)}${s.away ? ` (away from ${s.away})` : ""}`)}`,
+      `SUMMARY:${esc(`Work: ${shortStoreName(s.storeName)}${s.away ? ` (away from ${storeTag(doc, s.away)})` : ""}`)}`,
       ...(s.address ? [`LOCATION:${esc(s.address)}`] : []),
       ...(desc ? [`DESCRIPTION:${esc(desc)}`] : []),
       "TRANSP:TRANSPARENT",
@@ -107,7 +108,7 @@ export function personText(doc: ScheduleDoc, name: string): string {
   for (const s of shifts) {
     const where = shortStoreName(s.storeName);
     out.push(
-      `${weekdayShort(doc.year, doc.month, s.day)} ${monthName(doc.year, doc.month).slice(0, 3)} ${s.day}: ${where}${s.second ? " (second pharmacist)" : ""}${s.away ? ` — away from ${s.away}` : ""}`,
+      `${weekdayShort(doc.year, doc.month, s.day)} ${monthName(doc.year, doc.month).slice(0, 3)} ${s.day}: ${where}${s.second ? " (second pharmacist)" : ""}${s.away ? ` — away from ${storeTag(doc, s.away)}` : ""}`,
     );
   }
   const off = doc.timeOff.filter((t) => t.name === name && isApproved(t)).flatMap(timeOffDates);

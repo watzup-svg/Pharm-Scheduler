@@ -338,7 +338,7 @@ export function MonthBoard() {
               <p className="text-xs font-semibold text-muted">Names not carried over · {lastDrops.length}</p>
               <ul className="mt-1 max-h-32 list-disc space-y-1 overflow-auto pl-5 text-xs">
                 {lastDrops.map((d) => (
-                  <li key={dropLine(d)}>{dropLine(d)}</li>
+                  <li key={dropLine(d)}>{dropLine(d, tag)}</li>
                 ))}
               </ul>
             </div>

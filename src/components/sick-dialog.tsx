@@ -71,7 +71,7 @@ function SickBody({ seed, close }: { seed: { name: string; day: number }; close:
     setCell(s.store, s.slot, s.day, who);
     const now = useScheduleStore.getState().doc;
     const home = awayFromHome(now, who, s.store);
-    announce(`${who} on ${s.storeName}, ${dateLabel(s.day)}`, home ? `${who} is away from home: their store is ${home}.` : undefined);
+    announce(`${who} on ${s.storeName}, ${dateLabel(s.day)}`, home ? `${who} is away from home: their store is ${tag(home)}.` : undefined);
   }
 
   return (

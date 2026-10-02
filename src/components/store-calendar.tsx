@@ -8,7 +8,7 @@ import { memo, useRef, useState } from "react";
 import { useMedia } from "@/components/use-media";
 import { useStoreTag } from "@/components/use-store-tag";
 import { dayDomId, toneOf, type DayView, type DayName } from "@/components/day-view";
-import { monthWeeks, WEEKDAYS } from "@/lib/schedule/calendar";
+import { monthName, monthWeeks, weekdayShort, WEEKDAYS } from "@/lib/schedule/calendar";
 import { storeHoursLine } from "@/lib/schedule/coverage";
 import type { Store } from "@/lib/schedule/types";
 import { cn } from "@/lib/utils";
@@ -161,6 +161,7 @@ export const StoreCalendar = memo(function StoreCalendar({
                   short={short}
                   onOpen={placing.name ? (st, d) => void placeFromBench(st, d) : onOpen}
                   glow={placing.name ? (placing.glow.get(glowKey(store.code, day)) ?? "blocked") : undefined}
+                  when={`${weekdayShort(year, month, day)} ${monthName(year, month).slice(0, 3)} ${day}`}
                 />
               ),
             )}
@@ -184,15 +185,34 @@ function sameAsBefore(view: DayView | undefined, prev: DayView | undefined): boo
   return a !== "" && a === prev.names.map((n) => n.name).join("|");
 }
 
-function describe(view: DayView): string {
-  const where = `${view.store} day ${view.day}`;
+/** The hover note for a day: store and date, what is going on, and its colour edge and mark (the same ones the grid uses). */
+function tipOf(view: DayView, name: (code: string) => string, when: string, placing: boolean) {
+  const title = `${name(view.store)} · ${when}`;
+  const who = view.names.map((n) => n.name).join(", ");
+  const open = placing ? "" : " | Open this day";
+  const set = (tone: string, mark: string, ...lines: string[]) => ({ tip: [title, ...lines].join(" | ") + open, tone, mark });
+  if (!view.open && view.leftover) return set("bad", "leftover", `${who} is still on a closed day`);
+  if (!view.open) return set("", "", view.holiday ? `Closed · ${view.holiday}` : "Closed");
+  if (view.hole) return set("bad", "hole", "No pharmacist scheduled");
+  if (view.holeAccepted) return set("", "asis", "No coverage, left as is");
+  const flagged = (pick: (n: DayName) => boolean) => view.names.filter(pick).map((n) => n.name).join(", ");
+  if (view.unlicensed) return set("bad", "license", `${flagged((n) => n.unlicensed)} is not licensed in this state`);
+  if (view.double) return set("bad", "double", `${flagged((n) => n.double)} is also at another store today`);
+  if (view.off) return set("off", "timeOff", `${flagged((n) => n.off)} has the day off`);
+  if (view.needsSecond) return set("", "", who, "Usually two pharmacists, one here");
+  if (view.cover) return set("ok", "covering", who, view.away ? `Away from home: their store is ${name(view.away)}` : "A float covering here");
+  return set("", "", who || "Nobody scheduled");
+}
+
+function describe(view: DayView, name: (code: string) => string): string {
+  const where = `${name(view.store)} day ${view.day}`;
   if (!view.open && view.leftover) return `${where}: closed but ${view.names.map((n) => n.name).join(", ")} is still on it`;
   if (!view.open) return `${where}: closed${view.holiday ? `, ${view.holiday}` : ""}`;
   if (view.hole) return `${where}: no coverage, no pharmacist scheduled`;
   if (view.holeAccepted) return `${where}: no coverage (left as is)`;
   const second = view.needsSecond ? "; usually two pharmacists, only one here" : "";
   const bits = view.names.map((n) =>
-    [n.name, n.unlicensed ? "not licensed in this state" : "", n.double ? "scheduled twice" : "", n.off ? "on time off" : "", n.away ? `away from home, their store is ${n.away}` : n.cover ? "covering" : ""]
+    [n.name, n.unlicensed ? "not licensed in this state" : "", n.double ? "scheduled twice" : "", n.off ? "on time off" : "", n.away ? `away from home, their store is ${name(n.away)}` : n.cover ? "covering" : ""]
       .filter(Boolean)
       .join(", "),
   );
@@ -210,8 +230,11 @@ const DayCell = memo(function DayCell({
   short,
   onOpen,
   glow,
+  when,
 }: {
   view: DayView;
+  /** "Fri Oct 9", for the hover note. */
+  when: string;
   isToday: boolean;
   isFocus: boolean;
   isTabStop: boolean;
@@ -224,6 +247,8 @@ const DayCell = memo(function DayCell({
   /** While someone is being placed: how this day looks for them. */
   glow?: Glow;
 }) {
+  const name = useStoreTag();
+  const tip = tipOf(view, name, when, glow !== undefined);
   const closed = !view.open;
   const mine = person && view.names.some((n) => n.name === person);
   const dim = person && !mine;
@@ -243,7 +268,7 @@ const DayCell = memo(function DayCell({
         ? "time off"
         : view.cover
           ? view.away
-            ? `from ${view.away}`
+            ? `from ${name(view.away)}`
             : "cover"
           : view.needsSecond
             ? "1 of 2"
@@ -261,7 +286,10 @@ const DayCell = memo(function DayCell({
       tabIndex={isTabStop ? 0 : -1}
       onFocus={() => onFocusDay?.(view.store, view.day)}
       data-tone={toneOf(view)}
-      aria-label={describe(view)}
+      aria-label={describe(view, name)}
+      data-tip={tip.tip}
+      data-tip-tone={tip.tone || undefined}
+      data-tip-mark={tip.mark || undefined}
       onClick={() => onOpen(view.store, view.day)}
       className={cn(
         "relative flex min-h-[3.75rem] lg:min-h-[4.5rem] min-w-0 scroll-mt-20 flex-col rounded-lg px-[3px] pt-0.5 pb-1 text-left transition-[opacity,box-shadow]",
@@ -303,7 +331,7 @@ const DayCell = memo(function DayCell({
           <span className="mt-auto truncate text-xs leading-tight">{view.holiday || "closed"}</span>
         )
       ) : view.hole || view.holeAccepted ? (
-        <span className="my-auto grid place-items-center">{view.holeAccepted ? <QuietMark kind="asis" size={18} /> : <AlarmMark kind="hole" size={22} />}</span>
+        <span className="my-auto grid place-items-center">{view.holeAccepted ? <QuietMark kind="asis" size={18} /> : <AlarmMark kind="hole" size={22} tip={false} />}</span>
       ) : (
         <span className="mt-0.5 min-w-0 text-xs leading-tight font-semibold">
           {view.names.map((n: DayName, i) => (
@@ -320,13 +348,13 @@ const DayCell = memo(function DayCell({
       )}
       {tag ? (
         <span className="mt-auto flex items-center gap-1">
-          {tag === "license" ? <AlarmMark kind="license" size={16} /> : null}
-          {tag === "twice" ? <AlarmMark kind="double" size={16} /> : null}
-          {tag === "closed" ? <AlarmMark kind="leftover" size={16} /> : null}
+          {tag === "license" ? <AlarmMark kind="license" size={16} tip={false} /> : null}
+          {tag === "twice" ? <AlarmMark kind="double" size={16} tip={false} /> : null}
+          {tag === "closed" ? <AlarmMark kind="leftover" size={16} tip={false} /> : null}
           {tag === "time off" ? <QuietMark kind="off" size={12} /> : null}
-          {tag === "cover" || tag.startsWith("from ") ? <span data-tip={tag === "cover" ? "Covering | A float, away from their home store" : `Covering | Home store is ${tag.slice(5)}`} className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-ink"><QuietMark kind="cover" size={12} />{tag.startsWith("from ") ? tag.slice(5) : ""}</span> : null}
+          {tag === "cover" || tag.startsWith("from ") ? <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-ink max-sm:gap-0 max-sm:tracking-tight"><QuietMark kind="cover" size={12} />{tag.startsWith("from ") ? tag.slice(5) : ""}</span> : null}
           {tag === "as is" ? <QuietMark kind="asis" size={14} /> : null}
-          {tag === "1 of 2" ? <span data-tip="One pharmacist where two are usual" className="rounded-sm bg-warn-bg px-1 text-[11px] font-bold text-warn ring-1 ring-warn/50">1/2</span> : null}
+          {tag === "1 of 2" ? <span className="rounded-sm bg-warn-bg px-1 text-[11px] font-bold text-warn ring-1 ring-warn/50">1/2</span> : null}
         </span>
       ) : null}
     </button>

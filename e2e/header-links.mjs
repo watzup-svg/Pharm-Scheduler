@@ -92,5 +92,18 @@ export default async function run() {
     check("store counts are rounded squares, not circles", parseFloat(radius) <= 6, radius);
     await page.close();
   }
+  {
+    // A day on a store calendar says what is going on in the problem's colour, with its mark and what a click does.
+    const { page } = await open(browser, "schedule");
+    const cell = page.locator('[aria-label*="closed but"]').first();
+    await cell.scrollIntoViewIfNeeded();
+    await cell.hover({ position: { x: 4, y: 4 } });
+    await page.waitForTimeout(350);
+    const note = page.locator("[data-hover-note]");
+    const text = (await note.innerText()).replace(/\s+/g, " ");
+    check("a problem day's note names the store and date, the problem and the click", /\d{4} · \w{3} \w{3} \d+ .*still on a closed day.*Open this day/.test(text), text);
+    check("a problem day's note has the red edge and its mark", (await note.locator("[data-note-edge=bad]").count()) === 1 && (await note.locator("svg").count()) > 0);
+    await page.close();
+  }
   await browser.close();
 }

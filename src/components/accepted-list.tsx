@@ -1,3 +1,4 @@
+import { storeTag as labelOf } from "@/lib/schedule/label";
 import { Undo2 } from "lucide-react";
 import { useMemo } from "react";
 import { announce } from "@/components/undo";
@@ -46,7 +47,7 @@ export function AcceptedList({ onGo }: { onGo?: () => void }) {
             size="sm"
             onClick={() => {
               reopen(c.store, c.day);
-              announce(`Reopened ${c.store} on the ${c.day}. The shifts are open again.`);
+              announce(`Reopened ${labelOf(doc, c.store)} on the ${c.day}. The shifts are open again.`);
             }}
           >
             <Undo2 />
