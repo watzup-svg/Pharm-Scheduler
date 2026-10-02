@@ -1,5 +1,6 @@
 import "../lib/safe-storage.ts";
 import { create } from "zustand";
+import type { IssueAnchor } from "../lib/schedule/issue-cursor.ts";
 import type { CellRef, SlotId } from "../lib/schedule/types.ts";
 
 /**
@@ -41,6 +42,9 @@ export type ViewState = {
   dayPick: number;
   /** The cell that is highlighted on the calendar. */
   focus: CellRef | null;
+  /** The issue the header arrows stand on, and the month it belongs to ("2026-10"). Null when she is not stepping. */
+  issue: (IssueAnchor & { ym: string }) | null;
+  setIssue: (issue: (IssueAnchor & { ym: string }) | null) => void;
   /** The day being edited, or null when no sheet is open. `run` keeps going to the next problem after each fix. */
   sheet: { store: string; day: number; slot: SlotId; seed: string; run: boolean } | null;
   /** Person whose days are highlighted, or "". */
@@ -126,6 +130,8 @@ export const useViewStore = create<ViewState>((set, get) => ({
   weekStart: 1,
   dayPick: 1,
   focus: null,
+  issue: null,
+  setIssue: (issue) => set({ issue }),
   sheet: null,
   person: "",
   // On a phone the overview starts folded so the calendars are not a screen and a half away; on a laptop it is always shown.

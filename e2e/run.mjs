@@ -10,8 +10,9 @@ import cover from "./cover.mjs";
 import phase1 from "./phase1.mjs";
 import marks from "./marks.mjs";
 import hoverRules from "./hover-rules.mjs";
+import navigator from "./navigator.mjs";
 
-for (const [name, fn] of [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules]]) {
+for (const [name, fn] of [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator]]) {
   console.log(`\n# ${name}`);
   await fn();
 }

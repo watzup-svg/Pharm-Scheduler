@@ -2,7 +2,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Printer } from "lucide-react";
 import { useMemo } from "react";
 import { confirmAction } from "@/components/confirm";
-import { HeroCount, HeroLayout, HeroLead } from "@/components/hero";
+import { HeroCount, HeroLayout } from "@/components/hero";
+import { IssueLead, IssueLeaf, IssueTitle, useIssueNav, useOpenIssue } from "@/components/issue-nav";
 import { MonthDial } from "@/components/hero-graphics";
 import { Mark } from "@/components/icons";
 import { AlarmMark, StateMark, type AlarmKind } from "@/components/marks";
@@ -13,7 +14,8 @@ import { isOpenDay } from "@/lib/schedule/place";
 import { getCell } from "@/lib/schedule/grid";
 import { RPH_SLOTS } from "@/lib/schedule/slots";
 import { monthStatus } from "@/lib/schedule/dashboard";
-import { stepRef, type FixStep } from "@/lib/schedule/fix";
+import { type FixStep } from "@/lib/schedule/fix";
+import { issueOrder } from "@/lib/schedule/issue-cursor";
 import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
 
@@ -39,14 +41,18 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
   const steps = status.steps;
   const accepted = useMemo(() => acceptedItems(doc, ev), [doc, ev]);
   const waiting = doc.timeOff.filter((t) => t.status === "requested").length;
-  const by = (k: AlarmKind) => steps.filter((s) => s.kind === k);
+  // Everything in the header walks the month in date order, the same order as the arrows and the day panel's Next.
+  const ordered = useMemo(() => issueOrder(doc, steps), [doc, steps]);
+  const by = (k: AlarmKind) => ordered.filter((s) => s.kind === k);
+  const nav = useIssueNav();
+  const openIssue = useOpenIssue();
+  const current = nav.current;
 
   function fix(step: FixStep) {
-    goTo(stepRef(step), true, "", true);
-    void navigate({ to: "/schedule", resetScroll: false });
+    openIssue(doc, step);
   }
   function pickDay(day: number) {
-    const step = steps.find((s) => s.day === day);
+    const step = ordered.find((s) => s.day === day);
     if (step) return fix(step);
     const store = doc.stores.find((s) => isOpenDay(doc, s.code, day) && !RPH_SLOTS.some((slot) => getCell(doc.grid, s.code, slot, day).trim())) ?? doc.stores.find((s) => isOpenDay(doc, s.code, day));
     if (store) {
@@ -69,17 +75,28 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
     <HeroLayout
       label="Month status"
       lead={
-        <HeroLead
-          n={steps.length}
-          tone="bad"
-          done={!steps.length}
-          tip={steps.length ? `${steps.length} ${steps.length === 1 ? "problem" : "problems"} to fix | ${steps[0]?.headline ?? ""}` : "Nothing to fix | Every open store has a pharmacist, nobody is at two stores, no closed day has a name"}
-          onClick={steps[0] ? () => fix(steps[0]!) : undefined}
+        <IssueLead
+          tip={ordered.length ? `${ordered.length} ${ordered.length === 1 ? "problem" : "problems"} to fix | ${ordered[0]?.headline ?? ""} | The arrows step through them` : "Nothing to fix | Every open store has a pharmacist, nobody is at two stores, no closed day has a name"}
         />
       }
-      extra={<NextGapLeaf doc={doc} steps={steps} onOpen={fix} onDark />}
+      extra={
+        current ? (
+          <>
+            <IssueLeaf step={current} />
+            <IssueTitle step={current} className="max-sm:hidden" />
+          </>
+        ) : (
+          <NextGapLeaf doc={doc} steps={ordered} onOpen={fix} onDark />
+        )
+      }
+      tilesClassName={current ? "max-sm:[&>li:not([data-issue])]:hidden" : undefined}
       tiles={
         <>
+          {current ? (
+            <li data-issue className="w-full sm:hidden">
+              <IssueTitle step={current} />
+            </li>
+          ) : null}
           {KINDS.map((k) => {
             const list = by(k);
             if (!list.length) return null;
@@ -116,8 +133,8 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
       }
       actions={
         <>
-          {steps[0] ? (
-            <Button type="button" variant="light" aria-label="Fix the next one" onClick={() => fix(steps[0]!)}>
+          {ordered[0] ? (
+            <Button type="button" variant="light" aria-label={current ? "Open this issue" : "Fix the next one"} onClick={() => fix(current ?? ordered[0]!)}>
               Fix
               <ArrowRight />
             </Button>
@@ -147,7 +164,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
       }
       graphic={
         <div className="size-full">
-          <MonthDial doc={doc} steps={steps} onPick={pickDay} />
+          <MonthDial doc={doc} steps={steps} onPick={pickDay} selectedDay={nav.selectedDay} />
         </div>
       }
     />

@@ -29,7 +29,7 @@ export function Hero({ label, children, className, glow }: { label: string; chil
  *   graphic  one picture, in a box of one fixed size
  * A row with nothing in it still keeps its place, so the header does not change height from page to page.
  */
-export function HeroLayout({ label, lead, extra, tiles, actions, graphic, glow }: { glow?: "away"; label: string; lead: React.ReactNode; extra?: React.ReactNode; tiles?: React.ReactNode; actions?: React.ReactNode; graphic?: React.ReactNode }) {
+export function HeroLayout({ label, lead, extra, tiles, tilesClassName, actions, graphic, glow }: { glow?: "away"; label: string; lead: React.ReactNode; extra?: React.ReactNode; tiles?: React.ReactNode; /** Extra classes for the tiles row, e.g. to swap the tiles for an issue title on a phone. */ tilesClassName?: string; actions?: React.ReactNode; graphic?: React.ReactNode }) {
   return (
     <Hero label={label} glow={glow} className="max-sm:min-h-[25rem]">
       <div className="grid flex-1 gap-4 sm:grid-cols-[minmax(0,1fr)_14rem] sm:gap-8">
@@ -38,7 +38,7 @@ export function HeroLayout({ label, lead, extra, tiles, actions, graphic, glow }
             {lead}
             {extra}
           </div>
-          <ul aria-label="Counts" className="flex min-h-11 flex-wrap items-center gap-1.5 sm:gap-2">
+          <ul aria-label="Counts" className={cn("flex min-h-11 flex-wrap items-center gap-1.5 sm:gap-2", tilesClassName)}>
             {tiles}
           </ul>
           <div className="flex min-h-11 flex-wrap items-center gap-2 max-sm:[&_button]:px-3">{actions}</div>
