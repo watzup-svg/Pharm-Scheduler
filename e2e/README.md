@@ -31,3 +31,6 @@ Fast loop while editing: `npm run check` (type check + unit tests). See `ARCHITE
 
 ## Phone and Safari-engine runs
 `phone touch` visits every page at 390 px with touch and a 4x slower CPU. `BROWSER=webkit npm run e2e -- <groups>` runs groups in Playwright WebKit (needs `npx playwright-core install webkit`); CI runs a subset as a non-blocking job. Neither is a real iPhone.
+
+## Pressure test
+`npm run pressure -- --level low|medium|high` (see the header of scripts/pressure.mjs). Detail goes to `test-logs/pressure-<stamp>-<level>/`. `--only "<test name>"` runs one test, `--list` prints the names. Browser tests use locators, never element handles: a handle keeps its page element alive inside the browser and looks like a memory leak in the app.

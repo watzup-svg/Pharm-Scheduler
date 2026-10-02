@@ -34,7 +34,8 @@ if (job === "soak") {
   const cdp = await ctx.newCDPSession(page);
   await page.goto(BASE, { waitUntil: "load" });
   await settle(page);
-  const sample = async () => { await cdp.send("HeapProfiler.collectGarbage"); const m = Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics.map((x) => [x.name, x.value])); return { heap: m.JSHeapUsedSize / 1e6, dom: m.Nodes, listeners: m.JSEventListeners, attached: await page.evaluate(() => document.getElementsByTagName("*").length) }; };
+  // Always measure from the same page, so a bigger page at the moment of sampling is not mistaken for growth.
+  const sample = async () => { await page.keyboard.press("Escape"); await page.evaluate(() => (location.hash = "#/")); await page.waitForTimeout(400); await cdp.send("HeapProfiler.collectGarbage"); const m = Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics.map((x) => [x.name, x.value])); return { heap: m.JSHeapUsedSize / 1e6, dom: m.Nodes, listeners: m.JSEventListeners, attached: await page.evaluate(() => document.getElementsByTagName("*").length) }; };
   await cdp.send("Performance.enable");
   let first = null, last = null;
   for (let i = 0; i < iters; i++) {

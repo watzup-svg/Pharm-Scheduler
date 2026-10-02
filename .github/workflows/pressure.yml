@@ -1,0 +1,45 @@
+name: pressure test
+# Pushes the app past normal use (damaged files, odd data, a 120-store month, full storage, reloads mid-edit, squeezed screens, a long session).
+# Every test runs on its own machine at the same time, so the whole thing takes as long as the slowest one (about 10 minutes at high), not the sum.
+# Runs by hand (Actions tab > pressure test > Run workflow, pick a level) and once a week at high.
+on:
+  workflow_dispatch:
+    inputs:
+      level:
+        description: low, medium or high
+        default: high
+  schedule:
+    - cron: "17 12 * * 2"
+jobs:
+  pressure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - damaged files
+          - odd data
+          - big month and PDF
+          - random schedules
+          - storage full or refused
+          - interrupted by reloads
+          - squeezed and zoomed screens
+          - long session
+          - big month in the app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build:trial
+      - run: |
+          npx playwright-core install --with-deps chromium
+          echo "CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: ${{ matrix.test }}
+        run: node scripts/pressure.mjs --level "${{ github.event.inputs.level || 'high' }}" --only "${{ matrix.test }}"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pressure-${{ strategy.job-index }}
+          path: test-logs/

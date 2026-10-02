@@ -25,3 +25,4 @@ Newest first. One short block per batch: what changed, where to look, what was c
 - Unit tests for the storage fallback; `@types/node` and `vite` patch updates; one export dropped.
 
 - Standard checks added: `npm run coverage` (floor 90% lines / 82% branches on the rules code, part of `npm run all`), a `phone touch` browser group (390 px, touch, 4x slow CPU), a non-blocking WebKit (Safari engine) CI job (`BROWSER=webkit npm run e2e`), and a weekly dependency scan in the deep check.
+- `npm run pressure -- --level low|medium|high` pushes the app past normal use (damaged files, odd data, a 120-store month, full or refused storage, reloads mid-edit, squeezed and zoomed screens, a long session, 1,000 random schedules). Each test is its own process; a weekly cloud workflow (`pressure test`) runs each on its own machine.

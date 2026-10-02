@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);
+const only = args.includes("--only") ? args[args.indexOf("--only") + 1] : null; // run one test by name (CI runs each on its own machine)
 const level = args.includes("--level") ? args[args.indexOf("--level") + 1] : "low";
 if (!["low", "medium", "high"].includes(level)) { console.log("level must be low, medium or high"); process.exit(2); }
 const L = { low: 0, medium: 1, high: 2 }[level];
@@ -27,7 +28,7 @@ const jobs = [
   ["damaged files", node, [...strip, "scripts/pressure/node.mjs", "fuzz", level]],
   ["odd data", node, [...strip, "scripts/pressure/node.mjs", "hostile", level]],
   ["big month and PDF", node, [...strip, "--expose-gc", "scripts/pressure/node.mjs", "big", level]],
-  ["random schedules", node, ["scripts/sweep.mjs", "--seeds", String([30, 300, 1000][L]), "--jobs", "2"]],
+  ["random schedules", node, ["scripts/sweep.mjs", "--seeds", String([30, 300, 1000][L]), "--jobs", String(only ? os.cpus().length : 2)]],
   ["storage full or refused", ...withServer(node, "scripts/pressure/browser.mjs", "storage", level)],
   ["interrupted by reloads", ...withServer(node, "scripts/pressure/browser.mjs", "interrupts", level)],
   ["squeezed and zoomed screens", ...withServer(node, "scripts/pressure/browser.mjs", "screens", level)],
@@ -55,7 +56,8 @@ const run = ([name, cmd, argv]) => new Promise((done) => {
     done();
   });
 });
-const queue = [...jobs];
+if (args.includes("--list")) { console.log(JSON.stringify(jobs.map((j) => j[0]))); process.exit(0); }
+const queue = jobs.filter((j) => !only || j[0] === only);
 await Promise.all(Array.from({ length: width }, async () => { for (let j = queue.shift(); j; j = queue.shift()) await run(j); }));
 const failed = rows.filter((r) => !r.ok);
 fs.writeFileSync(path.join(dir, "summary.json"), JSON.stringify({ level, secs: Math.round((Date.now() - t0) / 1000), rows }, null, 1));
