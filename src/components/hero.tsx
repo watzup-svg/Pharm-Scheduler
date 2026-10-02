@@ -90,26 +90,27 @@ export function HeroLead({ n, tone = "plain", icon, mark, tip, onClick, done = f
 
 /** A frosted tile for one mark and its count; the whole thing is the button when it has somewhere to go. */
 /**
- * `current`: the kind of issue the header arrows are on. It lights up (brighter, a white outline and a bar under it) while
- * the other tiles step back, so the row says which kind is being worked on without colour alone.
+ * `current`: the kind of issue the header arrows are on. It is drawn chosen, like a chosen store chip: solid light fill
+ * with dark text, so the row says which kind is being worked on by fill and contrast, not hue alone.
  */
-export function HeroCount({ n, tip, children, onClick, tone = "plain", label, current, dim }: { n: number | string; tip: string; children?: React.ReactNode; onClick?: () => void; tone?: HeroTone; label?: string; current?: boolean; dim?: boolean }) {
+export function HeroCount({ n, tip, children, onClick, tone = "plain", label, current }: { n: number | string; tip: string; children?: React.ReactNode; onClick?: () => void; tone?: HeroTone; label?: string; current?: boolean }) {
   const body = (
     <>
       {children}
-      <span className={cn("text-xl leading-none font-semibold tabular-nums sm:text-2xl", tone === "bad" && "text-illegal-bg", tone === "warn" && "text-warn-bg")}>{n}</span>
+      <span className={cn("text-xl leading-none font-semibold tabular-nums sm:text-2xl", tone === "bad" && (current ? "text-illegal" : "text-illegal-bg"), tone === "warn" && "text-warn-bg")}>{n}</span>
       {label ? <span className="text-xs text-white/65">{label}</span> : null}
     </>
   );
   const cls = cn(
     "relative inline-flex h-11 items-center gap-1.5 rounded-xl bg-white/10 px-2 ring-1 ring-white/15 transition-[opacity,box-shadow,background-color] sm:gap-2.5 sm:px-2.5",
-    current && "bg-white/20 ring-2 ring-white shadow-[0_0_20px_-2px_rgba(255,255,255,0.45)] after:absolute after:inset-x-3 after:-bottom-2 after:h-1 after:rounded-full after:bg-white",
-    dim && "opacity-50",
+    // Chosen the way every other choice in the app reads as chosen (store chips, the Calendars/Week/Day switch, Fix):
+    // the tile turns solid light with dark text, the same inverse fill on the dark header. Fill, not hue, carries it.
+    current && "bg-cream ring-0 hover:bg-cream",
   );
   return (
     <li data-current-kind={current ? "" : undefined} aria-current={current ? "true" : undefined}>
       {onClick ? (
-        <button type="button" onClick={onClick} data-tip={tip} aria-label={tip.replace(" | ", ". ")} className={cn(cls, "transition-colors hover:bg-white/15")}>
+        <button type="button" onClick={onClick} data-tip={tip} aria-label={tip.replace(" | ", ". ")} className={cn(cls, !current && "hover:bg-white/15")}>
           {body}
         </button>
       ) : (

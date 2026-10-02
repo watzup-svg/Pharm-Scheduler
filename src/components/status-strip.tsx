@@ -107,7 +107,6 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
                 n={list.length}
                 tone="bad"
                 current={current?.kind === k}
-                dim={Boolean(current) && current?.kind !== k}
                 tip={`${KIND_NAME[k]} · ${list.length} | ${list[0]!.headline}${marked(list) !== list.length ? ` | ${marked(list)} marks on the grid, one for each store involved` : ""}`}
                 onClick={() => fix(list[0]!)}
               >
@@ -117,7 +116,6 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
           })}
           {accepted.length ? (
             <HeroCount
-              dim={Boolean(current)}
               n={accepted.length}
               tip={`Left as is · ${accepted.length} | Problems you decided to print as they are. ${accepted[0]!.label}`}
               onClick={() => {
@@ -129,7 +127,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
             </HeroCount>
           ) : null}
           {waiting ? (
-            <HeroCount dim={Boolean(current)} n={waiting} tone="warn" tip={`Time off waiting · ${waiting} | Requests you have not decided`} onClick={() => void navigate({ to: "/time-off" })}>
+            <HeroCount n={waiting} tone="warn" tip={`Time off waiting · ${waiting} | Requests you have not decided`} onClick={() => void navigate({ to: "/time-off" })}>
               <StateMark kind="waiting" size={28} tip={false} />
             </HeroCount>
           ) : null}
