@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { issueCells, useIssueNav } from "@/components/issue-nav";
 import { useNote } from "@/components/hover-note";
 import { MARK_ORDER, StateMark, type AlarmKind } from "@/components/marks";
 import { useStoreTag } from "@/components/use-store-tag";
@@ -119,6 +120,9 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
   const { show, hide, card } = useNote();
   const [cursor, setCursor] = useState({ r: 0, c: 0 });
   const [pick, setPick] = useState<{ store: string; day: number } | null>(null);
+  // The issue the header arrows are on gets a soft outline, on every store it involves.
+  const { current } = useIssueNav();
+  const marked = new Set(current ? issueCells(current).map((c) => `${c.store}|${c.day}`) : []);
   const touch = useRef(false);
   const root = useRef<HTMLDivElement>(null);
   const [more, setMore] = useState(false);
@@ -206,6 +210,7 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
             </span>
             {row.tones.map((tone, c) => {
               const selected = pick?.store === row.code && pick.day === c + 1;
+              const onIssue = marked.has(`${row.code}|${c + 1}`);
               return (
                 <button
                   key={c}
@@ -213,6 +218,8 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
                   role="gridcell"
                   data-notip
                   data-rc={`${r}|${c}`}
+                  data-cell={`${row.code}|${c + 1}`}
+                  data-issue={onIssue || undefined}
                   data-tone={tone}
                   tabIndex={cursor.r === r && cursor.c === c ? 0 : -1}
                   aria-label={cellLines(doc, row.code, c + 1, tone, true).slice(0, 2).join(". ")}
@@ -234,7 +241,7 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
                     hide();
                     onOpen(row.code, c + 1);
                   }}
-                  className={cn("block rounded-[3px] outline-none focus-visible:ring-2 focus-visible:ring-ink", selected && "ring-2 ring-ink")}
+                  className={cn("block rounded-[3px] outline-none focus-visible:ring-2 focus-visible:ring-ink", selected && "ring-2 ring-ink", onIssue && !selected && "ring-2 ring-ink/70 ring-offset-2 ring-offset-white")}
                 >
                   <Cell tone={tone} />
                 </button>

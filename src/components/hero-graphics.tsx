@@ -1,4 +1,5 @@
 import { useMemo, useRef } from "react";
+import { ordinal } from "@/lib/schedule/issue-cursor";
 import { useNote } from "@/components/hover-note";
 import { coverageByDay } from "@/lib/schedule/day-coverage";
 import { daysInMonth, monthName, todayParts, weekdayShort, weekdaySun0 } from "@/lib/schedule/calendar";
@@ -53,8 +54,12 @@ function dayLines(doc: ScheduleDoc, day: number, steps: FixStep[], open: number,
   return [`${head} · ${here.length} to fix`, ...here.slice(0, 3).map((s) => s.headline), ...(here.length > 3 ? [`and ${here.length - 3} more`] : []), covered < open ? "" : ""].filter(Boolean);
 }
 
-/** The month as a ring: green covered, pale brick a problem (thicker = more), hollow closed, a white tick for today. */
-export function MonthDial({ doc, steps, onPick }: { doc: ScheduleDoc; steps: FixStep[]; onPick: (day: number) => void }) {
+/**
+ * The month as a ring: green covered, pale brick a problem (thicker = more), hollow closed. The white tick points at the
+ * selected day (the open day panel, or the issue the header arrows are on) and the centre names it; with nothing selected
+ * the tick is today and the centre is the month. Today keeps a small dot on the rim while another day is selected.
+ */
+export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: ScheduleDoc; steps: FixStep[]; onPick: (day: number) => void; selectedDay?: number | null }) {
   const { bind, card, gate } = useHover();
   const cover = useMemo(() => coverageByDay(doc), [doc]);
   const days = daysInMonth(doc.year, doc.month);
@@ -66,10 +71,20 @@ export function MonthDial({ doc, steps, onPick }: { doc: ScheduleDoc; steps: Fix
   const cy = 120;
   const R = 92;
   const P = (r: number, a: number) => `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
-  const tick = ((today.day - 0.5) / days) * Math.PI * 2 - Math.PI / 2;
+  const sel = selectedDay != null && selectedDay >= 1 && selectedDay <= days ? selectedDay : null;
+  const tickDay = sel ?? (inMonth ? today.day : null);
+  // The tick is drawn pointing up and turned with a CSS rotation, so moving it is a smooth turn the short way round.
+  const turn = useRef<number | null>(null);
+  if (tickDay != null) {
+    const target = ((tickDay - 0.5) / days) * 360;
+    const prev = turn.current;
+    turn.current = prev == null ? target : prev + ((((target - prev) % 360) + 540) % 360) - 180;
+  }
+  const todayAngle = ((today.day - 0.5) / days) * Math.PI * 2 - Math.PI / 2;
+  const showTodayDot = inMonth && sel != null && sel !== today.day;
   return (
     <div className="relative size-full">
-      <svg viewBox="0 0 240 240" className="size-full" role="group" aria-label={`${monthName(doc.year, doc.month)} as a ring of ${days} days; ${steps.length} to fix`}>
+      <svg viewBox="0 0 240 240" className="size-full" role="group" aria-label={`${monthName(doc.year, doc.month)} as a ring of ${days} days; ${steps.length} to fix${sel != null ? `; showing ${weekdayShort(doc.year, doc.month, sel)} ${MON(doc)} ${sel}` : ""}`}>
         <circle cx={cx} cy={cy} r={R - 18} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
         {Array.from({ length: days }, (_, i) => {
           const d = i + 1;
@@ -99,13 +114,33 @@ export function MonthDial({ doc, steps, onPick }: { doc: ScheduleDoc; steps: Fix
             />
           );
         })}
-        {inMonth ? <line x1={cx + 68 * Math.cos(tick)} y1={cy + 68 * Math.sin(tick)} x2={cx + 112 * Math.cos(tick)} y2={cy + 112 * Math.sin(tick)} stroke="#fff" strokeWidth={3} strokeLinecap="round" pointerEvents="none" /> : null}
-        <text x={cx} y={cy + 4} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize={30} fontWeight={600} letterSpacing={2} pointerEvents="none">
-          {MON(doc).toUpperCase()}
-        </text>
-        <text x={cx} y={cy + 28} textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize={16} pointerEvents="none">
-          {doc.year}
-        </text>
+        {tickDay != null ? (
+          <g data-tick-day={tickDay} pointerEvents="none" style={{ transform: `rotate(${turn.current}deg)`, transformOrigin: `${cx}px ${cy}px`, transition: "transform 300ms ease-out" }}>
+            <line x1={cx} y1={cy - 68} x2={cx} y2={cy - 112} stroke="#fff" strokeWidth={3} strokeLinecap="round" />
+          </g>
+        ) : null}
+        {showTodayDot ? (
+          <rect data-today-dot x={cx + 113 * Math.cos(todayAngle) - 3.5} y={cy + 113 * Math.sin(todayAngle) - 3.5} width={7} height={7} rx={2} fill="#fff" pointerEvents="none" />
+        ) : null}
+        {sel != null ? (
+          <>
+            <text x={cx} y={cy + 2} textAnchor="middle" fill="rgba(255,255,255,0.92)" fontSize={30} fontWeight={600} pointerEvents="none">
+              <tspan letterSpacing={2}>{MON(doc).toUpperCase()}</tspan> {ordinal(sel)}
+            </text>
+            <text x={cx} y={cy + 26} textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize={16} pointerEvents="none">
+              {weekdayShort(doc.year, doc.month, sel).toUpperCase()} · {doc.year}
+            </text>
+          </>
+        ) : (
+          <>
+            <text x={cx} y={cy + 4} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize={30} fontWeight={600} letterSpacing={2} pointerEvents="none">
+              {MON(doc).toUpperCase()}
+            </text>
+            <text x={cx} y={cy + 28} textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize={16} pointerEvents="none">
+              {doc.year}
+            </text>
+          </>
+        )}
       </svg>
       {card}
     </div>

@@ -33,6 +33,7 @@ import { timeOffImpact } from "@/lib/schedule/impact";
 import { getCell } from "@/lib/schedule/grid";
 import { isOpenDay } from "@/lib/schedule/place";
 import { issueKey } from "@/lib/schedule/rules";
+import { anchorOf, issueOrder, nextAfter } from "@/lib/schedule/issue-cursor";
 import { plannedFillSlot, ptoPlanned, type PlannedPlace } from "@/lib/schedule/stamp";
 import type { SlotId } from "@/lib/schedule/types";
 import { cn } from "@/lib/utils";
@@ -112,13 +113,24 @@ function SheetBody() {
 
   const doubleStep = steps.find((st) => st.kind === "double" && st.stores.length >= 2) ?? null;
 
+  // Opening a day that has an issue puts the header's cursor on it, so the arrows carry on from here.
+  useEffect(() => {
+    const st = useScheduleStore.getState();
+    const here = issueOrder(st.doc, monthStatus(st.doc, st.evaluation).steps).find(
+      (x) => x.day === day && (x.store === store || (x.kind === "double" && x.stores.includes(store))),
+    );
+    if (here) useViewStore.getState().setIssue({ ...anchorOf(here), ym: `${st.doc.year}-${String(st.doc.month).padStart(2, "0")}` });
+  }, [store, day]);
+
   if (!storeRow) return null;
 
-  const allSteps = monthStatus(doc, ev).steps;
+  // The same date order and cursor as the header arrows, so "Next" here and the arrows there are one stepper.
+  const allSteps = issueOrder(doc, monthStatus(doc, ev).steps);
   const pos = allSteps.findIndex(
     (st) => st.day === day && (st.store === store || (st.kind === "double" && st.stores.includes(store))),
   );
-  const nextStep = allSteps.length && (pos >= 0 ? allSteps.length > 1 : true) ? allSteps[(pos + 1) % allSteps.length] : null;
+  const nextStep = !allSteps.length ? null : pos >= 0 ? (allSteps.length > 1 ? allSteps[(pos + 1) % allSteps.length]! : null) : nextAfter(doc, allSteps, day, store);
+  const ym = `${doc.year}-${String(doc.month).padStart(2, "0")}`;
 
   const dateLine = `${weekdayLong(doc.year, doc.month, day)}, ${monthName(doc.year, doc.month).slice(0, 3)} ${day}`;
 
@@ -129,13 +141,17 @@ function SheetBody() {
       return;
     }
     const st = useScheduleStore.getState();
-    const left = monthStatus(st.doc, st.evaluation).steps;
+    const left = issueOrder(st.doc, monthStatus(st.doc, st.evaluation).steps);
     if (!left.length) {
       closeSheet();
+      useViewStore.getState().setIssue(null);
       toast.success("All problems fixed. Time off still prints.");
       return;
     }
-    const n = stepRef(left[0]!);
+    // On to the next issue in the month after this one, the same one the header's next arrow would land on.
+    const next = nextAfter(st.doc, left, day, store)!;
+    useViewStore.getState().setIssue({ ...anchorOf(next), ym });
+    const n = stepRef(next);
     openSheet(n.store, n.day, n.slot, "", true);
   }
 
@@ -227,6 +243,7 @@ function SheetBody() {
             size="sm"
             className="min-w-0"
             onClick={() => {
+              useViewStore.getState().setIssue({ ...anchorOf(nextStep), ym });
               const n = stepRef(nextStep);
               openSheet(n.store, n.day, n.slot, "", true);
             }}
