@@ -68,10 +68,12 @@ export function driveBetween(doc: Pick<ScheduleDoc, "stores" | "driveMinutes"> &
   const miles = storeDistance(doc, from, to);
   const set = doc.driveMinutes?.[driveKey(from, to)];
   const road = roadMilesEstimate(doc, from, to);
-  if (set != null) return { minutes: set, estimated: false, miles, roadMiles: road?.miles, via: road?.via };
   const handMiles = doc.driveMiles?.[driveKey(from, to)];
-  const measured = handMiles == null ? tableFor(doc.stores, from, to) : null;
-  if (measured) return { minutes: measured.minutes, estimated: false, miles, roadMiles: measured.miles, via: road?.via, ferry: measured.ferry };
+  const measured = tableFor(doc.stores, from, to);
+  // Hand-set minutes win, and the ferry stays a fact about the route. Hand-set miles only change the miles (and so the mileage pay):
+  // they never throw away measured minutes.
+  if (set != null) return { minutes: set, estimated: false, miles, roadMiles: road?.miles, via: road?.via, ...(measured?.ferry ? { ferry: true } : {}) };
+  if (measured) return { minutes: measured.minutes, estimated: false, miles, roadMiles: handMiles ?? measured.miles, via: road?.via, ferry: measured.ferry };
   if (handMiles != null) return { minutes: Math.round((handMiles / 45) * 60), estimated: true, miles, roadMiles: handMiles, via: road?.via };
   if (miles == null || !road) return null;
   return { minutes: Math.round((road.miles / 45) * 60), estimated: true, miles, roadMiles: road.miles, via: road.via };
