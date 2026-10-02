@@ -9,7 +9,7 @@ export default async function run() {
   {
     const { page: p, errors } = await open(browser, "schedule");
     // 1. Remove stays on the shift, shows cover, and does not offer the removed person as best fit
-    const cell = p.locator('[aria-label^="CAT day 1:"]').first();
+    const cell = p.locator('#day-CAT-1');
     await cell.scrollIntoViewIfNeeded();
     await cell.click();
     await p.waitForTimeout(300);
@@ -20,7 +20,7 @@ export default async function run() {
     check("the person just removed is not the best fit", (await d.getByRole("button", { name: /^Schedule Marisol Quenby/ }).count()) === 0);
     await p.keyboard.press("Escape");
     // 2. Inventory is a closure reason
-    const c2 = p.locator('[aria-label^="SCA day 14:"]').first();
+    const c2 = p.locator('#day-SCA-14');
     await c2.scrollIntoViewIfNeeded();
     await c2.click();
     await p.waitForTimeout(300);

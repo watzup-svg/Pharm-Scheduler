@@ -82,8 +82,9 @@ export function createDemo(): ScheduleDoc {
   const doc: ScheduleDoc = {
     ...base,
     // Silverton usually runs two pharmacists on Saturdays. The manager chooses this per store.
-    // Invented four-digit store numbers (1101, 1102 …) so the practice month can show "name stores by number". Real numbers go on the Stores page.
-    stores: base.stores.map((st, i) => ({ ...st, number: String(1101 + i), ...(st.code === "SIL" ? { twoPharmacistDays: [6] } : {}) })),
+    // Stores go by number (placeholder numbers from the store list until the real ones are known).
+    storeLabels: "number",
+    stores: base.stores.map((st) => (st.code === "SIL" ? { ...st, twoPharmacistDays: [6] } : st)),
     year: YEAR,
     month: MONTH,
     people: [

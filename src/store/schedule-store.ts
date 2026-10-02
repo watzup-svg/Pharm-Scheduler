@@ -727,7 +727,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   startWithAllStores: (target) => {
     const { doc } = get();
     backupNow(doc, get().fileName, "before-replace");
-    const blank = blankMonthWithStores(doc);
+    // A fresh start names stores by number, as the district manager prefers.
+    const blank = { ...blankMonthWithStores(doc), storeLabels: "number" as const };
     const next = target ? { ...blank, year: target.year, month: target.month } : blank;
     set({
       ...evaluated(next),
