@@ -96,6 +96,14 @@ export default async function run() {
     check("no script errors on Schedule while stepping", errors.length === 0, errors.join(" | "));
     await page.close();
   }
+  for (const width of [1066, 1366]) {
+    // Every store chip on Schedule is whole and on screen at laptop widths (they wrap instead of running off the edge).
+    const { page } = await open(browser, "schedule", { width, height: 800 });
+    const cut = await page.evaluate(() => [...document.querySelectorAll("[data-store-chip]")].filter((e) => { const r = e.getBoundingClientRect(); const box = e.parentElement.getBoundingClientRect(); return r.right > Math.min(window.innerWidth, box.right) + 0.5 || r.left < box.left - 0.5; }).map((e) => e.getAttribute("data-store-chip")));
+    const n = await page.locator("[data-store-chip]").count();
+    check(`every store chip is whole on screen @${width}`, n === 18 && cut.length === 0, `${n} chips, cut: ${cut.join(",")}`);
+    await page.close();
+  }
   for (const width of [390, 320]) {
     const { page, errors } = await open(browser, "", { width, height: 800 });
     const h0 = await headerHeight(page);

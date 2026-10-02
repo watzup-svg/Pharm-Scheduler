@@ -238,7 +238,8 @@ export function MonthBoard() {
       <div
         ref={chipRow}
         onScroll={updateFade}
-        className={cn("flex gap-1", visibleCalendars.length > 6 ? "-mx-1 -mt-1 overflow-x-auto px-1 pt-1 pb-1 contain-paint" : "flex-wrap", moreRight && "[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)]")}
+        // Laptop and up: every store chip wraps onto as many lines as it needs, so none is cut off. Phone: one row that scrolls.
+        className={cn("flex gap-1 sm:flex-wrap sm:pt-1", visibleCalendars.length > 6 ? "-mx-1 -mt-1 px-1 pt-1 pb-1 max-sm:overflow-x-auto max-sm:contain-paint" : "max-sm:flex-wrap", moreRight && "max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)]")}
         role="group"
         aria-label="Show store"
       >
