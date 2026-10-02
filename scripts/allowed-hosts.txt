@@ -6,3 +6,4 @@ tailwindcss.com
 cdnjs.cloudflare.com
 localhost
 jspdf.default.namespaceuri
+www.irs.gov
