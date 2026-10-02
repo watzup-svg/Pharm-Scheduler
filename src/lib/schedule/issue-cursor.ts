@@ -1,6 +1,7 @@
 import { monthName, weekdayShort } from "./calendar.ts";
 import { storeLabel, type FixStep } from "./fix.ts";
 import type { ScheduleDoc } from "./types.ts";
+import { PROBLEM_NAME } from "./problem-kinds.ts";
 
 /**
  * The issue navigator's order and cursor. Pure: it only reads the problem list, it never changes the schedule.
@@ -80,12 +81,7 @@ export function nextAfter(doc: ScheduleDoc, ordered: FixStep[], day: number, sto
   return ordered[firstAfter(doc, ordered, day, store)]!;
 }
 
-const KIND_TITLE: Record<FixStep["kind"], string> = {
-  hole: "No coverage",
-  double: "Two places",
-  leftover: "Name on a closed day",
-  license: "Not licensed",
-};
+const KIND_TITLE: Record<FixStep["kind"], string> = PROBLEM_NAME;
 
 /** Longest title that keeps full names; past this the house short form ("M. Quenby") is used. */
 export const TITLE_FULL_NAME_MAX = 40;

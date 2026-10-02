@@ -2,6 +2,9 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Structure (no visible change)
+- Day panel split into four files; problem kind names and order live in one file (`problem-kinds.ts`).
+
 ## Build stamp
 - File menu, under the save status: "Trial build · Oct 2, 4:41 AM · 0f7262c" (build kind, when it was built, version). Tells a fresh build from an old one.
 

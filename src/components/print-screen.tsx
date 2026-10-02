@@ -47,6 +47,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
+import { PROBLEM_KINDS, PROBLEM_NAME } from "@/lib/schedule/problem-kinds";
 
 type Mode = "store" | "employee" | "district";
 
@@ -241,7 +242,7 @@ export function PrintScreen() {
     );
   }
 
-  const PRINT_KIND = { hole: "No coverage", double: "Two places", leftover: "Name on a closed day", license: "Not licensed" } as const;
+  const PRINT_KIND = PROBLEM_NAME;
   const firstStep = steps[0] ?? null;
   const leavable = steps.filter((st) => st.kind !== "license");
   return (
@@ -253,7 +254,7 @@ export function PrintScreen() {
         }
         tiles={
           <>
-            {(["hole", "double", "leftover", "license"] as const).map((k) => {
+            {PROBLEM_KINDS.map((k) => {
               const list = steps.filter((st) => st.kind === k);
               return list.length ? (
                 <Count key={k} tone="bad" n={list.length} tip={`${PRINT_KIND[k]} · ${list.length} | ${list[0]!.headline}`} onClick={() => showOnSchedule(stepRef(list[0]!), true)}>

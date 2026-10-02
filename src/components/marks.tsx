@@ -1,5 +1,6 @@
 import { Mark, type IconKey } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { PROBLEM_NAME } from "@/lib/schedule/problem-kinds";
 
 /**
  * Every state mark in the app comes from this file: one rounded-square chip, a picture inside, and a colour that says which
@@ -27,10 +28,10 @@ export type MarkKind =
   | "asis";
 
 export const MARKS: Record<MarkKind, { family: MarkFamily; icon: IconKey; name: string; meaning: string }> = {
-  hole: { family: "problem", icon: "noCoverage", name: "No coverage", meaning: "An open store with nobody scheduled" },
-  double: { family: "problem", icon: "twice", name: "Two places", meaning: "The same pharmacist at two stores on one day" },
-  leftover: { family: "problem", icon: "closed", name: "Name on a closed day", meaning: "A name left on a day the store is shut" },
-  license: { family: "problem", icon: "licence", name: "Not licensed", meaning: "A pharmacist placed in a state they are not licensed in" },
+  hole: { family: "problem", icon: "noCoverage", name: PROBLEM_NAME.hole, meaning: "An open store with nobody scheduled" },
+  double: { family: "problem", icon: "twice", name: PROBLEM_NAME.double, meaning: "The same pharmacist at two stores on one day" },
+  leftover: { family: "problem", icon: "closed", name: PROBLEM_NAME.leftover, meaning: "A name left on a day the store is shut" },
+  license: { family: "problem", icon: "licence", name: PROBLEM_NAME.license, meaning: "A pharmacist placed in a state they are not licensed in" },
   timeOff: { family: "away", icon: "timeOff", name: "Time off", meaning: "Scheduled on a day they are off. Prints in yellow; never blocks" },
   sick: { family: "away", icon: "sick", name: "Sick", meaning: "Called in sick" },
   appointment: { family: "away", icon: "appointment", name: "Appointment", meaning: "Time off for an appointment" },
