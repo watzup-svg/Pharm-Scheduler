@@ -21,7 +21,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 | Marks and their colours | `components/marks.tsx` (`MARKS`), tokens in `styles.css` |
 | Wording | `artifacts/COPY_GUIDE.md`; sentences live next to the code that shows them |
 | Month grid (District) / store calendars / week / day | `month-grid.tsx` / `store-calendar.tsx` / `week-board.tsx` / `day-board.tsx`; shared per-day facts: `day-view.ts` |
-| Day panel (click a day) | `day-sheet.tsx` and the files split from it |
+| Day panel (click a day) | `day-sheet.tsx` (panel + problem notices), `day-sheet-slot.tsx` (one slot), `day-sheet-picker.tsx` (who can cover), `day-sheet-extras.tsx` (not-offered list, impact list, out button) |
 | Printing | `lib/schedule/print-model.ts` (what), `pdf.ts` (PDF), `components/print-screen.tsx`, `letter-sheet.tsx` (on-screen preview) |
 | Saved file (format, old versions) | `lib/schedule/file.ts` (zod schema, v1 files expand on open) |
 | All app state and actions | `store/schedule-store.ts` (document), `store/view-store.ts` (UI only: selected issue, hover) |

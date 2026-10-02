@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { ImpactList } from "@/components/day-sheet";
+import { ImpactList } from "@/components/day-sheet-extras";
 import { announce } from "@/components/undo";
 import { useMedia } from "@/components/use-media";
 import { useShowOnSchedule } from "@/components/use-show-on-schedule";
