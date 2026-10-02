@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { dropLine, planNextMonth } from "@/lib/schedule/next-month";
+import { forecastLine, forecastNextMonth } from "@/lib/schedule/next-month-forecast";
+import { StateMark } from "@/components/marks";
 import { useScheduleStore } from "@/store/schedule-store";
 
 const LIST_CAP = 8;
@@ -30,6 +32,8 @@ export function StartNextMonthButton({
     else setUncontrolled(next);
   }
   const plan = useMemo(() => planNextMonth(doc), [doc]);
+  // Worked out only while the dialog is open: what the new month would open with, before she presses Start.
+  const forecast = useMemo(() => (open ? forecastNextMonth(doc, plan) : null), [open, doc, plan]);
   const shut = plan.dropped.filter((d) => d.reason === "shut");
   const missing = plan.dropped.filter((d) => d.reason === "no-day");
   const unlicensed = plan.dropped.filter((d) => d.reason === "unlicensed");
@@ -63,6 +67,12 @@ export function StartNextMonthButton({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent title={`Start ${plan.monthLabel}?`}>
           <div className="flex flex-col gap-3 text-sm">
+            {forecast ? (
+              <p data-forecast className="flex items-start gap-2 font-semibold text-ink">
+                {forecast.total ? <StateMark kind="hole" size={20} tip={false} className="mt-0.5" /> : null}
+                <span>{forecastLine(plan.monthLabel, forecast)}</span>
+              </p>
+            ) : null}
             <p className="text-pretty text-muted">
               Copy {plan.fromLabel} by weekday (first Monday to first Monday). Empty days stay empty. Names that would land on a closed day are dropped.
             </p>
@@ -70,16 +80,13 @@ export function StartNextMonthButton({
               <p>Nothing dropped. Every name lands on an open day.</p>
             ) : (
               <>
+                {/* The ones worth reading first; the end-of-month weekdays that simply don't exist are one line at the end. */}
                 <DropGroup
-                  title={`${shut.length} would land on a shut day`}
-                  lines={shut.map(dropLine)}
+                  title={`${unlicensed.length} ${unlicensed.length === 1 ? "is" : "are"} not licensed in that store’s state`}
+                  lines={unlicensed.map(dropLine)}
                 />
                 <DropGroup
-                  title={`${missing.length} had no matching weekday in ${plan.monthLabel}`}
-                  lines={missing.map(dropLine)}
-                />
-                <DropGroup
-                  title={`${gone.length} are not with the company on that date (relief or past end date)`}
+                  title={`${gone.length} ${gone.length === 1 ? "is" : "are"} not with the company on that date (relief or past end date)`}
                   lines={gone.map(dropLine)}
                 />
                 <DropGroup
@@ -87,9 +94,14 @@ export function StartNextMonthButton({
                   lines={usualOff.map(dropLine)}
                 />
                 <DropGroup
-                  title={`${unlicensed.length} are not licensed in that store’s state`}
-                  lines={unlicensed.map(dropLine)}
+                  title={`${shut.length} would land on a shut day`}
+                  lines={shut.map(dropLine)}
                 />
+                {missing.length ? (
+                  <p className="text-muted">
+                    {missing.length} {missing.length === 1 ? "name falls" : "names fall"} on a weekday {plan.monthLabel} doesn’t have (a 5th Thursday, for example), so {missing.length === 1 ? "it isn’t" : "they aren’t"} copied.
+                  </p>
+                ) : null}
               </>
             )}
             <div className="mt-2 flex flex-wrap justify-end gap-2">
