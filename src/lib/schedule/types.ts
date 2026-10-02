@@ -137,6 +137,10 @@ export type ScheduleDoc = {
   accepted?: Accepted[];
   /** Drive times the manager set by hand, in minutes, keyed "A|B" with the two store codes in alphabetical order. Beats the estimate from addresses. */
   driveMinutes?: Record<string, number>;
+  /** Road miles the manager set by hand for a pair of stores, same keys as driveMinutes. Beats the estimate from addresses. */
+  driveMiles?: Record<string, number>;
+  /** Mileage pay: the per-mile rate (the federal rate; blank until entered) and the miles from the home store that are not paid. */
+  mileage?: { rate?: number; freeMiles?: number };
   /** How stores are named in headings and lists: by their letters (EST) or by their store number. Default letters. */
   storeLabels?: "code" | "number";
 };

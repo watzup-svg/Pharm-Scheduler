@@ -15,6 +15,7 @@ import { isoDate, weekdaySun0 } from "./calendar.ts";
 import { choicesFor, offerable, type HoleChoice } from "./dashboard.ts";
 import { effectiveTimeOff } from "./employment.ts";
 import { driveBetween } from "./geo.ts";
+import { mileageFor, rateOf, type Mileage } from "./mileage.ts";
 import { getCell, setCellValue } from "./grid.ts";
 import { isOpenDay, placeName } from "./place.ts";
 import { personOnPto, timeOffDates } from "./pto.ts";
@@ -34,6 +35,8 @@ const UNCOVERED = 5e5;
 const MUST_STAY_COVERED = 2e6;
 const CHANGE = 20;
 const FLOAT_WILLING = 0.6;
+/** One dollar of mileage pay counts like this many cost points (about a minute of extra drive). */
+export const MILEAGE_WEIGHT = 1;
 
 export type CoverMove = {
   name: string;
@@ -47,6 +50,8 @@ export type CoverMove = {
   minutes: number | null;
   miles: number | null;
   estimated: boolean;
+  /** Mileage pay for working there from their HOME store (not from where they are that day). */
+  mileage: Mileage;
   /** True for the move that fills the shift the plan was asked about. */
   fillsTarget: boolean;
   /** Who is still at the store they leave once the plan is done (someone who stays, or their replacement). Empty when they were not at a store. */
@@ -67,6 +72,12 @@ export type CoverPlan = {
   estimated: boolean;
   /** Any drive with no known time. */
   unknown: boolean;
+  /** Sum of the paid miles (both ways) of all moves; moves with unknown distance count as 0 here and set `mileageUnknown`. */
+  paidMiles: number;
+  /** Mileage dollars of all moves at the entered rate, or null when no rate is entered or a distance is unknown. */
+  mileageDollars: number | null;
+  /** Any move whose home-store distance is unknown. */
+  mileageUnknown: boolean;
   /** Inner cost the plan was ranked on. */
   cost: number;
 };
@@ -179,9 +190,16 @@ function edge(ctx: Ctx, name: string, store: string): Edge {
   // Taking a store's second pharmacist away from a store that usually runs two is a reminder-level cost, not a block.
   if (at && at !== store && doc.stores.find((s) => s.code === at)?.twoPharmacistDays?.includes(ctx.weekday)) cost += 30;
   if (drive == null) cost += 15;
+  // Mileage pay runs from the HOME store. Only the extra over what they would be paid where they are now counts, so a move never
+  // looks better just because it pays less than a day they were not changing. Unknown distance costs like an unknown drive.
+  const mileage = mileageFor(doc, person.home, store);
+  const now = at ? mileageFor(doc, person.home, at) : null;
+  const rate = rateOf(doc);
+  if (mileage.paidMiles == null) cost += 15;
+  else cost += Math.max(0, mileage.paidMiles - (now?.paidMiles ?? 0)) * rate * MILEAGE_WEIGHT;
   return {
     cost,
-    move: { name, float, from: at, origin, to: store, minutes, miles: drive?.miles ?? null, estimated: drive?.estimated ?? true },
+    move: { name, float, from: at, origin, to: store, minutes, miles: drive?.miles ?? null, estimated: drive?.estimated ?? true, mileage },
   };
 }
 
@@ -249,6 +267,9 @@ function describe(ctx: Ctx, moves: CoverMove[], cost: number): CoverPlan {
     extreme: minutes.some((x) => x > LONG_DRIVE),
     estimated: moves.some((m) => m.estimated),
     unknown: moves.some((m) => m.minutes == null),
+    paidMiles: Math.round(moves.reduce((a, m) => a + (m.mileage.paidMiles ?? 0), 0) * 100) / 100,
+    mileageDollars: moves.some((m) => m.mileage.dollars == null) ? null : Math.round(moves.reduce((a, m) => a + (m.mileage.dollars ?? 0), 0) * 100) / 100,
+    mileageUnknown: moves.some((m) => m.mileage.paidMiles == null),
     cost,
   };
 }

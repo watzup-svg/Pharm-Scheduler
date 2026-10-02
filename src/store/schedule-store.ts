@@ -175,6 +175,9 @@ export type ScheduleState = {
   removeTimeOff: (index: number) => void;
   /** Set (or with null clear) the drive time between two stores, in minutes. One undo step. */
   setDriveMinutes: (a: string, b: string, minutes: number | null) => void;
+  setDriveMiles: (a: string, b: string, miles: number | null) => void;
+  /** The per-mile rate (null clears it) for mileage pay. */
+  setMileageRate: (rate: number | null) => void;
   /** Add the same days for several people in one undo step. Closed days and days already logged are skipped. */
   addTimeOffMany: (input: { names: string[]; dates: string[]; note: string; status: "approved" | "requested" }) => {
     added: number;
@@ -455,6 +458,27 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       else next[key] = Math.max(1, Math.min(1440, Math.round(minutes)));
       const { driveMinutes: _drop, ...rest } = d;
       return Object.keys(next).length ? { ...rest, driveMinutes: next } : rest;
+    });
+  },
+
+  setDriveMiles: (a, b, miles) => {
+    const key = driveKey(a, b);
+    withUndo(set, get, (d) => {
+      const next = { ...(d.driveMiles ?? {}) };
+      if (miles == null) delete next[key];
+      else next[key] = Math.max(0.1, Math.min(2000, Math.round(miles * 10) / 10));
+      const { driveMiles: _drop, ...rest } = d;
+      return Object.keys(next).length ? { ...rest, driveMiles: next } : rest;
+    });
+  },
+
+  setMileageRate: (rate) => {
+    withUndo(set, get, (d) => {
+      const { mileage: _drop, ...rest } = d;
+      const next = { ...(d.mileage ?? {}) };
+      if (rate == null) delete next.rate;
+      else next.rate = Math.max(0, Math.min(10, Math.round(rate * 1000) / 1000));
+      return Object.keys(next).length ? { ...rest, mileage: next } : rest;
     });
   },
 
