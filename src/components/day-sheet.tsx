@@ -1,5 +1,5 @@
 import { storeTag as labelOf } from "@/lib/schedule/label";
-import { Check, ChevronLeft, ChevronRight, TriangleAlert, Undo2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { dayDomId, dayView } from "@/components/day-view";
@@ -247,7 +247,7 @@ function SheetBody() {
           <div className="rounded-xl bg-illegal-bg px-3 py-3 text-sm text-illegal ring-1 ring-illegal/25" role="status">
             {view.hole ? (
               <div className="flex items-start gap-3">
-                <TriangleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
+                <StateMark kind="hole" size={24} tip={false} className="mt-0.5 bg-white" />
                 <div className="min-w-0 flex-1">
                   <p className="text-base font-bold">No coverage</p>
                   <p className="text-ink">No pharmacist is scheduled at {storeShort} on {dateLine}.</p>
@@ -267,7 +267,12 @@ function SheetBody() {
             ) : null}
             {steps.map((step) => (
               <div key={`${step.kind}|${step.store}|${step.names.join()}`} className="mt-1 first:mt-0">
-                {step.kind !== "hole" ? <p className="font-semibold text-pretty">{step.headline}</p> : null}
+                {step.kind !== "hole" ? (
+                  <div className="flex items-start gap-2.5">
+                    <StateMark kind={step.kind} size={24} tip={false} className="mt-px bg-white" />
+                    <p className="min-w-0 flex-1 font-semibold text-pretty">{step.headline}</p>
+                  </div>
+                ) : null}
                 {step.kind === "double" ? <p className="mt-2 font-semibold">Keep {step.names[0]!.split(" ")[0]} at</p> : null}
                 <div className="mt-2 flex flex-wrap gap-2">
                   {step.kind === "double"
