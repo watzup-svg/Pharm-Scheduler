@@ -58,7 +58,7 @@ export function DayBoard({
         {open.map((store) => {
           const v = dayView(doc, ev, store.code, day);
           const tone = toneOf(v);
-          const tag = tagOf(v, tone);
+          const label = tagOf(v, tone, tag);
           const mine = person && v.names.some((n) => n.name === person);
           return (
             <li key={store.code}>
@@ -73,14 +73,14 @@ export function DayBoard({
                   person && !mine && "opacity-50",
                 )}
               >
-                <span className="w-10 shrink-0 text-xs font-bold">{store.code}</span>
+                <span className="w-10 shrink-0 text-xs font-bold">{tag(store.code)}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">
                     {v.hole || v.holeAccepted ? "No coverage" : v.names.map((n) => short(n.name)).join(" + ")}
                   </span>
                   <span className="block truncate text-xs font-normal opacity-80">{shortStoreName(store.name)}</span>
                 </span>
-                {tag ? <span className="shrink-0 rounded-sm bg-white/70 px-2 text-xs font-bold uppercase">{tag}</span> : null}
+                {label ? <span className="shrink-0 rounded-sm bg-white/70 px-2 text-xs font-bold uppercase">{label}</span> : null}
               </button>
             </li>
           );

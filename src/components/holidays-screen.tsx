@@ -127,7 +127,7 @@ export function HolidaysScreen() {
               const iso = `${doc.year}-${String(doc.month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
               const hits = doc.holidays.filter((h) => h.date === iso || (h.repeat && h.date.slice(5) === iso.slice(5)));
               const head = `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][doc.month - 1]} ${d}`;
-              return hits.length ? { n: hits.length, tone: "off", lines: [`${head} · closed`, ...hits.slice(0, 4).map((h) => `${h.label || "Closure"} · ${h.store === "ALL" ? "every store" : h.store}`)] } : { n: 0, tone: "none", lines: [head] };
+              return hits.length ? { n: hits.length, tone: "off", lines: [`${head} · closed`, ...hits.slice(0, 4).map((h) => `${h.label || "Closure"} · ${h.store === "ALL" ? "every store" : tag(h.store)}`)] } : { n: 0, tone: "none", lines: [head] };
             }}
           />}
       />

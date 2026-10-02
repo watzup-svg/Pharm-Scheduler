@@ -157,7 +157,7 @@ export function posterLines(doc: ScheduleDoc, storeCode: string, day: number): s
     const name = getCell(doc.grid, storeCode, slot.id, day).trim();
     if (!name) continue;
     const home = awayFromHome(doc, name, storeCode);
-    lines.push(home ? `${slot.short}: ${name} (from ${home})` : `${slot.short}: ${name}`);
+    lines.push(home ? `${slot.short}: ${name} (from ${storeTag(doc, home)})` : `${slot.short}: ${name}`);
   }
   return lines;
 }

@@ -1,3 +1,4 @@
+import { storeTag as labelOf } from "@/lib/schedule/label";
 import { CalendarPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -83,19 +84,19 @@ export function StartNextMonthButton({
                 {/* The ones worth reading first; the end-of-month weekdays that simply don't exist are one line at the end. */}
                 <DropGroup
                   title={`${unlicensed.length} ${unlicensed.length === 1 ? "is" : "are"} not licensed in that store’s state`}
-                  lines={unlicensed.map(dropLine)}
+                  lines={unlicensed.map((d) => dropLine(d, (c) => labelOf(doc, c)))}
                 />
                 <DropGroup
                   title={`${gone.length} ${gone.length === 1 ? "is" : "are"} not with the company on that date (relief or past end date)`}
-                  lines={gone.map(dropLine)}
+                  lines={gone.map((d) => dropLine(d, (c) => labelOf(doc, c)))}
                 />
                 <DropGroup
                   title={`${usualOff.length} would land on a usual day off`}
-                  lines={usualOff.map(dropLine)}
+                  lines={usualOff.map((d) => dropLine(d, (c) => labelOf(doc, c)))}
                 />
                 <DropGroup
                   title={`${shut.length} would land on a shut day`}
-                  lines={shut.map(dropLine)}
+                  lines={shut.map((d) => dropLine(d, (c) => labelOf(doc, c)))}
                 />
                 {missing.length ? (
                   <p className="text-muted">

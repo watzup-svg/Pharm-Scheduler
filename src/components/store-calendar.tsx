@@ -184,15 +184,15 @@ function sameAsBefore(view: DayView | undefined, prev: DayView | undefined): boo
   return a !== "" && a === prev.names.map((n) => n.name).join("|");
 }
 
-function describe(view: DayView): string {
-  const where = `${view.store} day ${view.day}`;
+function describe(view: DayView, name: (code: string) => string): string {
+  const where = `${name(view.store)} day ${view.day}`;
   if (!view.open && view.leftover) return `${where}: closed but ${view.names.map((n) => n.name).join(", ")} is still on it`;
   if (!view.open) return `${where}: closed${view.holiday ? `, ${view.holiday}` : ""}`;
   if (view.hole) return `${where}: no coverage, no pharmacist scheduled`;
   if (view.holeAccepted) return `${where}: no coverage (left as is)`;
   const second = view.needsSecond ? "; usually two pharmacists, only one here" : "";
   const bits = view.names.map((n) =>
-    [n.name, n.unlicensed ? "not licensed in this state" : "", n.double ? "scheduled twice" : "", n.off ? "on time off" : "", n.away ? `away from home, their store is ${n.away}` : n.cover ? "covering" : ""]
+    [n.name, n.unlicensed ? "not licensed in this state" : "", n.double ? "scheduled twice" : "", n.off ? "on time off" : "", n.away ? `away from home, their store is ${name(n.away)}` : n.cover ? "covering" : ""]
       .filter(Boolean)
       .join(", "),
   );
@@ -224,6 +224,7 @@ const DayCell = memo(function DayCell({
   /** While someone is being placed: how this day looks for them. */
   glow?: Glow;
 }) {
+  const name = useStoreTag();
   const closed = !view.open;
   const mine = person && view.names.some((n) => n.name === person);
   const dim = person && !mine;
@@ -243,7 +244,7 @@ const DayCell = memo(function DayCell({
         ? "time off"
         : view.cover
           ? view.away
-            ? `from ${view.away}`
+            ? `from ${name(view.away)}`
             : "cover"
           : view.needsSecond
             ? "1 of 2"
@@ -261,7 +262,7 @@ const DayCell = memo(function DayCell({
       tabIndex={isTabStop ? 0 : -1}
       onFocus={() => onFocusDay?.(view.store, view.day)}
       data-tone={toneOf(view)}
-      aria-label={describe(view)}
+      aria-label={describe(view, name)}
       onClick={() => onOpen(view.store, view.day)}
       className={cn(
         "relative flex min-h-[3.75rem] lg:min-h-[4.5rem] min-w-0 scroll-mt-20 flex-col rounded-lg px-[3px] pt-0.5 pb-1 text-left transition-[opacity,box-shadow]",
@@ -324,7 +325,7 @@ const DayCell = memo(function DayCell({
           {tag === "twice" ? <AlarmMark kind="double" size={16} /> : null}
           {tag === "closed" ? <AlarmMark kind="leftover" size={16} /> : null}
           {tag === "time off" ? <QuietMark kind="off" size={12} /> : null}
-          {tag === "cover" || tag.startsWith("from ") ? <span data-tip={tag === "cover" ? "Covering | A float, away from their home store" : `Covering | Home store is ${tag.slice(5)}`} className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-ink"><QuietMark kind="cover" size={12} />{tag.startsWith("from ") ? tag.slice(5) : ""}</span> : null}
+          {tag === "cover" || tag.startsWith("from ") ? <span data-tip={tag === "cover" ? "Covering | A float, away from their home store" : `Covering | Home store is ${tag.slice(5)}`} className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-ink max-sm:gap-0 max-sm:tracking-tight"><QuietMark kind="cover" size={12} />{tag.startsWith("from ") ? tag.slice(5) : ""}</span> : null}
           {tag === "as is" ? <QuietMark kind="asis" size={14} /> : null}
           {tag === "1 of 2" ? <span data-tip="One pharmacist where two are usual" className="rounded-sm bg-warn-bg px-1 text-[11px] font-bold text-warn ring-1 ring-warn/50">1/2</span> : null}
         </span>

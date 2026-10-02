@@ -1,3 +1,4 @@
+import { storeTag } from "./label.ts";
 import { isoDate, monthName, weekdayShort } from "./calendar.ts";
 import { ptoOnDay } from "./coverage.ts";
 import { getCell, namesOnStoreDay } from "./grid.ts";
@@ -259,11 +260,11 @@ function isFloatPerson(role?: string, _home?: string): boolean {
   return role === "Float Pharmacist";
 }
 
-function homeTag(role?: string, home?: string): string {
+function homeTag(doc: ScheduleDoc, role?: string, home?: string): string {
   if (isFloatPerson(role, home)) {
-    return home && home !== "—" ? `float · home ${home}` : "float";
+    return home && home !== "—" ? `float · home ${storeTag(doc, home)}` : "float";
   }
-  return home && home !== "—" ? `home ${home}` : "";
+  return home && home !== "—" ? `home ${storeTag(doc, home)}` : "";
 }
 
 function storesWithName(doc: ScheduleDoc, name: string, day: number): string[] {
@@ -308,14 +309,14 @@ export function pickerLabel(
 ): string {
   const p = personByName(doc.people, name);
   const bits = [name];
-  bits.push(homeTag(p?.role, p?.home));
+  bits.push(homeTag(doc, p?.role, p?.home));
   if (p?.lead) bits.push("Lead");
   const pto = ptoOnDay(doc, name, day);
   if (pto) bits.push("PTO");
   const on = storesWithName(doc, name, day);
   const others = on.filter((c) => c !== store);
-  if (others.length) bits.push(`already ${joinAnd(others.map((c) => c))}`);
-  else if (on.includes(store) && name !== current) bits.push(`already ${store}`);
+  if (others.length) bits.push(`already ${joinAnd(others.map((c) => storeTag(doc, c)))}`);
+  else if (on.includes(store) && name !== current) bits.push(`already ${storeTag(doc, store)}`);
   else if (!pto && !on.length) bits.push("free");
   return bits.join(" · ");
 }

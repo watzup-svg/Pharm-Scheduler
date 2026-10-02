@@ -150,8 +150,8 @@ export const TONE_TAG: Record<Tone, string> = {
 };
 
 /** The word on a cell's tag. A regular pharmacist away from home says where from; a float only says cover. */
-export function tagOf(view: DayView, tone: Tone): string {
-  if (tone === "cover" && view.away) return `from ${view.away}`;
+export function tagOf(view: DayView, tone: Tone, name: (code: string) => string = (c) => c): string {
+  if (tone === "cover" && view.away) return `from ${name(view.away)}`;
   if (tone === "ok" && view.needsSecond) return "1 of 2";
   return TONE_TAG[tone];
 }

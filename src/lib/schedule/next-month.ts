@@ -62,9 +62,9 @@ function ordinal(n: number): string {
   return `${n}th`;
 }
 
-export function dropLine(drop: DroppedPlacement): string {
+export function dropLine(drop: DroppedPlacement, name: (code: string) => string = (c) => c): string {
   const row = drop.slotShort === "RPh2" ? "second pharmacist" : "pharmacist";
-  const who = `${drop.name} · ${drop.store} ${row}`;
+  const who = `${drop.name} · ${name(drop.store)} ${row}`;
   const from = `${drop.fromWeekday.slice(0, 3)} ${drop.fromDay}`;
   if (drop.reason === "usual-off") return `${who} · ${drop.toWeekday ?? from} is their usual day off`;
   if (drop.reason === "not-employed") return `${who} · ${from} · not with the company that day (start or end date)`;

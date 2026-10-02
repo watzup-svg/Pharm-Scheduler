@@ -1,3 +1,4 @@
+import { useStoreTag } from "@/components/use-store-tag";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import { dayView, TONE_CLASS, tagOf, toneOf, shortNames } from "@/components/day-view";
@@ -33,6 +34,7 @@ export function WeekBoard({
   const [first, last] = weeks[idx]!;
   const days = Array.from({ length: last - first + 1 }, (_, i) => first + i);
   const short = useMemo(() => shortNames(doc.people), [doc.people]);
+  const name = useStoreTag();
   const mon = monthName(doc.year, doc.month).slice(0, 3);
 
   return (
@@ -71,13 +73,13 @@ export function WeekBoard({
             {stores.map((store) => (
               <tr key={store.code}>
                 <th scope="row" className="sticky left-0 z-10 bg-cream pr-1 text-left align-middle">
-                  <span className="block w-16 truncate text-xs font-bold sm:w-28">{store.code}</span>
+                  <span className="block w-16 truncate text-xs font-bold sm:w-28">{name(store.code)}</span>
                   <span className="hidden w-28 truncate text-xs font-normal text-muted sm:block">{shortStoreName(store.name)}</span>
                 </th>
                 {days.map((d) => {
                   const v = dayView(doc, ev, store.code, d);
                   const tone = toneOf(v);
-                  const tag = tagOf(v, tone);
+                  const tag = tagOf(v, tone, name);
                   const mine = person && v.names.some((n) => n.name === person);
                   return (
                     <td key={d} className="p-0">

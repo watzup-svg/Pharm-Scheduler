@@ -1,3 +1,4 @@
+import { storeTag as labelOf } from "@/lib/schedule/label";
 import { Check, ChevronLeft, ChevronRight, Search, TriangleAlert, Undo2, UserCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -165,7 +166,7 @@ function SheetBody() {
     const home = awayFromHome(now.doc, name, store);
     const warn = [
       doubled ? `${name} is now at two stores on the ${day}. Choose one to keep.` : "",
-      home ? `${name} is away from home (their store is ${home}).` : "",
+      home ? `${name} is away from home (their store is ${labelOf(now.doc, home)}).` : "",
       hints.length ? `Check: ${name}. ${hints.join(". ")}.` : "",
     ]
       .filter(Boolean)
@@ -385,9 +386,9 @@ function SheetBody() {
           <div className="rounded-xl bg-cover px-3 py-2 text-sm ring-1 ring-ok/40" role="status">
             {view.names
               .filter((n) => n.away)
-              .map((n) => `${n.name} is away from home (their store is ${n.away}).`)
+              .map((n) => `${n.name} is away from home (their store is ${labelOf(doc, n.away!)}).`)
               .join(" ")}
-            <span className="text-muted"> Shown on the posters as “from {view.away}”.</span>
+            <span className="text-muted"> Shown on the posters as “from {labelOf(doc, view.away!)}”.</span>
           </div>
         ) : null}
 
