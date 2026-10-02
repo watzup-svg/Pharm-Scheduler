@@ -2,10 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { dayDomId, shortNames } from "@/components/day-view";
-import { HexBadge } from "@/components/graphics";
 import { HeroLead } from "@/components/hero";
-import { useStoreTag } from "@/components/use-store-tag";
-import { monthName, weekdayShort } from "@/lib/schedule/calendar";
 import { monthStatus } from "@/lib/schedule/dashboard";
 import { stepRef, type FixStep } from "@/lib/schedule/fix";
 import { anchorOf, currentIssue, issueOrder, issueTitle, stepFrom } from "@/lib/schedule/issue-cursor";
@@ -154,34 +151,6 @@ export function IssueLead({ tip }: { tip: string }) {
         </span>
       ) : null}
     </div>
-  );
-}
-
-/** The store badge for the issue the cursor is on. The date is in the ring and the title, so there is no calendar leaf. */
-export function IssueLeaf({ step }: { step: FixStep }) {
-  const { doc } = useIssueNav();
-  const open = useOpenIssue();
-  const tag = useStoreTag();
-  const mon = monthName(doc.year, doc.month).slice(0, 3);
-  const wd = weekdayShort(doc.year, doc.month, step.day);
-  const names = [...new Set([step.store, ...step.stores])].map((c) => doc.stores.find((s) => s.code === c)?.name ?? c).join(" and ");
-  return (
-    <button
-      type="button"
-      onClick={() => open(doc, step)}
-      data-tip={`${names} | ${wd} ${mon} ${step.day} | Open this day`}
-      data-tip-tone="bad"
-      data-tip-mark={step.kind}
-      aria-label={`Open ${names}, ${wd} ${mon} ${step.day}`}
-      className="relative flex shrink-0 items-center rounded-xl px-1 py-1 outline-offset-2 hover:bg-white/10 max-[359px]:hidden"
-    >
-      {/* "Two places" names both stores, the same ones boxed in the store row below. */}
-      <span className="flex items-center gap-1">
-        {[...new Set([step.store, ...step.stores])].map((code) => (
-          <HexBadge key={code} code={tag(code)} tone="muted" className="h-12 max-sm:h-10" />
-        ))}
-      </span>
-    </button>
   );
 }
 

@@ -56,7 +56,7 @@ export default async function run() {
     check("the day strip lists every store for the issue's day", (await strip.locator("[data-strip-store]").count()) === 18);
     const bad = await strip.locator("[data-state=bad]").evaluateAll((els) => els.map((e) => e.getAttribute("data-strip-store")).sort().join(","));
     check("the stores to fix that day are marked", bad === "EST,MOL", bad);
-    check("a two-places issue shows both store badges", (await header(page).getByRole("button", { name: /^Open .* and .*, Fri Oct 9$/ }).count()) === 1);
+    check("the issue header has no store badge (the store row and day strip carry it)", (await header(page).getByRole("button", { name: /^Open .* and .*, Fri Oct 9$/ }).count()) === 0);
     await strip.locator("[data-strip-store='CAT']").click();
     await page.waitForTimeout(700);
     check("a store in the strip opens that day", (await page.getByRole("dialog").getByText(/Oct 9/).count()) > 0 && page.url().includes("schedule"));
