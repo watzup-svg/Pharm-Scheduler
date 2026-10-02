@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { isWaiting } from "@/lib/schedule/timeoff-view";
 import { ArrowRight, Printer } from "lucide-react";
 import { useMemo } from "react";
 import { confirmAction } from "@/components/confirm";
@@ -40,7 +41,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
   const status = useMemo(() => monthStatus(doc, ev), [doc, ev]);
   const steps = status.steps;
   const accepted = useMemo(() => acceptedItems(doc, ev), [doc, ev]);
-  const waiting = doc.timeOff.filter((t) => t.status === "requested").length;
+  const waiting = doc.timeOff.filter((t) => isWaiting(doc, t)).length;
   // Everything in the header walks the month in date order, the same order as the arrows and the day panel's Next.
   const ordered = useMemo(() => issueOrder(doc, steps), [doc, steps]);
   const by = (k: AlarmKind) => ordered.filter((s) => s.kind === k);

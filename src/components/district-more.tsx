@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { isWaiting } from "@/lib/schedule/timeoff-view";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AcceptedList } from "@/components/accepted-list";
@@ -22,7 +23,7 @@ export function DistrictMore() {
   const status = useMemo(() => monthStatus(doc, ev), [doc, ev]);
   const looks = useMemo(() => secondLook(doc, inMonth ? today.day : 1), [doc, inMonth, today.day]);
   const decisions = ev.accepted + closuresInMonth(doc).length;
-  const waiting = doc.timeOff.filter((t) => t.status === "requested").length;
+  const waiting = doc.timeOff.filter((t) => isWaiting(doc, t)).length;
   const noHome = doc.people.filter((x) => !x.home || x.home === "—" || !doc.stores.some((st) => st.code === x.home)).length;
   const checklist = useChecklist({ doc, steps: status.steps, holes: ev.holes, waiting, noHome });
   const finished = checklist.doneCount === checklist.list.length;
