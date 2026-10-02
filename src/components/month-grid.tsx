@@ -194,14 +194,21 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
           const dow = weekdaySun0(doc.year, doc.month, d);
           const isToday = inMonth && today.day === d;
           const pr = pressure[i]!;
+          const pl = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+          const empties = pr.holes ? pl(pr.holes, "empty shift") : "All stores covered";
+          const freeTxt = `${pl(pr.free, "pharmacist")} free`;
           const tip =
             pr.level === "closed"
               ? "Every store is closed"
               : pr.level === "none"
-                ? `${-pr.spare} short | ${pr.holes} empty ${pr.holes === 1 ? "shift" : "shifts"}, only ${pr.free} ${pr.free === 1 ? "pharmacist" : "pharmacists"} free`
+                ? `${empties} | ${freeTxt}, ${-pr.spare} too few`
                 : pr.level === "tight"
-                  ? `Nobody spare | ${pr.holes} empty ${pr.holes === 1 ? "shift" : "shifts"}, ${pr.free} ${pr.free === 1 ? "pharmacist" : "pharmacists"} free`
-                  : `${pr.spare} spare ${pr.spare === 1 ? "pharmacist" : "pharmacists"} | ${pr.free} free, ${pr.holes} empty ${pr.holes === 1 ? "shift" : "shifts"}`;
+                  ? pr.holes
+                    ? `${empties} | ${freeTxt}, just enough`
+                    : `${empties} | nobody extra is free`
+                  : pr.holes
+                    ? `${empties} | ${freeTxt}, ${pr.spare} left over`
+                    : `${empties} | ${freeTxt} to place`;
           return (
             <span
               key={d}
