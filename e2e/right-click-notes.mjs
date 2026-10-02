@@ -39,6 +39,7 @@ export default async function run() {
     await lead.hover();
     await page.waitForTimeout(450);
     check("the big header number draws no marker", (await marker.count()) === 0);
+    check("the big number's cursor hints at a note", (await lead.evaluate((e) => getComputedStyle(e).cursor)) === "context-menu");
     await lead.click({ button: "right" });
     await page.waitForTimeout(250);
     check("right click on the big number still opens its note", (await note.count()) === 1);

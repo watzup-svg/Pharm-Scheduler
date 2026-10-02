@@ -191,6 +191,11 @@
   animation: hs-fade 160ms ease-out 140ms backwards;
 }
 
+/* Noted things that draw no corner marker (the big header number) say "a note is here" with the cursor instead. */
+[data-tip-quiet] {
+  cursor: context-menu;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
