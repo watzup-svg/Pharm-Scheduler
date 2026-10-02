@@ -9,12 +9,13 @@ import { createDemo } from "./demo.ts";
 import { driveBetween, driveKey } from "./geo.ts";
 import { setCellValue } from "./grid.ts";
 import { blankMonthWithStores } from "./stores.ts";
+import { withClosedTestStores } from "./test-stores.ts";
 import type { Person, ScheduleDoc } from "./types.ts";
 
 const DAY = 14;
 const person = (name: string, home: string, float = false): Person => ({ name, role: float ? "Float Pharmacist" : "Pharmacist", home, lead: false, phone: "", color: "#888888" });
 function scenario(bare: string[], extra: { p: Person; at?: string }[] = [], skipHome: string[] = []): ScheduleDoc {
-  let doc: ScheduleDoc = { ...blankMonthWithStores(createDemo()), people: [] };
+  let doc: ScheduleDoc = { ...withClosedTestStores(blankMonthWithStores(createDemo())), people: [] };
   for (const s of doc.stores) {
     if (bare.includes(s.code) || skipHome.includes(s.code)) continue;
     const p = person(`Local ${s.code}`, s.code);
@@ -55,7 +56,7 @@ describe("Grok's robust list, adopted parts", () => {
     const base = scenario(["EST"], [{ p: person("Flora Float", "WL", true) }]);
     const doc = { ...base, grid: setCellValue(base.grid, "LEN", "pharmacist2", DAY - 1, "Flora Float") };
     const m = coverPlans(doc, "EST", DAY).plans.find((p) => fillerOf(p) === "Flora Float")!.moves.find((x) => x.name === "Flora Float")!;
-    assert.equal(m.minutes, 30, "West Linn to Estacada, not John Day to Estacada");
+    assert.equal(m.minutes, 25, "West Linn to Estacada (estimated: the closed test store has no measured row), not John Day to Estacada");
   });
 
   it("return trip: a pharmacist working at Molalla is moved from Molalla (33 minutes), and Molalla is shown as opened", () => {

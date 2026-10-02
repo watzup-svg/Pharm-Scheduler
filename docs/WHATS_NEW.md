@@ -2,6 +2,12 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Store list updated to the HSP Float Store List
+- Real store numbers now come from the Float Store List (for example Cathlamet 1148, Clatskanie 1147, Estacada 1152, Medicine on Time 600). They replace the placeholder numbers 1101-1118 for a new or practice month.
+- Scappoose (1165) and West Linn (4900) are removed from the store list, the practice month and the measured drive table (16 stores, 120 pairs). Mt Angel Drug (1177) was never in the app. Every store on the list already had measured distances, so nothing is blank.
+- Cave's, Len's and Rogue River are not on that list, so they have no number yet and show their letters (CAV, LEN, RR). Enter a number on Stores > Edit, or tell us to remove them.
+- Months you already saved keep the stores and numbers they were saved with. Open one and the old stores (and their placeholder numbers) are still there; nothing is changed or removed behind your back. Distances to a saved store that is no longer on the list fall back to address estimates.
+
 ## Fill suggestions: longer reach, a leave-closed choice, honest follow-on holes
 - Fill plans now reach up to 2.5 hours (was 2). Long drives (over 90 minutes) still rank last among plans that leave no gap. A plan is at most three moves.
 - When no one can reach a store within 2.5 hours (John Day, for example), the card says so and offers "Close <store> today…" with the usual reasons. Leaving a store closed is always your choice; nothing is closed for you.

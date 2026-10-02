@@ -32,7 +32,7 @@ describe("paste a roster", () => {
 
   it("reports what it cannot use instead of guessing", () => {
     const existing: Person[] = [{ name: "Jane Smith", role: "Pharmacist", home: "EST", lead: false, phone: "", color: "" }];
-    const { people, problems } = parsePeopleList("Jane Smith, EST\nBob Ng, ZZZ\n, EST\nAmy Lo\nAmy Park, SCA\nAmy Park, SCA", stores, existing);
+    const { people, problems } = parsePeopleList("Jane Smith, EST\nBob Ng, ZZZ\n, EST\nAmy Lo\nAmy Park, CLA\nAmy Park, CLA", stores, existing);
     assert.deepEqual(people.map((p) => p.name), ["Amy Park"]);
     assert.deepEqual(
       problems.map((p) => [p.line, p.why]),

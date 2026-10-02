@@ -7,6 +7,7 @@ import { coverPlans, type CoverPlan } from "./cover-plan.ts";
 import { createDemo } from "./demo.ts";
 import { setCellValue } from "./grid.ts";
 import { blankMonthWithStores } from "./stores.ts";
+import { withClosedTestStores } from "./test-stores.ts";
 import type { Person, ScheduleDoc } from "./types.ts";
 
 const DAY = 14; // Wednesday, Oct 2026: every store is open
@@ -14,7 +15,7 @@ const person = (name: string, home: string, float = false): Person => ({ name, r
 
 /** Every store has one pharmacist at home on DAY, except `bare`. `extra` adds people: placed at a store (second pharmacist) or free. */
 function scenario(opts: { bare: string[]; extra?: { p: Person; at?: string }[]; skipHome?: string[] }): ScheduleDoc {
-  const base = blankMonthWithStores(createDemo());
+  const base = withClosedTestStores(blankMonthWithStores(createDemo()));
   let doc: ScheduleDoc = { ...base, people: [] };
   for (const s of doc.stores) {
     if (opts.bare.includes(s.code) || opts.skipHome?.includes(s.code)) continue;

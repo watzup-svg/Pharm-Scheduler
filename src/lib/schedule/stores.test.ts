@@ -6,10 +6,10 @@ import { createSample } from "./sample.ts";
 import { blankMonthWithStores, HI_SCHOOL_STORES } from "./stores.ts";
 
 describe("Hi-School pharmacy list", () => {
-  it("has 18 pharmacies with unique valid codes and no hardware stores", () => {
-    assert.equal(HI_SCHOOL_STORES.length, 18);
+  it("has 16 pharmacies with unique valid codes and no hardware stores", () => {
+    assert.equal(HI_SCHOOL_STORES.length, 16);
     const codes = HI_SCHOOL_STORES.map((s) => s.code);
-    assert.equal(new Set(codes).size, 18);
+    assert.equal(new Set(codes).size, 16);
     assert.ok(codes.every((c) => /^[A-Z0-9]{2,6}$/.test(c)));
     assert.ok(HI_SCHOOL_STORES.every((s) => !/hardware|ace/i.test(s.name)));
   });
@@ -23,7 +23,7 @@ describe("Hi-School pharmacy list", () => {
     const by = (c: string) => HI_SCHOOL_STORES.find((s) => s.code === c)!;
     assert.equal(by("EST").address, "207 S Broadway St, Estacada, OR 97023");
     assert.equal(by("MOL").name, "Cutter’s Hi-School Pharmacy");
-    assert.equal(by("WL").satOpen, true);
+    assert.equal(by("MOL").satOpen, true);
     assert.equal(by("SIL").hours?.includes("Sat 9:00 AM–5:00 PM"), true);
   });
 
@@ -38,12 +38,12 @@ describe("Hi-School pharmacy list", () => {
 
   it("makes a blank month: every open day is a hole, nothing is placed, and it round-trips", () => {
     const doc = blankMonthWithStores(createSample());
-    assert.equal(doc.stores.length, 18);
+    assert.equal(doc.stores.length, 16);
     assert.deepEqual(doc.grid, {});
     assert.equal(doc.holidays.some((h) => h.label === "Labor Day"), false);
     const ev = evaluate(doc);
     assert.ok(ev.holes > 0);
     assert.equal(ev.doubles + ev.closed, 0);
-    assert.equal(parseDoc(serializeDoc(doc)).stores.length, 18);
+    assert.equal(parseDoc(serializeDoc(doc)).stores.length, 16);
   });
 });

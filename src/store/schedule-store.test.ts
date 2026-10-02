@@ -218,7 +218,7 @@ describe("schedule store", () => {
     st.persistAutosave();
     useScheduleStore.setState({ hydrated: false, dirty: false });
     useScheduleStore.getState().hydrateFromStorage();
-    assert.equal(useScheduleStore.getState().doc.stores.length, 18);
+    assert.equal(useScheduleStore.getState().doc.stores.length, 16);
     assert.equal(useScheduleStore.getState().doc.people.length, 0);
   });
 
@@ -248,7 +248,7 @@ describe("schedule store", () => {
     useScheduleStore.getState().startWithAllStores({ year: 2026, month: 11 });
     const st = useScheduleStore.getState();
     assert.equal(st.doc.month, 11);
-    assert.equal(st.doc.stores.length, 18);
+    assert.equal(st.doc.stores.length, 16);
     assert.match(st.fileName, /November_2026/);
   });
 });

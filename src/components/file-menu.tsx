@@ -87,7 +87,7 @@ export function FileMenu() {
   async function onDemo() {
     if (dirty && !(await confirmAction({ title: "Replace this month with the practice month?", body: "The practice month has planted mistakes for you to find and fix.", effects: ["The month on screen is replaced.", "Unsaved changes are lost."], confirmLabel: "Replace with practice month", tone: "danger", note: "A backup of the current month is kept under File → Restore from a backup." }))) return;
     loadDemo();
-    toast.success("Loaded the practice month: October 2026, 18 stores, made-up pharmacists");
+    toast.success("Loaded the practice month: October 2026, 16 stores, made-up pharmacists");
   }
 
   async function onAllStores() {
@@ -104,7 +104,7 @@ export function FileMenu() {
       return;
     }
     startWithAllStores();
-    toast.success("Loaded all 18 stores. Add pharmacists on the People page.");
+    toast.success("Loaded all 16 stores. Add pharmacists on the People page.");
   }
 
   function onCsv() {

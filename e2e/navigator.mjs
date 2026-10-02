@@ -103,7 +103,7 @@ export default async function run() {
     const { page } = await open(browser, "schedule", { width, height: 800 });
     const cut = await page.evaluate(() => [...document.querySelectorAll("[data-store-chip]")].filter((e) => { const r = e.getBoundingClientRect(); const box = e.parentElement.getBoundingClientRect(); return r.right > Math.min(window.innerWidth, box.right) + 0.5 || r.left < box.left - 0.5; }).map((e) => e.getAttribute("data-store-chip")));
     const n = await page.locator("[data-store-chip]").count();
-    check(`every store chip is whole on screen @${width}`, n === 18 && cut.length === 0, `${n} chips, cut: ${cut.join(",")}`);
+    check(`every store chip is whole on screen @${width}`, n === 16 && cut.length === 0, `${n} chips, cut: ${cut.join(",")}`);
     await page.close();
   }
   for (const width of [390, 320]) {

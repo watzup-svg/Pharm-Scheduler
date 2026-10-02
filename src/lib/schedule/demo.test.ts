@@ -10,10 +10,10 @@ describe("demo month", () => {
   const doc = createDemo();
   const ev = evaluate(doc);
 
-  it("has all 18 stores and 22 invented pharmacists, each with a real home store", () => {
-    assert.equal(doc.stores.length, 18);
-    assert.equal(doc.people.length, 22);
-    assert.equal(new Set(doc.people.map((p) => p.name)).size, 22);
+  it("has all 16 stores and 20 invented pharmacists, each with a real home store", () => {
+    assert.equal(doc.stores.length, 16);
+    assert.equal(doc.people.length, 20);
+    assert.equal(new Set(doc.people.map((p) => p.name)).size, 20);
     assert.ok(doc.people.every((p) => doc.stores.some((s) => s.code === p.home)));
     assert.equal(doc.people.filter((p) => p.role === "Float Pharmacist").length, 4);
     assert.equal(doc.year, 2026);
@@ -34,7 +34,7 @@ describe("demo month", () => {
     assert.deepEqual(at("RR", 27).doubledNames, ["Kip Alder"]);
     // names on closed days: Saturday, a store holiday, a Sunday
     assert.equal(at("CAT", 10).leftover, true);
-    assert.equal(at("SCA", 12).leftover, true);
+    assert.equal(at("SHE", 12).leftover, true);
     assert.equal(at("WS", 18).leftover, true);
     // licence: Fenn is licensed in Oregon only and is covering a Washington store
     assert.deepEqual(at("WIN", 13).unlicensedNames, ["Fenn Ritter"]);
@@ -75,8 +75,8 @@ describe("demo month", () => {
 
   it("round-trips through save and open", () => {
     const back = parseDoc(serializeDoc(doc));
-    assert.equal(back.stores.length, 18);
-    assert.equal(back.people.length, 22);
+    assert.equal(back.stores.length, 16);
+    assert.equal(back.people.length, 20);
     assert.equal(evaluate(back).holes, ev.holes);
     assert.equal(evaluate(back).doubles, ev.doubles);
   });

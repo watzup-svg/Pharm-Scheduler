@@ -220,7 +220,7 @@ export type ScheduleState = {
   loadSample: () => void;
   /** Every Hi-School pharmacy, same month, nobody placed. Add pharmacists on the People page. */
   startWithAllStores: (target?: { year: number; month: number }) => void;
-  /** October 2026 for all 18 pharmacies with invented pharmacists and planted problems. */
+  /** October 2026 for all 16 pharmacies with invented pharmacists and planted problems. */
   loadDemo: () => void;
   restoreAutosave: () => boolean;
   applyNextMonth: (plan: NextMonthPlan) => void;
