@@ -1,5 +1,5 @@
 // Every red problem card in the day panel carries its kind's mark (door, empty chair, twice, licence), the same one as the tiles.
-import { check, launch, open } from "./lib.mjs";
+import { check, launch, open, tmp } from "./lib.mjs";
 
 export default async function run() {
   const browser = await launch();
@@ -13,7 +13,7 @@ export default async function run() {
     found.forEach((k) => kinds.add(k));
     if (i === 0) {
       check("a no-coverage card shows the hole mark", found.includes("hole"), found.join());
-      await page.screenshot({ path: "/tmp/problem-card-hole.png" });
+      await page.screenshot({ path: tmp("problem-card-hole.png") });
     }
     const next = page.getByRole("dialog").getByRole("button", { name: /^Next/ });
     if (!(await next.count())) break;
