@@ -193,11 +193,12 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
             <span
               key={d}
               role="columnheader"
+              data-col-day={d}
               data-tip={`${weekdayShort(doc.year, doc.month, d)} ${monthName(doc.year, doc.month).slice(0, 3)} ${d} | ${tip}`}
               className={cn("flex flex-col items-center gap-0.5 pb-1 text-[11px] leading-none tabular-nums", "text-muted")}
             >
               <span aria-hidden>{["S", "M", "T", "W", "T", "F", "S"][dow]}</span>
-              <span className={cn("rounded-sm px-0.5", isToday && "bg-ink font-bold text-cream")}>{d}</span>
+              <span data-col-date className={cn("rounded-sm px-0.5", isToday && "bg-ink font-bold text-cream")}>{d}</span>
               <PressureBar p={pr} />
             </span>
           );

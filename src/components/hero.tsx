@@ -93,7 +93,7 @@ export function HeroLead({ n, tone = "plain", icon, mark, tip, onClick, done = f
  * `current`: the kind of issue the header arrows are on. It is drawn chosen, like a chosen store chip: solid light fill
  * with dark text, so the row says which kind is being worked on by fill and contrast, not hue alone.
  */
-export function HeroCount({ n, tip, children, onClick, tone = "plain", label, current }: { n: number | string; tip: string; children?: React.ReactNode; onClick?: () => void; tone?: HeroTone; label?: string; current?: boolean }) {
+export function HeroCount({ n, tip, children, onClick, tone = "plain", label, current, hover }: { n: number | string; tip: string; children?: React.ReactNode; onClick?: () => void; tone?: HeroTone; label?: string; current?: boolean; hover?: { onPointerEnter: (e: React.PointerEvent) => void; onPointerLeave: () => void } }) {
   const body = (
     <>
       {children}
@@ -110,7 +110,7 @@ export function HeroCount({ n, tip, children, onClick, tone = "plain", label, cu
   return (
     <li data-current-kind={current ? "" : undefined} aria-current={current ? "true" : undefined}>
       {onClick ? (
-        <button type="button" onClick={onClick} data-tip={tip} aria-label={tip.replace(" | ", ". ")} className={cn(cls, !current && "hover:bg-white/15")}>
+        <button type="button" onClick={onClick} {...hover} aria-pressed={current} data-tip={tip} aria-label={tip.replace(" | ", ". ")} className={cn(cls, !current && "hover:bg-white/15")}>
           {body}
         </button>
       ) : (

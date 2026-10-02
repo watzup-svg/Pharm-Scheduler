@@ -33,7 +33,10 @@ export default async function run() {
   {
     const { page: p } = await open(browser, "");
     // 3. Left as is shows as a tally on the header
+    // A tile narrows the arrows to its kind; the Fix button (now "Open Oct …") opens the day.
     await p.getByRole("button", { name: /^Name on a closed day/ }).click();
+    await p.waitForTimeout(300);
+    await p.getByRole("button", { name: /^Open Oct \d+$/ }).click();
     await p.waitForTimeout(400);
     await hold(p, p.getByRole("dialog").getByRole("button", { name: /^Leave as is/ }));
     await p.waitForTimeout(500);
@@ -58,6 +61,8 @@ export default async function run() {
     // 5. Add a licence from its problem
     const before = await toFix(p);
     await p.getByRole("button", { name: /^Not licensed/ }).click();
+    await p.waitForTimeout(300);
+    await p.getByRole("button", { name: /^Open Oct \d+$/ }).click();
     await p.waitForTimeout(400);
     await p.getByRole("dialog").getByRole("button", { name: /^Add WA licence/ }).click();
     await p.getByRole("button", { name: "Add licence" }).click();

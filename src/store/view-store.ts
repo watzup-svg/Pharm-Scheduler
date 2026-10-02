@@ -45,6 +45,15 @@ export type ViewState = {
   /** The issue the header arrows stand on, and the month it belongs to ("2026-10"). Null when she is not stepping. */
   issue: (IssueAnchor & { ym: string }) | null;
   setIssue: (issue: (IssueAnchor & { ym: string }) | null) => void;
+  /** The kind of problem the header arrows are narrowed to (a tile was clicked). Null: every kind. */
+  issueKind: "hole" | "double" | "leftover" | "license" | null;
+  setIssueKind: (kind: "hole" | "double" | "leftover" | "license" | null) => void;
+  /**
+   * What the pointer is over in the header or a calendar, so the other one can answer: days to light on the ring and
+   * cells to outline below. Laptop hover only; nothing is chosen or changed.
+   */
+  hover: { days: number[]; cells: string[]; dim: boolean } | null;
+  setHover: (hover: { days: number[]; cells: string[]; dim: boolean } | null) => void;
   /** The day being edited, or null when no sheet is open. `run` keeps going to the next problem after each fix. */
   sheet: { store: string; day: number; slot: SlotId; seed: string; run: boolean } | null;
   /** Person whose days are highlighted, or "". */
@@ -131,7 +140,11 @@ export const useViewStore = create<ViewState>((set, get) => ({
   dayPick: 1,
   focus: null,
   issue: null,
-  setIssue: (issue) => set({ issue }),
+  setIssue: (issue) => set(issue ? { issue } : { issue, issueKind: null }),
+  issueKind: null,
+  setIssueKind: (issueKind) => set({ issueKind }),
+  hover: null,
+  setHover: (hover) => set({ hover }),
   sheet: null,
   person: "",
   // On a phone the overview starts folded so the calendars are not a screen and a half away; on a laptop it is always shown.
