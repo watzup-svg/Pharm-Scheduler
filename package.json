@@ -21,7 +21,8 @@
     "stress": "node scripts/with-server.mjs trial node stress/monkey.mjs",
     "lint": "eslint src",
     "audit": "node scripts/audit.mjs",
-    "coverage": "node scripts/coverage.mjs"
+    "coverage": "node scripts/coverage.mjs",
+    "pressure": "node scripts/pressure.mjs"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",
