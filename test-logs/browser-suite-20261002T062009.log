@@ -1,0 +1,19 @@
+ok   print (8 checks, 6s)
+ok   time off (10 checks, 11s)
+ok   pages (39 checks, 34s)
+ok   dialogs (10 checks, 42s)
+ok   cover plans (10 checks, 22s)
+ok   daily jobs (10 checks, 19s)
+ok   smoke (35 checks, 101s)
+ok   marks (45 checks, 22s)
+ok   hover rules (74 checks, 34s)
+ok   issue navigator (44 checks, 21s)
+ok   next month (9 checks, 5s)
+ok   small month (9 checks, 9s)
+ok   header links (30 checks, 16s)
+ok   fit (142 checks, 121s)
+ok   store numbers (17 checks, 16s)
+ok   problem card marks (3 checks, 16s)
+
+all 495 checks passed in 16 groups, 166s on 3 at a time
+full output: test-logs/e2e-20261002T062011-12144.log

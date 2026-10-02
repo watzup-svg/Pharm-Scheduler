@@ -17,7 +17,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 | Fix-it steps and their sentences | `lib/schedule/fix.ts` (kinds: hole, double, leftover, license) |
 | The issue cursor (arrows, Fix button) | `lib/schedule/issue-cursor.ts`, `components/issue-nav.tsx` |
 | Header: tiles, buttons, ring, day strip | `components/status-strip.tsx`, `hero-graphics.tsx` (ring), `header-links.tsx` (hover links), `issue-nav.tsx` |
-| Hover notes (popups) | `components/hover-note.tsx` (look), `hover-tips.tsx` (anything with `data-tip`/`title`). Markup: `data-tip="Title \| line \| Open this day"`, `data-tip-tone`, `data-tip-mark`, `data-tip-place="below"` |
+| Notes (popups). Open on right click / Shift+F10 / long press; hover only draws a small marker | `components/hover-note.tsx` (look, marker, long press), `hover-tips.tsx` (anything with `data-tip`/`title`). Rich notes built in code (`useNote`): month grid, ring, time-off lanes. Markup: `data-tip="Title \| line \| Open this day"`, `data-tip-tone`, `data-tip-mark`, `data-tip-place="below"` |
 | Marks and their colours | `components/marks.tsx` (`MARKS`), tokens in `styles.css` |
 | Wording | `artifacts/COPY_GUIDE.md`; sentences live next to the code that shows them |
 | Month grid (District) / store calendars / week / day | `month-grid.tsx` / `store-calendar.tsx` / `week-board.tsx` / `day-board.tsx`; shared per-day facts: `day-view.ts` |
@@ -29,7 +29,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 
 ## Recipes
 - **Rename a label**: change the string where it renders; if it appears in several places, `grep` the old text, then update `artifacts/COPY_GUIDE.md`.
-- **Tweak a popup**: add or edit `data-tip` on the element; tone and mark come from `data-tip-tone` / `data-tip-mark`. Don't nest two noted elements (e2e "no note inside another note" fails).
+- **Tweak a popup**: add or edit `data-tip` on the element (it opens on right click, so test with `rightClick()` from `e2e/lib.mjs`); tone and mark come from `data-tip-tone` / `data-tip-mark`. Don't nest two noted elements (e2e "no note inside another note" fails).
 - **Show a store anywhere**: `const tag = useStoreTag(); tag(code)`. In pure code: `storeTag(doc, code)` from `lib/schedule/label.ts`.
 - **Rename or reorder a problem kind**: `lib/schedule/problem-kinds.ts` (names and list order); tiles, print tiles, the issue titles, the grid legend, marks and the next-month summary all read from it.
 - **Add a problem type**: add it to `problem-kinds.ts`, the evaluation in `rules.ts`, a step in `fix.ts`, a mark in `marks.tsx`, its colours in `problem-row.tsx` and `day-view.ts`, and the print gate in `gate.ts`. Type errors on the `Record<…>` tables will point at what is missing.

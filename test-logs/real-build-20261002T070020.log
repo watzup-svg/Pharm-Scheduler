@@ -1,0 +1,12 @@
+ok   a first visit shows the Welcome screen @1366
+ok   the practice month is not loaded @1366
+ok   confirm() is the browser's own @1366
+ok   after "Set up my stores" nothing says Sample @1366
+ok   no script errors @1366
+ok   a first visit shows the Welcome screen @390
+ok   the practice month is not loaded @390
+ok   confirm() is the browser's own @390
+ok   after "Set up my stores" nothing says Sample @390
+ok   no script errors @390
+
+all checks passed

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { NoteBody, noteStyleOf, type NoteMark, type NoteTone } from "@/components/hover-note";
+import { armMarker, clearMarker, closeNotes, longPress, NoteBody, NoteMarker, noteStyleOf, type NoteMark, type NoteTone } from "@/components/hover-note";
 
 /**
- * One hover note for the whole app. Anything with a `title` or `data-tip` shows it as a small card (the browser's own
+ * One note for the whole app, opened on right click. Anything with a `title` or `data-tip` has one (the browser's own
  * tooltip is replaced, and the text is kept as the accessible name). Pictures with an accessible name (`role="img"`,
- * calendar days) show that name. Pieces that draw their own richer note mark themselves `data-notip`.
- * Mouse and pen hover, and keyboard focus. Touch has no hover, so the same words are read out instead.
+ * calendar days) use that name. Pieces that draw their own richer note mark themselves `data-notip`.
+ * Pointing at something with a note only draws a tiny marker on its corner. The note opens on right click, the menu key
+ * (Shift+F10), or a long press on touch; it closes on a click elsewhere, Escape, scrolling, or when another opens.
+ * Text fields, and anything without a note, keep the browser's own right-click menu.
  */
 const SEL = "[data-tip],[title],[role='img'][aria-label],[data-day][aria-label]";
 
@@ -47,11 +49,13 @@ function textOf(el: HTMLElement): { text: string; aria: boolean } | null {
   return aria ? { text: aria, aria: true } : null;
 }
 
+/** Text fields keep the browser's own menu (paste, spell check…). So does a right click on text the person has selected. */
+const FIELD = "input,textarea,select,[contenteditable='true']";
+
 export function HoverTips() {
   const [note, setNote] = useState<Note | null>(null);
   useEffect(() => {
-    let current: HTMLElement | null = null;
-    const show = (el: HTMLElement, x: number, y: number) => {
+    const open = (el: HTMLElement, x: number, y: number) => {
       if (el.closest("[data-notip]")) return;
       const got = textOf(el);
       if (!got) return;
@@ -61,6 +65,7 @@ export function HoverTips() {
         .filter(Boolean)
         .slice(0, 4);
       if (!lines.length) return;
+      closeNotes();
       const half = 128;
       const style = noteStyleOf(el);
       if (below(el)) {
@@ -72,71 +77,106 @@ export function HoverTips() {
       const cx = Math.min(Math.max(x, half), Math.max(half, window.innerWidth - half));
       setNote({ x: cx, y, dx: x - cx, below: y < 90, lines, ...style });
     };
+    // Pointing at something with a note: only the marker. (Taking the text out of `title` happens here too, so the
+    // browser's own tooltip never shows.)
     const over = (e: PointerEvent) => {
       if (e.pointerType === "touch") return;
       const el = resolve(e.target);
-      if (!el) {
-        current = null;
-        setNote(null);
-        return;
-      }
-      current = el;
-      show(el, e.clientX, e.clientY);
-    };
-    const move = (e: PointerEvent) => {
-      if (e.pointerType === "touch" || !current || below(current)) return;
-      setNote((n) => { if (!n) return n; const cx = Math.min(Math.max(e.clientX, 128), Math.max(128, window.innerWidth - 128)); return { ...n, x: cx, dx: e.clientX - cx, y: e.clientY, below: e.clientY < 90 }; });
+      if (!el || !textOf(el)) return clearMarker();
+      armMarker(el, noteStyleOf(el).tone);
     };
     const focus = (e: FocusEvent) => {
       const el = resolve(e.target);
-      if (!el || !(e.target as HTMLElement).matches?.(":focus-visible")) return;
-      const r = el.getBoundingClientRect();
-      current = el;
-      show(el, r.left + r.width / 2, r.top);
+      if (!el || !(e.target as HTMLElement).matches?.(":focus-visible") || !textOf(el)) return;
+      armMarker(el, noteStyleOf(el).tone);
+    };
+    // Right click, or the menu key / Shift+F10 on the focused element (which has no pointer position).
+    const menu = (e: MouseEvent) => {
+      const t = e.target as Element | null;
+      if (!t?.closest || t.closest(FIELD) || window.getSelection()?.toString()) return;
+      const el = resolve(t);
+      if (!el || !textOf(el)) return;
+      e.preventDefault();
+      if (e.clientX === 0 && e.clientY === 0) {
+        const r = el.getBoundingClientRect();
+        open(el, r.left + r.width / 2, r.top);
+      } else open(el, e.clientX, e.clientY);
     };
     let timer = 0;
-    // Touch has no hover: tapping a picture that is not itself a button shows its note for a few seconds.
-    const tap = (e: PointerEvent) => {
+    // Touch has no right click: a long press opens the note. A plain tap on a picture that is not itself a button also
+    // reads it for a few seconds (nothing else would happen).
+    let held: ReturnType<typeof longPress> | null = null;
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      const el = resolve(e.target);
+      if (!el || t_in_field(e.target) || !textOf(el)) return (held = null);
+      held = longPress(() => {
+        const r = el.getBoundingClientRect();
+        open(el, r.left + r.width / 2, r.top);
+      });
+      held.onPointerDown(e);
+    };
+    const move = (e: PointerEvent) => held?.onPointerMove(e);
+    const up = (e: PointerEvent) => {
+      held?.onPointerUp();
+      held = null;
       if (e.pointerType !== "touch") return;
       const el = resolve(e.target);
       window.clearTimeout(timer);
-      if (!el || el.closest("button,a,[role='button'],[role='gridcell'],input,select,textarea,summary,[data-notip]")) return setNote(null);
+      if (!el || el.closest("button,a,[role='button'],[role='gridcell'],input,select,textarea,summary,[data-notip]")) return;
       const r = el.getBoundingClientRect();
-      show(el, r.left + r.width / 2, r.top);
+      open(el, r.left + r.width / 2, r.top);
       timer = window.setTimeout(() => setNote(null), 3500);
     };
-    const hide = () => {
-      current = null;
-      setNote(null);
-    };
-    document.addEventListener("pointerup", tap);
-    document.addEventListener("pointerover", over);
+    const hide = () => setNote(null);
+    const key = (e: KeyboardEvent) => e.key === "Escape" && hide();
+    document.addEventListener("contextmenu", menu);
+    document.addEventListener("pointerdown", hide);
+    document.addEventListener("pointerdown", down);
     document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+    document.addEventListener("pointercancel", up);
+    document.addEventListener("pointerover", over);
     document.addEventListener("focusin", focus);
-    document.addEventListener("focusout", hide);
-    document.addEventListener("pointerleave", hide);
+    document.addEventListener("focusout", clearMarker);
+    document.addEventListener("pointerleave", clearMarker);
+    document.addEventListener("keydown", key);
     window.addEventListener("scroll", hide, true);
-    window.addEventListener("keydown", (e) => e.key === "Escape" && hide());
+    window.addEventListener("scroll", clearMarker, true);
+    window.addEventListener("hischool-close-notes", hide);
     return () => {
-      document.removeEventListener("pointerup", tap);
-      document.removeEventListener("pointerover", over);
+      document.removeEventListener("contextmenu", menu);
+      document.removeEventListener("pointerdown", hide);
+      document.removeEventListener("pointerdown", down);
       document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      document.removeEventListener("pointercancel", up);
+      document.removeEventListener("pointerover", over);
       document.removeEventListener("focusin", focus);
-      document.removeEventListener("focusout", hide);
-      document.removeEventListener("pointerleave", hide);
+      document.removeEventListener("focusout", clearMarker);
+      document.removeEventListener("pointerleave", clearMarker);
+      document.removeEventListener("keydown", key);
       window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("scroll", clearMarker, true);
+      window.removeEventListener("hischool-close-notes", hide);
     };
   }, []);
-  if (!note) return null;
   return (
-    <div
-      role="presentation"
-      style={{ left: note.x, top: note.y }}
-      data-hover-note
-      className={`pointer-events-none fixed z-[60] w-max max-w-[16rem] -translate-x-1/2 rounded-lg bg-white px-3 pt-2.5 pb-2 text-xs leading-snug text-ink shadow-xl ring-1 ring-black/10 print:hidden ${note.below ? "translate-y-4" : "-translate-y-[calc(100%+12px)]"}`}
-    >
-      <NoteBody lines={note.lines} tone={note.tone} mark={note.mark} />
-      {note.below ? null : <span aria-hidden className="absolute -bottom-1 size-2 rotate-45 bg-white ring-1 ring-black/10 [clip-path:polygon(100%_0,100%_100%,0_100%)]" style={{ left: `calc(50% + ${note.dx}px - 4px)` }} />}
-    </div>
+    <>
+      <NoteMarker />
+      {note ? (
+        <div
+          role="presentation"
+          style={{ left: note.x, top: note.y }}
+          data-hover-note
+          className={`pointer-events-none fixed z-[60] w-max max-w-[16rem] -translate-x-1/2 rounded-lg bg-white px-3 pt-2.5 pb-2 text-xs leading-snug text-ink shadow-xl ring-1 ring-black/10 print:hidden ${note.below ? "translate-y-4" : "-translate-y-[calc(100%+12px)]"}`}
+        >
+          <NoteBody lines={note.lines} tone={note.tone} mark={note.mark} />
+          {note.below ? null : <span aria-hidden className="absolute -bottom-1 size-2 rotate-45 bg-white ring-1 ring-black/10 [clip-path:polygon(100%_0,100%_100%,0_100%)]" style={{ left: `calc(50% + ${note.dx}px - 4px)` }} />}
+        </div>
+      ) : null}
+    </>
   );
 }
+
+const t_in_field = (t: EventTarget | null) => Boolean((t as Element | null)?.closest?.(FIELD));

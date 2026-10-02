@@ -1,0 +1,16 @@
+
+> build:trial
+> vite build -c vite.spa.config.ts
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2511 modules transformed.
+rendering chunks...
+[plugin vite:singlefile] 
+
+[plugin vite:singlefile] Inlining: spa-B9cI7wbf.js
+[plugin vite:singlefile] Inlining: style-DLCCbEL8.css
+computing gzip size...
+dist-spa/spa.html  2,193.59 kB │ gzip: 805.78 kB
+
+✓ built in 1.50s

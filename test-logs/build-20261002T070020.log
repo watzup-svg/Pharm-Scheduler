@@ -1,0 +1,32 @@
+
+> build:trial
+> vite build -c vite.spa.config.ts
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2511 modules transformed.
+rendering chunks...
+[plugin vite:singlefile] 
+
+[plugin vite:singlefile] Inlining: spa-Bjn6zOxX.js
+[plugin vite:singlefile] Inlining: style-Bk8_aM44.css
+computing gzip size...
+dist-spa/spa.html  2,193.40 kB │ gzip: 805.80 kB
+
+✓ built in 1.56s
+
+> build:real
+> vite build -c vite.spa.config.ts --mode real
+
+vite v8.3.1 building client environment for real...
+transforming...
+✓ 2511 modules transformed.
+rendering chunks...
+[plugin vite:singlefile] 
+
+[plugin vite:singlefile] Inlining: spa-CNW6OXH0.js
+[plugin vite:singlefile] Inlining: style-Bk8_aM44.css
+computing gzip size...
+dist-real/spa.html  2,193.16 kB │ gzip: 805.70 kB
+
+✓ built in 883ms

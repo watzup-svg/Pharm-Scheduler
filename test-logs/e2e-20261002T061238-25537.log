@@ -1,0 +1,591 @@
+
+# print
+
+# print
+ok   the pack cannot print while problems remain: Fix is offered and Print is disabled
+ok   the four marks count what is left
+ok   Oregon only shrinks the pack
+ok   Everything brings it back
+ok   a store with no problems can print on its own
+ok   first print asks to acknowledge problems elsewhere
+ok   second print does not ask again
+ok   no script errors
+
+all checks passed
+
+# time off
+
+# time off
+ok   Add is disabled until there is a person and days
+ok   two people added at once
+ok   one Undo takes both back
+ok   a quick tap on a hold button does nothing
+ok   and tells her to hold
+ok   while held the button shows it is timing
+ok   holding approves and takes the request off the queue
+ok   Undo puts it back
+ok   focus returns to the Add button
+ok   no script errors
+
+all checks passed
+
+# pages
+
+# pages
+ok   District shows the month checklist, open the first time
+ok   and starts with nothing ticked
+ok   a manual step can be marked
+ok   no script errors (District)
+ok   Week view store column stays narrow
+ok   Week table fits its card
+ok   sick call uses the shared day picker
+ok   and says what is missing
+ok   no script errors (Schedule)
+ok   phone: the strip shows the count and no sentence
+ok   phone: Fix opens the first problem's day
+ok   no script errors (phone)
+ok   selecting a tab gives a visible response
+ok   and it clears itself
+ok   removing a person asks in the app's own dialog
+ok   and lists what will happen
+ok   Cancel changes nothing
+ok   Remove removes one
+ok   and Undo brings them back
+ok   no script errors (people)
+ok   phone bottom bar has five entries
+ok   Setup holds People, Stores and Holidays
+ok   the switcher moves between them
+ok   and Setup shows as current in the tab bar
+ok   the Undo button says what it will undo
+ok   Recent changes lists it
+ok   no script errors (undo label)
+ok   Fill is in the status strip
+ok   checklist is open the first time a month is seen
+ok   and folded to its one summary line after that
+ok   a phone sheet closes when pulled down
+ok   People role filter narrows the list
+ok   People sort by name
+ok   Holiday list comes before the U.S. picker
+ok   the picker opens on demand
+ok   month strip filters the list
+ok   estimate is labelled
+ok   a set time replaces the estimate
+ok   Undo brings the estimate back
+
+all checks passed
+
+# dialogs
+
+# dialogs
+ok   sick dialog @1366
+ok   file menu @1366
+ok   search @1366
+ok   time-off drawer @1366
+ok   person form @1366
+ok   sick dialog @390
+ok   file menu @390
+ok   search @390
+ok   time-off drawer @390
+ok   person form @390
+
+all checks passed
+
+# cover plans
+
+# cover plans
+ok   shorter drives card shows when only a second pharmacist can cover @1366
+ok   shorter drives card passes the accessibility scan @1366
+ok   using a plan fixes the shift (one fewer to fix) @1366
+ok   undo restores it exactly @1366
+ok   no page errors @1366
+ok   shorter drives card shows when only a second pharmacist can cover @390
+ok   shorter drives card passes the accessibility scan @390
+ok   using a plan fixes the shift (one fewer to fix) @390
+ok   undo restores it exactly @390
+ok   no page errors @390
+
+all checks passed
+
+# daily jobs
+
+# daily jobs
+ok   after Remove the panel stays open on the emptied shift
+ok   the person just removed is not the best fit
+ok   Inventory is offered as a reason to close a store
+ok   no page errors (schedule)
+ok   a problem left as is appears as a tally in the header
+ok   a worked day on the person strip is a button
+ok   clicking it opens that day on the Schedule
+ok   adding the licence clears the licence problem and nothing else
+ok   the packet is still blocked while problems are open
+ok   the district page can print as a draft
+
+all checks passed
+
+# smoke
+
+# smoke
+ok   / @1366
+ok   /schedule @1366
+ok   /time-off @1366
+ok   /holidays @1366
+ok   /print @1366
+ok   /people @1366
+ok   /stores @1366
+ok   / @1024
+ok   /schedule @1024
+ok   /time-off @1024
+ok   /holidays @1024
+ok   /print @1024
+ok   /people @1024
+ok   /stores @1024
+ok   / @768
+ok   /schedule @768
+ok   /time-off @768
+ok   /holidays @768
+ok   /print @768
+ok   /people @768
+ok   /stores @768
+ok   / @390
+ok   /schedule @390
+ok   /time-off @390
+ok   /holidays @390
+ok   /print @390
+ok   /people @390
+ok   /stores @390
+ok   / @320
+ok   /schedule @320
+ok   /time-off @320
+ok   /holidays @320
+ok   /print @320
+ok   /people @320
+ok   /stores @320
+
+all checks passed
+
+# marks
+
+# marks
+ok   marks use only the four sizes /district @1366
+ok   no mark is a circle /district @1366
+ok   each mark has its family's colour /district @1366
+ok   the legend shows every mark, once, in the shared order
+ok   marks use only the four sizes /schedule @1366
+ok   no mark is a circle /schedule @1366
+ok   each mark has its family's colour /schedule @1366
+ok   marks use only the four sizes /time-off @1366
+ok   no mark is a circle /time-off @1366
+ok   each mark has its family's colour /time-off @1366
+ok   marks use only the four sizes /people @1366
+ok   no mark is a circle /people @1366
+ok   each mark has its family's colour /people @1366
+ok   marks use only the four sizes /stores @1366
+ok   no mark is a circle /stores @1366
+ok   each mark has its family's colour /stores @1366
+ok   marks use only the four sizes /print @1366
+ok   no mark is a circle /print @1366
+ok   each mark has its family's colour /print @1366
+ok   marks use only the four sizes /holidays @1366
+ok   no mark is a circle /holidays @1366
+ok   each mark has its family's colour /holidays @1366
+ok   marks use only the four sizes /district @390
+ok   no mark is a circle /district @390
+ok   each mark has its family's colour /district @390
+ok   marks use only the four sizes /schedule @390
+ok   no mark is a circle /schedule @390
+ok   each mark has its family's colour /schedule @390
+ok   marks use only the four sizes /time-off @390
+ok   no mark is a circle /time-off @390
+ok   each mark has its family's colour /time-off @390
+ok   marks use only the four sizes /people @390
+ok   no mark is a circle /people @390
+ok   each mark has its family's colour /people @390
+ok   marks use only the four sizes /stores @390
+ok   no mark is a circle /stores @390
+ok   each mark has its family's colour /stores @390
+ok   marks use only the four sizes /print @390
+ok   no mark is a circle /print @390
+ok   each mark has its family's colour /print @390
+ok   marks use only the four sizes /holidays @390
+ok   no mark is a circle /holidays @390
+ok   each mark has its family's colour /holidays @390
+ok   Someone’s out is yellow
+ok   Add time off is yellow
+
+all checks passed
+
+# issue navigator
+
+# issue navigator
+ok   no position shows before stepping
+ok   the first step lands on the first issue by date
+ok   the title names the issue
+ok   the matching kind lights up in the tiles row
+ok   the ring tick moves to the issue's day
+ok   the ring centre names the day
+ok   a person at two stores outlines both
+ok   stepping does not open the day panel
+ok   stepping stays on the District page
+ok   the header keeps its height while stepping
+ok   the next step outlines the next issue's cell
+ok   stepping back from the first wraps to the last
+ok   stepping never changes the schedule
+ok   today keeps a dot on the rim while another day is selected
+ok   Done clears the position
+ok   Done puts the tick back on today
+ok   no script errors while stepping
+ok   Fix says which day it opens while stepping
+ok   Fix opens the day the arrows are on
+ok   the open day panel drives the ring
+ok   the day panel's Next goes to the next issue by date
+ok   the header position follows the day panel
+ok   a closed day with nothing wrong is hollow
+ok   a closed day with nothing wrong just says closed
+ok   a closed day with a name on it says what is wrong
+ok   a closed day with a name on it can be opened
+ok   opening it goes to that day's problem
+ok   the store row boxes the issue's stores
+ok   the box moves with the next issue
+ok   no script errors on Schedule while stepping
+ok   every store chip is whole on screen @1066
+ok   every store chip is whole on screen @1366
+ok   stepping never scrolls the page away from the arrows @390
+ok   the title takes the tiles row on a phone @390
+ok   the header does not grow while stepping @390
+ok   no sideways scroll while stepping @390
+ok   arrows are full-size touch targets @390
+ok   no script errors @390
+ok   stepping never scrolls the page away from the arrows @320
+ok   the title takes the tiles row on a phone @320
+ok   the header does not grow while stepping @320
+ok   no sideways scroll while stepping @320
+ok   arrows are full-size touch targets @320
+ok   no script errors @320
+
+all checks passed
+
+# hover rules
+
+# hover rules
+ok   no note inside another note /district @1366
+ok   no title beside a note /district @1366
+ok   notes stay within their length /district @1366
+ok   a plain control does not sit under a card's note /district @1366
+ok   no note inside another note /schedule @1366
+ok   no title beside a note /schedule @1366
+ok   notes stay within their length /schedule @1366
+ok   a plain control does not sit under a card's note /schedule @1366
+ok   no note inside another note /time-off @1366
+ok   no title beside a note /time-off @1366
+ok   notes stay within their length /time-off @1366
+ok   a plain control does not sit under a card's note /time-off @1366
+ok   no note inside another note /people @1366
+ok   no title beside a note /people @1366
+ok   notes stay within their length /people @1366
+ok   a plain control does not sit under a card's note /people @1366
+ok   no note inside another note /stores @1366
+ok   no title beside a note /stores @1366
+ok   notes stay within their length /stores @1366
+ok   a plain control does not sit under a card's note /stores @1366
+ok   no note inside another note /print @1366
+ok   no title beside a note /print @1366
+ok   notes stay within their length /print @1366
+ok   a plain control does not sit under a card's note /print @1366
+ok   no note inside another note /holidays @1366
+ok   no title beside a note /holidays @1366
+ok   notes stay within their length /holidays @1366
+ok   a plain control does not sit under a card's note /holidays @1366
+ok   no note inside another note /lists @1366
+ok   no title beside a note /lists @1366
+ok   notes stay within their length /lists @1366
+ok   a plain control does not sit under a card's note /lists @1366
+ok   no note inside another note /district @390
+ok   no title beside a note /district @390
+ok   notes stay within their length /district @390
+ok   a plain control does not sit under a card's note /district @390
+ok   no note inside another note /schedule @390
+ok   no title beside a note /schedule @390
+ok   notes stay within their length /schedule @390
+ok   a plain control does not sit under a card's note /schedule @390
+ok   no note inside another note /time-off @390
+ok   no title beside a note /time-off @390
+ok   notes stay within their length /time-off @390
+ok   a plain control does not sit under a card's note /time-off @390
+ok   no note inside another note /people @390
+ok   no title beside a note /people @390
+ok   notes stay within their length /people @390
+ok   a plain control does not sit under a card's note /people @390
+ok   no note inside another note /stores @390
+ok   no title beside a note /stores @390
+ok   notes stay within their length /stores @390
+ok   a plain control does not sit under a card's note /stores @390
+ok   no note inside another note /print @390
+ok   no title beside a note /print @390
+ok   notes stay within their length /print @390
+ok   a plain control does not sit under a card's note /print @390
+ok   no note inside another note /holidays @390
+ok   no title beside a note /holidays @390
+ok   notes stay within their length /holidays @390
+ok   a plain control does not sit under a card's note /holidays @390
+ok   no note inside another note /lists @390
+ok   no title beside a note /lists @390
+ok   notes stay within their length /lists @390
+ok   a plain control does not sit under a card's note /lists @390
+ok   a plain button shows no borrowed note
+ok   a column header shows one note
+ok   moving onto a grid cell leaves exactly one note
+ok   moving off to a plain button clears them
+ok   the day panel has one note per spot @1366
+ok   the Someone’s out dialog has one note per spot @1366
+ok   the Add time off dialog has one note per spot @1366
+ok   the day panel has one note per spot @390
+ok   the Someone’s out dialog has one note per spot @390
+ok   the Add time off dialog has one note per spot @390
+
+all checks passed
+
+# next month
+
+# next month
+ok   October starts with 2 requests waiting
+ok   the Start dialog says what November will start with
+ok   the end-of-month weekdays are one line, not a list
+ok   November opens with the number the dialog promised
+ok   November is on screen
+ok   no request badge after the month moves on
+ok   Requests says nothing is waiting
+ok   Requests says where the older ones are
+ok   no script errors starting next month
+
+all checks passed
+
+# small month
+
+# small month
+ok   small month marks never cover a date /time-off @1366
+ok   small month shows the practice month's marks @1366
+ok   small month marks never cover a date /holidays @1366
+ok   small month marks never cover a date /time-off @390
+ok   small month shows the practice month's marks @390
+ok   small month marks never cover a date /holidays @390
+ok   small month marks never cover a date /time-off @320
+ok   small month shows the practice month's marks @320
+ok   small month marks never cover a date /holidays @320
+
+all checks passed
+
+# header links
+
+# header links
+ok   pointing at a tile lights its days on the ring
+ok   pointing at a tile outlines its cells below
+ok   the other ring days step back
+ok   moving away puts the ring back
+ok   pointing at a ring day boxes that date on the month grid
+ok   pointing at a date below lights it on the ring
+ok   no script errors while pointing
+ok   clicking a tile steps through only that kind
+ok   it starts on that kind's first issue
+ok   the big number still counts everything
+ok   the clicked tile reads as chosen
+ok   the ring keeps that kind's days lit
+ok   Next stays within the kind
+ok   clicking it again steps through everything
+ok   no script errors while narrowing
+ok   the day strip lists every store for the issue's day
+ok   the stores to fix that day are marked
+ok   a two-places issue shows both store badges
+ok   a store in the strip opens that day
+ok   no script errors in the strip
+ok   a tile's note has a problem edge
+ok   a tile's note leads with its mark
+ok   a tile's note puts the click in a footer
+ok   the arrows' note hangs below them
+ok   keyboard focus in the header is a white outline
+ok   no script errors in notes
+ok   store counts are rounded squares, not circles
+ok   a problem day's note names the store and date, the problem and the click
+ok   a problem day's note has the red edge and its mark
+ok   the File menu names the build, its time and its version
+
+all checks passed
+
+# problem card marks
+
+# problem card marks
+ok   a no-coverage card shows the hole mark
+ok   the other problem kinds carry their marks too
+ok   no script errors
+
+all checks passed
+
+# store numbers
+
+# store numbers
+ok   1366px /district: no store letters with numbers chosen
+ok   1366px /schedule: no store letters with numbers chosen
+ok   1366px /time-off: no store letters with numbers chosen
+ok   1366px /people: no store letters with numbers chosen
+ok   1366px /holidays: no store letters with numbers chosen
+ok   1366px /lists: no store letters with numbers chosen
+ok   1366px /print: no store letters with numbers chosen
+ok   1366px: no page errors
+ok   390px /district: no store letters with numbers chosen
+ok   390px /schedule: no store letters with numbers chosen
+ok   390px /time-off: no store letters with numbers chosen
+ok   390px /people: no store letters with numbers chosen
+ok   390px /holidays: no store letters with numbers chosen
+ok   390px /lists: no store letters with numbers chosen
+ok   390px /print: no store letters with numbers chosen
+ok   a covering tag with a store number fits its phone cell
+ok   390px: no page errors
+
+all checks passed
+
+# fit
+
+# fit
+ok   all page headers are the same width @1366
+ok   all page headers are the same height @1366
+ok   the count tiles sit on the same line in every header @1366
+ok   all page headers are the same width @1024
+ok   all page headers are the same height @1024
+ok   the count tiles sit on the same line in every header @1024
+ok   all page headers are the same width @390
+ok   all page headers are the same height @390
+ok   the count tiles sit on the same line in every header @390
+ok   no sideways scroll / @320
+ok   no cut-off text / @320
+ok   no sideways scroll /schedule @320
+ok   no cut-off text /schedule @320
+ok   no sideways scroll /time-off @320
+ok   no cut-off text /time-off @320
+ok   no sideways scroll /people @320
+ok   no cut-off text /people @320
+ok   no sideways scroll /stores @320
+ok   no cut-off text /stores @320
+ok   no sideways scroll /print @320
+ok   no cut-off text /print @320
+ok   no sideways scroll /lists @320
+ok   no cut-off text /lists @320
+ok   no sideways scroll /holidays @320
+ok   no cut-off text /holidays @320
+ok   day panel stays inside the screen @320
+ok   day panel has no cut-off text @320
+ok   day panel tap targets @320
+ok   no sideways scroll / @360
+ok   no cut-off text / @360
+ok   no sideways scroll /schedule @360
+ok   no cut-off text /schedule @360
+ok   no sideways scroll /time-off @360
+ok   no cut-off text /time-off @360
+ok   no sideways scroll /people @360
+ok   no cut-off text /people @360
+ok   no sideways scroll /stores @360
+ok   no cut-off text /stores @360
+ok   no sideways scroll /print @360
+ok   no cut-off text /print @360
+ok   no sideways scroll /lists @360
+ok   no cut-off text /lists @360
+ok   no sideways scroll /holidays @360
+ok   no cut-off text /holidays @360
+ok   day panel stays inside the screen @360
+ok   day panel has no cut-off text @360
+ok   day panel tap targets @360
+ok   no sideways scroll / @390
+ok   no cut-off text / @390
+ok   no sideways scroll /schedule @390
+ok   no cut-off text /schedule @390
+ok   no sideways scroll /time-off @390
+ok   no cut-off text /time-off @390
+ok   no sideways scroll /people @390
+ok   no cut-off text /people @390
+ok   no sideways scroll /stores @390
+ok   no cut-off text /stores @390
+ok   no sideways scroll /print @390
+ok   no cut-off text /print @390
+ok   no sideways scroll /lists @390
+ok   no cut-off text /lists @390
+ok   no sideways scroll /holidays @390
+ok   no cut-off text /holidays @390
+ok   day panel stays inside the screen @390
+ok   day panel has no cut-off text @390
+ok   day panel tap targets @390
+ok   no sideways scroll / @430
+ok   no cut-off text / @430
+ok   no sideways scroll /schedule @430
+ok   no cut-off text /schedule @430
+ok   no sideways scroll /time-off @430
+ok   no cut-off text /time-off @430
+ok   no sideways scroll /people @430
+ok   no cut-off text /people @430
+ok   no sideways scroll /stores @430
+ok   no cut-off text /stores @430
+ok   no sideways scroll /print @430
+ok   no cut-off text /print @430
+ok   no sideways scroll /lists @430
+ok   no cut-off text /lists @430
+ok   no sideways scroll /holidays @430
+ok   no cut-off text /holidays @430
+ok   day panel stays inside the screen @430
+ok   day panel has no cut-off text @430
+ok   day panel tap targets @430
+ok   no sideways scroll / @768
+ok   no cut-off text / @768
+ok   no sideways scroll /schedule @768
+ok   no cut-off text /schedule @768
+ok   no sideways scroll /time-off @768
+ok   no cut-off text /time-off @768
+ok   no sideways scroll /people @768
+ok   no cut-off text /people @768
+ok   no sideways scroll /stores @768
+ok   no cut-off text /stores @768
+ok   no sideways scroll /print @768
+ok   no cut-off text /print @768
+ok   no sideways scroll /lists @768
+ok   no cut-off text /lists @768
+ok   no sideways scroll /holidays @768
+ok   no cut-off text /holidays @768
+ok   day panel stays inside the screen @768
+ok   day panel has no cut-off text @768
+ok   day panel tap targets @768
+ok   no sideways scroll / @1024
+ok   no cut-off text / @1024
+ok   no sideways scroll /schedule @1024
+ok   no cut-off text /schedule @1024
+ok   no sideways scroll /time-off @1024
+ok   no cut-off text /time-off @1024
+ok   no sideways scroll /people @1024
+ok   no cut-off text /people @1024
+ok   no sideways scroll /stores @1024
+ok   no cut-off text /stores @1024
+ok   no sideways scroll /print @1024
+ok   no cut-off text /print @1024
+ok   no sideways scroll /lists @1024
+ok   no cut-off text /lists @1024
+ok   no sideways scroll /holidays @1024
+ok   no cut-off text /holidays @1024
+ok   day panel stays inside the screen @1024
+ok   day panel has no cut-off text @1024
+ok   day panel tap targets @1024
+ok   no sideways scroll / @1366
+ok   no cut-off text / @1366
+ok   no sideways scroll /schedule @1366
+ok   no cut-off text /schedule @1366
+ok   no sideways scroll /time-off @1366
+ok   no cut-off text /time-off @1366
+ok   no sideways scroll /people @1366
+ok   no cut-off text /people @1366
+ok   no sideways scroll /stores @1366
+ok   no cut-off text /stores @1366
+ok   no sideways scroll /print @1366
+ok   no cut-off text /print @1366
+ok   no sideways scroll /lists @1366
+ok   no cut-off text /lists @1366
+ok   no sideways scroll /holidays @1366
+ok   no cut-off text /holidays @1366
+ok   day panel stays inside the screen @1366
+ok   day panel has no cut-off text @1366
+ok   day panel tap targets @1366
+
+all checks passed

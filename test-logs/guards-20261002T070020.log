@@ -1,0 +1,6 @@
+ok   size dist-spa/spa.html — 2.19 MB of 2.42 MB allowed
+ok   size dist-real/spa.html — 2.19 MB of 2.42 MB allowed
+ok   hosts dist-spa/spa.html — 8 known
+ok   hosts dist-real/spa.html — 8 known
+ok   offline: no request leaves the page — 16 page loads
+ok   docs: new source files are named in ARCHITECTURE.md — 0 new

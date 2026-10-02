@@ -186,6 +186,10 @@
 .hs-slide-in {
   animation: hs-slide-in 200ms ease-out;
 }
+/* The "more here" marker on a noted element: it waits a beat, so passing over things never flickers. */
+.note-marker {
+  animation: hs-fade 160ms ease-out 140ms backwards;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

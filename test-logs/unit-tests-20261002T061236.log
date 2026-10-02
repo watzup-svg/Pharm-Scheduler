@@ -1,0 +1,2415 @@
+
+> test:schedule
+> node --experimental-strip-types --test src/lib/schedule/*.test.ts src/store/schedule-store.test.ts
+
+TAP version 13
+# Subtest: monthWeeks
+    # Subtest: lays September 2026 out Sunday-first with the 1st on Tuesday
+    ok 1 - lays September 2026 out Sunday-first with the 1st on Tuesday
+      ---
+      duration_ms: 2.525616
+      type: 'test'
+      ...
+    1..1
+ok 1 - monthWeeks
+  ---
+  duration_ms: 8.41487
+  type: 'suite'
+  ...
+# Subtest: suggestedMonth
+    # Subtest: is this month early and mid month, and the next month in the last week
+    ok 1 - is this month early and mid month, and the next month in the last week
+      ---
+      duration_ms: 0.292155
+      type: 'test'
+      ...
+    1..1
+ok 2 - suggestedMonth
+  ---
+  duration_ms: 0.42331
+  type: 'suite'
+  ...
+# Subtest: assignment solver
+    # Subtest: finds the cheapest assignment on 300 random matrices (checked against brute force)
+    ok 1 - finds the cheapest assignment on 300 random matrices (checked against brute force)
+      ---
+      duration_ms: 13.791392
+      type: 'test'
+      ...
+    1..1
+ok 3 - assignment solver
+  ---
+  duration_ms: 14.638553
+  type: 'suite'
+  ...
+# Subtest: cover plans
+    # Subtest: never fills one shift by emptying another store (the gap must not just move)
+    ok 1 - never fills one shift by emptying another store (the gap must not just move)
+      ---
+      duration_ms: 1385.03361
+      type: 'test'
+      ...
+    # Subtest: every plan for every hole in the practice month applies cleanly, fills the shift and respects the drive limit
+    ok 2 - every plan for every hole in the practice month applies cleanly, fills the shift and respects the drive limit
+      ---
+      duration_ms: 572.952447
+      type: 'test'
+      ...
+    # Subtest: is quiet for a shift that already has someone
+    ok 3 - is quiet for a shift that already has someone
+      ---
+      duration_ms: 2.726645
+      type: 'test'
+      ...
+    # Subtest: can move a second pharmacist to a store with nobody
+    ok 4 - can move a second pharmacist to a store with nobody
+      ---
+      duration_ms: 117.240772
+      type: 'test'
+      ...
+    # Subtest: never offers a plan that leaves another store bare (fuzz: 150 random months)
+    ok 5 - never offers a plan that leaves another store bare (fuzz: 150 random months)
+      ---
+      duration_ms: 15229.164439
+      type: 'test'
+      ...
+    # Subtest: a plan is never costlier to the longest drive than just sending the nearest free person
+    ok 6 - a plan is never costlier to the longest drive than just sending the nearest free person
+      ---
+      duration_ms: 232.540188
+      type: 'test'
+      ...
+    # Subtest: refuses a plan that would break the day, and changes nothing
+    ok 7 - refuses a plan that would break the day, and changes nothing
+      ---
+      duration_ms: 6.674123
+      type: 'test'
+      ...
+    1..7
+ok 4 - cover plans
+  ---
+  duration_ms: 17547.089643
+  type: 'suite'
+  ...
+# Subtest: visible slots
+    # Subtest: shows Pharmacist and a used Pharmacist 2, and nothing else
+    ok 1 - shows Pharmacist and a used Pharmacist 2, and nothing else
+      ---
+      duration_ms: 4.067716
+      type: 'test'
+      ...
+    # Subtest: keeps Pharmacist even when the month has no RPh names
+    ok 2 - keeps Pharmacist even when the month has no RPh names
+      ---
+      duration_ms: 0.31815
+      type: 'test'
+      ...
+    # Subtest: does not show technician or cashier rows
+    ok 3 - does not show technician or cashier rows
+      ---
+      duration_ms: 0.257203
+      type: 'test'
+      ...
+    # Subtest: reveals Pharmacist 2 on a store that has not used it
+    ok 4 - reveals Pharmacist 2 on a store that has not used it
+      ---
+      duration_ms: 0.260645
+      type: 'test'
+      ...
+    1..4
+ok 5 - visible slots
+  ---
+  duration_ms: 5.829243
+  type: 'suite'
+  ...
+# Subtest: time off jump
+    # Subtest: lands unplaced Jane on home-store Pharmacist the first PTO day
+    ok 1 - lands unplaced Jane on home-store Pharmacist the first PTO day
+      ---
+      duration_ms: 0.566893
+      type: 'test'
+      ...
+    1..1
+ok 6 - time off jump
+  ---
+  duration_ms: 0.672946
+  type: 'suite'
+  ...
+# Subtest: person day jump
+    # Subtest: lands Susan on Pharmacist 2, not the empty Pharmacist cell
+    ok 1 - lands Susan on Pharmacist 2, not the empty Pharmacist cell
+      ---
+      duration_ms: 0.332367
+      type: 'test'
+      ...
+    1..1
+ok 7 - person day jump
+  ---
+  duration_ms: 0.673374
+  type: 'suite'
+  ...
+# Subtest: September 2026 dashboard lessons
+    # Subtest: Labor Day is closed everywhere and is not a Jane PTO day
+    ok 1 - Labor Day is closed everywhere and is not a Jane PTO day
+      ---
+      duration_ms: 12.817245
+      type: 'test'
+      ...
+    # Subtest: Estacada the 16th is a hole because nobody is there, not because Jane is on PTO
+    ok 2 - Estacada the 16th is a hole because nobody is there, not because Jane is on PTO
+      ---
+      duration_ms: 20.702183
+      type: 'test'
+      ...
+    # Subtest: home-store floats are not covering; a different store is
+    ok 3 - home-store floats are not covering; a different store is
+      ---
+      duration_ms: 0.221509
+      type: 'test'
+      ...
+    # Subtest: a pharmacist already sitting on a West Linn weekend is a hard leftover
+    ok 4 - a pharmacist already sitting on a West Linn weekend is a hard leftover
+      ---
+      duration_ms: 12.53775
+      type: 'test'
+      ...
+    1..4
+ok 8 - September 2026 dashboard lessons
+  ---
+  duration_ms: 47.244521
+  type: 'suite'
+  ...
+# Subtest: month status and front-door model
+    # Subtest: is not ready: the Sep 4 double first, then the Estacada 16th hole
+    ok 1 - is not ready: the Sep 4 double first, then the Estacada 16th hole
+      ---
+      duration_ms: 3.078802
+      type: 'test'
+      ...
+    # Subtest: next hole is Estacada the 16th and offers a person without placing them
+    ok 2 - next hole is Estacada the 16th and offers a person without placing them
+      ---
+      duration_ms: 0.856858
+      type: 'test'
+      ...
+    # Subtest: free people are truly free; people working elsewhere are marked as a double
+    ok 3 - free people are truly free; people working elsewhere are marked as a double
+      ---
+      duration_ms: 0.36994
+      type: 'test'
+      ...
+    # Subtest: the other pharmacist row counts as already here, so a second row would double
+    ok 4 - the other pharmacist row counts as already here, so a second row would double
+      ---
+      duration_ms: 0.459718
+      type: 'test'
+      ...
+    # Subtest: someone on time off that day is off, not free
+    ok 5 - someone on time off that day is off, not free
+      ---
+      duration_ms: 12.614657
+      type: 'test'
+      ...
+    # Subtest: after the hole is filled by choice, the model reports the double it would make
+    ok 6 - after the hole is filled by choice, the model reports the double it would make
+      ---
+      duration_ms: 1.775169
+      type: 'test'
+      ...
+    # Subtest: lists who is off and whether they are still on a shift
+    ok 7 - lists who is off and whether they are still on a shift
+      ---
+      duration_ms: 0.830424
+      type: 'test'
+      ...
+    # Subtest: time off still prints: it never blocks the gate
+    ok 8 - time off still prints: it never blocks the gate
+      ---
+      duration_ms: 9.20561
+      type: 'test'
+      ...
+    # Subtest: covering is not an error: a float at a non-home store still prints
+    ok 9 - covering is not an error: a float at a non-home store still prints
+      ---
+      duration_ms: 0.955343
+      type: 'test'
+      ...
+    # Subtest: the gate is closed while the double and the hole remain
+    ok 10 - the gate is closed while the double and the hole remain
+      ---
+      duration_ms: 0.194791
+      type: 'test'
+      ...
+    # Subtest: a name left on a closed day blocks the gate and is the first problem
+    ok 11 - a name left on a closed day blocks the gate and is the first problem
+      ---
+      duration_ms: 1.332537
+      type: 'test'
+      ...
+    # Subtest: one person cannot fill both pharmacist rows of a store on one day
+    ok 12 - one person cannot fill both pharmacist rows of a store on one day
+      ---
+      duration_ms: 13.007548
+      type: 'test'
+      ...
+    # Subtest: problem list and rules engine never disagree about readiness
+    ok 13 - problem list and rules engine never disagree about readiness
+      ---
+      duration_ms: 7.772505
+      type: 'test'
+      ...
+    # Subtest: a doubled person counts once for that day in workload
+    ok 14 - a doubled person counts once for that day in workload
+      ---
+      duration_ms: 2.184516
+      type: 'test'
+      ...
+    # Subtest: today lists open stores only and stays quiet for closed ones
+    ok 15 - today lists open stores only and stays quiet for closed ones
+      ---
+      duration_ms: 0.417511
+      type: 'test'
+      ...
+    # Subtest: holes before today are not the next hole once a later one exists
+    ok 16 - holes before today are not the next hole once a later one exists
+      ---
+      duration_ms: 5.6188
+      type: 'test'
+      ...
+    1..16
+ok 9 - month status and front-door model
+  ---
+  duration_ms: 61.9182
+  type: 'suite'
+  ...
+# Subtest: demo month
+    # Subtest: has all 18 stores and 22 invented pharmacists, each with a real home store
+    ok 1 - has all 18 stores and 22 invented pharmacists, each with a real home store
+      ---
+      duration_ms: 1.082339
+      type: 'test'
+      ...
+    # Subtest: is not ready, and print is blocked
+    ok 2 - is not ready, and print is blocked
+      ---
+      duration_ms: 1.680293
+      type: 'test'
+      ...
+    # Subtest: plants each kind of hard error where it says
+    ok 3 - plants each kind of hard error where it says
+      ---
+      duration_ms: 1.354388
+      type: 'test'
+      ...
+    # Subtest: has warnings and valid cases that must not block: yellow time off, cover, a float at home
+    ok 4 - has warnings and valid cases that must not block: yellow time off, cover, a float at home
+      ---
+      duration_ms: 0.198939
+      type: 'test'
+      ...
+    # Subtest: shows the front-door model: problems, next hole, who is off, and a short day
+    ok 5 - shows the front-door model: problems, next hole, who is off, and a short day
+      ---
+      duration_ms: 33.532623
+      type: 'test'
+      ...
+    # Subtest: round-trips through save and open
+    ok 6 - round-trips through save and open
+      ---
+      duration_ms: 24.55631
+      type: 'test'
+      ...
+    1..6
+ok 10 - demo month
+  ---
+  duration_ms: 63.454139
+  type: 'suite'
+  ...
+# Subtest: drop a name on the grid
+    # Subtest: moves Jane from Tuesday 1 onto the Estacada Wednesday 16 hole
+    ok 1 - moves Jane from Tuesday 1 onto the Estacada Wednesday 16 hole
+      ---
+      duration_ms: 1.639824
+      type: 'test'
+      ...
+    # Subtest: Alt/copy keeps the source cell
+    ok 2 - Alt/copy keeps the source cell
+      ---
+      duration_ms: 0.28703
+      type: 'test'
+      ...
+    # Subtest: dropping a name onto another name swaps the two cells
+    ok 3 - dropping a name onto another name swaps the two cells
+      ---
+      duration_ms: 0.346697
+      type: 'test'
+      ...
+    # Subtest: rejects a drop onto a shut Sunday
+    ok 4 - rejects a drop onto a shut Sunday
+      ---
+      duration_ms: 0.246956
+      type: 'test'
+      ...
+    # Subtest: roster drop (no from) copies onto a vacant open cell
+    ok 5 - roster drop (no from) copies onto a vacant open cell
+      ---
+      duration_ms: 0.154164
+      type: 'test'
+      ...
+    # Subtest: moves Mark off a shut West Linn Saturday onto an open cell
+    ok 6 - moves Mark off a shut West Linn Saturday onto an open cell
+      ---
+      duration_ms: 0.21495
+      type: 'test'
+      ...
+    # Subtest: drop onto a selected range fills those cells without auto-filling other holes
+    ok 7 - drop onto a selected range fills those cells without auto-filling other holes
+      ---
+      duration_ms: 0.361095
+      type: 'test'
+      ...
+    # Subtest: drop caption names move, swap, fill, and shut
+    ok 8 - drop caption names move, swap, fill, and shut
+      ---
+      duration_ms: 0.534575
+      type: 'test'
+      ...
+    1..8
+ok 11 - drop a name on the grid
+  ---
+  duration_ms: 4.82387
+  type: 'suite'
+  ...
+# Subtest: away from home (regular pharmacists only)
+    # Subtest: marks a regular pharmacist at another store, never a float, never at home
+    ok 1 - marks a regular pharmacist at another store, never a float, never at home
+      ---
+      duration_ms: 0.919627
+      type: 'test'
+      ...
+    # Subtest: lists every away placement in date order
+    ok 2 - lists every away placement in date order
+      ---
+      duration_ms: 6.458155
+      type: 'test'
+      ...
+    # Subtest: the district strip shows it as its own tone unless something worse is going on
+    ok 3 - the district strip shows it as its own tone unless something worse is going on
+      ---
+      duration_ms: 0.245067
+      type: 'test'
+      ...
+    1..3
+ok 12 - away from home (regular pharmacists only)
+  ---
+  duration_ms: 21.002515
+  type: 'suite'
+  ...
+# Subtest: ranked suggestions
+    # Subtest: rank floats near a hole first, with reasons, and place nothing
+    ok 1 - rank floats near a hole first, with reasons, and place nothing
+      ---
+      duration_ms: 11.822723
+      type: 'test'
+      ...
+    # Subtest: prefer the shorter drive from home, floats included, and flag a very long one
+    ok 2 - prefer the shorter drive from home, floats included, and flag a very long one
+      ---
+      duration_ms: 1.981516
+      type: 'test'
+      ...
+    # Subtest: leave out people who cannot work there, unless asked for so it can be explained (then last, never free)
+    ok 3 - leave out people who cannot work there, unless asked for so it can be explained (then last, never free)
+      ---
+      duration_ms: 4.899734
+      type: 'test'
+      ...
+    # Subtest: warn about a sixth day, and are the same every time
+    ok 4 - warn about a sixth day, and are the same every time
+      ---
+      duration_ms: 3.825529
+      type: 'test'
+      ...
+    # Subtest: ordinary distance math
+    ok 5 - ordinary distance math
+      ---
+      duration_ms: 0.7763
+      type: 'test'
+      ...
+    1..5
+ok 13 - ranked suggestions
+  ---
+  duration_ms: 24.201617
+  type: 'suite'
+  ...
+# Subtest: time off requests
+    # Subtest: do not count until approved
+    ok 1 - do not count until approved
+      ---
+      duration_ms: 84.371426
+      type: 'test'
+      ...
+    # Subtest: show what approving would leave uncovered, with people who could cover
+    ok 2 - show what approving would leave uncovered, with people who could cover
+      ---
+      duration_ms: 18.966763
+      type: 'test'
+      ...
+    # Subtest: say when someone else is still there
+    ok 3 - say when someone else is still there
+      ---
+      duration_ms: 75.526774
+      type: 'test'
+      ...
+    # Subtest: status survives save and open, and older files count as approved
+    ok 4 - status survives save and open, and older files count as approved
+      ---
+      duration_ms: 55.095872
+      type: 'test'
+      ...
+    1..4
+ok 14 - time off requests
+  ---
+  duration_ms: 234.495387
+  type: 'suite'
+  ...
+# Subtest: state-aware shortage and thin cover
+    # Subtest: a state with more open stores than pharmacists licensed for it is short even if the district is not
+    ok 1 - a state with more open stores than pharmacists licensed for it is short even if the district is not
+      ---
+      duration_ms: 38.501483
+      type: 'test'
+      ...
+    # Subtest: finds days with no spare pharmacist for a state
+    ok 2 - finds days with no spare pharmacist for a state
+      ---
+      duration_ms: 45.384959
+      type: 'test'
+      ...
+    1..2
+ok 15 - state-aware shortage and thin cover
+  ---
+  duration_ms: 84.153439
+  type: 'suite'
+  ...
+# Subtest: two-pharmacist stores (the manager's choice)
+    # Subtest: advises when a store that usually runs two has one, and never blocks
+    ok 1 - advises when a store that usually runs two has one, and never blocks
+      ---
+      duration_ms: 17.393913
+      type: 'test'
+      ...
+    # Subtest: is kept in the file
+    ok 2 - is kept in the file
+      ---
+      duration_ms: 1.935845
+      type: 'test'
+      ...
+    1..2
+ok 16 - two-pharmacist stores (the manager's choice)
+  ---
+  duration_ms: 19.507284
+  type: 'suite'
+  ...
+# Subtest: U.S. holidays, computed
+    # Subtest: 2026
+    ok 1 - 2026
+      ---
+      duration_ms: 4.730982
+      type: 'test'
+      ...
+    # Subtest: another year
+    ok 2 - another year
+      ---
+      duration_ms: 0.273781
+      type: 'test'
+      ...
+    1..2
+ok 17 - U.S. holidays, computed
+  ---
+  duration_ms: 5.106361
+  type: 'suite'
+  ...
+# Subtest: fairness and archive
+    # Subtest: counts days, Saturdays and days away, beside last month
+    ok 1 - counts days, Saturdays and days away, beside last month
+      ---
+      duration_ms: 93.013318
+      type: 'test'
+      ...
+    # Subtest: keeps one entry per month, newest first, and finds last month's key
+    ok 2 - keeps one entry per month, newest first, and finds last month's key
+      ---
+      duration_ms: 26.23519
+      type: 'test'
+      ...
+    1..2
+ok 18 - fairness and archive
+  ---
+  duration_ms: 119.452304
+  type: 'suite'
+  ...
+# Subtest: changes since the last print
+    # Subtest: reports stores and people whose days changed, and nothing when nothing was printed
+    ok 1 - reports stores and people whose days changed, and nothing when nothing was printed
+      ---
+      duration_ms: 1.361827
+      type: 'test'
+      ...
+    1..1
+ok 19 - changes since the last print
+  ---
+  duration_ms: 1.484765
+  type: 'suite'
+  ...
+# Subtest: calendar files and messages
+    # Subtest: makes one all-day event per day worked, folded and escaped, with the away note
+    ok 1 - makes one all-day event per day worked, folded and escaped, with the away note
+      ---
+      duration_ms: 38.967017
+      type: 'test'
+      ...
+    # Subtest: is empty of events for someone with nothing scheduled
+    ok 2 - is empty of events for someone with nothing scheduled
+      ---
+      duration_ms: 0.519588
+      type: 'test'
+      ...
+    # Subtest: writes a short message with time off and where to go
+    ok 3 - writes a short message with time off and where to go
+      ---
+      duration_ms: 0.859539
+      type: 'test'
+      ...
+    1..3
+ok 20 - calendar files and messages
+  ---
+  duration_ms: 40.510283
+  type: 'suite'
+  ...
+# Subtest: paste a schedule from a spreadsheet
+    # Subtest: places names by store and row, refusing what typing would refuse
+    ok 1 - places names by store and row, refusing what typing would refuse
+      ---
+      duration_ms: 1.032754
+      type: 'test'
+      ...
+    # Subtest: never overwrites a filled cell
+    ok 2 - never overwrites a filled cell
+      ---
+      duration_ms: 0.166758
+      type: 'test'
+      ...
+    # Subtest: says what is wrong when there is no header
+    ok 3 - says what is wrong when there is no header
+      ---
+      duration_ms: 0.069591
+      type: 'test'
+      ...
+    1..3
+ok 21 - paste a schedule from a spreadsheet
+  ---
+  duration_ms: 1.41352
+  type: 'suite'
+  ...
+# Subtest: district model
+    # Subtest: summarizes without inventing numbers: every count comes from the rules
+    ok 1 - summarizes without inventing numbers: every count comes from the rules
+      ---
+      duration_ms: 78.575238
+      type: 'test'
+      ...
+    # Subtest: has no 'today' for a month that is not the current one
+    ok 2 - has no 'today' for a month that is not the current one
+      ---
+      duration_ms: 39.126981
+      type: 'test'
+      ...
+    # Subtest: reads a state from the store
+    ok 3 - reads a state from the store
+      ---
+      duration_ms: 0.214771
+      type: 'test'
+      ...
+    1..3
+ok 22 - district model
+  ---
+  duration_ms: 118.068141
+  type: 'suite'
+  ...
+# Subtest: poster away mark
+    # Subtest: says where a regular pharmacist is from, never for floats, and keeps phone and lunch off
+    ok 1 - says where a regular pharmacist is from, never for floats, and keeps phone and lunch off
+      ---
+      duration_ms: 1.657236
+      type: 'test'
+      ...
+    1..1
+ok 23 - poster away mark
+  ---
+  duration_ms: 1.743892
+  type: 'suite'
+  ...
+# Subtest: someone called in sick
+    # Subtest: finds their shifts, logs the days, and leaves the shifts open
+    ok 1 - finds their shifts, logs the days, and leaves the shifts open
+      ---
+      duration_ms: 37.598589
+      type: 'test'
+      ...
+    # Subtest: ranks who could cover, never the sick person, and does not change the schedule
+    ok 2 - ranks who could cover, never the sick person, and does not change the schedule
+      ---
+      duration_ms: 18.286804
+      type: 'test'
+      ...
+    # Subtest: skips a closed day
+    ok 3 - skips a closed day
+      ---
+      duration_ms: 0.160492
+      type: 'test'
+      ...
+    1..3
+ok 24 - someone called in sick
+  ---
+  duration_ms: 56.187289
+  type: 'suite'
+  ...
+# Subtest: weekdays a store is closed
+    # Subtest: closes those days everywhere they are checked, and is kept in the file
+    ok 1 - closes those days everywhere they are checked, and is kept in the file
+      ---
+      duration_ms: 17.910929
+      type: 'test'
+      ...
+    1..1
+ok 25 - weekdays a store is closed
+  ---
+  duration_ms: 17.986537
+  type: 'suite'
+  ...
+# Subtest: suggestions and pending requests
+    # Subtest: warn about someone who has asked for that day off, and rank them lower
+    ok 1 - warn about someone who has asked for that day off, and rank them lower
+      ---
+      duration_ms: 13.737233
+      type: 'test'
+      ...
+    1..1
+ok 26 - suggestions and pending requests
+  ---
+  duration_ms: 13.816436
+  type: 'suite'
+  ...
+# Subtest: debug pass regressions
+    # Subtest: a file with a repeated store code or person name keeps the first of each
+    ok 1 - a file with a repeated store code or person name keeps the first of each
+      ---
+      duration_ms: 9.497619
+      type: 'test'
+      ...
+    # Subtest: an old file that still has license end dates opens and ignores them
+    ok 2 - an old file that still has license end dates opens and ignores them
+      ---
+      duration_ms: 55.144224
+      type: 'test'
+      ...
+    # Subtest: the same person at one store in both rows gets two different calendar events
+    ok 3 - the same person at one store in both rows gets two different calendar events
+      ---
+      duration_ms: 9.147255
+      type: 'test'
+      ...
+    # Subtest: people with no home store are listed as worth a second look
+    ok 4 - people with no home store are listed as worth a second look
+      ---
+      duration_ms: 13.842785
+      type: 'test'
+      ...
+    1..4
+ok 27 - debug pass regressions
+  ---
+  duration_ms: 87.828227
+  type: 'suite'
+  ...
+# Subtest: polish pass helpers
+    # Subtest: splits a poster line into name, second-pharmacist flag and home store
+    ok 1 - splits a poster line into name, second-pharmacist flag and home store
+      ---
+      duration_ms: 8.545463
+      type: 'test'
+      ...
+    # Subtest: readiness is the share of open store-days that are staffed correctly
+    ok 2 - readiness is the share of open store-days that are staffed correctly
+      ---
+      duration_ms: 18.83142
+      type: 'test'
+      ...
+    # Subtest: trend lists older kept months first and ends with the month on screen
+    ok 3 - trend lists older kept months first and ends with the month on screen
+      ---
+      duration_ms: 62.790523
+      type: 'test'
+      ...
+    # Subtest: new files default to large poster type
+    ok 4 - new files default to large poster type
+      ---
+      duration_ms: 1.562061
+      type: 'test'
+      ...
+    1..4
+ok 28 - polish pass helpers
+  ---
+  duration_ms: 92.009639
+  type: 'suite'
+  ...
+# Subtest: accepting problems instead of fixing them
+    # Subtest: accepting a hole stops it blocking and is remembered in the file
+    ok 1 - accepting a hole stops it blocking and is remembered in the file
+      ---
+      duration_ms: 51.24283
+      type: 'test'
+      ...
+    # Subtest: a person in two places is accepted by name and day
+    ok 2 - a person in two places is accepted by name and day
+      ---
+      duration_ms: 18.415209
+      type: 'test'
+      ...
+    # Subtest: licenses cannot be accepted
+    ok 3 - licenses cannot be accepted
+      ---
+      duration_ms: 53.803807
+      type: 'test'
+      ...
+    # Subtest: an accept ends when the problem goes away, so it cannot come back unseen
+    ok 4 - an accept ends when the problem goes away, so it cannot come back unseen
+      ---
+      duration_ms: 18.450051
+      type: 'test'
+      ...
+    # Subtest: undoing an accept brings the problem back
+    ok 5 - undoing an accept brings the problem back
+      ---
+      duration_ms: 6.349007
+      type: 'test'
+      ...
+    1..5
+ok 29 - accepting problems instead of fixing them
+  ---
+  duration_ms: 148.546986
+  type: 'suite'
+  ...
+# Subtest: closing a store for a day on purpose
+    # Subtest: closes it with a reason, frees the people, and is reversible
+    ok 1 - closes it with a reason, frees the people, and is reversible
+      ---
+      duration_ms: 26.542923
+      type: 'test'
+      ...
+    # Subtest: takes a scheduled person off that day
+    ok 2 - takes a scheduled person off that day
+      ---
+      duration_ms: 20.616425
+      type: 'test'
+      ...
+    1..2
+ok 30 - closing a store for a day on purpose
+  ---
+  duration_ms: 47.29284
+  type: 'suite'
+  ...
+# Subtest: first and last day at the company
+    # Subtest: counts the days outside them as time off, and never suggests the person
+    ok 1 - counts the days outside them as time off, and never suggests the person
+      ---
+      duration_ms: 20.902283
+      type: 'test'
+      ...
+    1..1
+ok 31 - first and last day at the company
+  ---
+  duration_ms: 21.024396
+  type: 'suite'
+  ...
+# Subtest: intelligence pass
+    # Subtest: fill proposal: best free person per open shift, nobody used twice in a day, nothing placed
+    ok 1 - fill proposal: best free person per open shift, nobody used twice in a day, nothing placed
+      ---
+      duration_ms: 15.863653
+      type: 'test'
+      ...
+    # Subtest: hints before approving a request: who else is off and days left with no spare pharmacist
+    ok 2 - hints before approving a request: who else is off and days left with no spare pharmacist
+      ---
+      duration_ms: 6.108547
+      type: 'test'
+      ...
+    # Subtest: two or more no-spare days in one week become one fragile-week item
+    ok 3 - two or more no-spare days in one week become one fragile-week item
+      ---
+      duration_ms: 6.426875
+      type: 'test'
+      ...
+    # Subtest: someone who has covered away from home a lot ranks a little lower
+    ok 4 - someone who has covered away from home a lot ranks a little lower
+      ---
+      duration_ms: 3.949417
+      type: 'test'
+      ...
+    # Subtest: a poster changed since it was printed can say Revised
+    ok 5 - a poster changed since it was printed can say Revised
+      ---
+      duration_ms: 0.330125
+      type: 'test'
+      ...
+    # Subtest: the printed district page lists accepted problems and closures
+    ok 6 - the printed district page lists accepted problems and closures
+      ---
+      duration_ms: 4.197222
+      type: 'test'
+      ...
+    1..6
+ok 32 - intelligence pass
+  ---
+  duration_ms: 37.176539
+  type: 'suite'
+  ...
+# Subtest: start and end dates are optional
+    # Subtest: blank (or missing) dates mean available, and either one can be used alone
+    ok 1 - blank (or missing) dates mean available, and either one can be used alone
+      ---
+      duration_ms: 12.831237
+      type: 'test'
+      ...
+    1..1
+ok 33 - start and end dates are optional
+  ---
+  duration_ms: 12.945645
+  type: 'suite'
+  ...
+# Subtest: store numbers
+    # Subtest: shows letters when chosen and the number by default in the sample month, falling back to letters where there is none
+    ok 1 - shows letters when chosen and the number by default in the sample month, falling back to letters where there is none
+      ---
+      duration_ms: 4.861938
+      type: 'test'
+      ...
+    # Subtest: is saved in the file, and posters and calendars use it
+    ok 2 - is saved in the file, and posters and calendars use it
+      ---
+      duration_ms: 11.114792
+      type: 'test'
+      ...
+    # Subtest: a file without numbers opens with letters
+    ok 3 - a file without numbers opens with letters
+      ---
+      duration_ms: 0.471248
+      type: 'test'
+      ...
+    1..3
+ok 34 - store numbers
+  ---
+  duration_ms: 16.614368
+  type: 'suite'
+  ...
+# Subtest: rankCandidates load cache
+    # Subtest: does not go stale when the doc changes
+    ok 1 - does not go stale when the doc changes
+      ---
+      duration_ms: 2.643774
+      type: 'test'
+      ...
+    1..1
+ok 35 - rankCandidates load cache
+  ---
+  duration_ms: 2.717314
+  type: 'suite'
+  ...
+# Subtest: one-page print scoping
+    # Subtest: splits open problems into this store / person and the rest
+    ok 1 - splits open problems into this store / person and the rest
+      ---
+      duration_ms: 1.395867
+      type: 'test'
+      ...
+    1..1
+ok 36 - one-page print scoping
+  ---
+  duration_ms: 1.46299
+  type: 'suite'
+  ...
+# Subtest: time off view model
+    # Subtest: counts who is off per day, flags requests, and finds overlap
+    ok 1 - counts who is off per day, flags requests, and finds overlap
+      ---
+      duration_ms: 4.478632
+      type: 'test'
+      ...
+    1..1
+ok 37 - time off view model
+  ---
+  duration_ms: 4.578378
+  type: 'suite'
+  ...
+# Subtest: hand-set drive times
+    # Subtest: beat the estimate, survive save/load and renames, and go when a store goes
+    ok 1 - beat the estimate, survive save/load and renames, and go when a store goes
+      ---
+      duration_ms: 12.969581
+      type: 'test'
+      ...
+    1..1
+ok 38 - hand-set drive times
+  ---
+  duration_ms: 13.041485
+  type: 'suite'
+  ...
+# Subtest: nobody is offered for a state they can't be shown to be licensed in
+    # Subtest: never suggests anyone who lacks the state, anywhere, on any day
+    ok 1 - never suggests anyone who lacks the state, anywhere, on any day
+      ---
+      duration_ms: 382.995788
+      type: 'test'
+      ...
+    # Subtest: treats 'nothing on file' as licensed only in the home state
+    ok 2 - treats 'nothing on file' as licensed only in the home state
+      ---
+      duration_ms: 2.948949
+      type: 'test'
+      ...
+    # Subtest: does not let the fill plan or time-off cover suggestions pick them either
+    ok 3 - does not let the fill plan or time-off cover suggestions pick them either
+      ---
+      duration_ms: 86.852521
+      type: 'test'
+      ...
+    1..3
+ok 39 - nobody is offered for a state they can't be shown to be licensed in
+  ---
+  duration_ms: 472.994624
+  type: 'suite'
+  ...
+# Subtest: coverage wording and solo doubles
+    # Subtest: flags when moving someone would leave their store with no coverage
+    ok 1 - flags when moving someone would leave their store with no coverage
+      ---
+      duration_ms: 1.295993
+      type: 'test'
+      ...
+    1..1
+ok 40 - coverage wording and solo doubles
+  ---
+  duration_ms: 1.416759
+  type: 'suite'
+  ...
+# Subtest: clean copy
+    # Subtest: drops notes, from-marks, time-off and warning marks but keeps who works where
+    ok 1 - drops notes, from-marks, time-off and warning marks but keeps who works where
+      ---
+      duration_ms: 28.725481
+      type: 'test'
+      ...
+    1..1
+ok 41 - clean copy
+  ---
+  duration_ms: 28.815015
+  type: 'suite'
+  ...
+# Subtest: overrides: not suggested, relief, safe approvals
+    # Subtest: skips a 'don't suggest' person in rankCandidates but keeps them in choices
+    ok 1 - skips a 'don't suggest' person in rankCandidates but keeps them in choices
+      ---
+      duration_ms: 3.177299
+      type: 'test'
+      ...
+    # Subtest: safeToApprove is false when the only other pharmacist is already on approved time off
+    ok 2 - safeToApprove is false when the only other pharmacist is already on approved time off
+      ---
+      duration_ms: 82.425712
+      type: 'test'
+      ...
+    1..2
+ok 42 - overrides: not suggested, relief, safe approvals
+  ---
+  duration_ms: 85.74579
+  type: 'suite'
+  ...
+# Subtest: next month and relief
+    # Subtest: does not copy a one-day relief pharmacist into next month
+    ok 1 - does not copy a one-day relief pharmacist into next month
+      ---
+      duration_ms: 23.644343
+      type: 'test'
+      ...
+    1..1
+ok 43 - next month and relief
+  ---
+  duration_ms: 23.747615
+  type: 'suite'
+  ...
+# Subtest: usual days off
+    # Subtest: are never suggested or filled while someone else is free, but can be placed on purpose
+    ok 1 - are never suggested or filled while someone else is free, but can be placed on purpose
+      ---
+      duration_ms: 21.789955
+      type: 'test'
+      ...
+    # Subtest: bulk tools skip them and say so
+    ok 2 - bulk tools skip them and say so
+      ---
+      duration_ms: 17.772694
+      type: 'test'
+      ...
+    1..2
+ok 44 - usual days off
+  ---
+  duration_ms: 41.90603
+  type: 'suite'
+  ...
+# Subtest: coverage by day
+    # Subtest: counts holes and time off per day and matches the evaluation
+    ok 1 - counts holes and time off per day and matches the evaluation
+      ---
+      duration_ms: 7.151681
+      type: 'test'
+      ...
+    1..1
+ok 45 - coverage by day
+  ---
+  duration_ms: 7.244919
+  type: 'suite'
+  ...
+# Subtest: why cover is needed
+    # Subtest: names the reason for an empty shift and for a named person
+    ok 1 - names the reason for an empty shift and for a named person
+      ---
+      duration_ms: 2.695436
+      type: 'test'
+      ...
+    1..1
+ok 46 - why cover is needed
+  ---
+  duration_ms: 2.770793
+  type: 'suite'
+  ...
+# Subtest: risk dates for the add-time-off calendar
+    # Subtest: marks days that would leave a store with no working pharmacist
+    ok 1 - marks days that would leave a store with no working pharmacist
+      ---
+      duration_ms: 1.891185
+      type: 'test'
+      ...
+    1..1
+ok 47 - risk dates for the add-time-off calendar
+  ---
+  duration_ms: 1.963022
+  type: 'suite'
+  ...
+# Subtest: icon guide
+    # Subtest: explains every icon the app uses
+    ok 1 - explains every icon the app uses
+      ---
+      duration_ms: 1.575633
+      type: 'test'
+      ...
+    1..1
+ok 48 - icon guide
+  ---
+  duration_ms: 1.654475
+  type: 'suite'
+  ...
+# Subtest: bench
+    # Subtest: lists licensed pharmacists from other stores within the drive limit, closest first, and never the store's own
+    ok 1 - lists licensed pharmacists from other stores within the drive limit, closest first, and never the store's own
+      ---
+      duration_ms: 3.513027
+      type: 'test'
+      ...
+    1..1
+ok 49 - bench
+  ---
+  duration_ms: 3.585657
+  type: 'suite'
+  ...
+# Subtest: history
+    # Subtest: describes each change in words and Undo steps match the entries
+    ok 1 - describes each change in words and Undo steps match the entries
+      ---
+      duration_ms: 19.744606
+      type: 'test'
+      ...
+    1..1
+ok 50 - history
+  ---
+  duration_ms: 19.819606
+  type: 'suite'
+  ...
+# Subtest: glow agrees with the real rules
+    # Subtest: matches choicesFor for every person on every empty shift
+    ok 1 - matches choicesFor for every person on every empty shift
+      ---
+      duration_ms: 3542.672066
+      type: 'test'
+      ...
+    1..1
+ok 51 - glow agrees with the real rules
+  ---
+  duration_ms: 3542.77582
+  type: 'suite'
+  ...
+# Subtest: fix steps
+    # Subtest: names Jane’s double and the Estacada hole
+    ok 1 - names Jane’s double and the Estacada hole
+      ---
+      duration_ms: 35.726123
+      type: 'test'
+      ...
+    # Subtest: chip uses English plus a more-count, not HOLES
+    ok 2 - chip uses English plus a more-count, not HOLES
+      ---
+      duration_ms: 1.07921
+      type: 'test'
+      ...
+    # Subtest: clear leftover Saturday removes Mark without filling anything
+    ok 3 - clear leftover Saturday removes Mark without filling anything
+      ---
+      duration_ms: 29.375865
+      type: 'test'
+      ...
+    # Subtest: keep Estacada clears Jane from Molalla Friday and leaves EST
+    ok 4 - keep Estacada clears Jane from Molalla Friday and leaves EST
+      ---
+      duration_ms: 16.55374
+      type: 'test'
+      ...
+    # Subtest: sorts home pharmacists before floats, then by home store
+    ok 5 - sorts home pharmacists before floats, then by home store
+      ---
+      duration_ms: 7.193208
+      type: 'test'
+      ...
+    # Subtest: hole candidates for Estacada Wednesday 16 are free pharmacists, Jane first
+    ok 6 - hole candidates for Estacada Wednesday 16 are free pharmacists, Jane first
+      ---
+      duration_ms: 23.008672
+      type: 'test'
+      ...
+    # Subtest: keep Molalla would leave Estacada with no coverage; keep Estacada would not
+    ok 7 - keep Molalla would leave Estacada with no coverage; keep Estacada would not
+      ---
+      duration_ms: 6.55428
+      type: 'test'
+      ...
+    # Subtest: picker labels busy, PTO, and free without hiding names
+    ok 8 - picker labels busy, PTO, and free without hiding names
+      ---
+      duration_ms: 20.414368
+      type: 'test'
+      ...
+    # Subtest: Jane typed onto PTO is a yellow warn, and solo float is not a warn
+    ok 9 - Jane typed onto PTO is a yellow warn, and solo float is not a warn
+      ---
+      duration_ms: 6.340667
+      type: 'test'
+      ...
+    # Subtest: clear Jane from Saturday 14 does not empty Susan
+    ok 10 - clear Jane from Saturday 14 does not empty Susan
+      ---
+      duration_ms: 10.698292
+      type: 'test'
+      ...
+    # Subtest: suggests Jane Smith when typing Jan in a pharmacist cell
+    ok 11 - suggests Jane Smith when typing Jan in a pharmacist cell
+      ---
+      duration_ms: 4.091831
+      type: 'test'
+      ...
+    # Subtest: matches initials and keeps the full pharmacist list when the query is empty
+    ok 12 - matches initials and keeps the full pharmacist list when the query is empty
+      ---
+      duration_ms: 0.236696
+      type: 'test'
+      ...
+    1..12
+ok 52 - fix steps
+  ---
+  duration_ms: 162.73091
+  type: 'suite'
+  ...
+# Subtest: fuzz: engine invariants
+    # Subtest: demo: 1500 random edits never crash and never place an unlicensed person
+    ok 1 - demo: 1500 random edits never crash and never place an unlicensed person
+      ---
+      duration_ms: 3014.640862
+      type: 'test'
+      ...
+    # Subtest: sample: 1500 random edits never crash and never place an unlicensed person
+    ok 2 - sample: 1500 random edits never crash and never place an unlicensed person
+      ---
+      duration_ms: 157.450206
+      type: 'test'
+      ...
+    # Subtest: next month works from every month, including December and a leap February
+    ok 3 - next month works from every month, including December and a leap February
+      ---
+      duration_ms: 409.480381
+      type: 'test'
+      ...
+    # Subtest: time-off impact and bulk safety never crash on random requests
+    ok 4 - time-off impact and bulk safety never crash on random requests
+      ---
+      duration_ms: 1802.144906
+      type: 'test'
+      ...
+    # Subtest: every print model and the real PDF build for every store and person, clean or not, both papers
+    ok 5 - every print model and the real PDF build for every store and person, clean or not, both papers
+      ---
+      duration_ms: 2785.802621
+      type: 'test'
+      ...
+    # Subtest: hostile names and files do not crash parsing or printing
+    ok 6 - hostile names and files do not crash parsing or printing
+      ---
+      duration_ms: 117.820807
+      type: 'test'
+      ...
+    1..6
+ok 53 - fuzz: engine invariants
+  ---
+  duration_ms: 8297.648942
+  type: 'suite'
+  ...
+# Subtest: state of a store
+    # Subtest: reads the state from the address
+    ok 1 - reads the state from the address
+      ---
+      duration_ms: 14.586196
+      type: 'test'
+      ...
+    # Subtest: lists the states in use
+    ok 2 - lists the states in use
+      ---
+      duration_ms: 11.585004
+      type: 'test'
+      ...
+    1..2
+ok 54 - state of a store
+  ---
+  duration_ms: 33.983704
+  type: 'suite'
+  ...
+# Subtest: availability hints
+    # Subtest: flag a weekday someone usually cannot work
+    ok 1 - flag a weekday someone usually cannot work
+      ---
+      duration_ms: 225.526656
+      type: 'test'
+      ...
+    # Subtest: say nothing when nothing is on file (the September sample)
+    ok 2 - say nothing when nothing is on file (the September sample)
+      ---
+      duration_ms: 0.425519
+      type: 'test'
+      ...
+    # Subtest: never change what counts as ready
+    ok 3 - never change what counts as ready
+      ---
+      duration_ms: 85.278507
+      type: 'test'
+      ...
+    1..3
+ok 55 - availability hints
+  ---
+  duration_ms: 311.549557
+  type: 'suite'
+  ...
+# Subtest: workload flags
+    # Subtest: flags a weekday-only pharmacist who picks up a Saturday (6 days, usually 5)
+    ok 1 - flags a weekday-only pharmacist who picks up a Saturday (6 days, usually 5)
+      ---
+      duration_ms: 35.950902
+      type: 'test'
+      ...
+    # Subtest: is quiet for ordinary schedules
+    ok 2 - is quiet for ordinary schedules
+      ---
+      duration_ms: 49.029106
+      type: 'test'
+      ...
+    # Subtest: flags seven days in a row when a store opens on Sunday
+    ok 3 - flags seven days in a row when a store opens on Sunday
+      ---
+      duration_ms: 0.918287
+      type: 'test'
+      ...
+    1..3
+ok 56 - workload flags
+  ---
+  duration_ms: 109.289283
+  type: 'suite'
+  ...
+# Subtest: by-day roster
+    # Subtest: lists every store, who is free, and who is off
+    ok 1 - lists every store, who is free, and who is off
+      ---
+      duration_ms: 0.661328
+      type: 'test'
+      ...
+    1..1
+ok 57 - by-day roster
+  ---
+  duration_ms: 0.833394
+  type: 'suite'
+  ...
+# Subtest: backups
+    # Subtest: keeps newest first and caps the list
+    ok 1 - keeps newest first and caps the list
+      ---
+      duration_ms: 1.230395
+      type: 'test'
+      ...
+    # Subtest: replaces a recent autosave instead of piling them up, but keeps explicit ones
+    ok 2 - replaces a recent autosave instead of piling them up, but keeps explicit ones
+      ---
+      duration_ms: 0.161126
+      type: 'test'
+      ...
+    # Subtest: round-trips through storage and drops the oldest when the browser is full
+    ok 3 - round-trips through storage and drops the oldest when the browser is full
+      ---
+      duration_ms: 0.298006
+      type: 'test'
+      ...
+    1..3
+ok 58 - backups
+  ---
+  duration_ms: 1.809409
+  type: 'suite'
+  ...
+# Subtest: store filter and weeks
+    # Subtest: filters by problems and by state
+    ok 1 - filters by problems and by state
+      ---
+      duration_ms: 3.28035
+      type: 'test'
+      ...
+    # Subtest: cuts October 2026 into Sunday-first weeks
+    ok 2 - cuts October 2026 into Sunday-first weeks
+      ---
+      duration_ms: 0.281836
+      type: 'test'
+      ...
+    1..2
+ok 59 - store filter and weeks
+  ---
+  duration_ms: 3.652457
+  type: 'suite'
+  ...
+# Subtest: house rules
+    # Subtest: screens show a store through storeTag / useStoreTag, never its raw letters
+    ok 1 - screens show a store through storeTag / useStoreTag, never its raw letters
+      ---
+      duration_ms: 12.904223
+      type: 'test'
+      ...
+    # Subtest: no screen writes the grid itself: names go in through the store, which goes through placeName
+    ok 2 - no screen writes the grid itself: names go in through the store, which goes through placeName
+      ---
+      duration_ms: 3.036048
+      type: 'test'
+      ...
+    1..2
+ok 60 - house rules
+  ---
+  duration_ms: 16.88281
+  type: 'suite'
+  ...
+# Subtest: identity
+    # Subtest: delete Susan strips the grid and pattern
+    ok 1 - delete Susan strips the grid and pattern
+      ---
+      duration_ms: 14.618279
+      type: 'test'
+      ...
+    # Subtest: rename Jane updates grid, pattern, and time-off
+    ok 2 - rename Jane updates grid, pattern, and time-off
+      ---
+      duration_ms: 1.088255
+      type: 'test'
+      ...
+    # Subtest: recode EST moves grid, pattern, homes, holidays, and dayNotes
+    ok 3 - recode EST moves grid, pattern, homes, holidays, and dayNotes
+      ---
+      duration_ms: 6.487579
+      type: 'test'
+      ...
+    # Subtest: remove store drops pattern and dayNotes for that code
+    ok 4 - remove store drops pattern and dayNotes for that code
+      ---
+      duration_ms: 0.371985
+      type: 'test'
+      ...
+    1..4
+ok 61 - identity
+  ---
+  duration_ms: 23.631336
+  type: 'suite'
+  ...
+# Subtest: accepted problems follow renames
+    # Subtest: re-keys a store accept and a person accept
+    ok 1 - re-keys a store accept and a person accept
+      ---
+      duration_ms: 0.570209
+      type: 'test'
+      ...
+    1..1
+ok 62 - accepted problems follow renames
+  ---
+  duration_ms: 0.681312
+  type: 'suite'
+  ...
+# Subtest: pressure has one entry per day and closed days carry no bar
+ok 63 - pressure has one entry per day and closed days carry no bar
+  ---
+  duration_ms: 13.056291
+  type: 'test'
+  ...
+# Subtest: a person's month never counts time off or empty days as worked
+ok 64 - a person's month never counts time off or empty days as worked
+  ---
+  duration_ms: 2.128316
+  type: 'test'
+  ...
+# Subtest: a store run is at least one day when anyone is scheduled
+ok 65 - a store run is at least one day when anyone is scheduled
+  ---
+  duration_ms: 0.596027
+  type: 'test'
+  ...
+# Subtest: pressure counts the same free people as asking every empty store
+ok 66 - pressure counts the same free people as asking every empty store
+  ---
+  duration_ms: 47.337735
+  type: 'test'
+  ...
+# Subtest: issue order
+    # Subtest: keeps every issue and walks them by date
+    ok 1 - keeps every issue and walks them by date
+      ---
+      duration_ms: 0.677824
+      type: 'test'
+      ...
+    # Subtest: puts same-day issues in store-list order
+    ok 2 - puts same-day issues in store-list order
+      ---
+      duration_ms: 0.350918
+      type: 'test'
+      ...
+    1..2
+ok 67 - issue order
+  ---
+  duration_ms: 6.370482
+  type: 'suite'
+  ...
+# Subtest: issue cursor
+    # Subtest: starts at the first issue going forward and the last going back
+    ok 1 - starts at the first issue going forward and the last going back
+      ---
+      duration_ms: 0.324984
+      type: 'test'
+      ...
+    # Subtest: wraps at both ends
+    ok 2 - wraps at both ends
+      ---
+      duration_ms: 0.164442
+      type: 'test'
+      ...
+    # Subtest: stepping forward through the month visits every issue once
+    ok 3 - stepping forward through the month visits every issue once
+      ---
+      duration_ms: 0.221944
+      type: 'test'
+      ...
+    # Subtest: never changes the schedule
+    ok 4 - never changes the schedule
+      ---
+      duration_ms: 0.767593
+      type: 'test'
+      ...
+    # Subtest: lands on the next issue after the current one is fixed
+    ok 5 - lands on the next issue after the current one is fixed
+      ---
+      duration_ms: 15.481786
+      type: 'test'
+      ...
+    # Subtest: keeps its place when an unrelated cell changes
+    ok 6 - keeps its place when an unrelated cell changes
+      ---
+      duration_ms: 22.256721
+      type: 'test'
+      ...
+    # Subtest: has nothing to stand on when there are no issues
+    ok 7 - has nothing to stand on when there are no issues
+      ---
+      duration_ms: 11.09316
+      type: 'test'
+      ...
+    1..7
+ok 68 - issue cursor
+  ---
+  duration_ms: 50.911043
+  type: 'suite'
+  ...
+# Subtest: issue titles
+    # Subtest: names the store for no coverage and closed-day names
+    ok 1 - names the store for no coverage and closed-day names
+      ---
+      duration_ms: 0.244926
+      type: 'test'
+      ...
+    # Subtest: names the person for two places and licences
+    ok 2 - names the person for two places and licences
+      ---
+      duration_ms: 0.095664
+      type: 'test'
+      ...
+    # Subtest: uses the short name form only when the full title is long
+    ok 3 - uses the short name form only when the full title is long
+      ---
+      duration_ms: 0.11569
+      type: 'test'
+      ...
+    1..3
+ok 69 - issue titles
+  ---
+  duration_ms: 0.581061
+  type: 'suite'
+  ...
+# Subtest: ordinal
+    # Subtest: reads the way a date is said
+    ok 1 - reads the way a date is said
+      ---
+      duration_ms: 7.413528
+      type: 'test'
+      ...
+    1..1
+ok 70 - ordinal
+  ---
+  duration_ms: 7.489843
+  type: 'suite'
+  ...
+# Subtest: a pharmacist can only work in a state they are licensed in
+    # Subtest: reads the state from a store address and names it
+    ok 1 - reads the state from a store address and names it
+      ---
+      duration_ms: 0.720749
+      type: 'test'
+      ...
+    # Subtest: knows who lacks a licence where; nothing recorded means unknown, so no flag
+    ok 2 - knows who lacks a licence where; nothing recorded means unknown, so no flag
+      ---
+      duration_ms: 0.412703
+      type: 'test'
+      ...
+    # Subtest: placeName refuses an unlicensed placement, like a closed day, and still allows clearing
+    ok 3 - placeName refuses an unlicensed placement, like a closed day, and still allows clearing
+      ---
+      duration_ms: 0.38162
+      type: 'test'
+      ...
+    # Subtest: a name that is already there is a hard problem, listed, and blocks print
+    ok 4 - a name that is already there is a hard problem, listed, and blocks print
+      ---
+      duration_ms: 23.18045
+      type: 'test'
+      ...
+    # Subtest: alone it blocks the pack: everything else fixed, one unlicensed name left
+    ok 5 - alone it blocks the pack: everything else fixed, one unlicensed name left
+      ---
+      duration_ms: 1.139156
+      type: 'test'
+      ...
+    # Subtest: stamps skip an unlicensed person and say so
+    ok 6 - stamps skip an unlicensed person and say so
+      ---
+      duration_ms: 21.186856
+      type: 'test'
+      ...
+    # Subtest: the picker model marks them blocked instead of offering them
+    ok 7 - the picker model marks them blocked instead of offering them
+      ---
+      duration_ms: 52.806801
+      type: 'test'
+      ...
+    1..7
+ok 71 - a pharmacist can only work in a state they are licensed in
+  ---
+  duration_ms: 103.102973
+  type: 'suite'
+  ...
+# Subtest: next month forecast
+    # Subtest: matches what starting the month actually leaves
+    ok 1 - matches what starting the month actually leaves
+      ---
+      duration_ms: 63.822225
+      type: 'test'
+      ...
+    # Subtest: names the practice month's November result
+    ok 2 - names the practice month's November result
+      ---
+      duration_ms: 13.570082
+      type: 'test'
+      ...
+    # Subtest: never changes the month on screen
+    ok 3 - never changes the month on screen
+      ---
+      duration_ms: 9.278807
+      type: 'test'
+      ...
+    # Subtest: reads plainly with one kind or none
+    ok 4 - reads plainly with one kind or none
+      ---
+      duration_ms: 0.257138
+      type: 'test'
+      ...
+    1..4
+ok 72 - next month forecast
+  ---
+  duration_ms: 88.138378
+  type: 'suite'
+  ...
+# Subtest: next month copies by weekday, not 1–31
+    # Subtest: advances September 2026 to October 2026
+    ok 1 - advances September 2026 to October 2026
+      ---
+      duration_ms: 4.386867
+      type: 'test'
+      ...
+    # Subtest: maps the 3rd Wednesday (Sep 16 hole) to Oct 21 and leaves it empty
+    ok 2 - maps the 3rd Wednesday (Sep 16 hole) to Oct 21 and leaves it empty
+      ---
+      duration_ms: 0.171778
+      type: 'test'
+      ...
+    # Subtest: places Jane from Tuesday Sep 1 onto Tuesday Oct 6, not onto the 1st
+    ok 3 - places Jane from Tuesday Sep 1 onto Tuesday Oct 6, not onto the 1st
+      ---
+      duration_ms: 0.139674
+      type: 'test'
+      ...
+    # Subtest: does not keep names by calendar date index
+    ok 4 - does not keep names by calendar date index
+      ---
+      duration_ms: 0.087556
+      type: 'test'
+      ...
+    # Subtest: drops a pharmacist left on a shut Saturday so they do not land on the next shut Saturday
+    ok 5 - drops a pharmacist left on a shut Saturday so they do not land on the next shut Saturday
+      ---
+      duration_ms: 0.840414
+      type: 'test'
+      ...
+    # Subtest: drops 5th-weekday names when October has no 5th Tuesday or Wednesday
+    ok 6 - drops 5th-weekday names when October has no 5th Tuesday or Wednesday
+      ---
+      duration_ms: 0.133965
+      type: 'test'
+      ...
+    # Subtest: does not auto-fill empty source days
+    ok 7 - does not auto-fill empty source days
+      ---
+      duration_ms: 0.163305
+      type: 'test'
+      ...
+    # Subtest: lists Estacada Wednesday 21 as a new hole after Start next month
+    ok 8 - lists Estacada Wednesday 21 as a new hole after Start next month
+      ---
+      duration_ms: 2.964855
+      type: 'test'
+      ...
+    # Subtest: groups new holes by date so Saturday 31 lists every open store
+    ok 9 - groups new holes by date so Saturday 31 lists every open store
+      ---
+      duration_ms: 18.493896
+      type: 'test'
+      ...
+    # Subtest: does not carry day notes into the new month (they are keyed by day number)
+    ok 10 - does not carry day notes into the new month (they are keyed by day number)
+      ---
+      duration_ms: 0.848415
+      type: 'test'
+      ...
+    # Subtest: drops a name that is not licensed for that store's state, and says so
+    ok 11 - drops a name that is not licensed for that store's state, and says so
+      ---
+      duration_ms: 50.311446
+      type: 'test'
+      ...
+    1..11
+ok 73 - next month copies by weekday, not 1–31
+  ---
+  duration_ms: 88.477155
+  type: 'suite'
+  ...
+# Subtest: pdf text fitting
+    # Subtest: clip never exceeds the width and marks what it cut
+    ok 1 - clip never exceeds the width and marks what it cut
+      ---
+      duration_ms: 41.792414
+      type: 'test'
+      ...
+    # Subtest: fitLines keeps to the line count and the width
+    ok 2 - fitLines keeps to the line count and the width
+      ---
+      duration_ms: 30.891266
+      type: 'test'
+      ...
+    1..2
+ok 74 - pdf text fitting
+  ---
+  duration_ms: 73.563077
+  type: 'suite'
+  ...
+# Subtest: clean copy in the real PDF
+    # Subtest: normal pack carries the commentary; clean pack has none of it but keeps the names
+    ok 1 - normal pack carries the commentary; clean pack has none of it but keeps the names
+      ---
+      duration_ms: 470.848568
+      type: 'test'
+      ...
+    1..1
+ok 75 - clean copy in the real PDF
+  ---
+  duration_ms: 471.060879
+  type: 'suite'
+  ...
+# Subtest: paste a roster
+    # Subtest: reads comma and tab separated lines, floats, states, and store names
+    ok 1 - reads comma and tab separated lines, floats, states, and store names
+      ---
+      duration_ms: 6.541436
+      type: 'test'
+      ...
+    # Subtest: defaults a missing license to the home store's state (Washington store)
+    ok 2 - defaults a missing license to the home store's state (Washington store)
+      ---
+      duration_ms: 0.278523
+      type: 'test'
+      ...
+    # Subtest: reports what it cannot use instead of guessing
+    ok 3 - reports what it cannot use instead of guessing
+      ---
+      duration_ms: 0.398628
+      type: 'test'
+      ...
+    1..3
+ok 76 - paste a roster
+  ---
+  duration_ms: 8.127537
+  type: 'suite'
+  ...
+# Subtest: print model
+    # Subtest: employee marks match the sample lessons
+    ok 1 - employee marks match the sample lessons
+      ---
+      duration_ms: 1.154706
+      type: 'test'
+      ...
+    # Subtest: store poster lists pharmacist names only and marks shut days CLOSED
+    ok 2 - store poster lists pharmacist names only and marks shut days CLOSED
+      ---
+      duration_ms: 10.021258
+      type: 'test'
+      ...
+    # Subtest: uses the requested file names
+    ok 3 - uses the requested file names
+      ---
+      duration_ms: 1.288241
+      type: 'test'
+      ...
+    # Subtest: prints a phone on the pharmacist calendar only, with days and Saturdays
+    ok 4 - prints a phone on the pharmacist calendar only, with days and Saturdays
+      ---
+      duration_ms: 368.075045
+      type: 'test'
+      ...
+    # Subtest: marks a pharmacist away from home as cover, not a home-store float
+    ok 5 - marks a pharmacist away from home as cover, not a home-store float
+      ---
+      duration_ms: 0.820723
+      type: 'test'
+      ...
+    # Subtest: writes a one-page letter PDF
+    ok 6 - writes a one-page letter PDF
+      ---
+      duration_ms: 57.680176
+      type: 'test'
+      ...
+    # Subtest: pack pages list stores then employees, pairing when two-up
+    ok 7 - pack pages list stores then employees, pairing when two-up
+      ---
+      duration_ms: 0.944613
+      type: 'test'
+      ...
+    1..7
+ok 77 - print model
+  ---
+  duration_ms: 441.146551
+  type: 'suite'
+  ...
+# Subtest: time off dates
+    # Subtest: expands a from–to range and formats contiguous days
+    ok 1 - expands a from–to range and formats contiguous days
+      ---
+      duration_ms: 4.556896
+      type: 'test'
+      ...
+    # Subtest: skips Labor Day and Sundays at Jane’s home store
+    ok 2 - skips Labor Day and Sundays at Jane’s home store
+      ---
+      duration_ms: 0.609642
+      type: 'test'
+      ...
+    # Subtest: Jane Sep 12–16 keeps the open Saturday, drops Sunday, keeps the weekdays
+    ok 3 - Jane Sep 12–16 keeps the open Saturday, drops Sunday, keeps the weekdays
+      ---
+      duration_ms: 0.267034
+      type: 'test'
+      ...
+    # Subtest: keeps scattered individual days
+    ok 4 - keeps scattered individual days
+      ---
+      duration_ms: 0.199437
+      type: 'test'
+      ...
+    1..4
+ok 78 - time off dates
+  ---
+  duration_ms: 6.59196
+  type: 'suite'
+  ...
+# Subtest: range and remaining steal helpers
+    # Subtest: builds a slot × day rectangle in one store
+    ok 1 - builds a slot × day rectangle in one store
+      ---
+      duration_ms: 1.16885
+      type: 'test'
+      ...
+    # Subtest: pastes TSV from the focused cell as top-left
+    ok 2 - pastes TSV from the focused cell as top-left
+      ---
+      duration_ms: 0.236874
+      type: 'test'
+      ...
+    # Subtest: exports only filled cells as CSV
+    ok 3 - exports only filled cells as CSV
+      ---
+      duration_ms: 0.684765
+      type: 'test'
+      ...
+    # Subtest: counts unique days Jane works, not slots
+    ok 4 - counts unique days Jane works, not slots
+      ---
+      duration_ms: 0.497806
+      type: 'test'
+      ...
+    # Subtest: stamp does not overwrite a filled Monday
+    ok 5 - stamp does not overwrite a filled Monday
+      ---
+      duration_ms: 0.73508
+      type: 'test'
+      ...
+    # Subtest: copies a typical-week stencil between stores
+    ok 6 - copies a typical-week stencil between stores
+      ---
+      duration_ms: 0.260002
+      type: 'test'
+      ...
+    # Subtest: two-up pack is a valid PDF and page count matches
+    ok 7 - two-up pack is a valid PDF and page count matches
+      ---
+      duration_ms: 82.445246
+      type: 'test'
+      ...
+    1..7
+ok 79 - range and remaining steal helpers
+  ---
+  duration_ms: 87.026742
+  type: 'suite'
+  ...
+# Subtest: sample lessons
+    # Subtest: counts 1 hole, no leftovers, 1 double, and no yellow warns
+    ok 1 - counts 1 hole, no leftovers, 1 double, and no yellow warns
+      ---
+      duration_ms: 0.907027
+      type: 'test'
+      ...
+    # Subtest: Jane Smith on EST and MOL the same Friday is a double
+    ok 2 - Jane Smith on EST and MOL the same Friday is a double
+      ---
+      duration_ms: 1.354505
+      type: 'test'
+      ...
+    # Subtest: Estacada Wednesday 16 has no pharmacist
+    ok 3 - Estacada Wednesday 16 has no pharmacist
+      ---
+      duration_ms: 0.24637
+      type: 'test'
+      ...
+    # Subtest: Chris Hale at Molalla Friday 18 is coverage, not a warning
+    ok 4 - Chris Hale at Molalla Friday 18 is coverage, not a warning
+      ---
+      duration_ms: 0.11594
+      type: 'test'
+      ...
+    # Subtest: Jane typed onto a PTO day is yellow and still printable
+    ok 5 - Jane typed onto a PTO day is yellow and still printable
+      ---
+      duration_ms: 13.607949
+      type: 'test'
+      ...
+    # Subtest: clearing Jane from Molalla Friday 4 removes the double
+    ok 6 - clearing Jane from Molalla Friday 4 removes the double
+      ---
+      duration_ms: 0.909407
+      type: 'test'
+      ...
+    # Subtest: autosave JSON roundtrip still has the double and the hole
+    ok 7 - autosave JSON roundtrip still has the double and the hole
+      ---
+      duration_ms: 25.932058
+      type: 'test'
+      ...
+    # Subtest: blank autosave is not usable (cannot flip the sample to ready)
+    ok 8 - blank autosave is not usable (cannot flip the sample to ready)
+      ---
+      duration_ms: 0.268058
+      type: 'test'
+      ...
+    1..8
+ok 80 - sample lessons
+  ---
+  duration_ms: 44.622426
+  type: 'suite'
+  ...
+# Subtest: one person, once per store per day
+    # Subtest: the sample month has nobody twice at one store
+    ok 1 - the sample month has nobody twice at one store
+      ---
+      duration_ms: 43.240682
+      type: 'test'
+      ...
+    # Subtest: writing the same person into the other row changes nothing
+    ok 2 - writing the same person into the other row changes nothing
+      ---
+      duration_ms: 1.435602
+      type: 'test'
+      ...
+    # Subtest: two different stores on one day are still allowed, and still flagged
+    ok 3 - two different stores on one day are still allowed, and still flagged
+      ---
+      duration_ms: 19.349246
+      type: 'test'
+      ...
+    # Subtest: moving a name to the other row of the same day moves it
+    ok 4 - moving a name to the other row of the same day moves it
+      ---
+      duration_ms: 0.343019
+      type: 'test'
+      ...
+    # Subtest: swapping the two rows of one day swaps them
+    ok 5 - swapping the two rows of one day swaps them
+      ---
+      duration_ms: 0.262212
+      type: 'test'
+      ...
+    # Subtest: an older file with a repeat keeps the first row and says what it cleared
+    ok 6 - an older file with a repeat keeps the first row and says what it cleared
+      ---
+      duration_ms: 0.211515
+      type: 'test'
+      ...
+    1..6
+ok 81 - one person, once per store per day
+  ---
+  duration_ms: 78.492464
+  type: 'suite'
+  ...
+# Subtest: spreadsheet cell helpers
+    # Subtest: skips Sunday and Labor Day to the next open day
+    ok 1 - skips Sunday and Labor Day to the next open day
+      ---
+      duration_ms: 1.186886
+      type: 'test'
+      ...
+    # Subtest: previous filled slot day for the Estacada hole is Jane on the 12th
+    ok 2 - previous filled slot day for the Estacada hole is Jane on the 12th
+      ---
+      duration_ms: 0.161374
+      type: 'test'
+      ...
+    # Subtest: fill handle to the right fills only the empty open days on the drag path
+    ok 3 - fill handle to the right fills only the empty open days on the drag path
+      ---
+      duration_ms: 25.312336
+      type: 'test'
+      ...
+    # Subtest: fill handle does not overwrite filled days
+    ok 4 - fill handle does not overwrite filled days
+      ---
+      duration_ms: 3.708485
+      type: 'test'
+      ...
+    # Subtest: alt fill handle copies Jane onto other empty Tuesdays of that slot
+    ok 5 - alt fill handle copies Jane onto other empty Tuesdays of that slot
+      ---
+      duration_ms: 0.449607
+      type: 'test'
+      ...
+    # Subtest: fill handle down copies a pharmacist onto the empty Pharmacist 2 cell
+    ok 6 - fill handle down copies a pharmacist onto the empty Pharmacist 2 cell
+      ---
+      duration_ms: 0.295799
+      type: 'test'
+      ...
+    # Subtest: typing onto a range fills only open empty cells
+    ok 7 - typing onto a range fills only open empty cells
+      ---
+      duration_ms: 96.219967
+      type: 'test'
+      ...
+    # Subtest: cut of a rectangle pastes as a rectangle and does not auto-fill other holes
+    ok 8 - cut of a rectangle pastes as a rectangle and does not auto-fill other holes
+      ---
+      duration_ms: 0.805327
+      type: 'test'
+      ...
+    # Subtest: row and column selects cover the store slot or day
+    ok 9 - row and column selects cover the store slot or day
+      ---
+      duration_ms: 0.465459
+      type: 'test'
+      ...
+    1..9
+ok 82 - spreadsheet cell helpers
+  ---
+  duration_ms: 154.25091
+  type: 'suite'
+  ...
+# Subtest: place and stamp
+    # Subtest: rejects a name on a shut Sunday
+    ok 1 - rejects a name on a shut Sunday
+      ---
+      duration_ms: 1.497825
+      type: 'test'
+      ...
+    # Subtest: stamps Pattern Monday onto open Mondays and drops Labor Day
+    ok 2 - stamps Pattern Monday onto open Mondays and drops Labor Day
+      ---
+      duration_ms: 11.595698
+      type: 'test'
+      ...
+    # Subtest: stamp never writes a technician pattern cell
+    ok 3 - stamp never writes a technician pattern cell
+      ---
+      duration_ms: 0.504893
+      type: 'test'
+      ...
+    # Subtest: copy Thursday column does not keep names by 1–31
+    ok 4 - copy Thursday column does not keep names by 1–31
+      ---
+      duration_ms: 0.384826
+      type: 'test'
+      ...
+    # Subtest: loads a v1 file without pattern
+    ok 5 - loads a v1 file without pattern
+      ---
+      duration_ms: 17.645831
+      type: 'test'
+      ...
+    # Subtest: drops technicians and cashiers when an old file is opened
+    ok 6 - drops technicians and cashiers when an old file is opened
+      ---
+      duration_ms: 1.380604
+      type: 'test'
+      ...
+    # Subtest: jump next hole is Estacada pharmacist day 16
+    ok 7 - jump next hole is Estacada pharmacist day 16
+      ---
+      duration_ms: 9.736314
+      type: 'test'
+      ...
+    # Subtest: person tone is stable
+    ok 8 - person tone is stable
+      ---
+      duration_ms: 1.958182
+      type: 'test'
+      ...
+    # Subtest: fill Jane EST pharmacist hits PTO 14–15; skip leaves them empty
+    ok 9 - fill Jane EST pharmacist hits PTO 14–15; skip leaves them empty
+      ---
+      duration_ms: 0.824324
+      type: 'test'
+      ...
+    # Subtest: stamp skipPto leaves Jane off Monday 14
+    ok 10 - stamp skipPto leaves Jane off Monday 14
+      ---
+      duration_ms: 0.472483
+      type: 'test'
+      ...
+    # Subtest: a typical-week stamp does not overwrite a hand edit
+    ok 11 - a typical-week stamp does not overwrite a hand edit
+      ---
+      duration_ms: 0.274769
+      type: 'test'
+      ...
+    # Subtest: filling a row skips filled cells
+    ok 12 - filling a row skips filled cells
+      ---
+      duration_ms: 0.449342
+      type: 'test'
+      ...
+    # Subtest: copying a weekday column skips filled cells
+    ok 13 - copying a weekday column skips filled cells
+      ---
+      duration_ms: 0.176241
+      type: 'test'
+      ...
+    # Subtest: opening a v1 range drops days the home store is closed (Sep 12–16 keeps 12, 14, 15, 16)
+    ok 14 - opening a v1 range drops days the home store is closed (Sep 12–16 keeps 12, 14, 15, 16)
+      ---
+      duration_ms: 0.918453
+      type: 'test'
+      ...
+    1..14
+ok 83 - place and stamp
+  ---
+  duration_ms: 51.23872
+  type: 'suite'
+  ...
+# Subtest: Hi-School pharmacy list
+    # Subtest: has 18 pharmacies with unique valid codes and no hardware stores
+    ok 1 - has 18 pharmacies with unique valid codes and no hardware stores
+      ---
+      duration_ms: 0.890922
+      type: 'test'
+      ...
+    # Subtest: carries address, phone and hours for every store, and Saturday follows the posted hours
+    ok 2 - carries address, phone and hours for every store, and Saturday follows the posted hours
+      ---
+      duration_ms: 0.366213
+      type: 'test'
+      ...
+    # Subtest: keeps phone, hours and note through save and open, and still opens a store without them
+    ok 3 - keeps phone, hours and note through save and open, and still opens a store without them
+      ---
+      duration_ms: 11.493595
+      type: 'test'
+      ...
+    # Subtest: makes a blank month: every open day is a hole, nothing is placed, and it round-trips
+    ok 4 - makes a blank month: every open day is a hole, nothing is placed, and it round-trips
+      ---
+      duration_ms: 13.160132
+      type: 'test'
+      ...
+    1..4
+ok 84 - Hi-School pharmacy list
+  ---
+  duration_ms: 27.078636
+  type: 'suite'
+  ...
+# Subtest: requests waiting
+    # Subtest: counts the practice month's two undecided October requests in October
+    ok 1 - counts the practice month's two undecided October requests in October
+      ---
+      duration_ms: 5.908784
+      type: 'test'
+      ...
+    # Subtest: stops counting them once the month moves on to November
+    ok 2 - stops counting them once the month moves on to November
+      ---
+      duration_ms: 87.905647
+      type: 'test'
+      ...
+    # Subtest: still counts a request for this month, a later month, or one that runs into this month
+    ok 3 - still counts a request for this month, a later month, or one that runs into this month
+      ---
+      duration_ms: 0.36168
+      type: 'test'
+      ...
+    # Subtest: never counts approved or declined time off as waiting
+    ok 4 - never counts approved or declined time off as waiting
+      ---
+      duration_ms: 0.141388
+      type: 'test'
+      ...
+    1..4
+ok 85 - requests waiting
+  ---
+  duration_ms: 95.57947
+  type: 'suite'
+  ...
+# Subtest: schedule store
+    # Subtest: hydrate ignores a blank autosave and keeps the sample hole and double
+    ok 1 - hydrate ignores a blank autosave and keeps the sample hole and double
+      ---
+      duration_ms: 7.93506
+      type: 'test'
+      ...
+    # Subtest: hydrate ignores a leftover v2 autosave key
+    ok 2 - hydrate ignores a leftover v2 autosave key
+      ---
+      duration_ms: 1.210112
+      type: 'test'
+      ...
+    # Subtest: undo after clear leftover restores Mark
+    ok 3 - undo after clear leftover restores Mark
+      ---
+      duration_ms: 10.586759
+      type: 'test'
+      ...
+    # Subtest: delete person via the store strips the grid
+    ok 4 - delete person via the store strips the grid
+      ---
+      duration_ms: 3.475685
+      type: 'test'
+      ...
+    # Subtest: recode store via the store moves pattern and dayNotes
+    ok 5 - recode store via the store moves pattern and dayNotes
+      ---
+      duration_ms: 39.950893
+      type: 'test'
+      ...
+    # Subtest: applyDrop move is one undo and does not auto-fill other holes
+    ok 6 - applyDrop move is one undo and does not auto-fill other holes
+      ---
+      duration_ms: 36.501562
+      type: 'test'
+      ...
+    # Subtest: cut then paste a pharmacist block as a rectangle
+    ok 7 - cut then paste a pharmacist block as a rectangle
+      ---
+      duration_ms: 38.21273
+      type: 'test'
+      ...
+    # Subtest: clears every closed-day name in one undo step, and never invents a placement
+    ok 8 - clears every closed-day name in one undo step, and never invents a placement
+      ---
+      duration_ms: 163.945206
+      type: 'test'
+      ...
+    # Subtest: backs the month up before loading something over it, and restores it
+    ok 9 - backs the month up before loading something over it, and restores it
+      ---
+      duration_ms: 43.664133
+      type: 'test'
+      ...
+    # Subtest: a month with stores but no people survives a reload
+    ok 10 - a month with stores but no people survives a reload
+      ---
+      duration_ms: 77.786626
+      type: 'test'
+      ...
+    # Subtest: save records when and where it went, and keeps a backup
+    ok 11 - save records when and where it went, and keeps a backup
+      ---
+      duration_ms: 15.581795
+      type: 'test'
+      ...
+    # Subtest: starts a blank month for a chosen month, not just the open one
+    ok 12 - starts a blank month for a chosen month, not just the open one
+      ---
+      duration_ms: 2.453083
+      type: 'test'
+      ...
+    1..12
+ok 86 - schedule store
+  ---
+  duration_ms: 442.931154
+  type: 'suite'
+  ...
+# Subtest: schedule store: newer actions
+    # Subtest: callInSick is one undo step: the days are logged and the shifts left open, then all of it comes back
+    ok 1 - callInSick is one undo step: the days are logged and the shifts left open, then all of it comes back
+      ---
+      duration_ms: 38.07208
+      type: 'test'
+      ...
+    # Subtest: addHolidays skips repeats and is one undo step
+    ok 2 - addHolidays skips repeats and is one undo step
+      ---
+      duration_ms: 9.131757
+      type: 'test'
+      ...
+    # Subtest: approving and declining a request only changes its status
+    ok 3 - approving and declining a request only changes its status
+      ---
+      duration_ms: 19.159974
+      type: 'test'
+      ...
+    # Subtest: automatic archive copies never keep the sample or practice month
+    ok 4 - automatic archive copies never keep the sample or practice month
+      ---
+      duration_ms: 0.916155
+      type: 'test'
+      ...
+    1..4
+ok 87 - schedule store: newer actions
+  ---
+  duration_ms: 67.520221
+  type: 'suite'
+  ...
+# Subtest: schedule store: accepting and closing
+    # Subtest: accept is one undo step, and editing the problem away drops the accept
+    ok 1 - accept is one undo step, and editing the problem away drops the accept
+      ---
+      duration_ms: 35.403839
+      type: 'test'
+      ...
+    # Subtest: acceptAllOpen accepts everything but licenses, in one step
+    ok 2 - acceptAllOpen accepts everything but licenses, in one step
+      ---
+      duration_ms: 27.482893
+      type: 'test'
+      ...
+    # Subtest: closing a store for a day is one undo step and keeps the reason
+    ok 3 - closing a store for a day is one undo step and keeps the reason
+      ---
+      duration_ms: 26.69946
+      type: 'test'
+      ...
+    1..3
+ok 88 - schedule store: accepting and closing
+  ---
+  duration_ms: 89.767611
+  type: 'suite'
+  ...
+# Subtest: schedule store: time off for several people
+    # Subtest: adds one entry per person in one undo step and refuses duplicates
+    ok 1 - adds one entry per person in one undo step and refuses duplicates
+      ---
+      duration_ms: 81.264009
+      type: 'test'
+      ...
+    # Subtest: edits an entry's days and note
+    ok 2 - edits an entry's days and note
+      ---
+      duration_ms: 109.424182
+      type: 'test'
+      ...
+    1..2
+ok 89 - schedule store: time off for several people
+  ---
+  duration_ms: 190.917525
+  type: 'suite'
+  ...
+1..89
+# tests 301
+# suites 85
+# pass 301
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19975.106091

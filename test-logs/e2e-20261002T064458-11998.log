@@ -1,0 +1,24 @@
+
+# next month
+
+# next month
+ok   October starts with 2 requests waiting
+ok   the Start dialog says what November will start with
+ok   the end-of-month weekdays are one line, not a list
+ok   November opens with the number the dialog promised
+ok   November is on screen
+ok   no request badge after the month moves on
+ok   Requests says nothing is waiting
+ok   Requests says where the older ones are
+ok   no script errors starting next month
+
+all checks passed
+
+# problem card marks
+
+# problem card marks
+ok   a no-coverage card shows the hole mark
+ok   the other problem kinds carry their marks too
+ok   no script errors
+
+all checks passed

@@ -1,0 +1,17 @@
+{
+  "stamp": "20261002T061808",
+  "secs": 17,
+  "jobs": 16,
+  "problems": [
+    {
+      "page": "holidays @1366",
+      "kind": "store-letters",
+      "detail": "page: WAL ; WAL"
+    }
+  ],
+  "changedScreens": [
+    "district-1366",
+    "holidays-1366"
+  ],
+  "baseline": "compared"
+}

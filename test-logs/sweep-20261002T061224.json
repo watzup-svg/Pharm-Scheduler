@@ -1,0 +1,48 @@
+{
+  "seeds": 8,
+  "from": 1,
+  "edits": 1500,
+  "secs": 8,
+  "rows": [
+    {
+      "seed": 1,
+      "ok": true,
+      "secs": 3.8
+    },
+    {
+      "seed": 2,
+      "ok": true,
+      "secs": 3.6
+    },
+    {
+      "seed": 3,
+      "ok": true,
+      "secs": 3.9
+    },
+    {
+      "seed": 4,
+      "ok": true,
+      "secs": 4
+    },
+    {
+      "seed": 5,
+      "ok": true,
+      "secs": 3.8
+    },
+    {
+      "seed": 6,
+      "ok": true,
+      "secs": 3.6
+    },
+    {
+      "seed": 7,
+      "ok": true,
+      "secs": 3.7
+    },
+    {
+      "seed": 8,
+      "ok": true,
+      "secs": 3.4
+    }
+  ]
+}

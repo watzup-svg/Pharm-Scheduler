@@ -1,0 +1,108 @@
+{
+  "seeds": 20,
+  "from": 1,
+  "edits": 1500,
+  "secs": 74,
+  "rows": [
+    {
+      "seed": 1,
+      "ok": true,
+      "secs": 7.4
+    },
+    {
+      "seed": 2,
+      "ok": true,
+      "secs": 9.8
+    },
+    {
+      "seed": 3,
+      "ok": true,
+      "secs": 5.8
+    },
+    {
+      "seed": 4,
+      "ok": true,
+      "secs": 3.8
+    },
+    {
+      "seed": 5,
+      "ok": true,
+      "secs": 3.3
+    },
+    {
+      "seed": 6,
+      "ok": true,
+      "secs": 2.9
+    },
+    {
+      "seed": 7,
+      "ok": true,
+      "secs": 3.2
+    },
+    {
+      "seed": 8,
+      "ok": true,
+      "secs": 3.3
+    },
+    {
+      "seed": 9,
+      "ok": true,
+      "secs": 2.8
+    },
+    {
+      "seed": 10,
+      "ok": true,
+      "secs": 3
+    },
+    {
+      "seed": 11,
+      "ok": true,
+      "secs": 3
+    },
+    {
+      "seed": 12,
+      "ok": true,
+      "secs": 3.1
+    },
+    {
+      "seed": 13,
+      "ok": true,
+      "secs": 2.7
+    },
+    {
+      "seed": 14,
+      "ok": true,
+      "secs": 2.6
+    },
+    {
+      "seed": 15,
+      "ok": true,
+      "secs": 2.4
+    },
+    {
+      "seed": 16,
+      "ok": true,
+      "secs": 2.8
+    },
+    {
+      "seed": 17,
+      "ok": true,
+      "secs": 3.3
+    },
+    {
+      "seed": 18,
+      "ok": true,
+      "secs": 2.8
+    },
+    {
+      "seed": 19,
+      "ok": true,
+      "secs": 3
+    },
+    {
+      "seed": 20,
+      "ok": true,
+      "secs": 2.8
+    }
+  ]
+}

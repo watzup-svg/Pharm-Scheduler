@@ -1,0 +1,72 @@
+
+# next month
+
+# next month
+ok   October starts with 2 requests waiting
+ok   the Start dialog says what November will start with
+ok   the end-of-month weekdays are one line, not a list
+ok   November opens with the number the dialog promised
+ok   November is on screen
+ok   no request badge after the month moves on
+ok   Requests says nothing is waiting
+ok   Requests says where the older ones are
+ok   no script errors starting next month
+
+all checks passed
+
+# dialogs
+
+# dialogs
+ok   sick dialog @1366
+ok   file menu @1366
+ok   search @1366
+ok   time-off drawer @1366
+ok   person form @1366
+ok   sick dialog @390
+ok   file menu @390
+ok   search @390
+ok   time-off drawer @390
+ok   person form @390
+
+all checks passed
+
+# smoke
+
+# smoke
+ok   / @1366
+ok   /schedule @1366
+ok   /time-off @1366
+ok   /holidays @1366
+ok   /print @1366
+ok   /people @1366
+ok   /stores @1366
+ok   / @1024
+ok   /schedule @1024
+ok   /time-off @1024
+ok   /holidays @1024
+ok   /print @1024
+ok   /people @1024
+ok   /stores @1024
+ok   / @768
+ok   /schedule @768
+ok   /time-off @768
+ok   /holidays @768
+ok   /print @768
+ok   /people @768
+ok   /stores @768
+ok   / @390
+ok   /schedule @390
+ok   /time-off @390
+ok   /holidays @390
+ok   /print @390
+ok   /people @390
+ok   /stores @390
+ok   / @320
+ok   /schedule @320
+ok   /time-off @320
+ok   /holidays @320
+ok   /print @320
+ok   /people @320
+ok   /stores @320
+
+all checks passed

@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-02T07:04:14.750Z",
+  "secs": 234,
+  "results": [
+    {
+      "name": "type check",
+      "ok": true,
+      "secs": 76,
+      "log": "test-logs/type-check-20261002T070020.log"
+    },
+    {
+      "name": "lint",
+      "ok": true,
+      "secs": 80,
+      "log": "test-logs/lint-20261002T070020.log"
+    },
+    {
+      "name": "unit tests",
+      "ok": true,
+      "secs": 57,
+      "log": "test-logs/unit-tests-20261002T070020.log"
+    },
+    {
+      "name": "browser suite",
+      "ok": true,
+      "secs": 199,
+      "log": "test-logs/browser-suite-20261002T070020.log"
+    },
+    {
+      "name": "guards",
+      "ok": true,
+      "secs": 19,
+      "log": "test-logs/guards-20261002T070020.log"
+    },
+    {
+      "name": "real build",
+      "ok": true,
+      "secs": 9,
+      "log": "test-logs/real-build-20261002T070020.log"
+    },
+    {
+      "name": "sweep",
+      "ok": true,
+      "secs": 230,
+      "log": "test-logs/sweep-20261002T070020.log"
+    },
+    {
+      "name": "random clicks",
+      "ok": true,
+      "secs": 194,
+      "log": "test-logs/random-clicks-20261002T070020.log"
+    },
+    {
+      "name": "page sweep",
+      "ok": true,
+      "secs": 141,
+      "log": "test-logs/page-sweep-20261002T070020.log"
+    }
+  ]
+}

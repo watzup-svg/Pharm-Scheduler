@@ -1,0 +1,158 @@
+{
+  "seeds": 30,
+  "from": 1,
+  "edits": 1500,
+  "secs": 191,
+  "rows": [
+    {
+      "seed": 1,
+      "ok": true,
+      "secs": 33.7
+    },
+    {
+      "seed": 2,
+      "ok": true,
+      "secs": 38.1
+    },
+    {
+      "seed": 3,
+      "ok": true,
+      "secs": 19.8
+    },
+    {
+      "seed": 4,
+      "ok": true,
+      "secs": 14.5
+    },
+    {
+      "seed": 5,
+      "ok": true,
+      "secs": 12.4
+    },
+    {
+      "seed": 6,
+      "ok": true,
+      "secs": 15.2
+    },
+    {
+      "seed": 7,
+      "ok": true,
+      "secs": 12.3
+    },
+    {
+      "seed": 8,
+      "ok": true,
+      "secs": 12.2
+    },
+    {
+      "seed": 9,
+      "ok": true,
+      "secs": 12.5
+    },
+    {
+      "seed": 10,
+      "ok": true,
+      "secs": 11.8
+    },
+    {
+      "seed": 11,
+      "ok": true,
+      "secs": 12.6
+    },
+    {
+      "seed": 12,
+      "ok": true,
+      "secs": 12.2
+    },
+    {
+      "seed": 13,
+      "ok": true,
+      "secs": 12.7
+    },
+    {
+      "seed": 14,
+      "ok": true,
+      "secs": 11.8
+    },
+    {
+      "seed": 15,
+      "ok": true,
+      "secs": 11.2
+    },
+    {
+      "seed": 16,
+      "ok": true,
+      "secs": 11.3
+    },
+    {
+      "seed": 17,
+      "ok": true,
+      "secs": 9.6
+    },
+    {
+      "seed": 18,
+      "ok": true,
+      "secs": 9.3
+    },
+    {
+      "seed": 19,
+      "ok": true,
+      "secs": 10.1
+    },
+    {
+      "seed": 20,
+      "ok": true,
+      "secs": 10.4
+    },
+    {
+      "seed": 21,
+      "ok": true,
+      "secs": 9.9
+    },
+    {
+      "seed": 22,
+      "ok": true,
+      "secs": 10.2
+    },
+    {
+      "seed": 23,
+      "ok": true,
+      "secs": 9.7
+    },
+    {
+      "seed": 24,
+      "ok": true,
+      "secs": 9
+    },
+    {
+      "seed": 25,
+      "ok": true,
+      "secs": 10.4
+    },
+    {
+      "seed": 26,
+      "ok": true,
+      "secs": 9.9
+    },
+    {
+      "seed": 27,
+      "ok": true,
+      "secs": 8.6
+    },
+    {
+      "seed": 28,
+      "ok": true,
+      "secs": 8.7
+    },
+    {
+      "seed": 29,
+      "ok": true,
+      "secs": 6.2
+    },
+    {
+      "seed": 30,
+      "ok": true,
+      "secs": 6
+    }
+  ]
+}

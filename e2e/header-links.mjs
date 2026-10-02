@@ -1,6 +1,6 @@
 // The header and the calendars answer each other on a laptop: tiles light their days on the ring and outline their cells,
 // the ring and the month grid point at each other, a clicked tile narrows the arrows, and the day strip opens a store-day.
-import { check, launch, open } from "./lib.mjs";
+import { check, launch, open, rightClick } from "./lib.mjs";
 
 const header = (page) => page.locator("section.bg-night").first();
 const lit = (page) => page.evaluate(() => [...document.querySelectorAll("[data-ring-day][data-lit]")].map((e) => Number(e.getAttribute("data-ring-day"))).sort((a, b) => a - b).join(","));
@@ -67,14 +67,12 @@ export default async function run() {
     // Notes lead with their subject's mark and edge, actions sit in a footer, and nothing covers the big number.
     const { page, errors } = await open(browser, "");
     const note = page.locator("[data-hover-note]");
-    await header(page).getByRole("button", { name: /^Two places · 2/ }).hover();
-    await page.waitForTimeout(200);
+    await rightClick(header(page).getByRole("button", { name: /^Two places · 2/ }));
     check("a tile's note has a problem edge", (await note.locator("[data-note-edge=bad]").count()) === 1);
     check("a tile's note leads with its mark", (await note.locator("p").first().locator("svg, [data-note-store]").count()) > 0);
     check("a tile's note puts the click in a footer", /step through only these/.test((await note.locator("[data-note-action]").textContent()) ?? ""));
     const arrow = page.getByRole("button", { name: "Next issue" });
-    await arrow.hover();
-    await page.waitForTimeout(200);
+    await rightClick(arrow);
     const a = await arrow.boundingBox();
     const n = await note.boundingBox();
     check("the arrows' note hangs below them", n != null && a != null && n.y >= a.y + a.height - 1, `${n?.y} vs ${a?.y}+${a?.height}`);
@@ -97,8 +95,7 @@ export default async function run() {
     const { page } = await open(browser, "schedule");
     const cell = page.locator('[aria-label*="closed but"]').first();
     await cell.scrollIntoViewIfNeeded();
-    await cell.hover({ position: { x: 4, y: 4 } });
-    await page.waitForTimeout(350);
+    await rightClick(cell, { position: { x: 4, y: 4 } });
     const note = page.locator("[data-hover-note]");
     const text = (await note.innerText()).replace(/\s+/g, " ");
     check("a problem day's note names the store and date, the problem and the click", /\d{4} · \w{3} \w{3} \d+ .*still on a closed day.*Open this day/.test(text), text);

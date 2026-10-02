@@ -20,15 +20,15 @@ const b = await launch(); const res=[]; const ok=(c,m)=>{res.push((c?"ok   ":"FA
 // desktop: note stuck after route change / scroll / escape
 { const ctx=await b.newContext({viewport:{width:1366,height:900}}); const p=await ctx.newPage();
   await p.goto(BASE+"#/"); await p.waitForTimeout(800);
-  await p.locator('[data-rc="3|8"]').hover(); await p.waitForTimeout(200);
-  ok((await p.locator('[role="tooltip"]').count())===1,"desktop: note shows");
-  await p.mouse.move(5,5); await p.waitForTimeout(200);
-  ok((await p.locator('[role="tooltip"]').count())===0,"desktop: note hides when pointer leaves the grid");
-  await p.locator('[data-rc="3|8"]').hover(); await p.getByRole("link",{name:"Print"}).first().click().catch(()=>{}); await p.waitForTimeout(600);
+  await p.locator('[data-rc="3|8"]').click({button:"right"}); await p.waitForTimeout(200);
+  ok((await p.locator('[role="tooltip"]').count())===1,"desktop: right click shows the note");
+  await p.keyboard.press("Escape"); await p.waitForTimeout(200);
+  ok((await p.locator('[role="tooltip"]').count())===0,"desktop: Escape closes the note");
+  await p.locator('[data-rc="3|8"]').click({button:"right"}); await p.getByRole("link",{name:"Print"}).first().click().catch(()=>{}); await p.waitForTimeout(600);
   ok((await p.locator('[role="tooltip"]').count())===0,"desktop: no note left over after navigating");
   // global tips: native title removed and data-tip present, no duplicate native tooltips
   await p.goto(BASE+"#/people"); await p.waitForTimeout(600);
-  await p.locator('tbody button[aria-label^="Edit"]').first().hover(); await p.waitForTimeout(200);
+  await p.locator('tbody button[aria-label^="Edit"]').first().click({button:"right"}); await p.waitForTimeout(200);
   const t=await p.locator('div.fixed[role="presentation"]').count();
   ok(t===1,"desktop: icon button shows one note ("+t+")");
   ok((await p.locator('tbody button[aria-label^="Edit"]').first().getAttribute("title"))===null,"desktop: native title removed");
