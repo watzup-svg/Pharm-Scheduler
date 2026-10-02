@@ -7,7 +7,7 @@
     "build": "vite build -c vite.spa.config.ts",
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && npm run test:schedule",
-    "test:schedule": "node --experimental-strip-types --test src/lib/*.test.ts src/lib/schedule/*.test.ts src/store/schedule-store.test.ts",
+    "test:schedule": "node --experimental-strip-types --test src/lib/*.test.ts src/lib/schedule/*.test.ts src/store/*.test.ts",
     "build:trial": "vite build -c vite.spa.config.ts",
     "build:real": "vite build -c vite.spa.config.ts --mode real",
     "e2e": "node e2e/run.mjs",

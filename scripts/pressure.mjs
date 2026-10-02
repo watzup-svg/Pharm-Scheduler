@@ -25,6 +25,11 @@ const big = L === 2 ? [120, 500] : [40, 150];
 const bigFile = path.join(dir, "big-month.json");
 
 const jobs = [
+  ["security scan", node, [...strip, "scripts/pressure/security.mjs", "scan", level]],
+  ["hostile files", node, [...strip, "scripts/pressure/security.mjs", "files", level]],
+  ["time zones (unit tests)", node, [...strip, "scripts/pressure/security.mjs", "zones", level]],
+  ["markup injection", ...withServer(node, "scripts/pressure/browser.mjs", "injection", level)],
+  ["time zones and languages", ...withServer(node, "scripts/pressure/browser.mjs", "zones", level)],
   ["damaged files", node, [...strip, "scripts/pressure/node.mjs", "fuzz", level]],
   ["odd data", node, [...strip, "scripts/pressure/node.mjs", "hostile", level]],
   ["big month and PDF", node, [...strip, "--expose-gc", "scripts/pressure/node.mjs", "big", level]],

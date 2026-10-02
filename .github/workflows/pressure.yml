@@ -23,6 +23,11 @@ jobs:
           - big month and PDF
           - random schedules
           - storage full or refused
+          - security scan
+          - hostile files
+          - time zones (unit tests)
+          - markup injection
+          - time zones and languages
           - interrupted by reloads
           - squeezed and zoomed screens
           - long session

@@ -3,6 +3,7 @@
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
 ## Checks (no visible change to the app)
+- The pressure run gained security and stability tests: a source scan (no eval, no unsafe HTML, safe external links, no network calls), hostile files (prototype pollution, huge or deeply nested files), markup injection in names/notes, and time-zone/language checks. They found one real problem: opening a file with thousands of people was very slow (16,000 people: 4.8 s, now 0.07 s). Also a new undo/redo round-trip test.
 - `npm run all` / `npm run deep` run every check side by side with a short summary (details in `test-logs/`); `npm run guards`, `npm run sweep`, `npm run screens` run one piece. A weekly cloud run does the long version. Red day-panel cards, holiday and left-as-is rows, the drive card and the store form's closed-weekday label gained their kind's mark; right click, Shift+F10 or a long press opens a note (hover only draws a small corner marker). Not checked: real touch, iPhone Safari, printers. See `e2e/README.md`.
 
 ## Notes open on right click

@@ -144,6 +144,60 @@ if (job === "screens") {
   console.log(`  ${routes.length} pages x ${widths.length} widths x ${modes.length} modes`);
 }
 
+if (job === "injection") {
+  // Names and notes that are really markup or script. They must show as plain text and never run anything.
+  const { createDemo } = await imp("src/lib/schedule/demo.ts");
+  const { serializeDoc } = await imp("src/lib/schedule/file.ts");
+  const bad = ["<img src=x onerror=window.__pwned=1>", "<script>window.__pwned=1</script>", '"><svg onload=window.__pwned=1>', "javascript:window.__pwned=1", "{{constructor.constructor('window.__pwned=1')()}}", "<iframe srcdoc='<script>parent.__pwned=1</script>'>", "&lt;b&gt;x&lt;/b&gt;"];
+  const demo = createDemo();
+  const doc = JSON.parse(serializeDoc(demo));
+  doc.people = doc.people.map((p, i) => ({ ...p, name: bad[i % bad.length].slice(0, 80) + ` ${i}` }));
+  const names = new Map(demo.people.map((p, i) => [p.name, doc.people[i].name]));
+  doc.stores = doc.stores.map((s, i) => ({ ...s, name: bad[(i + 2) % bad.length].slice(0, 80), address: bad[i % bad.length], holidayNote: bad[(i + 1) % bad.length] }));
+  doc.holidays = (doc.holidays ?? []).map((h, i) => ({ ...h, label: bad[i % bad.length].slice(0, 80) }));
+  doc.timeOff = (doc.timeOff ?? []).map((t, i) => ({ ...t, name: names.get(t.name) ?? t.name, note: bad[i % bad.length] }));
+  doc.grid = Object.fromEntries(Object.entries(doc.grid ?? {}).map(([k, v]) => [k, names.get(v) ?? v]));
+  const payload = JSON.stringify({ doc, fileName: "<img src=x onerror=window.__pwned=1>.hisp.json", dirty: false });
+  const routes = L === 0 ? ["", "schedule", "people", "print"] : ROUTES;
+  const { ctx, page, errors } = await fresh({}, `localStorage.setItem("hischool-trial-demo-v1", "1"); localStorage.setItem("hischool-schedule-welcomed", "1"); localStorage.setItem("${KEY}", ${JSON.stringify(payload)});`);
+  let dialogs = 0;
+  page.on("dialog", (d) => { dialogs++; d.dismiss().catch(() => {}); });
+  for (const route of routes) {
+    await page.goto(`${BASE}#/${route}`, { waitUntil: "load" }); await settle(page, 600);
+    const loc = page.locator('button:not([disabled]), [role="tab"], [role="gridcell"]');
+    const n = await loc.count();
+    for (let k = 0; k < Math.min(n, [6, 15, 30][L]); k++) { await loc.nth(Math.floor((k * 37) % n)).click({ timeout: 300 }).catch(() => {}); await page.keyboard.press("Escape"); }
+    const r = await page.evaluate(() => ({ pwned: window.__pwned, img: !!document.querySelector('img[src="x"]'), svg: !!document.querySelector("svg[onload]"), script: !![...document.querySelectorAll("script")].some((s) => /__pwned/.test(s.textContent ?? "")), iframe: !!document.querySelector("iframe[srcdoc]"), text: document.body.innerText.includes("<img") || document.body.innerText.includes("<script") }));
+    if (r.pwned) note(`/${route}: injected script ran`);
+    if (r.img || r.svg || r.script || r.iframe) note(`/${route}: injected markup became a real element (${JSON.stringify(r)})`);
+    if (route === "people" && !r.text) note("/people: the markup name did not show as plain text");
+  }
+  if (dialogs) note(`${dialogs} alert or prompt dialogs opened`);
+  if (errors.length) note(`script errors: ${errors[0]}`);
+  console.log(`  ${routes.length} pages with markup in names, stores, notes, holidays and the file name`);
+}
+
+if (job === "zones") {
+  // Other time zones, other languages, and the dates around year end, leap day and clock changes.
+  const combos = [{ timezoneId: "Pacific/Kiritimati", locale: "ja-JP" }, { timezoneId: "America/St_Johns", locale: "ar-EG" }, { timezoneId: "Pacific/Auckland", locale: "de-DE" }, { timezoneId: "Asia/Kolkata", locale: "fr-FR" }, { timezoneId: "America/Los_Angeles", locale: "en-US" }];
+  const when = ["2026-12-31T23:59:50-08:00", "2028-02-29T12:00:00-08:00", "2027-03-14T01:59:50-08:00", "2026-11-01T01:30:00-07:00", "2100-02-28T23:59:55-08:00"];
+  const cs = L === 0 ? combos.slice(0, 2) : combos;
+  const ws = L === 0 ? when.slice(0, 2) : when;
+  for (const c of cs) for (const w of ws) {
+    const { ctx, page, errors } = await fresh({ ...c });
+    await ctx.clock.install({ time: new Date(w) }).catch(() => {});
+    for (const route of ["", "schedule", "time-off", "print", "lists"]) {
+      await page.goto(`${BASE}#/${route}`, { waitUntil: "load" }); await settle(page, 400);
+      const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      if (over > 1) note(`${c.timezoneId} ${c.locale} ${w.slice(0, 10)} /${route}: ${over}px sideways scroll`);
+      if ((await body(page)) < 50) note(`${c.timezoneId} ${w.slice(0, 10)} /${route}: blank screen`);
+    }
+    if (errors.length) note(`${c.timezoneId} ${c.locale} ${w.slice(0, 10)}: script error ${errors[0]}`);
+    await ctx.close();
+  }
+  console.log(`  ${cs.length} zone and language pairs x ${ws.length} dates x 5 pages`);
+}
+
 await browser.close();
 console.log(`${fail.length ? "FAIL" : "ok  "} ${job} (${level}, ${((Date.now() - t0) / 1000).toFixed(0)}s)${fail.length ? " — " + fail[0] : ""}`);
 for (const f of fail) console.log(`  ! ${f}`);
