@@ -1,5 +1,5 @@
 import { launch } from "./lib.mjs";
-const BASE="http://127.0.0.1:3002/spa.html";
+import { BASE } from "./lib.mjs";
 const b = await launch(); const res=[]; const ok=(c,m)=>{res.push((c?"ok   ":"FAIL ")+m);};
 // touch: two-tap on grid
 { const ctx=await b.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true}); const p=await ctx.newPage(); const errs=[]; p.on("pageerror",e=>errs.push(e.message));

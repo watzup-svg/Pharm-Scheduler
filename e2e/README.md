@@ -13,3 +13,10 @@ The copy for real use has its own short check: `npm run build:real`, serve `dist
 
 Run one check by name: `npm run e2e -- header-links` (names are the ones printed as `# name`; several can be given).
 Fast loop while editing: `npm run check` (type check + unit tests). See `ARCHITECTURE.md` for the whole map.
+
+## Everything at once, cheaply
+
+- `npm run all` builds the sample app, then runs the type check, unit tests and browser suite side by side. The screen gets one line per job; full output is in `test-logs/` (not committed) and `test-logs/latest.json`.
+- `npm run e2e` serves the build itself on a free port and runs the groups three at a time (`E2E_JOBS=n` to change). Scratch files go in a per-run folder (`tmp()` in `lib.mjs`), so two runs at once never collide. `-- --serial` prints everything in one process (and uses `BASE`, default port 3002).
+- `npm run sweep -- --seeds 200 --edits 3000` runs the rules-engine fuzz tests under many random seeds, one process per core, and writes `test-logs/sweep-*.json`. Reproduce one failing seed with `FUZZ_SEED=<seed> npm run test:schedule`.
+- Tests that depend on the sample month: the browser groups open the built sample (fixed to October 2026), so they must not be pointed at the real build.

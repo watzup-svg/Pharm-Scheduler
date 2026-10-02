@@ -41,6 +41,31 @@ if (serial) {
 }
 
 const { spawn } = await import("node:child_process");
+const fs = await import("node:fs");
+const path = await import("node:path");
+const http = await import("node:http");
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+
+// Serve the built page ourselves on a free port, so a run needs no setup and two runs at once never share a port.
+let server = null;
+if (!process.env.BASE) {
+  const dir = path.join(root, "dist-spa");
+  if (!fs.existsSync(path.join(dir, "spa.html"))) { console.log("Build first: npm run build:trial"); process.exit(2); }
+  server = http.createServer((req, res) => {
+    const f = path.join(dir, decodeURIComponent((req.url ?? "/").split("?")[0]).replace(/^\/+/, "") || "spa.html");
+    if (!f.startsWith(dir) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404).end(); return; }
+    res.writeHead(200, { "content-type": f.endsWith(".html") ? "text/html" : "application/octet-stream" }).end(fs.readFileSync(f));
+  });
+  await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
+  process.env.BASE = `http://127.0.0.1:${server.address().port}/spa.html`;
+}
+// Every group's full output goes to a log file; the screen gets the summary and any failure in full.
+const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15);
+const logDir = path.join(root, "test-logs");
+fs.mkdirSync(logDir, { recursive: true });
+const logFile = path.join(logDir, `e2e-${stamp}-${process.pid}.log`);
+fs.writeFileSync(logFile, "");
+process.env.E2E_TMP ||= fs.mkdtempSync(path.join((await import("node:os")).tmpdir(), "hischool-e2e-"));
 const os = await import("node:os");
 const width = Math.max(1, Math.min(Number(process.env.E2E_JOBS) || os.cpus().length - 1, picked.length));
 const started = Date.now();
@@ -55,6 +80,7 @@ const run = (name) =>
     child.on("close", (code) => {
       const lines = out.split("\n");
       const checks = lines.filter((l) => /^(ok  |FAIL)/.test(l)).length;
+      fs.appendFileSync(logFile, `\n# ${name}\n${out}`);
       results.push({ name, code, secs: Math.round((Date.now() - t0) / 1000), checks, out });
       console.log(`${code === 0 ? "ok  " : "FAIL"} ${name} (${checks} checks, ${Math.round((Date.now() - t0) / 1000)}s)`);
       done();
@@ -66,4 +92,6 @@ const bad = results.filter((r) => r.code !== 0);
 for (const r of bad) console.log(`\n# ${r.name} (failed)\n${r.out.trim()}`);
 const total = results.reduce((n, r) => n + r.checks, 0);
 console.log(bad.length ? `\n${bad.length} of ${results.length} group(s) failed` : `\nall ${total} checks passed in ${results.length} groups, ${Math.round((Date.now() - started) / 1000)}s on ${width} at a time`);
+console.log(`full output: ${path.relative(root, logFile)}`);
+server?.close();
 process.exit(bad.length ? 1 : 0);

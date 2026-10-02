@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
 jobs:
-  # The three jobs run side by side: type check and unit tests, the browser suite in two halves, and the builds.
+  # The jobs run side by side: type check, unit tests and builds; the browser suite in two halves; and a sweep of random schedules.
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +37,17 @@ jobs:
         run: |
           npx playwright-core install --with-deps chromium
           export CHROME="$(node -e "console.log(require('playwright-core').chromium.executablePath())")"
-          python3 -m http.server 3002 -d dist-spa >/dev/null 2>&1 &
-          sleep 1
           npm run e2e -- --shard ${{ matrix.shard }}
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run sweep -- --seeds 20
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sweep-results
+          path: test-logs/
