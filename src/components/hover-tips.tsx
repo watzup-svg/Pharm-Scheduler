@@ -82,12 +82,12 @@ export function HoverTips() {
     const over = (e: PointerEvent) => {
       if (e.pointerType === "touch") return;
       const el = resolve(e.target);
-      if (!el || !textOf(el)) return clearMarker();
+      if (!el || !textOf(el) || el.hasAttribute("data-tip-quiet")) return clearMarker();
       armMarker(el, noteStyleOf(el).tone);
     };
     const focus = (e: FocusEvent) => {
       const el = resolve(e.target);
-      if (!el || !(e.target as HTMLElement).matches?.(":focus-visible") || !textOf(el)) return;
+      if (!el || !(e.target as HTMLElement).matches?.(":focus-visible") || !textOf(el) || el.hasAttribute("data-tip-quiet")) return;
       armMarker(el, noteStyleOf(el).tone);
     };
     // Right click, or the menu key / Shift+F10 on the focused element (which has no pointer position).

@@ -60,12 +60,12 @@ export function HeroIcon({ tone = "plain", children, className }: { tone?: HeroT
 
 const NUMERAL = "text-left text-6xl leading-none font-semibold tabular-nums sm:text-7xl";
 
-/** The big numeral of a page. When there is nothing to count it becomes a green check. */
+/** The big numeral of a page. Its note opens on right click as everywhere, but it draws no corner marker (`data-tip-quiet`). When there is nothing to count it becomes a green check. */
 export function HeroLead({ n, tone = "plain", icon, mark, tip, onClick, done = false }: { n: number | string; tone?: HeroTone; icon?: React.ReactNode; /** A state mark beside the numeral, instead of a plain icon. */ mark?: MarkKind; tip: string; onClick?: () => void; done?: boolean }) {
   const aria = tip.replace(" | ", ". ");
   if (done) {
     return (
-      <span data-tip={tip} data-tip-tone={tone === "bad" ? "bad" : tone === "warn" ? "off" : undefined} data-tip-mark={mark} role="img" aria-label={aria} className="grid size-16 shrink-0 place-items-center rounded-full bg-ok-lite text-night shadow-[0_0_28px_rgba(111,183,141,0.45)]">
+      <span data-tip={tip} data-tip-quiet data-tip-tone={tone === "bad" ? "bad" : tone === "warn" ? "off" : undefined} data-tip-mark={mark} role="img" aria-label={aria} className="grid size-16 shrink-0 place-items-center rounded-full bg-ok-lite text-night shadow-[0_0_28px_rgba(111,183,141,0.45)]">
         <Check aria-hidden className="size-9" />
       </span>
     );
@@ -78,11 +78,11 @@ export function HeroLead({ n, tone = "plain", icon, mark, tip, onClick, done = f
     </>
   );
   return onClick ? (
-    <button type="button" onClick={onClick} data-tip={tip} aria-label={aria} className="inline-flex items-center gap-3 rounded-xl">
+    <button type="button" onClick={onClick} data-tip={tip} data-tip-quiet aria-label={aria} className="inline-flex items-center gap-3 rounded-xl">
       {body}
     </button>
   ) : (
-    <span data-tip={tip} role="img" aria-label={aria} className="inline-flex items-center gap-3">
+    <span data-tip={tip} data-tip-quiet role="img" aria-label={aria} className="inline-flex items-center gap-3">
       {body}
     </span>
   );
