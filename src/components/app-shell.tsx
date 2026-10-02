@@ -1,4 +1,5 @@
 import { useActionLog } from "@/components/undo";
+import { isWaiting } from "@/lib/schedule/timeoff-view";
 import { useSelectionFeedback } from "@/components/use-feedback";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { CalendarDays, ChevronRight, Ellipsis, LayoutDashboard, Printer, Search, SlidersHorizontal, Palmtree } from "lucide-react";
@@ -59,7 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const setSearchOpen = useViewStore((s) => s.setSearchOpen);
   const textLarge = useViewStore((s) => s.textLarge);
   const highContrast = useViewStore((s) => s.highContrast);
-  const requests = doc.timeOff.filter((t) => t.status === "requested").length;
+  const requests = doc.timeOff.filter((t) => isWaiting(doc, t)).length;
   const status = useMemo(() => monthStatus(doc, ev), [doc, ev]);
   const printStatus = usePrintStatus();
 

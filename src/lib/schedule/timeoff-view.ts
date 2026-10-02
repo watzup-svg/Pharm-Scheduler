@@ -14,6 +14,22 @@ export type TimeOffEntry = {
   dates: string[];
 };
 
+/**
+ * A request still waiting for her decision in the month on screen: undecided, and at least one of its dates falls in
+ * this month or later. A request whose dates are all in an earlier month (carried over by "Start next month") no
+ * longer counts as waiting anywhere; it stays in the List tab, where she can still decide or remove it.
+ */
+export function isWaiting(doc: ScheduleDoc, t: TimeOff): boolean {
+  if (t.status !== "requested") return false;
+  const first = isoDate(doc.year, doc.month, 1);
+  return timeOffDates(t).some((d) => d >= first);
+}
+
+/** Undecided requests whose dates are all before the month on screen. */
+export function olderRequests(doc: ScheduleDoc): TimeOff[] {
+  return doc.timeOff.filter((t) => t.status === "requested" && !isWaiting(doc, t));
+}
+
 export function entriesOf(doc: ScheduleDoc): TimeOffEntry[] {
   return doc.timeOff.map((t, index) => ({ index, t, status: t.status ?? "approved", dates: timeOffDates(t) }));
 }
@@ -85,7 +101,7 @@ export function summarize(doc: ScheduleDoc, loads = dayLoads(doc)): TimeOffSumma
     }
   }
   return {
-    waiting: doc.timeOff.filter((t) => t.status === "requested").length,
+    waiting: doc.timeOff.filter((t) => isWaiting(doc, t)).length,
     peopleOff: off.size,
     stillScheduled,
     busiest,

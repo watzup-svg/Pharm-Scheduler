@@ -12,7 +12,7 @@ import { HoldButton } from "@/components/ui/hold-button";
 import { EmptyState } from "@/components/empty-state";
 import { requestHints, safeToApprove, timeOffImpact } from "@/lib/schedule/impact";
 import { formatDateList } from "@/lib/schedule/pto";
-import { dayLoads, entriesOf, firstDate, noticeDays, overlapFor, type TimeOffEntry } from "@/lib/schedule/timeoff-view";
+import { dayLoads, entriesOf, firstDate, isWaiting, noticeDays, olderRequests, overlapFor, type TimeOffEntry } from "@/lib/schedule/timeoff-view";
 import { useScheduleStore } from "@/store/schedule-store";
 
 /** Requests waiting, soonest first. Each card shows the month with the asked-for days outlined, so the decision has its context. */
@@ -20,12 +20,22 @@ export function RequestsTab() {
   const doc = useScheduleStore((s) => s.doc);
   const loads = useMemo(() => dayLoads(doc), [doc]);
   const rows = useMemo(
-    () => entriesOf(doc).filter((e) => e.status === "requested").sort((a, b) => firstDate(a).localeCompare(firstDate(b))),
+    () => entriesOf(doc).filter((e) => isWaiting(doc, e.t)).sort((a, b) => firstDate(a).localeCompare(firstDate(b))),
     [doc],
   );
+  // Requests from an earlier month are not waiting any more; say where they went so nothing seems to vanish.
+  const older = olderRequests(doc).length;
+  const olderNote = older ? (
+    <p className="text-sm text-muted">
+      {older} undecided {older === 1 ? "request is" : "requests are"} from an earlier month, so {older === 1 ? "it isn't" : "they aren't"} counted here. {older === 1 ? "It's" : "They're"} still in the List tab.
+    </p>
+  ) : null;
   if (!rows.length) {
     return (
-      <EmptyState kind="timeoff" title="No requests waiting" hint="When someone asks for time off, add it as a request. It waits here until you approve or decline it, and changes nothing on the schedule meanwhile." />
+      <div className="flex flex-col gap-3">
+        <EmptyState kind="timeoff" title="No requests waiting" hint="When someone asks for time off, add it as a request. It waits here until you approve or decline it, and changes nothing on the schedule meanwhile." />
+        {olderNote}
+      </div>
     );
   }
   const setStatus = useScheduleStore.getState().setTimeOffStatus;
@@ -54,6 +64,7 @@ export function RequestsTab() {
           <RequestCard key={`${e.t.name}-${e.index}`} entry={e} loads={loads} />
         ))}
       </ul>
+      {olderNote}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { workloadFlags } from "./workload.ts";
 import { getCell } from "./grid.ts";
 import { RPH_SLOTS } from "./slots.ts";
 import { personOnPto } from "./pto.ts";
+import { isWaiting } from "./timeoff-view.ts";
 import { isoDate } from "./calendar.ts";
 import type { Evaluation, ScheduleDoc } from "./types.ts";
 
@@ -119,7 +120,7 @@ export function districtModel(doc: ScheduleDoc, ev: Evaluation, today: { year: n
       closedNames: ev.closed,
       unlicensed: ev.unlicensed,
       short: ev.short,
-      requests: doc.timeOff.filter((t) => t.status === "requested").length,
+      requests: doc.timeOff.filter((t) => isWaiting(doc, t)).length,
       away: awayList(doc).length,
       thin: thin.length,
       checks: hintsOnGrid(doc).length + workloadFlags(doc).length,
