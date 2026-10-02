@@ -211,6 +211,8 @@ function edgeUncached(ctx: Ctx, name: string, store: string): Edge {
   if (m > LONG_DRIVE) cost += 120;
   const load = loadFor(doc, name, ctx.day);
   if (!float) cost += Math.min(16, load.away * 2);
+  // A float is not penalised for covering, but the same float every day of a week is a tie-break: a small nudge per day already away.
+  else cost += Math.min(6, load.weekAway * 1.5);
   if (load.week + 1 > 5 + (doc.stores.find((s) => s.code === person.home)?.satOpen ? 1 : 0)) cost += 25;
   if (doc.timeOff.some((t) => t.name === name && t.status === "requested" && timeOffDates(t).includes(ctx.date))) cost += 20;
   // Taking a store's second pharmacist away from a store that usually runs two is a reminder-level cost, not a block.

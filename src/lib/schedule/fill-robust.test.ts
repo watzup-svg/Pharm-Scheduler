@@ -117,4 +117,15 @@ describe("Grok's robust list, adopted parts", () => {
     const hidden = { ...base, people: base.people.map((p) => (p.name === "Eli" ? { ...p, noSuggest: true } : p)) };
     assert.ok(!names(hidden).includes("Eli"), "marked do-not-suggest");
   });
+
+  it("away count: a float already away from home several days this week yields to an equally close float with a lighter week", () => {
+    let doc = scenario(["EST"], [{ p: person("Busy Float", "WL", true) }, { p: person("Rested Float", "WL", true) }]);
+    for (const d of [DAY - 1, DAY - 2, DAY - 3]) {
+      doc = { ...doc, grid: setCellValue(doc.grid, "MOL", "pharmacist2", d, "Busy Float") };
+    }
+    assert.equal(fillerOf(coverPlans(doc, "EST", DAY).plans[0]!), "Rested Float");
+    // but never at the price of a much shorter drive
+    const far = { ...doc, driveMinutes: { [driveKey("WL", "EST")]: 30 }, people: doc.people.map((p) => (p.name === "Rested Float" ? { ...p, home: "FLO" } : p)) };
+    assert.equal(fillerOf(coverPlans(far, "EST", DAY).plans[0]!), "Busy Float", "Rested Float lives much farther away");
+  });
 });
