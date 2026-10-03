@@ -14,7 +14,7 @@ const audit = () => {
     if (anc && !anc.closest("[data-notip]")) bad.nested.push(`${where} ⊂ ${(anc.getAttribute("data-tip") ?? anc.getAttribute("title") ?? "").slice(0, 30)}`);
     if (e.hasAttribute("data-tip") && e.hasAttribute("title")) bad.both.push(where);
     const lines = tip.split("|").length;
-    if (tip.length > 260 || lines > 4) bad.long.push(`${where} (${tip.length} chars, ${lines} lines)`);
+    if (tip.length > 260 || lines > (e.hasAttribute("data-tip-list") ? 8 : 4)) bad.long.push(`${where} (${tip.length} chars, ${lines} lines)`);
   }
   // a control without a note, sitting inside something that has one
   for (const c of document.querySelectorAll(INTERACTIVE)) {

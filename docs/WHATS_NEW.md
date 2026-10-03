@@ -2,6 +2,9 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Store tag note lists the pharmacists
+- Right-clicking a store tag in the header's day strip now also lists who is scheduled there that day, one name per row in day-panel order, or "No one scheduled" for an open store with nobody. Display only. Checked in Chromium (e2e header links, hover rules); WebKit and touch not checked.
+
 ## Housekeeping for outside review
 - Added README.md and REVIEW_GUIDE.md (what the app is, what it deliberately is not, where to look, how to run the checks, known open items, and the questions most worth reviewing). Refreshed ARCHITECTURE.md and the handoff notes to match main. Docs only: no code or rules changed.
 - Since the last entry: hover text on the day strip was reworded (#43), the three-dot marker came off the big header number with a hairline on hover (#44), the time-off timeline and legend were tidied (#40, #41), the hexagon came off the issue header (#39), and QC fixes landed (#45: the security scan allows the one IRS link; the fill search is lighter in very large months).
