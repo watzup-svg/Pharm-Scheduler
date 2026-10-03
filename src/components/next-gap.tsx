@@ -1,15 +1,12 @@
-import { HexBadge } from "@/components/graphics";
-import { useStoreTag } from "@/components/use-store-tag";
 import { monthName, todayParts, weekdayShort } from "@/lib/schedule/calendar";
 import type { FixStep } from "@/lib/schedule/fix";
 import type { ScheduleDoc } from "@/lib/schedule/types";
 
 /**
- * The next shift with no pharmacist, as a small tear-off calendar page with the store's badge on it. No sentence:
- * the date is the page, the store is the badge, and pointing at it says the rest. Tapping it opens that day.
+ * The next shift with no pharmacist, as a small tear-off calendar page. No sentence and no store badge (the store row
+ * carries the store): the date is the page, and pointing at it says the rest. Tapping it opens that day.
  */
 export function NextGapLeaf({ doc, steps, onOpen, onDark = false }: { doc: ScheduleDoc; steps: FixStep[]; onOpen: (s: FixStep) => void; onDark?: boolean }) {
-  const tag = useStoreTag();
   const today = todayParts();
   const inMonth = today.year === doc.year && today.month === doc.month;
   const holes = steps.filter((s) => s.kind === "hole");
@@ -34,7 +31,6 @@ export function NextGapLeaf({ doc, steps, onOpen, onDark = false }: { doc: Sched
         <span className="block text-3xl leading-8 font-bold tabular-nums text-ink">{next.day}</span>
         <span className="block pb-0.5 text-[10px] leading-3 font-semibold text-muted">{wd.toUpperCase()}</span>
       </span>
-      <HexBadge code={tag(next.store)} tone="bad" className="h-8" />
     </button>
   );
 }

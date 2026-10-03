@@ -18,27 +18,6 @@ export function Avatar({ name, color, className }: { name: string; color?: strin
   );
 }
 
-/**
- * The store's letters or number in a small hexagon, echoing the logo's shape: black text on white with one clean black outline.
- * A small dot on the corner shows whether the store needs attention (green fine, brick problem); closed stores have no dot.
- */
-export function HexBadge({ code, tone = "ok", className }: { code: string; tone?: "ok" | "bad" | "muted"; className?: string }) {
-  const dot = tone === "bad" ? "#8c3a2f" : tone === "ok" ? "#2f6f4e" : null;
-  // Store numbers are usually four digits; letters are two or three. The text is sized to fit the hexagon either way.
-  const size = code.length >= 6 ? 9.5 : code.length === 5 ? 11 : code.length === 4 ? 12.5 : 14;
-  return (
-    <svg viewBox="0 0 66 36" aria-hidden className={cn("h-9 w-auto shrink-0 overflow-visible", className)}>
-      <path d="M15 3h36l12 15-12 15H15L3 18 15 3Z" fill="#ffffff" stroke="#201820" strokeWidth="2.6" strokeLinejoin="round" />
-      <text x="33" y={18 + size * 0.36} textAnchor="middle" fontFamily="'Source Sans 3', system-ui, sans-serif" fontWeight="700" fontSize={size} fill="#201820">
-        {code}
-      </text>
-      {dot ? <circle cx="59" cy="29" r="5.2" fill={dot} stroke="#ffffff" strokeWidth="2" /> : null}
-    </svg>
-  );
-}
-
-
-
 /** Drive time with a small car, for suggestions. */
 export function DriveTag({ text, long }: { text: string; long?: boolean }) {
   return (
