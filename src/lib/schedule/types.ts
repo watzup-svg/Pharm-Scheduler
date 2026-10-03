@@ -170,6 +170,8 @@ export type DayIssue = {
   /** Placed in a state they are not licensed in. Hard error. */
   unlicensedNames: string[];
   ptoNames: string[];
+  /** Why each of them is off: time off, after their last day, or before their first day. Same yellow warning either way. */
+  ptoWhy?: Record<string, "time-off" | "left" | "not-yet">;
   soloFloatName: string | null;
   why: string;
   open: boolean;
