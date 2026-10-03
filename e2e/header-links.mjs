@@ -19,6 +19,16 @@ export default async function run() {
     check("the other ring days step back", (await page.locator('[data-ring-day="9"]').getAttribute("opacity")) === "0.28");
     await page.mouse.move(5, 700);
     await page.waitForTimeout(200);
+    const rows = () => page.evaluate(() => [...document.querySelectorAll("[data-row-lit]")].map((e) => `${e.getAttribute("data-row-store")}:${getComputedStyle(e.firstElementChild).outlineStyle}`));
+    await page.locator('[data-rc="3|8"]').hover();
+    const r1 = await rows();
+    const row3 = await page.locator('[role="rowheader"]').nth(3).getAttribute("data-row-store");
+    check("pointing at a cell boxes its row's store number", r1.length === 1 && r1[0] === `${row3}:solid`, r1.join());
+    await page.locator('[data-rc="5|2"]').hover();
+    const r2 = await rows();
+    check("the row box moves with the pointer", r2.length === 1 && !r2[0].startsWith(`${row3}:`), r2.join());
+    await page.mouse.move(5, 700);
+    await page.waitForTimeout(200);
     check("moving away puts the ring back", (await lit(page)) === "" && (await page.locator('[data-ring-day="9"]').getAttribute("opacity")) == null);
 
     await page.locator('[data-ring-day="20"]').hover();
@@ -100,6 +110,17 @@ export default async function run() {
     const text = (await note.innerText()).replace(/\s+/g, " ");
     check("a problem day's note names the store and date, the problem and the click", /\d{4} · \w{3} \w{3} \d+ .*still on a closed day.*Open this day/.test(text), text);
     check("a problem day's note has the red edge and its mark", (await note.locator("[data-note-edge=bad]").count()) === 1 && (await note.locator("svg").count()) > 0);
+    await page.close();
+  }
+  {
+    // Right click a store tag in the day strip: its pharmacists are listed under the status.
+    const { page } = await open(browser, "");
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    const tag = page.locator("[data-strip-store][data-state=ok]").first();
+    await rightClick(tag);
+    const text = (await page.locator("[data-hover-note]").innerText()).replace(/\s+/g, " ");
+    check("a store tag's note lists who is scheduled there", /Covered .+ Open this day/.test(text) && !/Covered Open this day/.test(text), text);
     await page.close();
   }
   {

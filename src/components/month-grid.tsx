@@ -226,8 +226,8 @@ export function MonthGrid({ onOpen }: { onOpen: (store: string, day: number) => 
         </div>
         {rows.map((row, r) => (
           <div key={row.code} role="row" className="contents">
-            <span role="rowheader" data-tip={row.name} className="pr-1 text-xs leading-[24px] font-bold text-ink/80">
-              {tag(row.code)}
+            <span role="rowheader" data-row-store={row.code} data-tip={row.name} className="pr-1 text-xs leading-[24px] font-bold text-ink/80">
+              <span className="rounded-sm px-0.5 in-data-[row-lit]:outline-2 in-data-[row-lit]:outline-offset-1 in-data-[row-lit]:outline-[#201820]">{tag(row.code)}</span>
             </span>
             {row.tones.map((tone, c) => {
               const selected = pick?.store === row.code && pick.day === c + 1;

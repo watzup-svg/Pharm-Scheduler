@@ -3,7 +3,9 @@ import { useEffect, useMemo } from "react";
 import { useStoreTag } from "@/components/use-store-tag";
 import { monthName, weekdayShort } from "@/lib/schedule/calendar";
 import type { FixStep } from "@/lib/schedule/fix";
+import { getCell } from "@/lib/schedule/grid";
 import { isOpenDay } from "@/lib/schedule/place";
+import { RPH_SLOTS } from "@/lib/schedule/slots";
 import type { ScheduleDoc } from "@/lib/schedule/types";
 import { cn } from "@/lib/utils";
 import { useViewStore } from "@/store/view-store";
@@ -60,8 +62,26 @@ export function HoverLinks() {
       if (cur?.days.length === 1 && cur.days[0] === day && cur.cells.length === 0) return;
       setHover([day]);
     }
+    // The store number at the left of the row under the pointer gets the same box as the date above its column. Set straight
+    // on the label (a data attribute, styled in the grid), so nothing re-renders while the pointer moves.
+    let lit: HTMLElement | null = null;
+    function overRow(e: PointerEvent) {
+      if (e.pointerType === "touch") return;
+      const t = e.target as HTMLElement | null;
+      const store = t?.closest?.<HTMLElement>("[data-cell]")?.dataset.cell?.split("|")[0];
+      const next = store ? document.querySelector<HTMLElement>(`[data-row-store="${CSS.escape(store)}"]`) : null;
+      if (next === lit) return;
+      lit?.removeAttribute("data-row-lit");
+      next?.setAttribute("data-row-lit", "");
+      lit = next;
+    }
     document.addEventListener("pointerover", over);
-    return () => document.removeEventListener("pointerover", over);
+    document.addEventListener("pointerover", overRow);
+    return () => {
+      document.removeEventListener("pointerover", over);
+      document.removeEventListener("pointerover", overRow);
+      lit?.removeAttribute("data-row-lit");
+    };
   }, []);
   if (!hover) return null;
   // Outlines are drawn with a stylesheet so the grid and the calendars don't re-render while the pointer moves.
@@ -98,13 +118,18 @@ export function DayStrip({ doc, day, steps, current }: { doc: ScheduleDoc; day: 
         const open = isOpenDay(doc, s.code, day);
         const bad = problem.has(s.code);
         const state = bad ? "To fix" : open ? "Covered" : "Closed";
+        // Who is on at this store this day, one per row, in the day panel's slot order.
+        const who = RPH_SLOTS.map((slot) => getCell(doc.grid, s.code, slot, day).trim()).filter(Boolean);
+        const people = who.length ? who : open ? ["No one scheduled"] : [];
+        const tip = [s.name, `${when} · ${state}`, ...people, "Open this day"].join(" | ");
         return (
           <li key={s.code}>
             <button
               type="button"
               data-strip-store={s.code}
               data-state={bad ? "bad" : open ? "ok" : "closed"}
-              data-tip={`${s.name} | ${when} · ${state} | Open this day`}
+              data-tip={tip}
+              data-tip-list
               data-tip-tone={bad ? "bad" : open ? "ok" : undefined}
               data-tip-mark={`store:${tag(s.code)}`}
               aria-label={`${s.name}, ${when}: ${state}. Open this day`}

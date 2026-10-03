@@ -63,7 +63,7 @@ export function HoverTips() {
         .split(got.aria ? /\s*\|\s*|\.\s+(?=[A-Z0-9])/ : /\s*\|\s*/)
         .map((l) => l.trim())
         .filter(Boolean)
-        .slice(0, 4);
+        .slice(0, el.hasAttribute("data-tip-list") ? 8 : 4);
       if (!lines.length) return;
       closeNotes();
       const half = 128;
