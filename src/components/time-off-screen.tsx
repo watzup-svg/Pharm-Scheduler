@@ -65,7 +65,7 @@ export function TimeOffScreen() {
         title="Time off"
         glow="away"
         lead={
-          <HeroLead n={sum.waiting} tone="warn" done={!sum.waiting} mark="waiting" tip={sum.waiting ? `Waiting · ${sum.waiting} | Requests you have not decided` : "Nothing waiting | Every request has been decided"} onClick={sum.waiting ? () => setTab("requests") : undefined} />
+          <HeroLead n={sum.waiting} tone="warn" done={!sum.waiting} mark="waiting" tip={sum.waiting ? `To approve · ${sum.waiting} | Requests waiting for a yes or a no` : "Nothing to approve | Every request has been decided"} onClick={sum.waiting ? () => setTab("requests") : undefined} />
         }
         tiles={
           <>

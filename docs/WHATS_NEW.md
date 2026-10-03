@@ -6,6 +6,15 @@ Newest first. One short block per batch: what changed, where to look, what was c
 - The panel for a person who is placed on a day they have approved time off now shows three actions: Find cover, Remove, and Reject time off. Change person and Swap with are gone there. Reject time off marks that time-off entry declined (the whole entry; the button names its dates when it spans several days), so she stops counting as off and stays on the schedule. Undo is in the toast. Other states (sick, requested, no time off) keep their buttons. Display and button change only; no rules touched.
 - Checked: 388 unit, 552 browser (new group "reject time off"), screenshot at laptop width. Not checked: real touch, iPhone Safari.
 
+## Time off: clearer approval, and Undo approval
+- Requests: one line says "These are waiting for a yes or a no." Approve is a plain one-click button and stays on the page; its toast offers Undo approval for about 6 seconds. Find cover appears only when approving would leave a store empty (it approves, then opens that day). Decline asks first. "Approve anyway" is gone. The header count reads "To approve".
+- Add drawer: the choices are now "Put it on the schedule" (default) and "Ask me first". Sick is still approved straight away, and the Someone's out button says "Records sick as approved."
+- List: approved rows (Sick too) have Undo approval next to Edit. It sets the entry back to requested: it returns to Requests, stops counting as time off, and nobody already placed is moved. Remove is still the hold. No new status.
+- Checked: unit tests for Undo approval and Sick in the list, browser group for Approve, Undo approval, Decline confirm, Sick row. Not checked: real touch, iOS Safari.
+
+## Store tag note lists the pharmacists
+- Right-clicking a store tag in the header's day strip now also lists who is scheduled there that day, one name per row in day-panel order, or "No one scheduled" for an open store with nobody. Display only. Checked in Chromium (e2e header links, hover rules); WebKit and touch not checked.
+
 ## Housekeeping for outside review
 - Added README.md and REVIEW_GUIDE.md (what the app is, what it deliberately is not, where to look, how to run the checks, known open items, and the questions most worth reviewing). Refreshed ARCHITECTURE.md and the handoff notes to match main. Docs only: no code or rules changed.
 - Since the last entry: hover text on the day strip was reworded (#43), the three-dot marker came off the big header number with a hairline on hover (#44), the time-off timeline and legend were tidied (#40, #41), the hexagon came off the issue header (#39), and QC fixes landed (#45: the security scan allows the one IRS link; the fill search is lighter in very large months).

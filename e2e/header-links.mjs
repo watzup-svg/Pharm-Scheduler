@@ -59,6 +59,16 @@ export default async function run() {
     await page.close();
   }
   {
+    // The store-number hexagon is gone from the header in every state (the store row carries it); it came back once in the resting state.
+    const { page } = await open(browser, "");
+    const hex = "svg path[d^='M15 3h36']";
+    check("the resting header has no store hexagon", (await header(page).locator(hex).count()) === 0);
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    check("the stepping header has no store hexagon", (await header(page).locator(hex).count()) === 0);
+    await page.close();
+  }
+  {
     const { page, errors } = await open(browser, "");
     await page.getByRole("button", { name: "Next issue" }).click();
     await page.waitForTimeout(400);
@@ -110,6 +120,17 @@ export default async function run() {
     const text = (await note.innerText()).replace(/\s+/g, " ");
     check("a problem day's note names the store and date, the problem and the click", /\d{4} · \w{3} \w{3} \d+ .*still on a closed day.*Open this day/.test(text), text);
     check("a problem day's note has the red edge and its mark", (await note.locator("[data-note-edge=bad]").count()) === 1 && (await note.locator("svg").count()) > 0);
+    await page.close();
+  }
+  {
+    // Right click a store tag in the day strip: its pharmacists are listed under the status.
+    const { page } = await open(browser, "");
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    const tag = page.locator("[data-strip-store][data-state=ok]").first();
+    await rightClick(tag);
+    const text = (await page.locator("[data-hover-note]").innerText()).replace(/\s+/g, " ");
+    check("a store tag's note lists who is scheduled there", /Covered .+ Open this day/.test(text) && !/Covered Open this day/.test(text), text);
     await page.close();
   }
   {

@@ -137,7 +137,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
             </HeroCount>
           ) : null}
           {waiting ? (
-            <HeroCount mark="waiting" n={waiting} tone="warn" tip={`Time off waiting · ${waiting} | Requests you have not decided`} onClick={() => void navigate({ to: "/time-off" })}>
+            <HeroCount mark="waiting" n={waiting} tone="warn" tip={`Time off to approve · ${waiting} | Requests waiting for a yes or a no`} onClick={() => void navigate({ to: "/time-off" })}>
               <StateMark kind="waiting" size={28} tip={false} />
             </HeroCount>
           ) : null}
@@ -169,7 +169,7 @@ export function StatusStrip({ showPrint = false }: { showPrint?: boolean }) {
               Clear
             </Button>
           ) : null}
-          <Button type="button" variant="away" aria-label="Someone’s out: called in sick or can’t come" data-tip-tone="off" data-tip-mark="timeOff" data-tip="Someone’s out | Called in sick or can’t come. Logs the time off and finds cover for their shifts" onClick={() => openSick()}>
+          <Button type="button" variant="away" aria-label="Someone’s out: called in sick or can’t come" data-tip-tone="off" data-tip-mark="timeOff" data-tip="Someone’s out | Called in sick or can’t come. Records sick as approved. Logs the time off and finds cover for their shifts" onClick={() => openSick()}>
             <Mark icon="timeOff" tip={false} />
             Someone’s out
           </Button>

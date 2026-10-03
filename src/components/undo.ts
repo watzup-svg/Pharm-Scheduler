@@ -14,6 +14,23 @@ export function undoLast() {
   useActionLog.setState((s) => ({ entries: s.entries.slice(0, -1) }));
 }
 
+/** Approve toast: the action is "Undo approval" and puts the entry back on Requests, for a few seconds. */
+export function announceApproval(message: string, index: number, warn?: string) {
+  toast.dismiss();
+  toast(message, {
+    duration: 6000,
+    action: {
+      label: "Undo approval",
+      onClick: () => {
+        useScheduleStore.getState().setTimeOffStatus(index, "requested");
+        toast.dismiss();
+      },
+    },
+  });
+  if (warn) toast.warning(warn, { duration: 6000 });
+  useActionLog.setState((s) => ({ entries: [...s.entries.slice(-49), { at: Date.now(), message }], changes: s.changes + 1 }));
+}
+
 /** Say what just happened, with an Undo that always means exactly this action. */
 export function announce(message: string, warn?: string) {
   toast.dismiss();
