@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 // Official files in src/assets/brand (see the README there). ?inline gives a data URL, so they also work in the single-file build and in PDFs.
-const files = import.meta.glob("/src/assets/brand/hsp-{icon,badge}.{png,svg,jpg}", { eager: true, query: "?inline", import: "default" }) as Record<string, string>;
+const files = import.meta.glob("/src/assets/brand/hsp-{icon,badge,badge-gray}.{png,svg,jpg}", { eager: true, query: "?inline", import: "default" }) as Record<string, string>;
 const find = (stem: string) => Object.entries(files).find(([k]) => k.includes(`/${stem}.`))?.[1];
 
 /** The badge as a data URL, for the PDF pack. Null when the file has not been added. */
@@ -24,6 +24,12 @@ export function BrandMark({ className, title = "Hi-School Pharmacy" }: { classNa
       </text>
     </svg>
   );
+}
+
+/** The gray badge, small, for quiet footers (File menu). Nothing at all when the file is missing. */
+export function BrandBadgeGray({ className }: { className?: string }) {
+  const badge = find("hsp-badge-gray");
+  return badge ? <img src={badge} alt="" aria-hidden className={cn("h-6 w-auto opacity-80", className)} /> : null;
 }
 
 /** The larger badge, for the welcome screen and print pages. Nothing at all when the official file is missing. */
