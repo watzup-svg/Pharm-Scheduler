@@ -103,6 +103,17 @@ export default async function run() {
     await page.close();
   }
   {
+    // Right click a store tag in the day strip: its pharmacists are listed under the status.
+    const { page } = await open(browser, "");
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    const tag = page.locator("[data-strip-store][data-state=ok]").first();
+    await rightClick(tag);
+    const text = (await page.locator("[data-hover-note]").innerText()).replace(/\s+/g, " ");
+    check("a store tag's note lists who is scheduled there", /Covered .+ Open this day/.test(text) && !/Covered Open this day/.test(text), text);
+    await page.close();
+  }
+  {
     // The File menu says which build this is, so a fresh build is easy to tell from an old one.
     const { page } = await open(browser, "schedule");
     await page.getByRole("button", { name: "File" }).click();
