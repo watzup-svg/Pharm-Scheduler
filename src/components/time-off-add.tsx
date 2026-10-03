@@ -250,7 +250,7 @@ function Form({ seed, onClose }: { seed: AddSeed; onClose: () => void }) {
         <Input id="to-note" aria-label="Details (optional)" maxLength={140} value={detail} onChange={(e) => setDetail(e.target.value)} placeholder={reason === "Other" ? "What for?" : "Details (optional)"} />
         {!editing && reason !== "Sick" ? (
           <div className="mt-1 flex flex-col gap-2">
-            <Label>Has this been decided?</Label>
+            <Label>When you add it</Label>
             <Segmented
               tone="ink"
               label="Status"
@@ -258,13 +258,14 @@ function Form({ seed, onClose }: { seed: AddSeed; onClose: () => void }) {
               value={status}
               onChange={setStatus}
               options={[
-                { value: "approved", label: "Already approved" },
-                { value: "requested", label: "Waiting for my decision" },
+                { value: "approved", label: "Put it on the schedule" },
+                { value: "requested", label: "Ask me first" },
               ]}
             />
+            <p className="text-xs text-muted">{status === "approved" ? "Counts as time off now." : "Waits on Requests. Counts as time off only once you approve it."}</p>
           </div>
         ) : reason === "Sick" ? (
-          <p className="text-xs text-muted">Sick time is recorded as approved straight away.</p>
+          <p className="text-xs text-muted">Sick is approved straight away. It counts as time off now.</p>
         ) : null}
       </section>
 

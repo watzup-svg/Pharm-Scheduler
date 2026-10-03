@@ -29,24 +29,37 @@ export default async function run() {
   await p.getByRole("tab", { name: /Requests/ }).click();
   const waiting = async () => Number((await p.getByRole("tab", { name: /Requests/ }).innerText()).replace(/\D/g, "") || 0);
   const before = await waiting();
-  // A quick tap on a held button does nothing and says so; holding it does the job.
-  const anyway = p.getByRole("button", { name: /^Approve anyway/ }).first();
-  await anyway.click();
+  // Approve is one plain click, stays on Requests, and the toast offers Undo approval.
+  check("Requests says what it is for", (await p.getByText("These are waiting for a yes or a no.").count()) === 1);
+  check("Approve is a plain button", (await p.getByRole("button", { name: /^Approve$/ }).count()) >= 1);
+  await p.getByRole("button", { name: /^Approve$/ }).first().click();
   await p.waitForTimeout(300);
-  check("a quick tap on a hold button does nothing", (await waiting()) === before);
-  check("and tells her to hold", (await p.getByText("Press and hold to confirm").count()) >= 1);
-  const box = await anyway.boundingBox();
-  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await p.mouse.down();
-  await p.waitForTimeout(350);
-  check("while held the button shows it is timing", (await anyway.getAttribute("data-holding")) !== null);
-  await p.waitForTimeout(600);
-  await p.mouse.up();
+  check("one click approves and takes the request off the queue", (await waiting()) === before - 1);
+  check("and stays on Requests", (await p.getByRole("tab", { name: /Requests/ }).getAttribute("aria-selected")) === "true");
+  await p.getByText("Undo approval").first().click();
   await p.waitForTimeout(300);
-  check("holding approves and takes the request off the queue", (await waiting()) === before - 1);
-  await p.getByText("Undo").first().click();
+  check("Undo approval puts it back", (await waiting()) === before);
+  // Decline asks first.
+  await p.getByRole("button", { name: /^Decline$/ }).first().click();
+  check("Decline opens a confirm", (await p.getByRole("dialog").count()) === 1);
+  await p.getByRole("button", { name: "Keep waiting" }).click();
   await p.waitForTimeout(300);
-  check("Undo puts it back", (await waiting()) === before);
+  check("Keep waiting changes nothing", (await waiting()) === before);
+  // Sick is recorded as approved, shows in the List, and can be unapproved there.
+  await add.click();
+  const sd = p.getByRole("dialog");
+  await sd.locator("#to-find").fill("Lena");
+  await sd.getByRole("list", { name: "Pharmacists" }).getByRole("button").first().click();
+  await sd.getByRole("button", { name: /^October 12$/ }).click();
+  await sd.getByRole("button", { name: /Sick/ }).click();
+  await sd.getByRole("button", { name: "Add time off" }).last().click();
+  await p.waitForTimeout(400);
+  await p.getByRole("tab", { name: /List/ }).click();
+  const undoBtn = p.getByRole("button", { name: /^Undo approval for Lena/ });
+  check("Sick shows in the List with Undo approval", (await undoBtn.count()) >= 1);
+  await undoBtn.first().click();
+  await p.waitForTimeout(300);
+  check("Undo approval on a List row sends it back to Requests", (await waiting()) === before + 1);
 
   await add.focus();
   await p.keyboard.press("Enter");
