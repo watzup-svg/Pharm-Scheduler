@@ -8,6 +8,7 @@ import { useStoreTag } from "@/components/use-store-tag";
 import { bestDirectDrive, coverPlans, MAX_DRIVE, type CoverMove, type CoverPlan } from "@/lib/schedule/cover-plan";
 import { shortStoreName } from "@/lib/schedule/fix";
 import { mileageText } from "@/lib/schedule/mileage";
+import { previewPlan } from "@/lib/schedule/plan-preview";
 import { driveLabel, driveText } from "@/lib/schedule/suggest";
 import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
@@ -78,6 +79,7 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
                 <MoveLine key={`${m.name}>${m.to}`} m={m} tag={tag} />
               ))}
             </ul>
+            <PreviewLine plan={p} day={day} tag={tag} />
             {p.opens.length ? (
               <p className="rounded-lg bg-warn-bg px-2 py-1 text-xs font-medium text-warn">
                 Leaves {p.opens.map((c) => tag(c)).join(", ")} with no pharmacist. It will get its own suggestions, or you can close it.
@@ -126,5 +128,19 @@ function MoveLine({ m, tag }: { m: CoverMove; tag: (code: string) => string }) {
       {m.mileage.paidMiles !== 0 ? <span className="text-xs text-muted">{mileageText(m.mileage)}</span> : null}
       {m.from && m.leftWith?.length ? <span className="basis-full text-xs text-muted">{tag(m.from)} keeps {m.leftWith.map(first).join(" and ")}</span> : null}
     </li>
+  );
+}
+
+/** What the plan would do to the month, worked out on a copy before anything is written. */
+function PreviewLine({ plan, day, tag }: { plan: CoverPlan; day: number; tag: (code: string) => string }) {
+  const doc = useScheduleStore((s) => s.doc);
+  const pv = useMemo(() => previewPlan(doc, plan, day), [doc, plan, day]);
+  if (!pv.ok) return <p className="text-xs text-illegal">{pv.problem ?? "This plan can't be applied now"}</p>;
+  const [was, now] = pv.holes;
+  return (
+    <p data-testid="plan-preview" className="text-xs text-muted">
+      <span className="font-semibold text-ink">Preview</span> · empty shifts this month {was} → <span className={now < was ? "font-semibold text-ok" : now > was ? "font-semibold text-illegal" : "font-semibold text-ink"}>{now}</span>
+      {pv.shortened.length ? <span className="text-warn"> · leaves {pv.shortened.map((x) => tag(x.store)).join(", ")} with one pharmacist on a two-pharmacist day</span> : null}
+    </p>
   );
 }
