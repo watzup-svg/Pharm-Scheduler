@@ -12,31 +12,39 @@ import { EmptyState } from "@/components/empty-state";
 import { requestHints, safeToApprove, timeOffImpact } from "@/lib/schedule/impact";
 import { formatDateList } from "@/lib/schedule/pto";
 import type { ScheduleDoc } from "@/lib/schedule/types";
+import { cn } from "@/lib/utils";
 import { entriesOf, firstDate, isWaiting, noticeDays, olderRequests, overlapFor, type TimeOffEntry } from "@/lib/schedule/timeoff-view";
 import { useScheduleStore } from "@/store/schedule-store";
 
-/** Requests waiting, soonest first. Each card shows the month with the asked-for days outlined, so the decision has its context. */
-export function RequestsTab() {
+/** Requests waiting for a decision, soonest first. */
+export function waitingRows(doc: ScheduleDoc): TimeOffEntry[] {
+  return entriesOf(doc).filter((e) => isWaiting(doc, e.t)).sort((a, b) => firstDate(a).localeCompare(firstDate(b)));
+}
+
+/**
+ * The queue: one row per request (name, the dates as a range, a brick dot if a store would be left bare). The selected
+ * row opens into its slip. With a day picked on the month, only requests that cover that day are listed.
+ */
+export function ToApproveList({ day, selected, onSelect }: { day: string | null; selected: number | null; onSelect: (index: number) => void }) {
   const doc = useScheduleStore((s) => s.doc);
-  const rows = useMemo(
-    () => entriesOf(doc).filter((e) => isWaiting(doc, e.t)).sort((a, b) => firstDate(a).localeCompare(firstDate(b))),
-    [doc],
-  );
+  const all = useMemo(() => waitingRows(doc), [doc]);
+  const rows = day ? all.filter((e) => e.dates.includes(day)) : all;
   // Requests from an earlier month are not waiting any more; say where they went so nothing seems to vanish.
   const older = olderRequests(doc).length;
   const olderNote = older ? (
     <p className="text-sm text-muted">
-      {older} undecided {older === 1 ? "request is" : "requests are"} from an earlier month, so {older === 1 ? "it isn't" : "they aren't"} counted here. {older === 1 ? "It's" : "They're"} still in the List tab.
+      {older} undecided {older === 1 ? "request is" : "requests are"} from an earlier month, so {older === 1 ? "it isn't" : "they aren't"} counted here. {older === 1 ? "It's" : "They're"} in Declined and Approved only once decided.
     </p>
   ) : null;
   if (!rows.length) {
     return (
       <div className="flex flex-col gap-3">
-        <EmptyState kind="timeoff" title="No requests waiting" hint="Add time off with “Ask me first” and it waits here until you approve or decline it. It changes nothing on the schedule meanwhile." />
+        <EmptyState kind="timeoff" title="Nothing to approve" hint={day ? "No request covers that day. Clear the day to see the rest." : "Add time off with “Ask me first” and it waits here until you approve or decline it. It changes nothing on the schedule meanwhile."} />
         {olderNote}
       </div>
     );
   }
+  const open = rows.some((r) => r.index === selected) ? selected : rows[0]!.index;
   const setStatus = useScheduleStore.getState().setTimeOffStatus;
   const safeNow = rows.filter((e) => safeToApprove(doc, e.t.name, e.dates));
   function approveSafe() {
@@ -52,20 +60,37 @@ export function RequestsTab() {
   }
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted">These are waiting for a yes or a no.</p>
       {safeNow.length > 1 ? (
         <HoldButton variant="secondary" className="self-start" holdMs={900} onHold={approveSafe}>
           <Check />
           Approve {safeNow.length} safe
         </HoldButton>
       ) : null}
-      <ul className="flex flex-col gap-3" aria-label="Requests waiting">
+      <ul className="flex flex-col gap-2" aria-label="Requests to approve">
         {rows.map((e) => (
-          <RequestCard key={`${e.t.name}-${e.index}`} entry={e} />
+          <QueueRow key={`${e.t.name}-${e.index}`} entry={e} open={e.index === open} onSelect={() => onSelect(e.index)} />
         ))}
       </ul>
       {olderNote}
     </div>
+  );
+}
+
+function QueueRow({ entry, open, onSelect }: { entry: TimeOffEntry; open: boolean; onSelect: () => void }) {
+  const doc = useScheduleStore((s) => s.doc);
+  const key = entry.dates.join();
+  const bare = useMemo(() => timeOffImpact(doc, entry.t.name, entry.dates).some((i) => i.becomesHole), [doc, entry.t.name, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <li className={cn("accent-away rounded-xl bg-white ring-1 ring-line", open && "ring-2 ring-ink/70")}>
+      <button type="button" onClick={onSelect} aria-expanded={open} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-4 py-2 pl-5 text-left">
+        <span className="min-w-0 flex-1 truncate font-semibold">{entry.t.name}</span>
+        {bare ? (
+          <span role="img" aria-label="A store would be left with no pharmacist" data-tip="A store would be left with no pharmacist" className="size-2.5 shrink-0 rounded-full bg-illegal" />
+        ) : null}
+        <span className="shrink-0 text-sm font-medium tabular-nums">{formatDateList(entry.dates)}</span>
+      </button>
+      {open ? <RequestCard entry={entry} /> : null}
+    </li>
   );
 }
 
@@ -122,12 +147,7 @@ function RequestCard({ entry }: { entry: TimeOffEntry }) {
   const asked = [t.requestedOn ? `Asked ${formatDateList([t.requestedOn])}` : "", notice != null ? (notice <= 3 ? `${Math.max(notice, 0)} ${notice === 1 ? "day" : "days"} notice` : `${notice} days ahead`) : ""].filter(Boolean).join(" · ");
 
   return (
-    <li className="accent-away flex flex-col gap-3 rounded-xl bg-white p-4 pl-5 ring-1 ring-line">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <p className="text-base font-semibold">{t.name}</p>
-        <p className="text-sm font-medium tabular-nums">{formatDateList(dates)}</p>
-      </div>
-
+    <div className="flex flex-col gap-3 px-4 pt-1 pb-4 pl-5">
       <dl className="flex flex-col gap-2">
         <Fact label="Who">
           {t.note || <span className="text-muted">No reason given</span>}
@@ -208,6 +228,6 @@ function RequestCard({ entry }: { entry: TimeOffEntry }) {
           </div>
         </DialogContent>
       </Dialog>
-    </li>
+    </div>
   );
 }

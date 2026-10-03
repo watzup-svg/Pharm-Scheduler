@@ -19,7 +19,8 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 | Fix-it steps and their sentences | `lib/schedule/fix.ts` (kinds: hole, double, leftover, license) |
 | The issue cursor (arrows, Fix button) | `lib/schedule/issue-cursor.ts`, `components/issue-nav.tsx` |
 | Header: tiles, buttons, ring, day strip | `components/status-strip.tsx`, `hero-graphics.tsx` (ring), `header-links.tsx` (hover links), `issue-nav.tsx` |
-| Notes (popups). Open on right click / Shift+F10 / long press; hover only draws a small marker | `components/hover-note.tsx` (look, marker, long press), `hover-tips.tsx` (anything with `data-tip`/`title`). Rich notes built in code (`useNote`): month grid, ring, time-off lanes. Markup: `data-tip="Title \| line \| Open this day"`, `data-tip-tone`, `data-tip-mark`, `data-tip-place="below"` |
+| Notes (popups). Open on right click / Shift+F10 / long press; hover only draws a small marker | `components/hover-note.tsx` (look, marker, long press), `hover-tips.tsx` (anything with `data-tip`/`title`). Rich notes built in code (`useNote`): month grid, ring. Markup: `data-tip="Title \| line \| Open this day"`, `data-tip-tone`, `data-tip-mark`, `data-tip-place="below"` |
+| The Time off page: filters, queue, slip, month | `components/time-off-screen.tsx` (page), `time-off-requests.tsx` (To approve queue and slip), `time-off-list.tsx` (Approved and Declined rows), `time-off-month.tsx` (the one month), `time-off-day.tsx` (a day's details), `time-off-add.tsx` (drawer); data in `lib/schedule/timeoff-view.ts` |
 | Marks and their colours | `components/marks.tsx` (`MARKS`), tokens in `styles.css` |
 | Wording | `artifacts/COPY_GUIDE.md`; sentences live next to the code that shows them |
 | Month grid (District) / store calendars / week / day | `month-grid.tsx` / `store-calendar.tsx` / `week-board.tsx` / `day-board.tsx`; shared per-day facts: `day-view.ts` |

@@ -1,34 +1,26 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import type { AddSeed } from "@/components/time-off-add";
-import { StatusPill } from "@/components/time-off-parts";
 import { announce } from "@/components/undo";
 import { useShowOnSchedule } from "@/components/use-show-on-schedule";
 import { useStoreTag } from "@/components/use-store-tag";
 import { Button } from "@/components/ui/button";
 import { HoldButton } from "@/components/ui/hold-button";
-import { NativeSelect } from "@/components/ui/native-select";
-import { Segmented } from "@/components/ui/segmented";
 import { isoDate } from "@/lib/schedule/calendar";
 import { namePlacements } from "@/lib/schedule/coverage";
 import { formatDateList } from "@/lib/schedule/pto";
-import { entriesOf, firstDate, groupByDates, type TimeOffEntry } from "@/lib/schedule/timeoff-view";
+import { entriesOf, firstDate, type TimeOffEntry } from "@/lib/schedule/timeoff-view";
 import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
 
-type StatusFilter = "all" | "approved" | "requested" | "declined";
-
-export function ListTab({ onEdit }: { onEdit: (seed: AddSeed) => void }) {
+/** Approved or Declined entries, soonest first. With a day picked on the month, only entries that cover it. */
+export function EntryList({ status, day, onEdit }: { status: "approved" | "declined"; day: string | null; onEdit: (seed: AddSeed) => void }) {
   const tag = useStoreTag();
   const doc = useScheduleStore((s) => s.doc);
   const remove = useScheduleStore((s) => s.removeTimeOff);
   const setStatus = useScheduleStore((s) => s.setTimeOffStatus);
   const showOnSchedule = useShowOnSchedule();
-  const [status, setFilter] = useState<StatusFilter>("all");
-  const [person, setPerson] = useState("");
-  const [group, setGroup] = useState<"person" | "date">("person");
-  const [sittingOnly, setSittingOnly] = useState(false);
   const all = useMemo(() => entriesOf(doc), [doc]);
   const monthPrefix = `${doc.year}-${String(doc.month).padStart(2, "0")}`;
 
@@ -44,17 +36,10 @@ export function ListTab({ onEdit }: { onEdit: (seed: AddSeed) => void }) {
     return m;
   }, [all, doc]);
 
-  const counts = {
-    approved: all.filter((e) => e.status === "approved").length,
-    requested: all.filter((e) => e.status === "requested").length,
-    declined: all.filter((e) => e.status === "declined").length,
-  };
   const visible = all
-    .filter((e) => (status === "all" ? e.status !== "declined" : e.status === status))
-    .filter((e) => !person || e.t.name === person)
-    .filter((e) => !sittingOnly || sitting.has(e.index))
-    .sort((a, b) => (group === "person" ? a.t.name.localeCompare(b.t.name) || firstDate(a).localeCompare(firstDate(b)) : firstDate(a).localeCompare(firstDate(b))));
-  const people = [...new Set(all.map((e) => e.t.name))].sort();
+    .filter((e) => e.status === status)
+    .filter((e) => !day || e.dates.includes(day))
+    .sort((a, b) => firstDate(a).localeCompare(firstDate(b)) || a.t.name.localeCompare(b.t.name));
 
   function row(e: TimeOffEntry) {
     const hits = sitting.get(e.index);
@@ -68,7 +53,6 @@ export function ListTab({ onEdit }: { onEdit: (seed: AddSeed) => void }) {
         <p className={cn("text-sm", inMonth ? "" : "text-muted")}>
           {formatDateList(e.dates)} · {e.dates.length}d{inMonth ? "" : " · not this month"}
         </p>
-        <StatusPill status={e.status} />
         <div className="ml-auto flex items-center">
           {e.status === "approved" ? (
             <Button
@@ -118,74 +102,18 @@ export function ListTab({ onEdit }: { onEdit: (seed: AddSeed) => void }) {
     );
   }
 
+  if (!visible.length) {
+    return day ? (
+      <EmptyState kind="timeoff" title={`Nothing ${status} that day`} hint="Clear the day to see the rest." />
+    ) : status === "approved" ? (
+      <EmptyState kind="timeoff" title="Nothing approved yet" hint="Time off you approve, and sick time, is listed here. Undo approval puts one back in To approve." />
+    ) : (
+      <EmptyState kind="timeoff" title="Nothing declined" hint="A declined request is listed here. Reopen puts it back in To approve." />
+    );
+  }
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Segmented
-            tone="ink"
-          label="Status"
-          value={status}
-          onChange={setFilter}
-          options={[
-            { value: "all", label: "All" },
-            { value: "approved", label: "Approved", hint: String(counts.approved) },
-            { value: "requested", label: "Requested", hint: String(counts.requested) },
-            ...(counts.declined ? [{ value: "declined" as const, label: "Declined", hint: String(counts.declined) }] : []),
-          ]}
-        />
-        <NativeSelect aria-label="Show one person" className="sm:w-52" value={person} onChange={(e) => setPerson(e.target.value)}>
-          <option value="">Everyone</option>
-          {people.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </NativeSelect>
-        {sitting.size ? (
-          <button
-            type="button"
-            aria-pressed={sittingOnly}
-            onClick={() => setSittingOnly(!sittingOnly)}
-            className={cn("h-11 rounded-md px-3 text-sm font-semibold", sittingOnly ? "bg-ink text-cream" : "bg-white text-illegal ring-1 ring-illegal")}
-          >
-            Still scheduled ({sitting.size})
-          </button>
-        ) : null}
-        <Segmented
-            tone="ink"
-          className="ml-auto"
-          label="Group"
-          value={group}
-          onChange={setGroup}
-          options={[
-            { value: "person", label: "By person" },
-            { value: "date", label: "By date" },
-          ]}
-        />
-      </div>
-
-      {!visible.length ? (
-        <EmptyState
-          kind="timeoff"
-          title={all.length ? "Nothing matches these filters" : "No time off logged yet"}
-          hint={all.length ? "Clear a filter to see more." : "Every entry you add, approved or requested, is listed here. Use “Add time off” to start."}
-        />
-      ) : group === "person" ? (
-        <ul className="flex flex-col gap-2" aria-label="Time off">
-          {visible.map(row)}
-        </ul>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {groupByDates(visible).map((g) => (
-            <section key={g.key} aria-label={formatDateList(g.dates)}>
-              <h2 className="mb-2 text-sm font-semibold">
-                {formatDateList(g.dates)} · {g.entries.length} {g.entries.length === 1 ? "person" : "people"}
-              </h2>
-              <ul className="flex flex-col gap-2">{g.entries.map(row)}</ul>
-            </section>
-          ))}
-        </div>
-      )}
-    </div>
+    <ul className="flex flex-col gap-2" aria-label={status === "approved" ? "Approved time off" : "Declined time off"}>
+      {visible.map(row)}
+    </ul>
   );
 }

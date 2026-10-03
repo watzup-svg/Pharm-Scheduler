@@ -2,6 +2,14 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Time off: a queue and one month
+- The three tabs and the lanes strip are gone. The page is two columns: on the left three filters (To approve, Approved, Declined), on the right one sticky month, the only calendar on the page. To approve opens first when anything waits.
+- To approve: one row per request (name, dates as a range, a brick dot if a store would be bare). The selected row opens into its slip. Approved and Declined rows keep Edit, Undo approval / Reopen, and the hold to remove, and still show "Still on ... prints yellow" with Show on schedule.
+- The month shows how many are off each day (approved solid, waiting dashed and lighter, brick ring where a store would be bare). Hover names them. Click a day to list only what covers it (click again or the chip to clear). The open slip's days are outlined. One line under it: the busiest day. The day details (who is free to call, Add for this day) open under the month.
+- The header picture is three bars (To approve, Approved, Declined) instead of a mini calendar; the header box and size are unchanged.
+- When nothing waits, To approve says "Nothing to approve" and the month takes the width. On a phone the month sits above the queue.
+- Display only. No rule, status or placement change. Checked: unit, full browser suite (time off, pages, small month, next month updated for the new page), laptop and phone screenshots. Not checked: touch, iOS Safari, printers.
+
 ## Time off: requests as slips
 - Each request is now a slip with four facts: the reason (and when it was asked), the dates in words, who else is out those days (by name), and what the stores do ("Every store stays covered", or the bare store and days in brick with "no one free" when that's true). The month strip inside each request is gone; the lanes above still show the month.
 - Find cover moved onto the bare store (one per store, opens its first bare day); Approve is only Approve and stays on the page.

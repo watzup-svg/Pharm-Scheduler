@@ -20,9 +20,9 @@ export default async function run() {
   check("no request badge after the month moves on", (await page.getByLabel(/requests waiting$/).count()) === 0);
   await page.goto(page.url().replace(/#\/.*$/, "#/time-off"));
   await page.waitForTimeout(800);
-  await page.getByRole("tab", { name: /Requests/ }).click();
+  await page.getByRole("group", { name: "Show" }).getByRole("button", { name: /To approve/ }).click();
   await page.waitForTimeout(300);
-  check("Requests says nothing is waiting", (await page.getByText("No requests waiting").count()) > 0);
+  check("To approve says nothing is waiting", (await page.getByText("Nothing to approve").count()) > 0);
   check("Requests says where the older ones are", (await page.getByText(/2 undecided requests are from an earlier month/).count()) > 0);
   check("no script errors starting next month", errors.length === 0, errors.join(" | "));
   await page.close();
