@@ -6,7 +6,6 @@ import { dayLabel } from "@/components/time-off-parts";
 import { announce, announceApproval } from "@/components/undo";
 import { useShowOnSchedule } from "@/components/use-show-on-schedule";
 import { Button } from "@/components/ui/button";
-import { HoldButton } from "@/components/ui/hold-button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/empty-state";
 import { requestHints, safeToApprove, timeOffImpact } from "@/lib/schedule/impact";
@@ -45,26 +44,19 @@ export function ToApproveList({ day, selected, onSelect }: { day: string | null;
     );
   }
   const open = rows.some((r) => r.index === selected) ? selected : rows[0]!.index;
-  const setStatus = useScheduleStore.getState().setTimeOffStatus;
   const safeNow = rows.filter((e) => safeToApprove(doc, e.t.name, e.dates));
   function approveSafe() {
-    // One at a time against the current schedule, so two requests that together empty a store are not both approved.
-    let n = 0;
-    for (const e of rows) {
-      const now = useScheduleStore.getState().doc;
-      if (!safeToApprove(now, e.t.name, e.dates)) continue;
-      setStatus(e.index, "approved");
-      n += 1;
-    }
+    // One at a time against the current schedule, so two requests that together empty a store are not both approved. One Undo puts them all back.
+    const n = useScheduleStore.getState().approveSafeTimeOff(rows.map((e) => e.index));
     announce(`Approved ${n} ${n === 1 ? "request" : "requests"} that leave every store covered. ${rows.length - n} left to decide.`);
   }
   return (
     <div className="flex flex-col gap-3">
       {safeNow.length > 1 ? (
-        <HoldButton variant="secondary" className="self-start" holdMs={900} onHold={approveSafe}>
+        <Button type="button" variant="secondary" className="self-start" onClick={approveSafe}>
           <Check />
           Approve {safeNow.length} safe
-        </HoldButton>
+        </Button>
       ) : null}
       <ul className="flex flex-col gap-2" aria-label="Requests to approve">
         {rows.map((e) => (

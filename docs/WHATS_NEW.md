@@ -2,6 +2,10 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## No more press-and-hold on anything you can undo
+- Rule: press-and-hold is only for an action with no undo. All seven holds (Remove on a time-off entry, Remove and "Schedule on N more days" in the day panel, Keep at a store, Leave as is, Leave N as is, Approve N safe) were undoable, so they are now plain clicks with the Undo toast. "Approve N safe" is now one undo step instead of one per request. `HoldButton` stays for a future non-undoable action and must be marked `// no-undo:` (guard test).
+- Checked: unit tests, browser groups that used the holds. Not checked: touch, iOS Safari.
+
 ## Time off: holidays on the month
 - A holiday sits on its day on the Time off month: the name in the corner and "closed N" for the stores it shuts (hover lists them). If a pharmacist is still named at a shut store, the day is brick and clicking it opens that day on the Schedule. Under the month, one line adds "Next holiday". District closures (weather, short-staffed) are not shown here.
 - Display only. Checked: unit tests for the holiday days, time off browser group, laptop screenshot. Not checked: touch, iOS Safari.

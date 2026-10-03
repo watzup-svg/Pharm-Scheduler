@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { Mark, reasonIcon } from "@/components/icons";
-import { HoldButton } from "@/components/ui/hold-button";
 import { whyOut } from "@/lib/schedule/why-out";
 import { announce } from "@/components/undo";
 import { ActionBar } from "@/components/ui/action-bar";
@@ -138,9 +137,9 @@ export function SlotBlock({
             </Button>
           ) : null}
           {name && !doubled ? (
-            <HoldButton variant="default" size="sm" onHold={() => onClear(name)}>
+            <Button type="button" variant="default" size="sm" onClick={() => onClear(name)}>
               Remove
-            </HoldButton>
+            </Button>
           ) : null}
         </ActionBar>
       ) : null}
@@ -162,9 +161,9 @@ export function SlotBlock({
         </ul>
       ) : null}
       {fillCount > 0 && !picking ? (
-        <HoldButton variant="secondary" size="sm" className="mt-2 h-auto min-h-11 w-full justify-start py-2 text-left whitespace-normal" onHold={onFill} holdMs={900}>
+        <Button type="button" variant="secondary" size="sm" className="mt-2 h-auto min-h-11 w-full justify-start py-2 text-left whitespace-normal" onClick={onFill}>
           Schedule {name.split(" ")[0]} on {fillCount} more open {fillCount === 1 ? "day" : "days"} at {storeName}
-        </HoldButton>
+        </Button>
       ) : null}
     </div>
     {open && !picking && name && onTimeOff ? <CoverCard slot={slot} seed={seed} onChoose={onChoose} exclude={exclude} title={`Replace ${name.split(" ")[0]}`} /> : null}

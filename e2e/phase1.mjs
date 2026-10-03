@@ -1,6 +1,6 @@
 // The daily-job fixes: staying on an emptied shift, the Inventory reason, the left-as-is tally, a clickable person strip,
 // adding a licence from its problem, and printing the district page as a draft.
-import { check, hold, launch, open } from "./lib.mjs";
+import { check, launch, open } from "./lib.mjs";
 
 const toFix = (p) => p.evaluate(() => Number(document.querySelector('[aria-label*="to fix"]')?.getAttribute("aria-label")?.match(/(\d+) to fix/)?.[1] ?? NaN));
 
@@ -14,7 +14,7 @@ export default async function run() {
     await cell.click();
     await p.waitForTimeout(300);
     const d = p.getByRole("dialog");
-    await hold(p, d.getByRole("button", { name: /^Remove/ }));
+    await d.getByRole("button", { name: /^Remove/ }).click();
     await p.waitForTimeout(500);
     check("after Remove the panel stays open on the emptied shift", (await d.getByRole("region", { name: "Who can cover" }).count()) === 1);
     check("the person just removed is not the best fit", (await d.getByRole("button", { name: /^Schedule Marisol Quenby/ }).count()) === 0);
@@ -38,7 +38,7 @@ export default async function run() {
     await p.waitForTimeout(300);
     await p.getByRole("button", { name: /^Open Oct \d+$/ }).click();
     await p.waitForTimeout(400);
-    await hold(p, p.getByRole("dialog").getByRole("button", { name: /^Leave as is/ }));
+    await p.getByRole("dialog").getByRole("button", { name: /^Leave as is/ }).click();
     await p.waitForTimeout(500);
     await p.keyboard.press("Escape");
     await p.getByRole("link", { name: "District" }).first().click();
