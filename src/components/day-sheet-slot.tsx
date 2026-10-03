@@ -20,6 +20,7 @@ import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
 import { CoverCard, phoneOf } from "@/components/day-sheet-picker";
 import { OutButton } from "@/components/day-sheet-extras";
+import { SwapWith } from "@/components/day-sheet-swap";
 
 const SLOT_LABEL: Record<string, string> = {
   pharmacist: "Pharmacist",
@@ -113,6 +114,7 @@ export function SlotBlock({
               {name ? "Change person" : "Choose person"}
             </Button>
           ) : null}
+          {name && open && !picking ? <SwapWith store={store} slot={slot} day={day} name={name} /> : null}
           {name && open && !picking ? <OutButton name={name} knownReason={why.length > 0} /> : null}
           {unlicensed && stateCode ? (
             <Button type="button" variant="secondary" size="sm" onClick={() => void addLicence()}>
