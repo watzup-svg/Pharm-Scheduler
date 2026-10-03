@@ -14,6 +14,9 @@ Newest first. One short block per batch: what changed, where to look, what was c
 - Each request is now a slip with four facts: the reason (and when it was asked), the dates in words, who else is out those days (by name), and what the stores do ("Every store stays covered", or the bare store and days in brick with "no one free" when that's true). The month strip inside each request is gone; the lanes above still show the month.
 - Find cover moved onto the bare store (one per store, opens its first bare day); Approve is only Approve and stays on the page.
 - Display only: no rule, status or placement change. Checked: unit, time off browser group, laptop screenshot. Not checked: phone, touch, iOS Safari.
+## Day panel: someone placed on approved time off
+- The panel for a person who is placed on a day they have approved time off now shows three actions: Find cover, Remove, and Reject time off. Change person and Swap with are gone there. Reject time off marks that time-off entry declined (the whole entry; the button names its dates when it spans several days), so she stops counting as off and stays on the schedule. Undo is in the toast. Other states (sick, requested, no time off) keep their buttons. Display and button change only; no rules touched.
+- Checked: 388 unit, 552 browser (new group "reject time off"), screenshot at laptop width. Not checked: real touch, iPhone Safari.
 
 ## Time off: clearer approval, and Undo approval
 - Requests: one line says "These are waiting for a yes or a no." Approve is a plain one-click button and stays on the page; its toast offers Undo approval for about 6 seconds. Find cover appears only when approving would leave a store empty (it approves, then opens that day). Decline asks first. "Approve anyway" is gone. The header count reads "To approve".
