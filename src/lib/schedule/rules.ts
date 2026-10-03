@@ -6,6 +6,7 @@ import {
   isStoreOpen,
 } from "./calendar.ts";
 import { getCell, namesOnStoreDay } from "./grid.ts";
+import { OFF_WORDS, offKind } from "./employment.ts";
 import { unlicensedAt } from "./licence.ts";
 import { personOnPto } from "./pto.ts";
 import { isRphName, RPH_SLOTS } from "./slots.ts";
@@ -36,7 +37,10 @@ function whyText(issue: Omit<DayIssue, "why">): string {
     parts.push(`Closed — clear ${joinNames(issue.leftoverNames)}.`);
   }
   if (issue.ptoNames.length) {
-    parts.push(`${joinNames(issue.ptoNames)} on time off (prints yellow).`);
+    const words = OFF_WORDS;
+    const by = new Map<string, string[]>();
+    for (const n of issue.ptoNames) by.set(words[issue.ptoWhy?.[n] ?? "time-off"], [...(by.get(words[issue.ptoWhy?.[n] ?? "time-off"]) ?? []), n]);
+    parts.push(`${[...by].map(([w, names]) => `${joinNames(names)} ${w}`).join("; ")} (prints yellow).`);
   }
   return parts.join(" ");
 }
@@ -132,6 +136,7 @@ export function evaluate(doc: ScheduleDoc): Evaluation {
       const unlicensedNames = open ? [...new Set(rph.filter((n) => unlicensedAt(doc, n, store.code, date)))] : [];
       const ptoNames = [...new Set(placed.filter((n) => personOnPto(effectiveTimeOff(doc), n, date) && isRphName(doc.people, n)))];
 
+      const ptoWhy = Object.fromEntries(ptoNames.map((n) => [n, offKind(doc, n, date)]));
       const soloFloatName: string | null = null;
       const needsSecond = open && rph.length === 1 && (store.twoPharmacistDays ?? []).includes(weekdaySun0(doc.year, doc.month, day));
 
@@ -149,6 +154,7 @@ export function evaluate(doc: ScheduleDoc): Evaluation {
         unlicensedNames,
         needsSecond,
         ptoNames,
+        ptoWhy,
         soloFloatName,
         open,
       };

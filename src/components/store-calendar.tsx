@@ -212,7 +212,7 @@ function describe(view: DayView, name: (code: string) => string): string {
   if (view.holeAccepted) return `${where}: no coverage (left as is)`;
   const second = view.needsSecond ? "; usually two pharmacists, only one here" : "";
   const bits = view.names.map((n) =>
-    [n.name, n.unlicensed ? "not licensed in this state" : "", n.double ? "scheduled twice" : "", n.off ? "on time off" : "", n.away ? `away from home, their store is ${name(n.away)}` : n.cover ? "covering" : ""]
+    [n.name, n.unlicensed ? "not licensed in this state" : "", n.double ? "scheduled twice" : "", n.off ? n.offText : "", n.away ? `away from home, their store is ${name(n.away)}` : n.cover ? "covering" : ""]
       .filter(Boolean)
       .join(", "),
   );

@@ -54,6 +54,22 @@ describe("sample lessons", () => {
     assert.equal(est?.leftover, false);
   });
 
+  it("a shift after someone's last day is a yellow warning with its own wording, not a hole", () => {
+    const iso = (d: number) => `${doc.year}-${String(doc.month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const next = {
+      ...doc,
+      people: doc.people.map((p) => (p.name === "Jane Smith" ? { ...p, endsOn: iso(10) } : p)),
+      grid: setCellValue(doc.grid, "EST", "pharmacist", 22, "Jane Smith"),
+    };
+    const ev2 = evaluate(next);
+    const est = ev2.byKey[issueKey("EST", 22)];
+    assert.deepEqual(est?.ptoNames, ["Jane Smith"]);
+    assert.match(est?.why ?? "", /Jane Smith after their last day \(prints yellow\)/);
+    assert.equal(est?.hole, false);
+    assert.ok(ev2.warns >= 1);
+    assert.equal(ev2.ready, evaluate(doc).ready);
+  });
+
   it("clearing Jane from Molalla Friday 4 removes the double", () => {
     const next = {
       ...doc,

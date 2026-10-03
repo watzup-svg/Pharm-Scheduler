@@ -366,9 +366,8 @@ function SheetBody() {
               <p className="text-base font-bold">
                 {view.names
                   .filter((n) => n.off)
-                  .map((n) => n.name)
-                  .join(", ")}{" "}
-                is on time off
+                  .map((n) => `${n.name} ${n.offText ?? "on time off"}`)
+                  .join("; ")}
               </p>
               <p className="text-ink">Their name prints in yellow until you replace or remove it.</p>
             </div>

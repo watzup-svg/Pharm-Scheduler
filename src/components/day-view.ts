@@ -1,5 +1,6 @@
 import { holidayMatches, isoDate } from "@/lib/schedule/calendar";
 import { awayFromHome, covering } from "@/lib/schedule/dashboard";
+import { OFF_WORDS } from "@/lib/schedule/employment";
 import { personColorHex } from "@/lib/schedule/color";
 import { getCell } from "@/lib/schedule/grid";
 import { issueKey } from "@/lib/schedule/rules";
@@ -15,8 +16,10 @@ export type DayName = {
   cover: boolean;
   /** Home store code when a regular (non-float) pharmacist is away from it, else null. */
   away: string | null;
-  /** On time off this date. Yellow, still prints. */
+  /** On time off this date, or outside their dates with the company. Yellow, still prints. */
   off: boolean;
+  /** Words for why: "on time off", "after their last day", "before their first day". */
+  offText: string;
   /** In two places this date. */
   double: boolean;
   /** Not licensed in this store's state. */
@@ -67,6 +70,7 @@ export function dayView(doc: ScheduleDoc, ev: Evaluation, store: string, day: nu
       cover: covering(doc, name, store),
       away: awayFromHome(doc, name, store),
       off: Boolean(issue?.ptoNames.includes(name)),
+      offText: OFF_WORDS[issue?.ptoWhy?.[name] ?? "time-off"],
       double: Boolean(issue?.doubledNames.includes(name)),
       unlicensed: Boolean(issue?.unlicensedNames.includes(name)),
     });
