@@ -32,7 +32,7 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
     return (
       <section aria-label="No one can reach" className="flex flex-col gap-2 rounded-xl bg-illegal-bg px-3 py-3 text-illegal ring-1 ring-illegal/25">
         <p role="status" className="text-sm font-medium">
-          No one can reach {storeName} within {driveText(MAX_DRIVE)} that day without leaving another store with no pharmacist and nothing nearer works. Leaving it closed is your call.
+          Nobody can cover {storeName} without uncovering a store (drives are limited to {driveText(MAX_DRIVE)}). Closing it for the day is your call.
         </p>
         <div>
           <CloseStoreMenu store={store} day={day} variant="secondary" onDone={onDone} />
@@ -47,7 +47,7 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
   const anyEstimated = plans.some((p) => p.estimated);
 
   function use(plan: CoverPlan) {
-    const res = apply(plan.moves, day, plan.opens);
+    const res = apply(plan.moves, day);
     if (res !== "ok") {
       toast.error(res);
       return;
@@ -80,11 +80,6 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
               ))}
             </ul>
             <PreviewLine plan={p} day={day} tag={tag} />
-            {p.opens.length ? (
-              <p className="rounded-lg bg-warn-bg px-2 py-1 text-xs font-medium text-warn">
-                Leaves {p.opens.map((c) => tag(c)).join(", ")} with no pharmacist. It will get its own suggestions, or you can close it.
-              </p>
-            ) : null}
             <div className="flex flex-wrap items-center gap-2">
               <span data-tip={`Longest drive ${driveText(p.longest)} | ${p.moves.length} ${p.moves.length === 1 ? "person moves" : "people move"}, ${driveText(p.totalMinutes)} of driving in all`} className={cn("rounded-full px-2 py-0.5 text-xs font-bold", p.extreme ? "bg-warn-bg text-warn" : "bg-ok-bg text-ok")}>
                 {p.extreme ? "long drive " : "longest "}
@@ -106,12 +101,6 @@ export function ShorterDrives({ store, day, onDone }: { store: string; day: numb
           </li>
         ))}
       </ul>
-      {plans.every((p) => p.opens.length) ? (
-        <div className="flex flex-col gap-1 border-t border-line px-3 py-2 text-xs text-muted">
-          <span>Every option here leaves another store bare. Closing {storeName} for the day is also your call.</span>
-          <CloseStoreMenu store={store} day={day} variant="ghost" onDone={onDone} />
-        </div>
-      ) : null}
       {anyEstimated ? <p className="border-t border-line px-3 py-2 text-xs text-muted">~ means an estimated drive time. Exact times are set under Setup, Stores.</p> : null}
     </section>
   );

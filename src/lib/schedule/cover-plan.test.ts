@@ -45,14 +45,15 @@ const holesOf = (doc: ScheduleDoc) => evaluate(doc).issues.filter((i) => i.hole)
 const bareStores = (d: ScheduleDoc, day: number) => d.stores.filter((s) => d.stores && !RPH_SLOTS.some((sl) => getCell(d.grid, s.code, sl, day).trim()) && evaluate(d).issues.some((i) => i.hole && i.store === s.code && i.day === day)).map((s) => s.code);
 
 describe("cover plans", () => {
-  it("never fills one shift by emptying another store, except the one store a plan says it opens", () => {
+  it("never fills one shift by emptying another store, and every plan lowers the day's empty count", () => {
     const doc = createDemo();
     for (const h of holesOf(doc)) {
       for (const p of coverPlans(doc, h.store, h.day).plans) {
         const res = applyCoverPlan(doc, p, h.day);
         const before = new Set(bareStores(doc, h.day));
-        for (const c of bareStores(res.doc, h.day)) assert.ok(before.has(c) || p.opens.includes(c), `${c} newly bare on day ${h.day}`);
-        assert.ok(p.opens.length <= 1 && p.moves.length <= 3);
+        for (const c of bareStores(res.doc, h.day)) assert.ok(before.has(c), `${c} newly bare on day ${h.day}`);
+        assert.ok(bareStores(res.doc, h.day).length < before.size);
+        assert.ok(p.moves.length <= 3);
         assert.ok(!bareStores(res.doc, h.day).includes(h.store));
       }
     }

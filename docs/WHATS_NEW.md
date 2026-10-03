@@ -2,6 +2,13 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Fill suggestions are closed chains
+- Joe's rule (2026-10-03): a suggestion that fills one store by leaving another bare is a bug, so it is gone. The old "plan may open one hole" path (and its "Leaves <store> with no pharmacist" line) is deleted. Every plan is a closed chain of 1 to 3 moves: the first person fills the hole, each next person fills the store the last one left, and the chain stops only when nobody left a covered store empty (the last mover was free, or was a second pharmacist, or was replaced by the next move).
+- A plan must also lower the number of empty stores that day, so a preview of 3 → 3 is refused and never shown.
+- When no closed chain exists the card says "Nobody can cover <store> without uncovering a store" and offers Close the store as the manager's own action. No partial chains, no "fixed next pass".
+- Unchanged: the write gate (`placeName`), the 150-minute cap, over 90 minutes sorts last, floats cost less, mileage is the extra for the move, MAX_CHAIN 3, the manager still places every name.
+- Checked: unit tests (new `closed-chains.test.ts`: Estacada, near vs far spare, John Day, two holes one free pharmacist, Cathlamet ferry, float with no clock, 3 → 3 rejected, the whole demo month), `npm run fill -- --level medium` (updated to require closed chains and a falling empty count). Not checked: `--level high`, touch, iOS Safari.
+
 ## No more press-and-hold on anything you can undo
 - Rule: press-and-hold is only for an action with no undo. All seven holds (Remove on a time-off entry, Remove and "Schedule on N more days" in the day panel, Keep at a store, Leave as is, Leave N as is, Approve N safe) were undoable, so they are now plain clicks with the Undo toast. "Approve N safe" is now one undo step instead of one per request. `HoldButton` stays for a future non-undoable action and must be marked `// no-undo:` (guard test).
 - Checked: unit tests, browser groups that used the holds. Not checked: touch, iOS Safari.
@@ -48,6 +55,7 @@ Newest first. One short block per batch: what changed, where to look, what was c
 - Months you already saved keep the stores and numbers they were saved with. Open one and the old stores (and their placeholder numbers) are still there; nothing is changed or removed behind your back. Distances to a saved store that is no longer on the list fall back to address estimates.
 
 ## Fill suggestions: longer reach, a leave-closed choice, honest follow-on holes
+- Superseded 2026-10-03: the follow-on-hole rule below no longer applies; plans are closed chains (see the entry at the top).
 - Fill plans now reach up to 2.5 hours (was 2). Long drives (over 90 minutes) still rank last among plans that leave no gap. A plan is at most three moves.
 - When no one can reach a store within 2.5 hours (John Day, for example), the card says so and offers "Close <store> today…" with the usual reasons. Leaving a store closed is always your choice; nothing is closed for you.
 - A plan may take the only pharmacist from one nearby store to fill a hole. It says so ("Leaves <store> with no pharmacist. It will get its own suggestions, or you can close it."), ranks after plans that leave no gap, and the new hole then gets its own suggestions as usual. Never more than one new hole per plan.

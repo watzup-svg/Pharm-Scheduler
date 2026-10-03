@@ -18,7 +18,7 @@ export type PlanPreview = {
 
 const keyOf = (i: { store: string; day: number }) => `${i.store}|${i.day}`;
 
-export function previewPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves" | "opens">, day: number): PlanPreview {
+export function previewPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves">, day: number): PlanPreview {
   const before = evaluate(doc);
   const res = applyCoverPlan(doc, plan, day);
   if (!res.ok) return { ok: false, problem: res.problem, holes: [before.holes, before.holes], opened: [], shortened: [] };

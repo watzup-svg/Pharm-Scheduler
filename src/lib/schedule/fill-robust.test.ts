@@ -1,7 +1,7 @@
-// The good ideas from Grok's second test list (reviewed 2026-10-02), adapted to Joe's decisions: a plan may open one hole of its own,
+// The good ideas from Grok's second test list (reviewed 2026-10-02), adapted to Joe's decisions: a plan is a closed chain and never opens a hole of its own (2026-10-03),
 // the cutoff is 150 minutes, dollars count in ranking. Adopted: same-fixture-twice order, the pool shrinking after a plan is accepted,
 // a stale assignment on another day, the return trip, either-direction ferry lookup, no invented miles, nobody used twice, and
-// mutations (change the input, the winner must move). Dropped: "fewest people away from home before worst leg" and "never opens a hole".
+// mutations (change the input, the winner must move). Dropped: "fewest people away from home before worst leg".
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { applyCoverPlan, coverPlans, type CoverPlan } from "./cover-plan.ts";
@@ -43,13 +43,13 @@ describe("Grok's robust list, adopted parts", () => {
     }
   });
 
-  it("the pool shrinks: after accepting the plan for one hole, that person is only offered again as opening the hole they just filled", () => {
+  it("the pool shrinks: after accepting the plan for one hole, that person is not offered again (moving them would reopen the hole they just filled)", () => {
     const doc = scenario(["EST", "MOL"], [{ p: person("Fred Free", "WL") }]);
     const first = coverPlans(doc, "EST", DAY).plans[0]!;
     assert.equal(fillerOf(first), "Fred Free");
     const applied = applyCoverPlan(doc, first, DAY);
     assert.ok(applied.ok, applied.problem ?? "applies");
-    for (const p of coverPlans(applied.doc, "MOL", DAY, 8).plans) for (const m of p.moves.filter((x) => x.name === "Fred Free")) assert.equal(m.from, "EST", "Fred is placed at Estacada: any move starts there, never from home");
+    for (const p of coverPlans(applied.doc, "MOL", DAY, 8).plans) assert.ok(!p.moves.some((x) => x.name === "Fred Free"), "Fred is the only pharmacist at Estacada now");
   });
 
   it("a stale assignment on another day is not the origin: the leg is from home", () => {
@@ -59,12 +59,14 @@ describe("Grok's robust list, adopted parts", () => {
     assert.equal(m.minutes, 25, "West Linn to Estacada (estimated: the closed test store has no measured row), not John Day to Estacada");
   });
 
-  it("return trip: a pharmacist working at Molalla is moved from Molalla (33 minutes), and Molalla is shown as opened", () => {
-    const doc = scenario(["EST"], [], []);
+  it("return trip: a pharmacist working at Molalla is moved from Molalla (33 minutes) only when Molalla is backfilled in the same plan", () => {
+    const alone = scenario(["EST"], [], []);
+    assert.ok(!coverPlans(alone, "EST", DAY, 8).plans.some((p) => p.moves.some((m) => m.name === "Local MOL")), "alone at Molalla: not offered, it would leave Molalla bare");
+    const doc = scenario(["EST"], [{ p: person("Sil Spare", "SIL"), at: "SIL" }], []);
     const plan = coverPlans(doc, "EST", DAY, 8).plans.find((p) => p.moves.some((m) => m.name === "Local MOL" && m.to === "EST"));
-    assert.ok(plan, "offered");
+    assert.ok(plan, "offered with a backfill");
     assert.equal(plan!.moves.find((m) => m.name === "Local MOL")!.minutes, 33);
-    assert.deepEqual(plan!.opens, ["MOL"]);
+    assert.deepEqual(plan!.moves.map((m) => m.to).sort(), ["EST", "MOL"]);
   });
 
   it("ferry lookup works in either direction, and the bridge route is not a ferry", () => {
@@ -97,13 +99,13 @@ describe("Grok's robust list, adopted parts", () => {
     assert.equal(fillerOf(coverPlans(farther, "EST", DAY).plans[0]!), "Eli", "add 60 minutes to the float and the winner moves");
   });
 
-  it("a short move beats a long one: 33 minutes opening a store outranks a free float 140 minutes away", () => {
+  it("a long free float is offered, flagged as a long drive; a short move out of a solo store is offered only as a closed chain", () => {
     const doc = scenario(["EST"], [{ p: person("Far Float", "WL", true) }]);
     const slow = { ...doc, driveMinutes: { [driveKey("WL", "EST")]: 140 } };
     const plans = coverPlans(slow, "EST", DAY, 8).plans;
     const ff = plans.findIndex((p) => fillerOf(p) === "Far Float");
     assert.ok(ff === -1 || plans[ff]!.extreme, "a 140-minute float is flagged as a long drive");
-    assert.ok(plans.some((p) => p.opens.length === 1 && !p.extreme), "the short opening move is offered");
+    for (const p of plans.filter((x) => x.moves.some((m) => m.name === "Local MOL"))) assert.ok(p.moves.some((m) => m.to === "MOL"), "Molalla's pharmacist only moves when Molalla is backfilled in the same plan");
   });
 
   it("unavailable dates are already dropped before the search: approved time off, an employment start date, and 'don't suggest' all keep a person out", () => {

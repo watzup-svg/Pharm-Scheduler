@@ -22,8 +22,8 @@ export default async function run() {
     let found = false;
     for (let i = 0; i < 14 && !found; i++) {
       const card = dlg.getByRole("region", { name: "Shorter drives" });
-      // A plan that leaves another store bare is shown too (checked below); this part wants one that fixes the shift outright.
-      if ((await card.count()) && !(await card.locator("li").filter({ hasText: "Use this plan" }).first().innerText().then((t) => /with no pharmacist/.test(t)))) { found = true; break; }
+      // Every plan shown is a closed chain (none leaves another store bare), so any plan card will do.
+      if (await card.count()) { found = true; break; }
       const next = dlg.getByRole("button", { name: /^Next ·/ });
       if (!(await next.count())) break;
       await next.click();

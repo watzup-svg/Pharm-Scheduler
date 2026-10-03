@@ -207,7 +207,7 @@ export type ScheduleState = {
   /** Place several names at once (for "Fill the month"), refusing what typing would refuse. One undo step. */
   placeMany: (list: { store: string; slot: SlotId; day: number; name: string }[]) => number;
   /** Apply a cover plan as one undoable step. Returns "ok", or the reason it was refused (nothing changes then). */
-  applyCoverPlan: (moves: CoverMove[], day: number, opens?: string[]) => string;
+  applyCoverPlan: (moves: CoverMove[], day: number) => string;
   /** Add holidays in one undo step. Ones already there (same date and store) are skipped. Returns how many were added. */
   addHolidays: (list: Holiday[]) => number;
   /** Paste a spreadsheet block. One undo step. Never overwrites. */
@@ -541,8 +541,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     return placed;
   },
 
-  applyCoverPlan: (moves, day, opens) => {
-    const res = applyCoverPlanDoc(get().doc, { moves, opens }, day);
+  applyCoverPlan: (moves, day) => {
+    const res = applyCoverPlanDoc(get().doc, { moves }, day);
     if (!res.ok) return res.problem ?? "That plan can't be applied";
     withUndo(set, get, () => res.doc);
     return "ok";

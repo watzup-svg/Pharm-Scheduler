@@ -1,7 +1,7 @@
 // Fill-suggestion pressure tests (no browser, no AI tokens). Usage: node scripts/pressure/fill.mjs <cases|rules|chains|scale> <level>
-//   cases   Grok's named cases, drive table, mileage and cover-plan unit tests (same at every level)
+//   cases   Grok's named cases, closed-chain tests, drive table, mileage and cover-plan unit tests (same at every level)
 //   rules   many random shifts with holes: every plan checked against the hard rules, mileage math, determinism, read-only
-//   chains  accept the top plan again and again (follow-on holes) until no hole is left or nobody can help: must end, never get worse
+//   chains  accept the top plan again and again until no hole is left or nobody can help: must end, never get worse
 //   scale   a big month (30 / 60 / 120 stores): suggestions must stay inside a time limit and keep the rules
 // One summary line per test (ok/FAIL and the numbers); detail lines start with two spaces and go to the log.
 import { spawnSync } from "node:child_process";
@@ -15,7 +15,7 @@ const note = (m) => { if (fail.length < 15) fail.push(m); };
 const t0 = Date.now();
 
 if (job === "cases") {
-  const files = ["fill-cases", "cover-plan", "drive-table", "mileage", "new-store", "miles-import"].map((f) => `src/lib/schedule/${f}.test.ts`);
+  const files = ["fill-cases", "closed-chains", "cover-plan", "drive-table", "mileage", "new-store", "miles-import"].map((f) => `src/lib/schedule/${f}.test.ts`);
   const r = spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", "--test", ...files], { cwd: root, encoding: "utf8" });
   const out = (r.stdout ?? "") + (r.stderr ?? "");
   console.log(out.split("\n").filter((l) => /^# (tests|pass|fail)|^not ok|^    not ok/.test(l)).map((l) => "  " + l).join("\n"));
@@ -64,7 +64,6 @@ function checkPlans(doc, store, plans, result, tag) {
     if (p.moves.length > MAX_CHAIN) note(`${tag}: ${p.moves.length} moves`);
     if (new Set(p.moves.map((m) => m.name)).size !== p.moves.length) note(`${tag}: a person moves twice`);
     if (!p.moves.some((m) => m.fillsTarget && m.to === store)) note(`${tag}: does not fill the target`);
-    if (p.opens.length > 1) note(`${tag}: opens ${p.opens.length} stores`);
     if (p.longest > MAX_DRIVE) note(`${tag}: drive ${p.longest} over the limit`);
     let paid = 0;
     for (const m of p.moves) {
@@ -74,26 +73,26 @@ function checkPlans(doc, store, plans, result, tag) {
       const home = doc.people.find((x) => x.name === m.name)?.home;
       const tm = home && home !== m.to ? tableFor(doc.stores, home, m.to) : null;
       if (tm && m.mileage.paidMiles !== paidMilesFor(tm.miles)) note(`${tag}: paid miles ${m.mileage.paidMiles} for ${home}-${m.to}, expected ${paidMilesFor(tm.miles)}`);
-      paid += m.mileage.paidMiles ?? 0;
+      paid += m.extra?.paidMiles ?? 0;
     }
-    if (Math.abs(p.paidMiles - paid) > 0.011) note(`${tag}: plan paid miles ${p.paidMiles} != sum ${paid}`);
+    if (Math.abs(p.paidMiles - paid) > 0.011) note(`${tag}: plan extra paid miles ${p.paidMiles} != sum ${paid}`);
     if (p.mileageDollars != null && Math.abs(p.mileageDollars - paid * rateOf(doc)) > 0.05 * p.moves.length) note(`${tag}: dollars ${p.mileageDollars} != ${(paid * rateOf(doc)).toFixed(2)}`);
     const res = applyCoverPlan(doc, p, DAY);
     if (!res.ok) { note(`${tag}: plan does not apply: ${res.problem}`); continue; }
     const after = evaluate(res.doc);
-    if (after.holes > before.holes) note(`${tag}: holes ${before.holes} -> ${after.holes}`);
+    if (after.holes >= before.holes) note(`${tag}: holes ${before.holes} -> ${after.holes} (a plan must lower the empty count)`);
     if (after.doubles > before.doubles || after.unlicensed > before.unlicensed || after.closed > before.closed) note(`${tag}: made the day worse`);
     if (!RPH_SLOTS.some((sl) => getCell(res.doc.grid, store, sl, DAY).trim())) note(`${tag}: target still empty`);
     const opened = bareNow(res.doc).filter((c) => !wasBare.has(c));
-    if (opened.some((c) => !p.opens.includes(c))) note(`${tag}: left ${opened.join(",")} bare without saying so`);
-    if (p.opens.length && opened.length !== p.opens.length) note(`${tag}: says it opens ${p.opens} but opened ${opened}`);
+    if (opened.length) note(`${tag}: left ${opened.join(",")} bare (plans must be closed chains)`);
+    if (bareNow(res.doc).length >= wasBare.size) note(`${tag}: empty stores that day ${wasBare.size} -> ${bareNow(res.doc).length}`);
   }
 }
 
 if (job === "rules") {
   const N = pick([50, 500, 2000]);
   const rnd = rng(31);
-  let holes = 0, plansSeen = 0, closeCards = 0, openers = 0, slowest = 0;
+  let holes = 0, plansSeen = 0, closeCards = 0, slowest = 0;
   for (let i = 0; i < N && fail.length < 15; i++) {
     const doc = shift(rnd, HI_SCHOOL_STORES.map((s) => ({ ...s })), { bare: 0.1 + rnd() * 0.3, two: rnd() * 0.4, free: Math.floor(rnd() * 6) });
     const snap = JSON.stringify(doc);
@@ -104,19 +103,18 @@ if (job === "rules") {
       slowest = Math.max(slowest, Date.now() - t);
       plansSeen += r.plans.length;
       if (r.leaveClosed) closeCards++;
-      openers += r.plans.filter((p) => p.opens.length).length;
       checkPlans(doc, code, r.plans, r, `case ${i} ${code}`);
       if (holes % 4 === 0 && JSON.stringify(coverPlans(doc, code, DAY)) !== JSON.stringify(r)) note(`case ${i} ${code}: not the same twice`);
     }
     if (JSON.stringify(doc) !== snap) note(`case ${i}: suggestions changed the schedule`);
   }
-  console.log(`  ${N} shifts, ${holes} holes, ${plansSeen} plans, ${openers} that open a hole, ${closeCards} leave-closed cards, slowest ${slowest} ms`);
+  console.log(`  ${N} shifts, ${holes} holes, ${plansSeen} plans, ${closeCards} leave-closed cards, slowest ${slowest} ms`);
   if (slowest > pick([3000, 5000, 8000])) note(`one suggestion took ${slowest} ms`);
 }
 
 if (job === "chains") {
-  // Accept the top plan again and again, as the district manager would: follow-on holes get their own suggestions. Moving a gap
-  // from store to store can go round in circles, so the simulated manager gives each shift a few accepted plans (6) and then, or
+  // Accept the top plan again and again, as the district manager would. Every plan is a closed chain, so each one lowers the
+  // empty count and circles should be zero; the simulated manager gives each shift a few accepted plans (6) and then, or
   // as soon as a state repeats or a hole has no plan, closes what is left. Rules: holes never go up, every plan applies,
   // nothing crashes, and the number of circles is reported.
   const N = pick([20, 120, 500]);
