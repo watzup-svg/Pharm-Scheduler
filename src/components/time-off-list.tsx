@@ -6,7 +6,6 @@ import { announce } from "@/components/undo";
 import { useShowOnSchedule } from "@/components/use-show-on-schedule";
 import { useStoreTag } from "@/components/use-store-tag";
 import { Button } from "@/components/ui/button";
-import { HoldButton } from "@/components/ui/hold-button";
 import { isoDate } from "@/lib/schedule/calendar";
 import { namePlacements } from "@/lib/schedule/coverage";
 import { formatDateList } from "@/lib/schedule/pto";
@@ -77,18 +76,19 @@ export function EntryList({ status, day, onEdit }: { status: "approved" | "decli
           <Button type="button" variant="ghost" size="icon" aria-label={`Edit ${e.t.name}, ${formatDateList(e.dates)}`} onClick={() => onEdit({ editIndex: e.index })}>
             <Pencil />
           </Button>
-          <HoldButton
+          <Button
+            type="button"
             variant="ghost"
             size="icon"
-            aria-label={`Remove ${e.t.name}, ${formatDateList(e.dates)}. Press and hold.`}
-            title="Press and hold to remove"
-            onHold={() => {
+            aria-label={`Remove ${e.t.name}, ${formatDateList(e.dates)}`}
+            title="Remove"
+            onClick={() => {
               remove(e.index);
               announce(`Removed ${e.t.name}, ${formatDateList(e.dates)}`);
             }}
           >
             <Trash2 />
-          </HoldButton>
+          </Button>
         </div>
         {hits ? (
           <p className="flex basis-full flex-wrap items-center gap-2 text-sm font-medium text-illegal">

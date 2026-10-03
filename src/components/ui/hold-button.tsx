@@ -5,7 +5,8 @@ import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 
 /**
- * A button that has to be pressed and held before it acts. For a one-time decision that has no confirmation question after it.
+ * A button that has to be pressed and held before it acts. House rule: only for an action that CANNOT be undone (no Undo toast, no Ctrl+Z,
+ * no Reopen). Anything undoable is a plain Button that calls announce(). Mark each use with `// no-undo: <what is lost>`; house-rules.test.ts fails otherwise.
  * While held, a fill sweeps across the button; letting go early cancels and says so.
  * Keyboard: hold Space or Enter. Assistive technology that activates the button directly (no press) acts at once, since it
  * cannot hold.

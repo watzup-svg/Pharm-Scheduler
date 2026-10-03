@@ -302,6 +302,17 @@ describe("schedule store: newer actions", () => {
     assert.equal(s.getState().doc.timeOff[i]!.status, undefined);
   });
 
+  it("approving several safe requests is one undo step", () => {
+    const s = useScheduleStore;
+    const name = s.getState().doc.people[0]!.name;
+    for (const d of ["2026-08-10", "2026-08-11"]) s.getState().addTimeOff({ name, dates: [d], from: d, to: d, note: "", status: "requested", requestedOn: "2026-09-01" });
+    const idx = [s.getState().doc.timeOff.length - 2, s.getState().doc.timeOff.length - 1];
+    const n = s.getState().approveSafeTimeOff(idx);
+    assert.equal(n, 2);
+    s.getState().undo();
+    assert.deepEqual(idx.map((i) => s.getState().doc.timeOff[i]!.status), ["requested", "requested"]);
+  });
+
   it("approving and declining a request only changes its status", () => {
     const s = useScheduleStore;
     s.getState().addTimeOff({ name: s.getState().doc.people[0]!.name, dates: ["2026-09-08"], from: "2026-09-08", to: "2026-09-08", note: "", status: "requested", requestedOn: "2026-09-01" });

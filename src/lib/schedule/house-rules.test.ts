@@ -23,4 +23,15 @@ describe("house rules", () => {
     const bad = files(COMPONENTS).filter((f) => /\bsetCellValue\b/.test(fs.readFileSync(f, "utf8"))).map((f) => path.relative(COMPONENTS, f));
     assert.deepEqual(bad, [], `these write the grid directly: ${bad.join(", ")}`);
   });
+
+  it("press-and-hold is only for an action that cannot be undone, and says so", () => {
+    // A <HoldButton> must have `// no-undo: <what is lost>` on one of the 3 lines above it. Anything undoable is a plain Button plus announce() (Undo toast).
+    const bad = files(COMPONENTS)
+      .filter((f) => !f.endsWith("hold-button.tsx"))
+      .flatMap((f) => {
+        const ls = lines(f);
+        return ls.filter((l, i) => /<HoldButton\b/.test(l.text) && !ls.slice(Math.max(0, i - 3), i).some((p) => /no-undo:/.test(p.text))).map((l) => `${path.relative(COMPONENTS, f)}:${l.n}`);
+      });
+    assert.deepEqual(bad, [], `these hold buttons are not marked non-undoable (use a Button and announce() instead, or add "// no-undo: ..."): ${bad.join(", ")}`);
+  });
 });

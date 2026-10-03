@@ -10,6 +10,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - **`src/lib/schedule/` is pure**: no React, no browser. Rules, wording of problems, print model, file format all live here and are tested without a browser.
 - **Hard problems block printing** (open store-day with nobody, same person at two stores one day, name on a closed day, not licensed in that state). One answer: `gate.ts`.
 - **Letters are a store's identity in the file; the display name is `storeTag` / `useStoreTag`** (number or letters, the district's choice). Never print `store.code` on screen. `house-rules.test.ts` fails if a screen does.
+- **Press-and-hold only when there is no undo.** An action that can be undone (a store/person/holiday/time-off removal, clearing a day, fills, leave-as-is, approvals) is a plain click that calls `announce()` (Undo toast, also Ctrl+Z). `HoldButton` (`components/ui/hold-button.tsx`) is only for an action nothing can undo, and each use carries a `// no-undo: <what is lost>` comment. `house-rules.test.ts` fails otherwise. Today no screen needs one.
 - Don't change rules unless asked.
 
 ## Map

@@ -6,7 +6,6 @@ import { dayDomId, dayView } from "@/components/day-view";
 import { CloseStoreMenu } from "@/components/close-menu";
 import { Mark, reasonIcon } from "@/components/icons";
 import { okToPlace } from "@/components/usual-off";
-import { HoldButton } from "@/components/ui/hold-button";
 import { whyOut } from "@/lib/schedule/why-out";
 import { DoubleCalendars } from "@/components/double-calendars";
 import { acceptedItems } from "@/lib/schedule/accept";
@@ -277,27 +276,29 @@ function SheetBody() {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {step.kind === "double"
                     ? step.stores.map((code) => (
-                        <HoldButton
+                        <Button
                           key={code}
+                          type="button"
                           size="sm"
                           variant="secondary"
                           className="h-auto min-h-11 py-2 text-left whitespace-normal"
-                          onHold={() => {
+                          onClick={() => {
                             keepDouble(step.names[0]!, day, code);
                             announce(`${step.names[0]} kept at ${storeLabel(doc, code)}, ${dateLine}`);
                             finish();
                           }}
                         >
                           {keepDoubleLabel(doc, step.names[0]!, day, code)}
-                        </HoldButton>
+                        </Button>
                       ))
                     : null}
                   {step.kind === "hole" ? <CloseStoreMenu store={store} day={day} variant="secondary" onDone={finish} /> : null}
                   {step.kind !== "license" ? (
-                    <HoldButton
+                    <Button
+                      type="button"
                       size="sm"
                       variant="secondary"
-                      onHold={() => {
+                      onClick={() => {
                         acceptProblems([acceptKeyFor(step, store, day)]);
                         announce("Left as is. It no longer blocks printing.");
                         finish();
@@ -305,7 +306,7 @@ function SheetBody() {
                     >
                       <Check />
                       Leave as is
-                    </HoldButton>
+                    </Button>
                   ) : null}
                 </div>
               </div>

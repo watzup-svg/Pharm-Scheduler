@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { AlarmMark } from "@/components/marks";
 import { Count, HeroLead, PageStrip } from "@/components/page-strip";
 import { PaperStack } from "@/components/hero-graphics";
-import { HoldButton } from "@/components/ui/hold-button";
 import { Mark } from "@/components/icons";
 import { usePrintStatus } from "@/components/use-print-status";
 import { Label } from "@/components/ui/label";
@@ -273,15 +272,9 @@ export function PrintScreen() {
               </Button>
             ) : null}
             {blocked && leavable.length ? (
-              leavable.some((st) => st.kind === "hole") ? (
-                <Button type="button" variant="lightGhost" onClick={() => void leaveAllAsIs()}>
-                  Leave {leavable.length} as is
-                </Button>
-              ) : (
-                <HoldButton variant="lightGhost" holdMs={900} onHold={() => void leaveAllAsIs()}>
-                  Leave {leavable.length} as is
-                </HoldButton>
-              )
+              <Button type="button" variant="lightGhost" onClick={() => void leaveAllAsIs()}>
+                Leave {leavable.length} as is
+              </Button>
             ) : null}
             <span data-tip={blocked ? `Fix or leave the ${steps.length} problems first | Then the pack can print` : `Print the whole pack | ${pageTotal} pages`} className="inline-flex">
               <Button type="button" variant={blocked ? "lightGhost" : "light"} disabled={blocked || !packModels.length} onClick={() => runPack("print")}>
