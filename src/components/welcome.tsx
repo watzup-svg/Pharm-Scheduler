@@ -32,8 +32,9 @@ export function Welcome({ open, onClose }: { open: boolean; onClose: () => void 
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? done() : undefined)}>
       <DialogContent sheet title="Start a schedule" description="Choose one. You can change your mind later from the File menu.">
-        <div className="mb-3 flex items-center gap-3">
+        <div className="mb-3 flex flex-col items-start gap-1.5">
           <BrandBadge className="h-16" />
+          <p className="text-sm text-muted">Month scheduler for Hi-School Pharmacy</p>
         </div>
         <div className="flex flex-col gap-2">
           <Button
