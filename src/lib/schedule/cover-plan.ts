@@ -10,8 +10,12 @@
 //     more willing to drive, so their drive costs less. Drives over 90 minutes are "extreme" and cost extra and rank last; over 150 minutes (2.5 hours) are not offered.
 //   * The lowest-total-cost way to give every open store someone is found exactly (the assignment problem, Hungarian method).
 //     When someone alone at a store moves, that store needs a replacement, so the answer can be a short chain of moves.
-//   * A second pharmacist at a store can move to a store with nobody. A plan may leave ONE other store bare: it is labelled, ranked
-//     with a small penalty, and that store gets its own suggestions (or the district manager closes it).
+//   * A plan is a CLOSED chain of 1 to MAX_CHAIN moves: the first person fills the hole, each later person fills the store the previous
+//     one left, and the chain stops only when nobody left a covered store empty (the last mover was free that day, or was a second
+//     pharmacist and the first stays, or the next move filled the store they left). A plan that fills one store by leaving another
+//     bare is not a suggestion, and neither is a plan that does not lower the number of empty stores that day. There is no partial
+//     chain and no "fix the new hole next". When no closed chain exists the answer is "nobody can cover it without uncovering a
+//     store"; closing the store is the district manager's own button on the hole, never a plan.
 import { isoDate, weekdaySun0 } from "./calendar.ts";
 import { choicesFor, offerable, type HoleChoice } from "./dashboard.ts";
 import { effectiveTimeOff } from "./employment.ts";
@@ -37,13 +41,9 @@ const UNCOVERED = 5e5;
 /** A store that has someone now must never be left bare to fill another: far costlier than any move. */
 const MUST_STAY_COVERED = 2e6;
 const CHANGE = 20;
-/** A plan that leaves one other store with no pharmacist (to be fixed next, or closed) ranks after cleaner plans by this much. */
-const OPENS_HOLE = 60;
 /** A month with more stores than this (the pressure tests use 120) searches only the nearest few; an ordinary month is never cut. */
 const SCOPE_AT = 30;
 const SCOPE_KEEP = 12;
-/** Inside the solver, what leaving the one allowed store bare costs, so it takes that store's only pharmacist when the move is short. */
-const OPEN_SLACK = 10;
 const FLOAT_WILLING = 0.6;
 /** One dollar of mileage pay counts like this many cost points (about a minute of extra drive). */
 export const MILEAGE_WEIGHT = 1;
@@ -83,7 +83,6 @@ export type CoverPlan = {
   /** True when that longest drive is itself an estimate (a short estimated leg does not make a measured long one a guess). */
   longestEstimated: boolean;
   /** Stores this plan leaves with no pharmacist (at most one). The next hole gets its own suggestions, or the district manager closes it. */
-  opens: string[];
   /** Any drive over LONG_DRIVE. */
   extreme: boolean;
   /** Any drive time that is a guess rather than one the manager set. */
@@ -244,7 +243,7 @@ function edgeUncached(ctx: Ctx, name: string, store: string): Edge {
 type Solve = { assigned: Map<string, string | null>; moves: Map<string, Omit<CoverMove, "fillsTarget">> };
 
 /** Cover every open store with the lowest total cost. `ban` forbids specific person-to-store moves; `rows` limits which stores must be covered. */
-function solve(ctx: Ctx, target: string, rows: string[], ban: Set<string>, openOK?: string): Solve {
+function solve(ctx: Ctx, target: string, rows: string[], ban: Set<string>): Solve {
   const n = rows.length;
   const cols = ctx.people.length + n;
   const matrix: number[][] = rows.map((store) => {
@@ -253,7 +252,7 @@ function solve(ctx: Ctx, target: string, rows: string[], ban: Set<string>, openO
       return edge(ctx, name, store).cost;
     });
     const wasCovered = RPH_SLOTS.some((sl) => getCell(ctx.doc.grid, store, sl, ctx.day).trim());
-    for (let k = 0; k < n; k++) row.push(k === rows.indexOf(store) ? (store === target ? UNCOVERED * 1.2 : store === openOK ? OPEN_SLACK : wasCovered ? MUST_STAY_COVERED : UNCOVERED) : INF);
+    for (let k = 0; k < n; k++) row.push(k === rows.indexOf(store) ? (store === target ? UNCOVERED * 1.2 : wasCovered ? MUST_STAY_COVERED : UNCOVERED) : INF);
     return row;
   });
   const pick = assign(matrix, n, cols);
@@ -305,7 +304,6 @@ function describe(ctx: Ctx, moves: CoverMove[], cost: number): CoverPlan {
     longestEstimated: (moves.find((m) => (m.minutes ?? 60) === Math.max(0, ...minutes)) ?? moves[0])?.estimated ?? false,
     extreme: minutes.some((x) => x > LONG_DRIVE),
     estimated: moves.some((m) => m.estimated),
-    opens: [],
     unknown: moves.some((m) => m.minutes == null),
     paidMiles: Math.round(moves.reduce((a, m) => a + (m.extra.paidMiles ?? 0), 0) * 100) / 100,
     mileageDollars: moves.some((m) => m.extra.dollars == null) ? null : Math.round(moves.reduce((a, m) => a + (m.extra.dollars ?? 0), 0) * 100) / 100,
@@ -315,7 +313,7 @@ function describe(ctx: Ctx, moves: CoverMove[], cost: number): CoverPlan {
 }
 
 /** Does applying these moves leave the day worse? Used as a safety net: holes and double-ups may only go down. */
-export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves"> & { opens?: string[] }, day: number, quick = false): { doc: ScheduleDoc; ok: boolean; problem?: string; newlyBare?: string[] } {
+export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves">, day: number, quick = false): { doc: ScheduleDoc; ok: boolean; problem?: string; newlyBare?: string[] } {
   let next = doc;
   for (const m of plan.moves) if (!doc.people.some((p) => p.name === m.name && isRphRole(p.role))) return { doc, ok: false, problem: `${m.name} is not a pharmacist on this month` };
   for (const m of plan.moves) {
@@ -338,9 +336,10 @@ export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves"> 
   const bare = (d: ScheduleDoc) => d.stores.filter((s) => isOpenDay(d, s.code, day) && !RPH_SLOTS.some((sl) => getCell(d.grid, s.code, sl, day).trim())).map((s) => s.code);
   const wasBare = new Set(bare(doc));
   const opened = bare(next).filter((c) => !wasBare.has(c));
-  // A plan may leave the one store it says it leaves (it then gets its own suggestions, or is closed); never any other.
-  const surprise = opened.find((c) => !(plan.opens ?? []).includes(c));
-  if (surprise) return { doc, ok: false, problem: `That would leave ${doc.stores.find((s) => s.code === surprise)?.name ?? surprise} with no pharmacist` };
+  // A plan never leaves a store bare, and it must lower the number of empty stores that day (a plan that changes nothing, or only
+  // moves the gap, is rejected). The first check names the store; the second catches a plan that fills nothing.
+  if (opened.length) return { doc, ok: false, problem: `That would leave ${doc.stores.find((s) => s.code === opened[0])?.name ?? opened[0]} with no pharmacist` };
+  if (bare(next).length >= wasBare.size) return { doc, ok: false, problem: "That would not reduce the empty shifts" };
   if (quick) return { doc: next, ok: true, newlyBare: opened };
   const before = evaluate(doc);
   const after = evaluate(next);
@@ -350,7 +349,7 @@ export function applyCoverPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves"> 
   return { doc: next, ok: true, newlyBare: opened };
 }
 
-/** Order of preference before cost: long drives last. A plan that leaves one store bare is allowed and competes on cost (it already carries the OPENS_HOLE penalty); it just creates another issue for the manager. */
+/** Order of preference before cost: long drives (over LONG_DRIVE minutes) last. Every plan here is a closed chain. */
 const tier = (p: CoverPlan) => (p.extreme ? 1 : 0);
 
 /**
@@ -369,65 +368,43 @@ export function coverPlans(doc: ScheduleDoc, store: string, day: number, max = 3
   const holesNow = open.filter((c) => !RPH_SLOTS.some((sl) => getCell(doc.grid, c, sl, day).trim()));
   // Two views: the whole day (every empty shift competes for the same people) and this store alone.
   const views: string[][] = [open, open.filter((c) => c === store || !holesNow.includes(c))];
-  // Stores with exactly one pharmacist whose pharmacist could reach this store: taking them leaves a new hole, which is allowed
-  // for ONE store at a time and ranked after plans that leave none.
-  const soloDonors = open
-    .filter((c) => c !== store)
-    .map((c) => {
-      const names = RPH_SLOTS.map((sl) => getCell(doc.grid, c, sl, day).trim()).filter(Boolean);
-      return { c, cost: names.length === 1 ? edge(ctx, names[0]!, store).cost : INF };
-    })
-    .filter((x) => x.cost < INF)
-    .sort((a, b) => a.cost - b.cost || a.c.localeCompare(b.c))
-    .slice(0, 6) // the nearest few: a distant store's only pharmacist is never a sensible way to move a gap
-    .map((x) => x.c);
-
   const found = new Map<string, CoverPlan>();
   const edgeCost = (c: Ctx, m: CoverMove) => edge(c, m.name, m.to).cost;
-  const consider = (rows: string[], ban: Set<string>, openOK?: string) => {
-    const s = solve(ctx, store, rows, ban, openOK);
+  const consider = (rows: string[], ban: Set<string>) => {
+    const s = solve(ctx, store, rows, ban);
     if (!s.assigned.get(store)) return null;
     const chain = chainTo(ctx, s, store);
     if (!chain || chain.length > MAX_CHAIN) return null;
     const plan = describe(ctx, chain, chain.reduce((a, m) => a + edgeCost(ctx, m), 0));
-    const strict = applyCoverPlan(doc, plan, day, true);
-    if (strict.ok) {
-      if (!found.has(plan.id)) found.set(plan.id, plan);
-      return plan;
-    }
-    if (!openOK) return null;
-    const loose = applyCoverPlan(doc, { moves: plan.moves, opens: [openOK] }, day, true);
-    if (!loose.ok || loose.newlyBare?.length !== 1 || loose.newlyBare[0] !== openOK) return null;
-    plan.opens = [openOK];
-    plan.cost += OPENS_HOLE;
+    // Closed or nothing: a chain that leaves any covered store empty, or does not lower the empty count, is dropped here.
+    if (!applyCoverPlan(doc, plan, day, true).ok) return null;
     if (!found.has(plan.id)) found.set(plan.id, plan);
     return plan;
   };
 
   // Different ways to do it: first rule out each successive person who fills the target (so every candidate filler gets a turn,
   // cheapest first), then forbid each move of the best plan in turn.
-  const expand = (rows: string[], openOK?: string) => {
+  const expand = (rows: string[]) => {
     const bans = new Set<string>();
     let best: CoverPlan | null = null;
     for (let i = 0; i < 8; i++) {
-      const p = consider(rows, bans, openOK);
+      const p = consider(rows, bans);
       if (!p) break;
       best ??= p;
       const filler = p.moves.find((m) => m.fillsTarget);
       if (!filler) break;
       bans.add(`${filler.name}|${store}`);
     }
-    if (best) for (const m of best.moves) consider(rows, new Set([`${m.name}|${m.to}`]), openOK);
+    if (best) for (const m of best.moves) consider(rows, new Set([`${m.name}|${m.to}`]));
   };
   for (const rows of views) {
     expand(rows);
-    for (const donor of soloDonors) expand(rows, donor);
   }
   // The full "does this leave the day worse" check (a whole-month evaluation) runs only on the plans that would be shown.
   const plans: CoverPlan[] = [];
   for (const p of [...found.values()].sort((a, b) => tier(a) - tier(b) || a.cost - b.cost || a.id.localeCompare(b.id))) {
     if (plans.length >= max) break;
-    if (applyCoverPlan(doc, { moves: p.moves, opens: p.opens }, day).ok) plans.push(p);
+    if (applyCoverPlan(doc, p, day).ok) plans.push(p);
   }
   return { plans, reason: plans.length ? "ok" : "nobody", leaveClosed: plans.length === 0 };
 }
