@@ -70,6 +70,21 @@ export function ListTab({ onEdit }: { onEdit: (seed: AddSeed) => void }) {
         </p>
         <StatusPill status={e.status} />
         <div className="ml-auto flex items-center">
+          {e.status === "approved" ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              data-tip="Back to Requests | Stops counting as time off. Nobody already placed is moved"
+              aria-label={`Undo approval for ${e.t.name}, ${formatDateList(e.dates)}`}
+              onClick={() => {
+                setStatus(e.index, "requested");
+                announce(`${e.t.name}, ${formatDateList(e.dates)} is back on Requests.`);
+              }}
+            >
+              Undo approval
+            </Button>
+          ) : null}
           {e.status === "declined" ? (
             <Button type="button" variant="ghost" size="sm" onClick={() => setStatus(e.index, "requested")}>
               Reopen

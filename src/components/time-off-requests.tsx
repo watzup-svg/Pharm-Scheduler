@@ -1,14 +1,15 @@
 import { Check } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AlarmMark } from "@/components/marks";
 import { Mark } from "@/components/icons";
 import { monthName } from "@/lib/schedule/calendar";
 import { useStoreTag } from "@/components/use-store-tag";
 import { MonthStrip } from "@/components/time-off-parts";
-import { announce } from "@/components/undo";
+import { announce, announceApproval } from "@/components/undo";
 import { useShowOnSchedule } from "@/components/use-show-on-schedule";
 import { Button } from "@/components/ui/button";
 import { HoldButton } from "@/components/ui/hold-button";
+import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/empty-state";
 import { requestHints, safeToApprove, timeOffImpact } from "@/lib/schedule/impact";
 import { formatDateList } from "@/lib/schedule/pto";
@@ -33,7 +34,7 @@ export function RequestsTab() {
   if (!rows.length) {
     return (
       <div className="flex flex-col gap-3">
-        <EmptyState kind="timeoff" title="No requests waiting" hint="When someone asks for time off, add it as a request. It waits here until you approve or decline it, and changes nothing on the schedule meanwhile." />
+        <EmptyState kind="timeoff" title="No requests waiting" hint="Add time off with “Ask me first” and it waits here until you approve or decline it. It changes nothing on the schedule meanwhile." />
         {olderNote}
       </div>
     );
@@ -53,6 +54,7 @@ export function RequestsTab() {
   }
   return (
     <div className="flex flex-col gap-3">
+      <p className="text-sm text-muted">These are waiting for a yes or a no.</p>
       {safeNow.length > 1 ? (
         <HoldButton variant="secondary" className="self-start" holdMs={900} onHold={approveSafe}>
           <Check />
@@ -82,10 +84,11 @@ function RequestCard({ entry, loads }: { entry: TimeOffEntry; loads: ReturnType<
   const alsoAsked = useMemo(() => overlapFor(doc, t.name, dates, index).filter((o) => o.status === "requested"), [doc, t.name, key, index]); // eslint-disable-line react-hooks/exhaustive-deps
   const notice = noticeDays(entry);
   const label = `${t.name}, ${formatDateList(dates)}`;
+  const [confirmDecline, setConfirmDecline] = useState(false);
 
   function approve(thenFind: boolean) {
     setStatus(index, "approved");
-    announce(`Approved ${label}.${holes.length ? ` Leaves ${holes.length} ${holes.length === 1 ? "shift" : "shifts"} with no coverage.` : ""}`);
+    announceApproval(`Approved ${label}.${holes.length ? ` Leaves ${holes.length} ${holes.length === 1 ? "shift" : "shifts"} with no coverage.` : ""}`, index);
     if (thenFind && holes[0]) showOnSchedule({ store: holes[0].store, slot: holes[0].slot, day: holes[0].day }, true);
   }
 
@@ -134,37 +137,45 @@ function RequestCard({ entry, loads }: { entry: TimeOffEntry; loads: ReturnType<
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <Button type="button" onClick={() => approve(false)}>
+          <Check />
+          Approve
+        </Button>
         {holes.length ? (
-          <>
-            <Button type="button" aria-label="Approve and find cover" onClick={() => approve(true)}>
-              <Check />
-              Approve
-            </Button>
-            <HoldButton variant="ghost" aria-label="Approve anyway" onHold={() => approve(false)}>
-              Approve anyway
-            </HoldButton>
-          </>
-        ) : (
-          <Button type="button" onClick={() => approve(false)}>
-            <Check />
-            Approve
+          <Button type="button" variant="secondary" data-tip="Approves it, then opens the first day that would be left empty" onClick={() => approve(true)}>
+            Find cover
           </Button>
-        )}
-        <HoldButton
-          variant="ghost"
-          onHold={() => {
-            setStatus(index, "declined");
-            announce(`Declined ${label}`);
-          }}
-        >
+        ) : null}
+        <Button type="button" variant="ghost" onClick={() => setConfirmDecline(true)}>
           Decline
-        </HoldButton>
+        </Button>
         {impact[0] ? (
           <Button type="button" variant="ghost" onClick={() => showOnSchedule({ store: impact[0]!.store, slot: impact[0]!.slot, day: impact[0]!.day })}>
             Show
           </Button>
         ) : null}
       </div>
+      <Dialog open={confirmDecline} onOpenChange={setConfirmDecline}>
+        <DialogContent title={`Decline ${t.name}?`} description={`${formatDateList(dates)}. It moves to Declined in the List, and you can reopen it there.`}>
+          <div className="mt-4 flex justify-end gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                Keep waiting
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              onClick={() => {
+                setConfirmDecline(false);
+                setStatus(index, "declined");
+                announce(`Declined ${label}`);
+              }}
+            >
+              Decline
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </li>
   );
 }

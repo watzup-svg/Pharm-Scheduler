@@ -5,6 +5,9 @@ import { AUTOSAVE_KEY } from "../lib/schedule/file.ts";
 import { getCell, setCellValue } from "../lib/schedule/grid.ts";
 import { evaluate, issueKey } from "../lib/schedule/rules.ts";
 import { createSample, SAMPLE_FILE_NAME } from "../lib/schedule/sample.ts";
+import { isoDate } from "../lib/schedule/calendar.ts";
+import { namePlacements } from "../lib/schedule/coverage.ts";
+import { entriesOf, summarize } from "../lib/schedule/timeoff-view.ts";
 import { getPatternCell } from "../lib/schedule/stamp.ts";
 import { useScheduleStore } from "./schedule-store.ts";
 
@@ -296,6 +299,38 @@ describe("schedule store: newer actions", () => {
     assert.equal(s.getState().doc.timeOff[i]!.status, undefined);
     s.getState().setTimeOffStatus(i, "declined");
     assert.equal(s.getState().doc.timeOff[i]!.status, "declined");
+  });
+
+  it("Undo approval returns an approved entry to Requests, stops it counting, and moves nobody", () => {
+    const s = useScheduleStore;
+    const doc0 = s.getState().doc;
+    const placed = doc0.people.map((p) => ({ p, hits: namePlacements(doc0, p.name) })).find((x) => x.hits.length)!;
+    const day = placed.hits[0]!.day;
+    const date = isoDate(doc0.year, doc0.month, day);
+    s.getState().addTimeOff({ name: placed.p.name, dates: [date], from: date, to: date, note: "", requestedOn: date });
+    const i = s.getState().doc.timeOff.length - 1;
+    assert.ok(summarize(s.getState().doc).stillScheduled >= 1, "approved time off flags the placed shift");
+    assert.equal(summarize(s.getState().doc).waiting, 0);
+    const gridBefore = JSON.stringify(s.getState().doc.grid);
+    s.getState().setTimeOffStatus(i, "requested");
+    const d = s.getState().doc;
+    assert.equal(d.timeOff[i]!.status, "requested");
+    assert.equal(summarize(d).stillScheduled, 0, "no longer counts, so the warning clears");
+    assert.equal(summarize(d).waiting, 1, "it is back on Requests");
+    assert.equal(JSON.stringify(d.grid), gridBefore, "nobody is moved");
+    assert.equal(d.timeOff.length, i + 1, "not removed");
+  });
+
+  it("Sick is recorded as approved and appears in the time off list", () => {
+    const s = useScheduleStore;
+    const doc0 = s.getState().doc;
+    const placed = doc0.people.map((p) => ({ p, hits: namePlacements(doc0, p.name) })).find((x) => x.hits.length)!;
+    s.getState().callInSick(placed.p.name, [placed.hits[0]!.day]);
+    const e = entriesOf(s.getState().doc).find((x) => x.t.name === placed.p.name && /sick/i.test(x.t.note));
+    assert.ok(e, "listed");
+    assert.equal(e!.status, "approved");
+    s.getState().setTimeOffStatus(e!.index, "requested");
+    assert.equal(entriesOf(s.getState().doc).find((x) => x.index === e!.index)!.status, "requested");
   });
 
   it("automatic archive copies never keep the sample or practice month", () => {

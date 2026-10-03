@@ -2,6 +2,12 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Time off: clearer approval, and Undo approval
+- Requests: one line says "These are waiting for a yes or a no." Approve is a plain one-click button and stays on the page; its toast offers Undo approval for about 6 seconds. Find cover appears only when approving would leave a store empty (it approves, then opens that day). Decline asks first. "Approve anyway" is gone. The header count reads "To approve".
+- Add drawer: the choices are now "Put it on the schedule" (default) and "Ask me first". Sick is still approved straight away, and the Someone's out button says "Records sick as approved."
+- List: approved rows (Sick too) have Undo approval next to Edit. It sets the entry back to requested: it returns to Requests, stops counting as time off, and nobody already placed is moved. Remove is still the hold. No new status.
+- Checked: unit tests for Undo approval and Sick in the list, browser group for Approve, Undo approval, Decline confirm, Sick row. Not checked: real touch, iOS Safari.
+
 ## Store tag note lists the pharmacists
 - Right-clicking a store tag in the header's day strip now also lists who is scheduled there that day, one name per row in day-panel order, or "No one scheduled" for an open store with nobody. Display only. Checked in Chromium (e2e header links, hover rules); WebKit and touch not checked.
 
