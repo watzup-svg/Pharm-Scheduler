@@ -5,10 +5,12 @@ const ROUTES = ["", "schedule", "time-off", "holidays", "print", "people", "stor
 // The faint DRAFT watermark on the print preview is decorative on purpose.
 const IGNORE = new Set(["color-contrast:.pointer-events-none"]);
 
-export default async function run() {
+// Slice n of m takes every m-th screen size, so the same checks can run in several groups side by side.
+export default async function run(slice = 0, slices = 1) {
   const browser = await launch();
   const axe = axeSource();
-  for (const size of [{ width: 1366, height: 900 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }, { width: 390, height: 844 }, { width: 320, height: 640 }]) {
+  for (const [i, size] of [{ width: 1366, height: 900 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }, { width: 390, height: 844 }, { width: 320, height: 640 }].entries()) {
+    if (i % slices !== slice) continue;
     for (const route of ROUTES) {
       const { page, errors } = await open(browser, route, size);
       await page.evaluate(axe);

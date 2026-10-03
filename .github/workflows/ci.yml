@@ -44,20 +44,25 @@ jobs:
   webkit:
     runs-on: ubuntu-latest
     continue-on-error: true
+    # Two machines, like the Chromium job. On one runner the groups compete for the same cores (measured: 3 groups at once ran about 1.6x slower each), so splitting across machines is where the time comes back.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/2", "2/2"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run build:trial
-      - name: Browser checks in WebKit
+      - name: Browser checks in WebKit ${{ matrix.shard }}
         run: |
           npx playwright-core install --with-deps webkit
-          BROWSER=webkit npm run e2e -- smoke pages fit dialogs print "phone touch"
+          BROWSER=webkit npm run e2e -- smoke pages fit dialogs print "phone touch" --shard ${{ matrix.shard }}
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: webkit-logs
+          name: webkit-logs-${{ strategy.job-index }}
           path: test-logs/
   sweep:
     runs-on: ubuntu-latest
