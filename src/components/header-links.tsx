@@ -60,8 +60,26 @@ export function HoverLinks() {
       if (cur?.days.length === 1 && cur.days[0] === day && cur.cells.length === 0) return;
       setHover([day]);
     }
+    // The store number at the left of the row under the pointer gets the same box as the date above its column. Set straight
+    // on the label (a data attribute, styled in the grid), so nothing re-renders while the pointer moves.
+    let lit: HTMLElement | null = null;
+    function overRow(e: PointerEvent) {
+      if (e.pointerType === "touch") return;
+      const t = e.target as HTMLElement | null;
+      const store = t?.closest?.<HTMLElement>("[data-cell]")?.dataset.cell?.split("|")[0];
+      const next = store ? document.querySelector<HTMLElement>(`[data-row-store="${CSS.escape(store)}"]`) : null;
+      if (next === lit) return;
+      lit?.removeAttribute("data-row-lit");
+      next?.setAttribute("data-row-lit", "");
+      lit = next;
+    }
     document.addEventListener("pointerover", over);
-    return () => document.removeEventListener("pointerover", over);
+    document.addEventListener("pointerover", overRow);
+    return () => {
+      document.removeEventListener("pointerover", over);
+      document.removeEventListener("pointerover", overRow);
+      lit?.removeAttribute("data-row-lit");
+    };
   }, []);
   if (!hover) return null;
   // Outlines are drawn with a stylesheet so the grid and the calendars don't re-render while the pointer moves.
