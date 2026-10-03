@@ -24,7 +24,7 @@ export function TimeOffScreen() {
   const sum = useMemo(() => summarize(doc, loads), [doc, loads]);
   const saved = useViewStore((s) => s.timeOffTab);
   const setSaved = useViewStore((s) => s.setTimeOffTab);
-  const [tab, setTabState] = useState<Tab>(saved ?? "calendar");
+  const [tab, setTabState] = useState<Tab>(saved ?? (sum.waiting > 0 ? "requests" : "calendar"));
   const [seed, setSeedState] = useState<AddSeed | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const [focusDay, setFocusDay] = useState<number | null>(null);
