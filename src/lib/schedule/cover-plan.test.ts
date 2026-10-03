@@ -128,10 +128,27 @@ describe("cover plans", () => {
     }
   });
 
+  it("a plan row's mileage is the extra over where each person already is, never more than the move's full paid miles", () => {
+    const doc = createDemo();
+    let seen = 0;
+    for (const h of holesOf(doc).slice(0, 6)) {
+      for (const p of coverPlans(doc, h.store, h.day).plans) {
+        for (const m of p.moves) {
+          seen += 1;
+          if (m.extra.paidMiles != null) assert.ok(m.extra.paidMiles >= 0 && m.extra.paidMiles <= (m.mileage.paidMiles ?? 0) + 1e-9);
+          if (m.extra.dollars != null && m.mileage.dollars != null) assert.ok(m.extra.dollars <= m.mileage.dollars + 1e-9);
+        }
+        const sum = p.moves.reduce((a, m) => a + (m.extra.paidMiles ?? 0), 0);
+        assert.ok(Math.abs(p.paidMiles - Math.round(sum * 100) / 100) < 1e-9);
+      }
+    }
+    assert.ok(seen > 0);
+  });
+
   it("refuses a plan that would break the day, and changes nothing", () => {
     const doc = createDemo();
     const h = holesOf(doc)[0]!;
-    const bogus = { moves: [{ name: "Nobody Real", float: false, from: null, origin: null, to: h.store, minutes: 10, miles: 5, estimated: true, mileage: { oneWay: 0, paidMiles: 0, dollars: null, source: "set" as const }, fillsTarget: true }] };
+    const bogus = { moves: [{ name: "Nobody Real", float: false, from: null, origin: null, to: h.store, minutes: 10, miles: 5, estimated: true, mileage: { oneWay: 0, paidMiles: 0, dollars: null, source: "set" as const }, extra: { paidMiles: 0, dollars: null }, fillsTarget: true }] };
     const res = applyCoverPlan(doc, bogus, h.day);
     assert.equal(res.ok, false);
     assert.equal(res.doc, doc);

@@ -50,7 +50,7 @@ describe("plan preview (dry run)", () => {
 
   it("says why when the copy refuses", () => {
     const doc = scenario(["EST"]);
-    const bad = previewPlan(doc, { moves: [{ name: "Nobody Here", float: false, from: null, origin: null, to: "EST", minutes: 10, miles: 1, estimated: false, mileage: { paidMiles: 0, dollars: 0 } as never, fillsTarget: true }], opens: [] }, DAY);
+    const bad = previewPlan(doc, { moves: [{ name: "Nobody Here", float: false, from: null, origin: null, to: "EST", minutes: 10, miles: 1, estimated: false, mileage: { paidMiles: 0, dollars: 0 } as never, extra: { paidMiles: 0, dollars: 0 }, fillsTarget: true }], opens: [] }, DAY);
     assert.equal(bad.ok, false);
     assert.ok(bad.problem);
   });

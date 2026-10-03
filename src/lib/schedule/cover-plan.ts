@@ -62,6 +62,8 @@ export type CoverMove = {
   estimated: boolean;
   /** Mileage pay for working there from their HOME store (not from where they are that day). */
   mileage: Mileage;
+  /** What this move adds over where they are now (paid miles and dollars, never below 0); this is what the plan row shows. Nulls when a distance is unknown. */
+  extra: { paidMiles: number | null; dollars: number | null };
   /** True when this leg crosses the Wahkiakum ferry (the minutes already include the wait). */
   ferry?: boolean;
   /** True for the move that fills the shift the plan was asked about. */
@@ -88,9 +90,9 @@ export type CoverPlan = {
   estimated: boolean;
   /** Any drive with no known time. */
   unknown: boolean;
-  /** Sum of the paid miles (both ways) of all moves; moves with unknown distance count as 0 here and set `mileageUnknown`. */
+  /** Extra paid miles (both ways) the moves add over where each person is now; moves with unknown distance count as 0 here and set `mileageUnknown`. */
   paidMiles: number;
-  /** Mileage dollars of all moves at the entered rate, or null when no rate is entered or a distance is unknown. */
+  /** Extra mileage dollars the moves add, at the entered rate, or null when no rate is entered or a distance is unknown. */
   mileageDollars: number | null;
   /** Any move whose home-store distance is unknown. */
   mileageUnknown: boolean;
@@ -231,9 +233,11 @@ function edgeUncached(ctx: Ctx, name: string, store: string): Edge {
   const rate = rateOf(doc);
   if (mileage.paidMiles == null) cost += 15;
   else cost += Math.max(0, mileage.paidMiles - (now?.paidMiles ?? 0)) * rate * MILEAGE_WEIGHT;
+  const extraMiles = mileage.paidMiles == null ? null : Math.max(0, mileage.paidMiles - (now?.paidMiles ?? 0));
+  const extraDollars = extraMiles == null || mileage.dollars == null ? null : mileage.paidMiles ? Math.round(mileage.dollars * (extraMiles / mileage.paidMiles) * 100) / 100 : 0;
   return {
     cost,
-    move: { name, float, from: at, origin, to: store, minutes, miles: drive?.miles ?? null, estimated: drive?.estimated ?? true, mileage, ...(drive?.ferry ? { ferry: true } : {}) },
+    move: { name, float, from: at, origin, to: store, minutes, miles: drive?.miles ?? null, estimated: drive?.estimated ?? true, mileage, extra: { paidMiles: extraMiles, dollars: extraDollars }, ...(drive?.ferry ? { ferry: true } : {}) },
   };
 }
 
@@ -303,8 +307,8 @@ function describe(ctx: Ctx, moves: CoverMove[], cost: number): CoverPlan {
     estimated: moves.some((m) => m.estimated),
     opens: [],
     unknown: moves.some((m) => m.minutes == null),
-    paidMiles: Math.round(moves.reduce((a, m) => a + (m.mileage.paidMiles ?? 0), 0) * 100) / 100,
-    mileageDollars: moves.some((m) => m.mileage.dollars == null) ? null : Math.round(moves.reduce((a, m) => a + (m.mileage.dollars ?? 0), 0) * 100) / 100,
+    paidMiles: Math.round(moves.reduce((a, m) => a + (m.extra.paidMiles ?? 0), 0) * 100) / 100,
+    mileageDollars: moves.some((m) => m.extra.dollars == null) ? null : Math.round(moves.reduce((a, m) => a + (m.extra.dollars ?? 0), 0) * 100) / 100,
     mileageUnknown: moves.some((m) => m.mileage.paidMiles == null),
     cost,
   };
