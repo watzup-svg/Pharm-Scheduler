@@ -107,16 +107,19 @@ export function EmptyArt({ kind, className }: { kind: ArtKind; className?: strin
   );
 }
 
-/** The hexagon texture behind the dark page headers. Decoration only. */
+/** One faint hexagon behind the instrument at the right of the dark page headers, fading out before it reaches the numbers. Decoration only. */
 export function HexPattern({ className }: { className?: string }) {
   return (
-    <svg aria-hidden className={cn("pointer-events-none absolute inset-0 size-full", className)}>
-      <defs>
-        <pattern id="hexes" width="56" height="48.5" patternUnits="userSpaceOnUse" patternTransform="scale(1.1)">
-          <path d="M14 0h28l14 24.25L42 48.5H14L0 24.25 14 0Z" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#hexes)" />
+    <svg
+      aria-hidden
+      viewBox="0 0 112 97"
+      className={cn(
+        "pointer-events-none absolute bottom-3 left-1/2 h-[15rem] w-auto -translate-x-1/2 sm:bottom-auto sm:left-auto sm:right-0 sm:top-1/2 sm:translate-x-0 sm:-translate-y-1/2",
+        "[mask-image:linear-gradient(to_right,transparent_0%,black_55%)] max-sm:[mask-image:none]",
+        className,
+      )}
+    >
+      <path d="M28 2h56l26 46.5L84 95H28L2 48.5 28 2Z" fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="1.2" />
     </svg>
   );
 }
