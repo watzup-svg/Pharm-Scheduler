@@ -156,9 +156,8 @@ export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: Sch
               opacity={dim && !on ? 0.28 : undefined}
               className={cn("outline-none transition-opacity hover:opacity-80 focus-visible:stroke-white", !inert && "cursor-pointer")}
               fill={p ? "#efd8d2" : closed ? "none" : "#6fb78d"}
-              stroke={on ? "#fff" : closed ? "rgba(255,255,255,0.28)" : "none"}
-              strokeWidth={on ? 2.5 : 1}
-              style={p ? { filter: "drop-shadow(0 0 5px rgba(239,216,210,0.6))" } : undefined}
+              stroke={on ? "#fff" : p ? "#efd8d2" : closed ? "rgba(255,255,255,0.28)" : "none"}
+              strokeWidth={on ? 2.5 : p ? 2 : 1}
             />
           );
         })}
@@ -168,7 +167,7 @@ export function MonthDial({ doc, steps, onPick, selectedDay = null }: { doc: Sch
           </g>
         ) : null}
         {showTodayDot ? (
-          <rect data-today-dot x={cx + 113 * Math.cos(todayAngle) - 3.5} y={cy + 113 * Math.sin(todayAngle) - 3.5} width={7} height={7} rx={2} fill="#fff" pointerEvents="none" />
+          <rect data-today-dot x={cx + 113 * Math.cos(todayAngle) - 3.5} y={cy + 113 * Math.sin(todayAngle) - 3.5} width={7} height={7} rx={2} fill="#c8102e" stroke="#fff" strokeWidth={1} pointerEvents="none" />
         ) : null}
         {sel != null ? (
           <>
