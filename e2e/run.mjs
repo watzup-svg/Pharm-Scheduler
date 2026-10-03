@@ -9,6 +9,7 @@ import dialogs from "./dialogs.mjs";
 import fit from "./fit.mjs";
 import cover from "./cover.mjs";
 import swapClick from "./swap-click.mjs";
+import rejectTimeOff from "./reject-time-off.mjs";
 import phase1 from "./phase1.mjs";
 import marks from "./marks.mjs";
 import hoverRules from "./hover-rules.mjs";
@@ -22,7 +23,7 @@ import problemCardMarks from "./problem-card-marks.mjs";
 import rightClickNotes from "./right-click-notes.mjs";
 import phone from "./phone.mjs";
 
-const GROUPS = [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["click swap", swapClick], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["header links", headerLinks], ["next month", nextMonth], ["small month", miniMonth], ["store numbers", storeNumbers], ["new store distances", newStoreDistances], ["problem card marks", problemCardMarks], ["right click notes", rightClickNotes], ["phone touch", phone]];
+const GROUPS = [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["click swap", swapClick], ["reject time off", rejectTimeOff], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["header links", headerLinks], ["next month", nextMonth], ["small month", miniMonth], ["store numbers", storeNumbers], ["new store distances", newStoreDistances], ["problem card marks", problemCardMarks], ["right click notes", rightClickNotes], ["phone touch", phone]];
 
 // Each group opens its own browser (a fresh profile) against the same static page, so groups never share state and can run side by side.
 //   npm run e2e                 every group, a few at a time, with a short summary (failures print in full)
