@@ -51,15 +51,22 @@ jobs:
       - run: npm ci
       - run: npm run build:trial
       # The browser download is cached by Playwright version; the system packages it needs are installed every run.
+      # Saved even when the checks below fail (WebKit is red on known findings), which a plain cache step would not do.
       - id: pw
         run: echo "v=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: pwcache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-webkit-${{ runner.os }}-${{ steps.pw.outputs.v }}
+      - run: npx playwright-core install --with-deps webkit
+      - if: steps.pwcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-webkit-${{ runner.os }}-${{ steps.pw.outputs.v }}
       - name: Browser checks in WebKit
         run: |
-          npx playwright-core install --with-deps webkit
           BROWSER=webkit npm run e2e -- smoke pages fit dialogs print "phone touch"
       - if: failure()
         uses: actions/upload-artifact@v4
