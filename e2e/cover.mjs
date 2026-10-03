@@ -31,6 +31,9 @@ export default async function run() {
     }
     check(`shorter drives card shows when only a second pharmacist can cover ${tag}`, found);
     if (!found) { await ctx.close(); continue; }
+    const pv = (await dlg.getByTestId("plan-preview").first().innerText()).replace(/\s+/g, " ");
+    const nums = pv.match(/this month (\d+) → (\d+)/);
+    check(`the first plan shows a preview that the month has one fewer empty shift ${tag}`, Boolean(nums) && Number(nums[1]) - Number(nums[2]) === 1, pv);
     await page.evaluate(axe);
     const bad = await page.evaluate(async () => (await axe.run(document.querySelector('[role="dialog"]'), { resultTypes: ["violations"] })).violations.flatMap((x) => x.nodes.map((n) => `${x.id}:${n.target.join(" ").slice(0, 50)}`)));
     check(`shorter drives card passes the accessibility scan ${tag}`, !bad.length, bad.slice(0, 2).join("; "));
