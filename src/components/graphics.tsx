@@ -37,6 +37,7 @@ export function EmptyArt({ kind, className }: { kind: ArtKind; className?: strin
   const red = "#c8102e";
   return (
     <svg viewBox="0 0 120 84" aria-hidden className={cn("mx-auto h-20 w-auto", className)}>
+      <path d="M26 4h68l20 38-20 38H26L6 42 26 4Z" fill="none" stroke={soft} strokeWidth="1.5" />
       <rect x="6" y="66" width="108" height="4" rx="2" fill={soft} />
       {kind === "people" ? (
         <>
