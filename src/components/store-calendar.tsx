@@ -161,6 +161,7 @@ export const StoreCalendar = memo(function StoreCalendar({
                   short={short}
                   onOpen={placing.name ? (st, d) => void placeFromBench(st, d) : onOpen}
                   glow={placing.name ? (placing.glow.get(glowKey(store.code, day)) ?? "blocked") : undefined}
+                  drive={placing.name && placing.glow.get(glowKey(store.code, day)) === "free" ? placing.drive.get(store.code) : undefined}
                   when={`${weekdayShort(year, month, day)} ${monthName(year, month).slice(0, 3)} ${day}`}
                 />
               ),
@@ -230,6 +231,7 @@ const DayCell = memo(function DayCell({
   short,
   onOpen,
   glow,
+  drive,
   when,
 }: {
   view: DayView;
@@ -246,6 +248,8 @@ const DayCell = memo(function DayCell({
   onOpen: (store: string, day: number, seed?: string) => void;
   /** While someone is being placed: how this day looks for them. */
   glow?: Glow;
+  /** While placing, on a green empty day: the drive from their home store ("35 min", "home"). */
+  drive?: string;
 }) {
   const name = useStoreTag();
   const tip = tipOf(view, name, when, glow !== undefined);
@@ -331,7 +335,10 @@ const DayCell = memo(function DayCell({
           <span className="mt-auto truncate text-xs leading-tight">{view.holiday || "closed"}</span>
         )
       ) : view.hole || view.holeAccepted ? (
-        <span className="my-auto grid place-items-center">{view.holeAccepted ? <QuietMark kind="asis" size={18} /> : <AlarmMark kind="hole" size={22} tip={false} />}</span>
+        <span className="my-auto grid place-items-center">
+          {view.holeAccepted ? <QuietMark kind="asis" size={18} /> : <AlarmMark kind="hole" size={22} tip={false} />}
+          {drive ? <span data-testid="placing-drive" className="text-[10px] leading-none font-bold text-ok">{drive}</span> : null}
+        </span>
       ) : (
         <span className="mt-0.5 min-w-0 text-xs leading-tight font-semibold">
           {view.names.map((n: DayName, i) => (
