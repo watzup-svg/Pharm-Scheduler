@@ -25,10 +25,13 @@ const probe = (root) => {
   return { sideways: document.documentElement.scrollWidth > vw + 1, cut, out, small };
 };
 
-export default async function run() {
+// Run in slices so the groups can run side by side: slice n of m takes every m-th width, header widths first, so the checks are the same, only spread out.
+export default async function run(slice = 0, slices = 1) {
   const browser = await launch();
+  const mine = (i) => i % slices === slice;
   // Every page header is built from one template: same width, same height, same row positions.
-  for (const width of [1366, 1024, 390]) {
+  for (const [i, width] of [1366, 1024, 390].entries()) {
+    if (!mine(i)) continue;
     const seen = [];
     for (const route of ["", "schedule", "time-off", "print", "people", "stores", "holidays"]) {
       const { page } = await open(browser, route, { width, height: 900 });
@@ -45,7 +48,8 @@ export default async function run() {
     check(`all page headers are the same height @${width}`, same("h"), JSON.stringify(seen.map(([n, v]) => [n, v.h])));
     check(`the count tiles sit on the same line in every header @${width}`, same("tilesY"), JSON.stringify(seen.map(([n, v]) => [n, v.tilesY])));
   }
-  for (const width of WIDTHS) {
+  for (const [i, width] of WIDTHS.entries()) {
+    if (!mine(i + 3)) continue;
     const size = { width, height: width < 700 ? 800 : 900 };
     for (const route of ROUTES) {
       const { page } = await open(browser, route, size);

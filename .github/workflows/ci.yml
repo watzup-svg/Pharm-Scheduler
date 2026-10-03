@@ -50,6 +50,13 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run build:trial
+      # The browser download is cached by Playwright version; the system packages it needs are installed every run.
+      - id: pw
+        run: echo "v=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-webkit-${{ runner.os }}-${{ steps.pw.outputs.v }}
       - name: Browser checks in WebKit
         run: |
           npx playwright-core install --with-deps webkit
