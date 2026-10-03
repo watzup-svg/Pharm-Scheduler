@@ -59,6 +59,16 @@ export default async function run() {
     await page.close();
   }
   {
+    // The store-number hexagon is gone from the header in every state (the store row carries it); it came back once in the resting state.
+    const { page } = await open(browser, "");
+    const hex = "svg path[d^='M15 3h36']";
+    check("the resting header has no store hexagon", (await header(page).locator(hex).count()) === 0);
+    await page.getByRole("button", { name: "Next issue" }).click();
+    await page.waitForTimeout(400);
+    check("the stepping header has no store hexagon", (await header(page).locator(hex).count()) === 0);
+    await page.close();
+  }
+  {
     const { page, errors } = await open(browser, "");
     await page.getByRole("button", { name: "Next issue" }).click();
     await page.waitForTimeout(400);
