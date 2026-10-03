@@ -2,6 +2,11 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Time off: requests as slips
+- Each request is now a slip with four facts: the reason (and when it was asked), the dates in words, who else is out those days (by name), and what the stores do ("Every store stays covered", or the bare store and days in brick with "no one free" when that's true). The month strip inside each request is gone; the lanes above still show the month.
+- Find cover moved onto the bare store (one per store, opens its first bare day); Approve is only Approve and stays on the page.
+- Display only: no rule, status or placement change. Checked: unit, time off browser group, laptop screenshot. Not checked: phone, touch, iOS Safari.
+
 ## Time off: clearer approval, and Undo approval
 - Requests: one line says "These are waiting for a yes or a no." Approve is a plain one-click button and stays on the page; its toast offers Undo approval for about 6 seconds. Find cover appears only when approving would leave a store empty (it approves, then opens that day). Decline asks first. "Approve anyway" is gone. The header count reads "To approve".
 - Add drawer: the choices are now "Put it on the schedule" (default) and "Ask me first". Sick is still approved straight away, and the Someone's out button says "Records sick as approved."
