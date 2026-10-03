@@ -2,6 +2,13 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Mark a store-day as needing two pharmacists
+- In the day panel, "Needs two pharmacists this day" marks that store and day. Also "Every <weekday> this month" and "A range of days…" (closed days are skipped). It is only a mark: nothing is placed for you.
+- A marked day with exactly one pharmacist is a new problem, "Needs a second" (own mark, own count in the header and store calendars, "1/2" on the day cell). It blocks printing like the others, and "Leave as is" works on it. A marked day with nobody is still the normal "No coverage".
+- The older per-weekday "usually two" reminder (Stores > Edit) stays a soft reminder; on a marked day only the new problem shows.
+- Saved file: new optional `needsTwo` (store code to day numbers). Old files open unchanged. Marks belong to that month's file and are not carried into next month.
+- Engine change, opt-in: nothing changes for a month with no marks. Checked: unit tests (rule, accept, file round trip, rename/remove store), one browser group (Chromium). WebKit, printers and touch not checked.
+
 ## Store tag note lists the pharmacists
 - Right-clicking a store tag in the header's day strip now also lists who is scheduled there that day, one name per row in day-panel order, or "No one scheduled" for an open store with nobody. Display only. Checked in Chromium (e2e header links, hover rules); WebKit and touch not checked.
 

@@ -26,6 +26,7 @@ import {
   TriangleAlert,
   UserX,
   Users,
+  UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +39,7 @@ const ICON = {
   note: StickyNote,
   noCoverage: UserX,
   twice: Copy,
+  second: UsersRound,
   closed: DoorClosed,
   licence: ShieldAlert,
   licensed: BadgeCheck,
@@ -129,6 +131,7 @@ export const ICON_GUIDE: { title: string; items: GuideItem[] }[] = [
     title: "Problems",
     items: [
       { icon: "noCoverage", name: "No coverage", meaning: "An open store has no pharmacist. Blocks printing." },
+      { icon: "second", name: "Needs a second", meaning: "A store-day you marked as needing two pharmacists has only one. Blocks printing." },
       { icon: "twice", name: "Twice", meaning: "One pharmacist is booked at two stores the same day. Blocks printing." },
       { icon: "closed", name: "Closed", meaning: "A name is on a day the store is closed. Blocks printing." },
       { icon: "licence", name: "Licence", meaning: "Scheduled in a state they aren’t licensed in. Must be fixed." },

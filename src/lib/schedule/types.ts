@@ -143,6 +143,8 @@ export type ScheduleDoc = {
   mileage?: { rate?: number; freeMiles?: number };
   /** How stores are named in headings and lists: by their letters (EST) or by their store number. Default letters. */
   storeLabels?: "code" | "number";
+  /** Store-days the district manager marked as needing two pharmacists this month: store code to day numbers. One pharmacist on such a day is the problem "Needs a second". Missing = none marked. */
+  needsTwo?: Record<string, number[]>;
 };
 
 export type CellRef = {
@@ -167,6 +169,12 @@ export type DayIssue = {
   doubledAccepted: string[];
   /** Open, one pharmacist, and this store usually runs two that weekday. Advisory only. */
   needsSecond: boolean;
+  /** Marked as needing two pharmacists, one is here, and not accepted. A problem that blocks printing. */
+  second: boolean;
+  /** Same, accepted by the district manager. */
+  secondAccepted: boolean;
+  /** Marked as needing two pharmacists (whatever is booked). */
+  marked: boolean;
   /** Placed in a state they are not licensed in. Hard error. */
   unlicensedNames: string[];
   ptoNames: string[];
@@ -186,6 +194,8 @@ export type Evaluation = {
   unlicensed: number;
   /** Days where a store usually runs two pharmacists and has one. Advisory only. */
   short: number;
+  /** Marked store-days that have one pharmacist, not accepted. Blocks printing. */
+  seconds: number;
   warns: number;
   staffWarns: number;
   ready: boolean;

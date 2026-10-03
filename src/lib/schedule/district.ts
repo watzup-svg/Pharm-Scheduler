@@ -11,7 +11,7 @@ import { RPH_SLOTS } from "./slots.ts";
 import { isWaiting } from "./timeoff-view.ts";
 import type { Evaluation, ScheduleDoc } from "./types.ts";
 
-export type DayTone = "ok" | "hole" | "accepted" | "double" | "license" | "leftover" | "closed" | "off" | "away" | "cover";
+export type DayTone = "ok" | "hole" | "second" | "accepted" | "double" | "license" | "leftover" | "closed" | "off" | "away" | "cover";
 
 /** The one look a store-day has. Most serious first, the same order the calendars use. */
 export function dayTone(doc: ScheduleDoc, ev: Evaluation, store: string, day: number): DayTone {
@@ -21,7 +21,8 @@ export function dayTone(doc: ScheduleDoc, ev: Evaluation, store: string, day: nu
   if (issue.unlicensedNames.length) return "license";
   if (issue.doubledNames.length) return "double";
   if (issue.hole) return "hole";
-  if (issue.holeAccepted || issue.doubledAccepted.length) return "accepted";
+  if (issue.second) return "second";
+  if (issue.holeAccepted || issue.secondAccepted || issue.doubledAccepted.length) return "accepted";
   if (issue.ptoNames.length) return "off";
   const names = RPH_SLOTS.map((s) => getCell(doc.grid, store, s, day).trim()).filter(Boolean);
   if (names.some((n) => { const p = doc.people.find((x) => x.name === n); return p?.role === "Pharmacist" && p.home !== store && p.home !== "—"; })) return "away";
@@ -49,6 +50,7 @@ export type District = {
   status: MonthStatus;
   counts: {
     holes: number;
+    seconds: number;
     doubles: number;
     closedNames: number;
     unlicensed: number;
@@ -76,7 +78,7 @@ export function districtModel(doc: ScheduleDoc, ev: Evaluation, today: { year: n
     const firstName = (n: string | undefined) => (n ?? "").split(" ")[0] ?? "";
     for (let d = 1; d <= days; d++) {
       const i = ev.byKey[issueKey(s.code, d)];
-      if (i && (i.hole || i.leftover || i.doubledNames.length || i.unlicensedNames.length)) {
+      if (i && (i.hole || i.second || i.leftover || i.doubledNames.length || i.unlicensedNames.length)) {
         problems += 1;
         if (first == null) first = d;
         const what = i.unlicensedNames.length
@@ -85,7 +87,9 @@ export function districtModel(doc: ScheduleDoc, ev: Evaluation, today: { year: n
             ? `${firstName(i.doubledNames[0])} at two stores`
             : i.hole
               ? "No coverage"
-              : `${firstName(i.leftoverNames[0])} on a closed day`;
+              : i.second
+                ? "Needs a second"
+                : `${firstName(i.leftoverNames[0])} on a closed day`;
         problemLines.push(`${what} · ${weekdayShort(doc.year, doc.month, d)} ${monthName(doc.year, doc.month).slice(0, 3)} ${d}`);
       }
     }
@@ -113,6 +117,7 @@ export function districtModel(doc: ScheduleDoc, ev: Evaluation, today: { year: n
     status,
     counts: {
       holes: ev.holes,
+      seconds: ev.seconds,
       doubles: ev.doubles,
       closedNames: ev.closed,
       unlicensed: ev.unlicensed,

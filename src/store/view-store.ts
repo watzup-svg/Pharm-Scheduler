@@ -46,8 +46,8 @@ export type ViewState = {
   issue: (IssueAnchor & { ym: string }) | null;
   setIssue: (issue: (IssueAnchor & { ym: string }) | null) => void;
   /** The kind of problem the header arrows are narrowed to (a tile was clicked). Null: every kind. */
-  issueKind: "hole" | "double" | "leftover" | "license" | null;
-  setIssueKind: (kind: "hole" | "double" | "leftover" | "license" | null) => void;
+  issueKind: "hole" | "double" | "leftover" | "license" | "second" | null;
+  setIssueKind: (kind: "hole" | "double" | "leftover" | "license" | "second" | null) => void;
   /**
    * What the pointer is over in the header or a calendar, so the other one can answer: days to light on the ring and
    * cells to outline below. Laptop hover only; nothing is chosen or changed.

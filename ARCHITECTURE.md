@@ -8,7 +8,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - **No auto-scheduler.** Nothing places a name unless a person asked.
 - **`placeName` (`src/lib/schedule/place.ts`) is the only write gate** for names in the grid. Drag, swap, bulk and paste all go through it.
 - **`src/lib/schedule/` is pure**: no React, no browser. Rules, wording of problems, print model, file format all live here and are tested without a browser.
-- **Hard problems block printing** (open store-day with nobody, same person at two stores one day, name on a closed day, not licensed in that state). One answer: `gate.ts`.
+- **Hard problems block printing** (open store-day with nobody, same person at two stores one day, name on a closed day, not licensed in that state, a store-day marked "needs two pharmacists" that has one). One answer: `gate.ts`.
 - **Letters are a store's identity in the file; the display name is `storeTag` / `useStoreTag`** (number or letters, the district's choice). Never print `store.code` on screen. `house-rules.test.ts` fails if a screen does.
 - Don't change rules unless asked.
 
@@ -16,13 +16,14 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 | You want to change | Look in |
 |---|---|
 | A rule, or who counts as a problem | `lib/schedule/rules.ts`, `dashboard.ts`, `district.ts` (one look per store-day) |
-| Fix-it steps and their sentences | `lib/schedule/fix.ts` (kinds: hole, double, leftover, license) |
+| Fix-it steps and their sentences | `lib/schedule/fix.ts` (kinds: hole, double, leftover, license, second) |
 | The issue cursor (arrows, Fix button) | `lib/schedule/issue-cursor.ts`, `components/issue-nav.tsx` |
 | Header: tiles, buttons, ring, day strip | `components/status-strip.tsx`, `hero-graphics.tsx` (ring), `header-links.tsx` (hover links), `issue-nav.tsx` |
 | Notes (popups). Open on right click / Shift+F10 / long press; hover only draws a small marker | `components/hover-note.tsx` (look, marker, long press), `hover-tips.tsx` (anything with `data-tip`/`title`). Rich notes built in code (`useNote`): month grid, ring, time-off lanes. Markup: `data-tip="Title \| line \| Open this day"`, `data-tip-tone`, `data-tip-mark`, `data-tip-place="below"` |
 | Marks and their colours | `components/marks.tsx` (`MARKS`), tokens in `styles.css` |
 | Wording | `artifacts/COPY_GUIDE.md`; sentences live next to the code that shows them |
 | Month grid (District) / store calendars / week / day | `month-grid.tsx` / `store-calendar.tsx` / `week-board.tsx` / `day-board.tsx`; shared per-day facts: `day-view.ts` |
+| "Needs two pharmacists" marks (`doc.needsTwo`, store to days; the problem kind `second`) | `lib/schedule/needs-two.ts` (set/clear, weekday and range helpers), `rules.ts` (the problem), `components/needs-two.tsx` (day panel control). The weekday "usually two" reminder (`Store.twoPharmacistDays`) stays advisory and gives way to a mark |
 | Day panel (click a day) | `day-sheet.tsx` (panel + problem notices), `day-sheet-slot.tsx` (one slot), `day-sheet-picker.tsx` (who can cover), `day-sheet-swap.tsx` (swap with another booked person), `day-sheet-extras.tsx` (not-offered list, impact list, out button) |
 | Printing | `lib/schedule/print-model.ts` (what), `pdf.ts` (PDF), `components/print-screen.tsx`, `letter-sheet.tsx` (on-screen preview) |
 | Saved file (format, old versions) | `lib/schedule/file.ts` (zod schema, v1 files expand on open) |

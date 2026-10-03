@@ -147,7 +147,7 @@ export function IssueLead({ tip }: { tip: string }) {
       {current ? (
         <span aria-live="polite" className="pointer-events-none absolute inset-x-0 -bottom-4 text-center text-xs leading-4 font-semibold tabular-nums text-white/70">
           {index + 1} of {count}
-          {kind ? <span className="sr-only"> {kind === "hole" ? "with no coverage" : kind === "double" ? "at two places" : kind === "leftover" ? "on closed days" : "not licensed"}</span> : null}
+          {kind ? <span className="sr-only"> {kind === "hole" ? "with no coverage" : kind === "double" ? "at two places" : kind === "leftover" ? "on closed days" : kind === "second" ? "needing a second pharmacist" : "not licensed"}</span> : null}
         </span>
       ) : null}
     </div>

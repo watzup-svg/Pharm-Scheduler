@@ -21,6 +21,7 @@ import {
   removeStoreDoc,
 } from "../lib/schedule/identity.ts";
 import { applyNextMonthPlan, type NextMonthPlan } from "../lib/schedule/next-month.ts";
+import { setNeedsTwo as setNeedsTwoFn } from "../lib/schedule/needs-two.ts";
 import { keepOpenPtoDates, normalizeTimeOff, timeOffDates } from "../lib/schedule/pto.ts";
 import { driveKey } from "../lib/schedule/geo.ts";
 import { duplicateDates } from "../lib/schedule/timeoff-view.ts";
@@ -244,6 +245,8 @@ export type ScheduleState = {
   clearPattern: (store: string) => void;
   setPattern: (store: string, slot: SlotId, weekday: number, name: string) => void;
   setNote: (store: string, day: number, note: string) => void;
+  /** Mark (or clear) days at one store as needing two pharmacists. Marks only; never places anyone. */
+  setNeedsTwo: (store: string, days: number[], on: boolean) => void;
   setPrintPrefs: (prefs: Partial<PrintPrefs>) => void;
   clearRange: (cells: CellRef[]) => void;
   assignRange: (cells: CellRef[], name: string, emptyOnly?: boolean, skipPto?: boolean) => DroppedPlacement[];
@@ -931,6 +934,10 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       ...doc,
       pattern: setPatternCell(doc.pattern, store, slot, weekday, name),
     }));
+  },
+
+  setNeedsTwo: (store, days, on) => {
+    withUndo(set, get, (doc) => setNeedsTwoFn(doc, store, days, on));
   },
 
   setNote: (store, day, note) => {

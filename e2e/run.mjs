@@ -21,8 +21,9 @@ import newStoreDistances from "./new-store-distances.mjs";
 import problemCardMarks from "./problem-card-marks.mjs";
 import rightClickNotes from "./right-click-notes.mjs";
 import phone from "./phone.mjs";
+import needsTwo from "./needs-two.mjs";
 
-const GROUPS = [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["click swap", swapClick], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["header links", headerLinks], ["next month", nextMonth], ["small month", miniMonth], ["store numbers", storeNumbers], ["new store distances", newStoreDistances], ["problem card marks", problemCardMarks], ["right click notes", rightClickNotes], ["phone touch", phone]];
+const GROUPS = [["smoke", smoke], ["time off", timeoff], ["print", print], ["pages", pages], ["dialogs", dialogs], ["fit", fit], ["cover plans", cover], ["click swap", swapClick], ["daily jobs", phase1], ["marks", marks], ["hover rules", hoverRules], ["issue navigator", navigator], ["header links", headerLinks], ["next month", nextMonth], ["small month", miniMonth], ["store numbers", storeNumbers], ["new store distances", newStoreDistances], ["problem card marks", problemCardMarks], ["right click notes", rightClickNotes], ["phone touch", phone], ["needs two", needsTwo]];
 
 // Each group opens its own browser (a fresh profile) against the same static page, so groups never share state and can run side by side.
 //   npm run e2e                 every group, a few at a time, with a short summary (failures print in full)
