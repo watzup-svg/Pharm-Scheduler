@@ -8,6 +8,8 @@ for (const w of [1366, 390]) {
   ok((await p.getByRole("button", { name: "Done" }).count()) === 1, `${w} placing bar shows`);
   const greens = await p.locator("[role=gridcell].ring-ok").count();
   ok(greens > 0, `${w} green days exist (${greens})`);
+  const drives = (await p.locator("[role=gridcell].ring-ok [data-testid=placing-drive]").evaluateAll((els) => els.map((e) => e.textContent ?? "")));
+  ok(drives.length > 0 && drives.every((t) => /^(~?\d+ (min|hr)|~?\d+ hr \d+ min|home)$/.test(t.trim())), `${w} green days show the drive from home (${[...new Set(drives)].join(", ")})`);
   // the empty Waldport Oct 14 cell is a hole: find a green cell and click it
   const before = await p.locator("[role=gridcell].ring-ok").count();
   await p.locator("[role=gridcell].ring-ok").first().scrollIntoViewIfNeeded();

@@ -9,19 +9,33 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { monthName } from "@/lib/schedule/calendar";
+import { driveBetween } from "@/lib/schedule/geo";
 import { glowFor, glowKey, type Glow } from "@/lib/schedule/glow";
 import { shortStoreName } from "@/lib/schedule/fix";
 import { isRphRole } from "@/lib/schedule/slots";
+import { driveLabel } from "@/lib/schedule/suggest";
 import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
 
 /** The glow for the person being placed, or an empty map. One pass over the month; recomputed only when the schedule changes. */
-export function usePlacingGlow(): { name: string | null; glow: Map<string, Glow> } {
+export function usePlacingGlow(): { name: string | null; glow: Map<string, Glow>; drive: Map<string, string> } {
   const doc = useScheduleStore((s) => s.doc);
   const name = useViewStore((s) => s.placing);
   const glow = useMemo(() => (name ? glowFor(doc, name) : new Map<string, Glow>()), [doc, name]);
-  return { name, glow };
+  // How far each store is from their home store, shown on the green days. A green day means they are not working elsewhere that day, so home is where they start.
+  const drive = useMemo(() => {
+    const out = new Map<string, string>();
+    const home = name ? doc.people.find((p) => p.name === name)?.home : "";
+    if (!name || !home || home === "—") return out;
+    for (const s of doc.stores) {
+      if (s.code === home) { out.set(s.code, "home"); continue; }
+      const d = driveBetween(doc, home, s.code);
+      if (d) out.set(s.code, driveLabel(d.minutes, d.estimated));
+    }
+    return out;
+  }, [doc, name]);
+  return { name, glow, drive };
 }
 
 /**
