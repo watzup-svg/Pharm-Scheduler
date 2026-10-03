@@ -86,7 +86,7 @@ export function EmptyArt({ kind, className }: { kind: ArtKind; className?: strin
   );
 }
 
-/** One faint hexagon behind the instrument at the right of the dark page headers, fading out before it reaches the numbers. Decoration only. */
+/** One faint hexagon, proportioned like the logo hexagon (long flat top and bottom, short pointed sides), behind the instrument at the right of the dark page headers, fading out before it reaches the numbers. Decoration only. */
 export function HexPattern({ className }: { className?: string }) {
   return (
     <svg
@@ -98,7 +98,7 @@ export function HexPattern({ className }: { className?: string }) {
         className,
       )}
     >
-      <path d="M28 2h56l26 46.5L84 95H28L2 48.5 28 2Z" fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="1.2" />
+      <path d="M18 2h76l16 46.5L94 95H18L2 48.5 18 2Z" fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="1.4" strokeLinejoin="miter" />
     </svg>
   );
 }
