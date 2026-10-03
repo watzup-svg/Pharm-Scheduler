@@ -11,7 +11,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Mark } from "@/components/icons";
 import { AlarmMark, StateMark } from "@/components/marks";
 import { Count, HeroLead, PageStrip } from "@/components/page-strip";
-import { dayLoads, summarize } from "@/lib/schedule/timeoff-view";
+import { dayLoads, holidayDays, nextHoliday, summarize } from "@/lib/schedule/timeoff-view";
 import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
@@ -46,6 +46,8 @@ function StandingBars({ waiting, approved, declined }: { waiting: number; approv
 export function TimeOffScreen() {
   const doc = useScheduleStore((s) => s.doc);
   const loads = useMemo(() => dayLoads(doc), [doc]);
+  const hols = useMemo(() => holidayDays(doc), [doc]);
+  const nextHol = useMemo(() => nextHoliday(doc, hols), [doc, hols]);
   const sum = useMemo(() => summarize(doc, loads), [doc, loads]);
   const saved = useViewStore((s) => s.timeOffFilter);
   const setSaved = useViewStore((s) => s.setTimeOffFilter);
@@ -151,10 +153,12 @@ export function TimeOffScreen() {
         </section>
 
         <aside aria-label="Month" className={cn("flex min-w-0 flex-col gap-3 max-lg:order-first", !wide && "lg:sticky lg:top-4")}>
-          <TimeOffMonth loads={loads} lit={lit} day={day} onDay={setDay} />
-          {sum.busiest ? (
+          <TimeOffMonth loads={loads} holidays={hols} lit={lit} day={day} onDay={setDay} />
+          {sum.busiest || nextHol ? (
             <p className="text-sm text-muted">
-              Busiest day: {dayLabel(doc, sum.busiest.day)}, {sum.busiest.off} of {sum.busiest.total} off.
+              {sum.busiest ? `Busiest day: ${dayLabel(doc, sum.busiest.day)}, ${sum.busiest.off} of ${sum.busiest.total} off.` : null}
+              {sum.busiest && nextHol ? " " : null}
+              {nextHol ? `Next holiday: ${nextHol.labels[0]}, ${dayLabel(doc, nextHol.day)}.` : null}
             </p>
           ) : null}
           {day ? <DayDetail day={day} load={loads[day - 1]!} onClose={() => setDay(null)} onAdd={setSeed} /> : null}

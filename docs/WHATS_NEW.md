@@ -2,6 +2,10 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Time off: holidays on the month
+- A holiday sits on its day on the Time off month: the name in the corner and "closed N" for the stores it shuts (hover lists them). If a pharmacist is still named at a shut store, the day is brick and clicking it opens that day on the Schedule. Under the month, one line adds "Next holiday". District closures (weather, short-staffed) are not shown here.
+- Display only. Checked: unit tests for the holiday days, time off browser group, laptop screenshot. Not checked: touch, iOS Safari.
+
 ## Time off: a queue and one month
 - The three tabs and the lanes strip are gone. The page is two columns: on the left three filters (To approve, Approved, Declined), on the right one sticky month, the only calendar on the page. To approve opens first when anything waits.
 - To approve: one row per request (name, dates as a range, a brick dot if a store would be bare). The selected row opens into its slip. Approved and Declined rows keep Edit, Undo approval / Reopen, and the hold to remove, and still show "Still on ... prints yellow" with Show on schedule.

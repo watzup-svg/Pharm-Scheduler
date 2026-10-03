@@ -68,11 +68,16 @@ export default async function run() {
   await pill(/To approve/).click();
   const rows = () => p.getByRole("list", { name: "Requests to approve" }).locator("> li").count();
   const all = await rows();
-  await p.locator("[data-day]").evaluateAll((els) => els.find((e) => e.getAttribute("aria-label")?.includes("waiting"))?.click());
+  await p.locator("[data-day]").evaluateAll((els) => els.find((e) => e.getAttribute("aria-label")?.includes("waiting") && !e.getAttribute("aria-label")?.includes("Click to open"))?.click());
   await p.waitForTimeout(200);
   check("a day on the month narrows the queue", (await rows()) < all || all <= 1);
   await p.getByRole("button", { name: /Clear$/ }).click();
   check("clearing the day brings it back", (await rows()) === all);
+
+  // A holiday sits on its cell with the name in the corner; one with a pharmacist still named is brick and opens that day.
+  const hol = await p.locator("[data-day]").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") ?? "").filter((l) => l.includes("closed")));
+  check("the month names a holiday and who it closes", hol.some((l) => l.includes("Inventory day")), hol.join(" / "));
+  check("a holiday with a name still scheduled says so", hol.some((l) => l.includes("still scheduled")));
 
   await add.focus();
   await p.keyboard.press("Enter");
