@@ -7,7 +7,7 @@ import { isOpenDay, placeName } from "./place.ts";
 import { personByName, RPH_SLOTS, SLOTS, namesForKindDetailed } from "./slots.ts";
 import type { CellRef, Evaluation, ScheduleDoc, SlotId, SlotKind } from "./types.ts";
 
-export type FixKind = "leftover" | "license" | "double" | "hole";
+export type FixKind = "leftover" | "license" | "double" | "hole" | "second";
 
 export type FixStep = {
   kind: FixKind;
@@ -168,6 +168,26 @@ export function holeSteps(doc: ScheduleDoc, ev: Evaluation): FixStep[] {
   return out;
 }
 
+export function secondSteps(doc: ScheduleDoc, ev: Evaluation): FixStep[] {
+  const out: FixStep[] = [];
+  for (const issue of ev.issues) {
+    if (!issue.second) continue;
+    const who = RPH_SLOTS.map((s) => getCell(doc.grid, issue.store, s, issue.day).trim()).filter(Boolean);
+    const store = storeLabel(doc, issue.store);
+    out.push({
+      kind: "second",
+      store: issue.store,
+      day: issue.day,
+      // The empty pharmacist row, where the second one goes.
+      slot: RPH_SLOTS.find((s) => !getCell(doc.grid, issue.store, s, issue.day).trim()) ?? RPH_SLOTS[0]!,
+      headline: `${store} needs two pharmacists on ${weekdayDay(doc, issue.day)}${who[0] ? `, only ${who[0]} is here` : ""}`,
+      names: [],
+      stores: [issue.store],
+    });
+  }
+  return out;
+}
+
 export function fixSteps(doc: ScheduleDoc, ev: Evaluation, mode: "rph" | "staff" | "all" = "rph"): FixStep[] {
   if (mode === "staff") return leftoverSteps(doc, ev, "staff");
   return [
@@ -175,6 +195,7 @@ export function fixSteps(doc: ScheduleDoc, ev: Evaluation, mode: "rph" | "staff"
     ...licenseSteps(doc, ev),
     ...doubleSteps(doc, ev),
     ...holeSteps(doc, ev),
+    ...secondSteps(doc, ev),
   ];
 }
 

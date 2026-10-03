@@ -695,6 +695,7 @@ function breakdown(steps: { kind: string }[]): string {
     n("hole") ? `${n("hole")} ${n("hole") === 1 ? "shift" : "shifts"} with no coverage` : "",
     n("double") ? `${n("double")} ${n("double") === 1 ? "person" : "people"} at two stores` : "",
     n("leftover") ? `${n("leftover")} ${n("leftover") === 1 ? "name" : "names"} on closed days` : "",
+    n("second") ? `${n("second")} ${n("second") === 1 ? "day" : "days"} needing a second pharmacist` : "",
   ].filter(Boolean);
   return parts.join(", ");
 }

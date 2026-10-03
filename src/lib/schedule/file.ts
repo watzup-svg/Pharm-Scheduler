@@ -98,6 +98,7 @@ const DocSchema = z.object({
   storeLabels: z.enum(["code", "number"]).optional(),
   driveMinutes: z.record(z.string().max(40), z.number().int().min(1).max(1440)).optional(),
   driveMiles: z.record(z.string().max(40), z.number().min(0.1).max(2000)).optional(),
+  needsTwo: z.record(z.string().max(40), z.array(z.number().int().min(1).max(31)).max(31)).optional(),
   mileage: z.object({ rate: z.number().min(0).max(10).optional(), freeMiles: z.number().min(0).max(500).optional() }).optional(),
 });
 
@@ -110,6 +111,19 @@ function firstOfEach<T>(items: T[], key: (item: T) => string): T[] {
     seen.add(k);
     return true;
   });
+}
+
+/** Marked days: only known stores, days sorted and unique, empty lists dropped. */
+function normalizeNeedsTwo(raw: Record<string, number[]> | undefined, codes: string[]): { needsTwo: Record<string, number[]> } | null {
+  if (!raw) return null;
+  const known = new Set(codes);
+  const out: Record<string, number[]> = {};
+  for (const [code, days] of Object.entries(raw)) {
+    if (!known.has(code) || code === "__proto__") continue;
+    const list = [...new Set(days)].sort((a, b) => a - b);
+    if (list.length) out[code] = list;
+  }
+  return Object.keys(out).length ? { needsTwo: out } : null;
 }
 
 function normalizeDoc(raw: z.infer<typeof DocSchema>): ScheduleDoc {
@@ -171,6 +185,7 @@ function normalizeDoc(raw: z.infer<typeof DocSchema>): ScheduleDoc {
     pattern,
     dayNotes: raw.dayNotes ?? {},
     ...(raw.accepted?.length ? { accepted: raw.accepted } : {}),
+    ...(normalizeNeedsTwo(raw.needsTwo, raw.stores.map((s) => s.code)) ?? {}),
     ...(raw.storeLabels === "number" ? { storeLabels: "number" as const } : {}),
     ...(raw.driveMinutes && Object.keys(raw.driveMinutes).length ? { driveMinutes: Object.fromEntries(Object.entries(raw.driveMinutes).filter(([k]) => k !== "__proto__")) } : {}),
     ...(raw.driveMiles && Object.keys(raw.driveMiles).length ? { driveMiles: Object.fromEntries(Object.entries(raw.driveMiles).filter(([k]) => k !== "__proto__")) } : {}),

@@ -21,6 +21,7 @@ export type CalendarStore = {
   doubles: number;
   licence: number;
   leftovers: number;
+  seconds: number;
   views: Record<number, DayView>;
 };
 
@@ -55,7 +56,7 @@ export const StoreCalendar = memo(function StoreCalendar({
   const placing = usePlacingGlow();
   const { store } = data;
   const narrow = useMedia("(max-width: 767px)");
-  const hasProblems = data.holes + data.doubles + data.licence + data.leftovers > 0;
+  const hasProblems = data.holes + data.doubles + data.licence + data.leftovers + data.seconds > 0;
   const [userOpen, setUserOpen] = useState<boolean | null>(null);
   const foldable = collapsible && narrow;
   // Once a store has been open (it had a problem, or you went to it) it stays open, so fixing the last problem doesn't fold it away.
@@ -127,6 +128,7 @@ export const StoreCalendar = memo(function StoreCalendar({
           {(
             [
               ["hole", data.holes],
+              ["second", data.seconds],
               ["double", data.doubles],
               ["license", data.licence],
               ["leftover", data.leftovers],
@@ -196,6 +198,8 @@ function tipOf(view: DayView, name: (code: string) => string, when: string, plac
   if (!view.open) return set("", "", view.holiday ? `Closed · ${view.holiday}` : "Closed");
   if (view.hole) return set("bad", "hole", "No pharmacist scheduled");
   if (view.holeAccepted) return set("", "asis", "No coverage, left as is");
+  if (view.second) return set("bad", "second", who, "Marked for two pharmacists. Only one is here");
+  if (view.secondAccepted) return set("", "asis", who, "Marked for two, one here, left as is");
   const flagged = (pick: (n: DayName) => boolean) => view.names.filter(pick).map((n) => n.name).join(", ");
   if (view.unlicensed) return set("bad", "license", `${flagged((n) => n.unlicensed)} is not licensed in this state`);
   if (view.double) return set("bad", "double", `${flagged((n) => n.double)} is also at another store today`);
@@ -211,7 +215,7 @@ function describe(view: DayView, name: (code: string) => string): string {
   if (!view.open) return `${where}: closed${view.holiday ? `, ${view.holiday}` : ""}`;
   if (view.hole) return `${where}: no coverage, no pharmacist scheduled`;
   if (view.holeAccepted) return `${where}: no coverage (left as is)`;
-  const second = view.needsSecond ? "; usually two pharmacists, only one here" : "";
+  const second = view.second ? "; marked for two pharmacists, only one here" : view.needsSecond ? "; usually two pharmacists, only one here" : "";
   const bits = view.names.map((n) =>
     [n.name, n.unlicensed ? "not licensed in this state" : "", n.double ? "scheduled twice" : "", n.off ? n.offText : "", n.away ? `away from home, their store is ${name(n.away)}` : n.cover ? "covering" : ""]
       .filter(Boolean)
@@ -274,7 +278,9 @@ const DayCell = memo(function DayCell({
           ? view.away
             ? `from ${name(view.away)}`
             : "cover"
-          : view.needsSecond
+          : view.second
+            ? "needs 2"
+            : view.needsSecond
             ? "1 of 2"
             : view.holeAccepted || view.doubleAccepted
               ? "as is"
@@ -361,6 +367,7 @@ const DayCell = memo(function DayCell({
           {tag === "time off" ? <QuietMark kind="off" size={12} /> : null}
           {tag === "cover" || tag.startsWith("from ") ? <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-ink max-sm:gap-0 max-sm:tracking-tight"><QuietMark kind="cover" size={12} />{tag.startsWith("from ") ? tag.slice(5) : ""}</span> : null}
           {tag === "as is" ? <QuietMark kind="asis" size={14} /> : null}
+          {tag === "needs 2" ? <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-illegal"><AlarmMark kind="second" size={16} tip={false} />1/2</span> : null}
           {tag === "1 of 2" ? <span className="rounded-sm bg-warn-bg px-1 text-[11px] font-bold text-warn ring-1 ring-warn/50">1/2</span> : null}
         </span>
       ) : null}

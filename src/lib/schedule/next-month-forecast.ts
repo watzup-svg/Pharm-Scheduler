@@ -18,7 +18,7 @@ export type NextMonthForecast = {
 export function forecastNextMonth(doc: ScheduleDoc, plan: NextMonthPlan): NextMonthForecast {
   const next = applyNextMonthPlan(doc, plan);
   const steps = monthStatus(next, evaluate(next)).steps;
-  const byKind: NextMonthForecast["byKind"] = { hole: 0, double: 0, leftover: 0, license: 0 };
+  const byKind: NextMonthForecast["byKind"] = { hole: 0, double: 0, leftover: 0, license: 0, second: 0 };
   for (const s of steps) byKind[s.kind] += 1;
   return { total: steps.length, byKind };
 }
@@ -28,6 +28,7 @@ const KIND_PHRASE: Record<FixStep["kind"], [string, string]> = {
   double: ["person at two places", "people at two places"],
   leftover: ["name on a closed day", "names on closed days"],
   license: ["pharmacist not licensed for the store", "pharmacists not licensed for their stores"],
+  second: ["day needing a second pharmacist", "days needing a second pharmacist"],
 };
 
 /** "November will start with 29 problems to fix: 26 shifts with no coverage and 3 people at two places." */

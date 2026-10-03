@@ -49,6 +49,11 @@ export type DayView = {
   away: string | null;
   /** The store usually runs two pharmacists this weekday and has one. A reminder only. */
   needsSecond: boolean;
+  /** Marked as needing two pharmacists and has one: a problem. */
+  second: boolean;
+  secondAccepted: boolean;
+  /** Marked as needing two pharmacists. */
+  marked: boolean;
   note: string;
   why: string;
 };
@@ -93,6 +98,9 @@ export function dayView(doc: ScheduleDoc, ev: Evaluation, store: string, day: nu
     cover: names.some((n) => n.cover),
     away: names.find((n) => n.away)?.away ?? null,
     needsSecond: Boolean(issue?.needsSecond),
+    second: Boolean(issue?.second),
+    secondAccepted: Boolean(issue?.secondAccepted),
+    marked: Boolean(issue?.marked),
     note: doc.dayNotes[store]?.[String(day)] ?? "",
     why: issue?.why ?? "",
   };
@@ -115,7 +123,7 @@ export function dayDomId(store: string, day: number): string {
   return `day-${store}-${day}`;
 }
 
-export type Tone = "closed" | "leftover" | "license" | "double" | "hole" | "accepted" | "off" | "cover" | "ok";
+export type Tone = "closed" | "leftover" | "license" | "double" | "second" | "hole" | "accepted" | "off" | "cover" | "ok";
 
 /** The one look a store-day has, most serious first. */
 export function toneOf(view: DayView): Tone {
@@ -123,7 +131,8 @@ export function toneOf(view: DayView): Tone {
   if (view.unlicensed) return "license";
   if (view.double) return "double";
   if (view.hole) return "hole";
-  if (view.holeAccepted || view.doubleAccepted) return "accepted";
+  if (view.second) return "second";
+  if (view.holeAccepted || view.doubleAccepted || view.secondAccepted) return "accepted";
   if (view.off) return "off";
   if (view.cover) return "cover";
   return "ok";
@@ -135,6 +144,7 @@ export const TONE_CLASS: Record<Tone, string> = {
   license: "border-2 border-dotted border-illegal bg-illegal-bg text-illegal",
   double: "bg-illegal-bg text-illegal ring-2 ring-illegal",
   hole: "border-2 border-dashed border-illegal bg-illegal-bg text-illegal",
+  second: "border-2 border-double border-illegal bg-illegal-bg text-illegal",
   accepted: "border-2 border-dashed border-muted bg-paper text-ink",
   off: "bg-warn-bg text-warn ring-1 ring-warn/40",
   cover: "bg-cover text-ink ring-1 ring-ok/40",
@@ -147,6 +157,7 @@ export const TONE_TAG: Record<Tone, string> = {
   license: "license",
   double: "twice",
   hole: "NO COVER",
+  second: "needs 2",
   accepted: "accepted",
   off: "time off",
   cover: "cover",

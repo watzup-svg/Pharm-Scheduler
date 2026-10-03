@@ -3,9 +3,9 @@ import type { FixStep } from "@/lib/schedule/fix";
 import { Mark, type IconKey } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-const KIND_ICON: Record<FixStep["kind"], IconKey> = { hole: "noCoverage", double: "twice", leftover: "closed", license: "licence" };
+const KIND_ICON: Record<FixStep["kind"], IconKey> = { hole: "noCoverage", double: "twice", leftover: "closed", license: "licence", second: "second" };
 
-const KIND_TAG: Record<FixStep["kind"], string> = { hole: "NO COVERAGE", double: "TWICE", leftover: "CLOSED", license: "LICENSE" };
+const KIND_TAG: Record<FixStep["kind"], string> = { hole: "NO COVERAGE", double: "TWICE", leftover: "CLOSED", license: "LICENSE", second: "NEEDS 2" };
 
 /** Each kind reads differently at a glance: no coverage and licence are solid, a double is outlined, a closed-day name is neutral. */
 const TAG_STYLE: Record<FixStep["kind"], string> = {
@@ -13,6 +13,7 @@ const TAG_STYLE: Record<FixStep["kind"], string> = {
   license: "bg-illegal text-cream",
   double: "bg-cream text-illegal ring-1 ring-illegal",
   leftover: "bg-night text-cream",
+  second: "bg-cream text-illegal ring-1 ring-illegal",
 };
 
 /** One problem, the same on Schedule, Print and anywhere else: a kind tag, the plain sentence, and a chevron. */
