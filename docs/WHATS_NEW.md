@@ -2,6 +2,10 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Day panel: someone placed on approved time off
+- The panel for a person who is placed on a day they have approved time off now shows three actions: Find cover, Remove, and Reject time off. Change person and Swap with are gone there. Reject time off marks that time-off entry declined (the whole entry; the button names its dates when it spans several days), so she stops counting as off and stays on the schedule. Undo is in the toast. Other states (sick, requested, no time off) keep their buttons. Display and button change only; no rules touched.
+- Checked: 388 unit, 552 browser (new group "reject time off"), screenshot at laptop width. Not checked: real touch, iPhone Safari.
+
 ## Time off: clearer approval, and Undo approval
 - Requests: one line says "These are waiting for a yes or a no." Approve is a plain one-click button and stays on the page; its toast offers Undo approval for about 6 seconds. Find cover appears only when approving would leave a store empty (it approves, then opens that day). Decline asks first. "Approve anyway" is gone. The header count reads "To approve".
 - Add drawer: the choices are now "Put it on the schedule" (default) and "Ask me first". Sick is still approved straight away, and the Someone's out button says "Records sick as approved."
