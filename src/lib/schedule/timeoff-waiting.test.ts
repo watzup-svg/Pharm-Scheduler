@@ -5,7 +5,7 @@ import { districtModel } from "./district.ts";
 import { evaluate } from "./rules.ts";
 import { applyNextMonthPlan, planNextMonth } from "./next-month.ts";
 import { normalizeTimeOff } from "./pto.ts";
-import { isWaiting, olderRequests, summarize } from "./timeoff-view.ts";
+import { approvedOffOn, isWaiting, olderRequests, summarize } from "./timeoff-view.ts";
 
 const oct = createDemo();
 const nov = applyNextMonthPlan(oct, planNextMonth(oct));
@@ -34,5 +34,22 @@ describe("requests waiting", () => {
   it("never counts approved or declined time off as waiting", () => {
     assert.equal(isWaiting(nov, normalizeTimeOff({ name: "Anders Kowal", dates: ["2026-11-03"] })), false);
     assert.equal(isWaiting(nov, normalizeTimeOff({ name: "Anders Kowal", dates: ["2026-11-03"], status: "declined" })), false);
+  });
+});
+
+describe("approved time off on a day", () => {
+  const add = (extra: object, dates = ["2026-10-12", "2026-10-13", "2026-10-14"]) =>
+    ({ ...oct, timeOff: [...oct.timeOff, normalizeTimeOff({ name: "Zed Test", dates, ...extra })] });
+
+  it("finds an approved row that covers the day, and only that day", () => {
+    const doc = add({});
+    assert.equal(approvedOffOn(doc, "Zed Test", 13).length, 1);
+    assert.equal(approvedOffOn(doc, "Zed Test", 15).length, 0);
+  });
+
+  it("ignores requested, declined and sick rows", () => {
+    assert.equal(approvedOffOn(add({ status: "requested" }), "Zed Test", 13).length, 0);
+    assert.equal(approvedOffOn(add({ status: "declined" }), "Zed Test", 13).length, 0);
+    assert.equal(approvedOffOn(add({ note: "Called in sick" }), "Zed Test", 13).length, 0);
   });
 });

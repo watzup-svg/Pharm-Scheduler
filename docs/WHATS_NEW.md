@@ -2,6 +2,10 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Day panel: someone placed on approved time off
+- The panel for a person who is placed on a day they have approved time off now shows three actions: Find cover, Remove, and Reject time off. Change person and Swap with are gone there. Reject time off marks that time-off entry declined (the whole entry; the button names its dates when it spans several days), so she stops counting as off and stays on the schedule. Undo is in the toast. Other states (sick, requested, no time off) keep their buttons. Display and button change only; no rules touched.
+- Checked: 388 unit, 552 browser (new group "reject time off"), screenshot at laptop width. Not checked: real touch, iPhone Safari.
+
 ## Housekeeping for outside review
 - Added README.md and REVIEW_GUIDE.md (what the app is, what it deliberately is not, where to look, how to run the checks, known open items, and the questions most worth reviewing). Refreshed ARCHITECTURE.md and the handoff notes to match main. Docs only: no code or rules changed.
 - Since the last entry: hover text on the day strip was reworded (#43), the three-dot marker came off the big header number with a hairline on hover (#44), the time-off timeline and legend were tidied (#40, #41), the hexagon came off the issue header (#39), and QC fixes landed (#45: the security scan allows the one IRS link; the fill search is lighter in very large months).

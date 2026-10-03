@@ -13,6 +13,8 @@ import { stateOfStore } from "@/lib/schedule/licence";
 import { storeLabel } from "@/lib/schedule/fix";
 import { getCell } from "@/lib/schedule/grid";
 import { issueKey } from "@/lib/schedule/rules";
+import { approvedOffOn } from "@/lib/schedule/timeoff-view";
+import { formatDateList } from "@/lib/schedule/pto";
 import { plannedFillSlot } from "@/lib/schedule/stamp";
 import type { SlotId } from "@/lib/schedule/types";
 import { cn } from "@/lib/utils";
@@ -76,6 +78,15 @@ export function SlotBlock({
     if (err) toast.error(err);
     else announce(`${name} recorded as licensed in ${stateName(stateCode)}`);
   }
+  // Approved time off on a placed person: the panel offers Find cover, Remove, or Reject time off (she stays on the day).
+  const approvedOff = useMemo(() => (name ? approvedOffOn(doc, name, day) : []), [doc, name, day]);
+  const rejectable = open && approvedOff.length > 0;
+  const setTimeOffStatus = useScheduleStore((s) => s.setTimeOffStatus);
+  const offDates = [...new Set(approvedOff.flatMap((e) => e.dates))].sort();
+  function rejectTimeOff() {
+    for (const e of approvedOff) setTimeOffStatus(e.index, "declined");
+    announce(`Rejected ${name}'s time off, ${formatDateList(offDates)}. ${name.split(" ")[0]} stays on the schedule.`);
+  }
   const fillCount = name && open ? plannedFillSlot(doc, { store, slot, day }).length : 0;
   const storeName = storeLabel(doc, store);
 
@@ -109,13 +120,18 @@ export function SlotBlock({
       </div>
       {name || open ? (
         <ActionBar className="mt-2">
-          {open ? (
+          {open && !rejectable ? (
             <Button type="button" variant={picking ? "default" : "secondary"} size="sm" onClick={onPick} aria-expanded={picking}>
               {name ? "Change person" : "Choose person"}
             </Button>
           ) : null}
-          {name && open && !picking ? <SwapWith store={store} slot={slot} day={day} name={name} /> : null}
+          {name && open && !picking && !rejectable ? <SwapWith store={store} slot={slot} day={day} name={name} /> : null}
           {name && open && !picking ? <OutButton name={name} knownReason={why.length > 0} /> : null}
+          {name && rejectable && !picking ? (
+            <Button type="button" variant="secondary" size="sm" className="h-auto min-h-11 w-full py-2 whitespace-normal" onClick={rejectTimeOff}>
+              Reject time off{offDates.length > 1 ? ` · ${formatDateList(offDates).replace(/(\w{3}) (\d+)–\1 /g, "$1 $2 to ").replace(/–/g, " to ")}` : ""}
+            </Button>
+          ) : null}
           {unlicensed && stateCode ? (
             <Button type="button" variant="secondary" size="sm" onClick={() => void addLicence()}>
               Add {stateCode} licence
