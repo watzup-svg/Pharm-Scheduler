@@ -290,6 +290,18 @@ describe("schedule store: newer actions", () => {
     assert.equal(s.getState().doc.holidays.some((h) => h.label === "Thanksgiving"), false);
   });
 
+  it("rejecting approved time off leaves the schedule alone and undo restores it", () => {
+    const s = useScheduleStore;
+    s.getState().addTimeOff({ name: s.getState().doc.people[0]!.name, dates: ["2026-09-09"], from: "2026-09-09", to: "2026-09-09", note: "" });
+    const i = s.getState().doc.timeOff.length - 1;
+    const grid = s.getState().doc.grid;
+    s.getState().setTimeOffStatus(i, "declined");
+    assert.equal(s.getState().doc.timeOff[i]!.status, "declined");
+    assert.deepEqual(s.getState().doc.grid, grid);
+    s.getState().undo();
+    assert.equal(s.getState().doc.timeOff[i]!.status, undefined);
+  });
+
   it("approving and declining a request only changes its status", () => {
     const s = useScheduleStore;
     s.getState().addTimeOff({ name: s.getState().doc.people[0]!.name, dates: ["2026-09-08"], from: "2026-09-08", to: "2026-09-08", note: "", status: "requested", requestedOn: "2026-09-01" });

@@ -25,6 +25,15 @@ export function isWaiting(doc: ScheduleDoc, t: TimeOff): boolean {
   return timeOffDates(t).some((d) => d >= first);
 }
 
+/**
+ * Approved time off for this person that covers this day, as the rows the store can change. Sick calls are not
+ * time off she approved, so they are left out; the day panel only offers "Reject time off" for these rows.
+ */
+export function approvedOffOn(doc: ScheduleDoc, name: string, day: number): TimeOffEntry[] {
+  const date = isoDate(doc.year, doc.month, day);
+  return entriesOf(doc).filter((e) => e.t.name === name && e.status === "approved" && !/sick/i.test(e.t.note) && e.dates.includes(date));
+}
+
 /** Undecided requests whose dates are all before the month on screen. */
 export function olderRequests(doc: ScheduleDoc): TimeOff[] {
   return doc.timeOff.filter((t) => t.status === "requested" && !isWaiting(doc, t));
