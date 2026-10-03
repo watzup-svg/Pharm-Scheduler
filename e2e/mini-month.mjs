@@ -1,11 +1,11 @@
-// The small month in the Time off and Holidays headers: a day's mark sits behind its own date and never spills onto
+// The small month in the Holidays header (Time off keeps its one month in the page body): a day's mark sits behind its own date and never spills onto
 // another day, at laptop and phone sizes.
 import { check, launch, open } from "./lib.mjs";
 
 export default async function run() {
   const browser = await launch();
   for (const width of [1366, 390, 320]) {
-    for (const route of ["time-off", "holidays"]) {
+    for (const route of ["holidays"]) {
       const { page } = await open(browser, route, { width, height: 844 });
       const bad = await page.evaluate(() => {
         const days = [...document.querySelectorAll("section.bg-night [role=group] button[data-day]")];
@@ -21,7 +21,6 @@ export default async function run() {
         return { n: boxes.filter((b) => b.mark).length, out };
       });
       check(`small month marks never cover a date /${route} @${width}`, bad.out.length === 0, bad.out.slice(0, 3).join("; "));
-      if (route === "time-off") check(`small month shows the practice month's marks @${width}`, bad.n > 0, String(bad.n));
       await page.close();
     }
   }

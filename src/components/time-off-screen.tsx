@@ -1,35 +1,75 @@
 import { useMemo, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { AddTimeOffDrawer, type AddSeed } from "@/components/time-off-add";
-import { CalendarTab } from "@/components/time-off-calendar";
-import { type Tab } from "@/components/time-off-parts";
-import { ListTab } from "@/components/time-off-list";
-import { RequestsTab } from "@/components/time-off-requests";
+import { DayDetail } from "@/components/time-off-day";
+import { dayLabel } from "@/components/time-off-parts";
+import { EntryList } from "@/components/time-off-list";
+import { TimeOffMonth } from "@/components/time-off-month";
+import { ToApproveList, waitingRows } from "@/components/time-off-requests";
 import { Button } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
 import { Mark } from "@/components/icons";
 import { AlarmMark, StateMark } from "@/components/marks";
 import { Count, HeroLead, PageStrip } from "@/components/page-strip";
-import { MiniMonth } from "@/components/hero-graphics";
-import { monthName } from "@/lib/schedule/calendar";
-import { TimeOffLanes } from "@/components/time-off-lanes";
 import { dayLoads, summarize } from "@/lib/schedule/timeoff-view";
 import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
 
-const TABS: Tab[] = ["requests", "calendar", "list"];
+type Filter = "waiting" | "approved" | "declined";
+
+/** The header picture: where every request stands, as three bars. Not a calendar; the month below is the only one. */
+function StandingBars({ waiting, approved, declined }: { waiting: number; approved: number; declined: number }) {
+  const max = Math.max(1, waiting, approved, declined);
+  const rows: [string, number, string][] = [
+    ["To approve", waiting, "bg-warn-bg"],
+    ["Approved", approved, "bg-ok-lite"],
+    ["Declined", declined, "bg-white/35"],
+  ];
+  return (
+    <div className="flex size-full flex-col justify-center gap-4" role="group" aria-label={`To approve ${waiting}, approved ${approved}, declined ${declined}`} data-tip="Time off by decision | Every entry this file holds, not only this month">
+      {rows.map(([label, n, tone]) => (
+        <div key={label} className="flex flex-col gap-1">
+          <div className="flex items-baseline justify-between text-[11px] leading-none text-white/75">
+            <span>{label}</span>
+            <span className="font-semibold tabular-nums text-white">{n}</span>
+          </div>
+          <span aria-hidden className="h-2.5 rounded-full bg-white/10">
+            <span className={cn("block h-full rounded-full", tone)} style={{ width: `${n ? Math.max(8, (n / max) * 100) : 0}%` }} />
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function TimeOffScreen() {
   const doc = useScheduleStore((s) => s.doc);
   const loads = useMemo(() => dayLoads(doc), [doc]);
   const sum = useMemo(() => summarize(doc, loads), [doc, loads]);
-  const saved = useViewStore((s) => s.timeOffTab);
-  const setSaved = useViewStore((s) => s.setTimeOffTab);
-  const [tab, setTabState] = useState<Tab>(saved ?? (sum.waiting > 0 ? "requests" : "calendar"));
+  const saved = useViewStore((s) => s.timeOffFilter);
+  const setSaved = useViewStore((s) => s.setTimeOffFilter);
+  const [filter, setFilterState] = useState<Filter>(saved ?? (sum.waiting > 0 ? "waiting" : "approved"));
   const [seed, setSeedState] = useState<AddSeed | null>(null);
   const opener = useRef<HTMLElement | null>(null);
-  const [focusDay, setFocusDay] = useState<number | null>(null);
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const entryCount = doc.timeOff.filter((t) => t.status !== "declined").length;
+  const [day, setDay] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const counts = useMemo(
+    () => ({
+      approved: doc.timeOff.filter((t) => (t.status ?? "approved") === "approved").length,
+      declined: doc.timeOff.filter((t) => t.status === "declined").length,
+    }),
+    [doc.timeOff],
+  );
+  const dayIso = day ? loads[day - 1]?.date ?? null : null;
+
+  // The days of the open slip, outlined on the month.
+  const lit = useMemo(() => {
+    if (filter !== "waiting") return new Set<string>();
+    const rows = waitingRows(doc).filter((e) => !dayIso || e.dates.includes(dayIso));
+    const open = rows.find((e) => e.index === selected) ?? rows[0];
+    return new Set(open?.dates ?? []);
+  }, [doc, filter, selected, dayIso]);
 
   // Opening the drawer remembers what had focus; closing gives it back (the drawer is remounted per seed, so the
   // dialog's own restore can't be relied on).
@@ -45,19 +85,13 @@ export function TimeOffScreen() {
     }
   }
 
-  function setTab(t: Tab) {
-    setTabState(t);
-    setSaved(t);
+  function setFilter(f: Filter) {
+    setFilterState(f);
+    setSaved(f);
   }
 
-  function onTabKey(e: React.KeyboardEvent) {
-    const i = TABS.indexOf(tab);
-    const next = e.key === "ArrowRight" ? TABS[(i + 1) % 3] : e.key === "ArrowLeft" ? TABS[(i + 2) % 3] : null;
-    if (!next) return;
-    e.preventDefault();
-    setTab(next);
-    tabRefs.current[next]?.focus();
-  }
+  // Nothing waiting: the queue is one line and the month takes the width.
+  const wide = filter === "waiting" && sum.waiting === 0;
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 px-4 py-4 sm:px-6 lg:py-6">
@@ -65,7 +99,7 @@ export function TimeOffScreen() {
         title="Time off"
         glow="away"
         lead={
-          <HeroLead n={sum.waiting} tone="warn" done={!sum.waiting} mark="waiting" tip={sum.waiting ? `To approve · ${sum.waiting} | Requests waiting for a yes or a no` : "Nothing to approve | Every request has been decided"} onClick={sum.waiting ? () => setTab("requests") : undefined} />
+          <HeroLead n={sum.waiting} tone="warn" done={!sum.waiting} mark="waiting" tip={sum.waiting ? `To approve · ${sum.waiting} | Requests waiting for a yes or a no` : "Nothing to approve | Every request has been decided"} onClick={sum.waiting ? () => setFilter("waiting") : undefined} />
         }
         tiles={
           <>
@@ -75,7 +109,7 @@ export function TimeOffScreen() {
               </Count>
             ) : null}
             {sum.stillScheduled ? (
-              <Count n={sum.stillScheduled} tone="warn" tip={`Still scheduled · ${sum.stillScheduled} | Named on a day they are off. Prints in yellow`} onClick={() => setTab("list")}>
+              <Count n={sum.stillScheduled} tone="warn" tip={`Still scheduled · ${sum.stillScheduled} | Named on a day they are off. Prints in yellow`} onClick={() => setFilter("approved")}>
                 <StateMark kind="timeOff" size={28} tip={false} />
               </Count>
             ) : null}
@@ -87,57 +121,44 @@ export function TimeOffScreen() {
             Add
           </Button>
         }
-        graphic={<MiniMonth
-            doc={doc}
-            onPick={() => setTab("calendar")}
-            dotFor={(d) => {
-              const l = loads[d - 1];
-              const n = (l?.off.length ?? 0) + (l?.pending.length ?? 0);
-              const head = `${monthName(doc.year, doc.month).slice(0, 3)} ${d}`;
-              if (l?.uncovered.length) return { n: Math.max(n, 1), tone: "bare", lines: [`${head} · ${l.uncovered.length === 1 ? "a store" : `${l.uncovered.length} stores`} left with no pharmacist`, ...l.off.slice(0, 4)] };
-              if (n) return { n, tone: "off", lines: [`${head} · ${n} off`, ...l!.off.slice(0, 4), ...(l!.pending.length ? [`${l!.pending.length} waiting for you`] : [])] };
-              return { n: 0, tone: "none", lines: [head] };
-            }}
-          />}
+        graphic={<StandingBars waiting={sum.waiting} approved={counts.approved} declined={counts.declined} />}
       />
 
-      {tab !== "calendar" ? <TimeOffLanes doc={doc} onPickDay={(d) => { setTab("calendar"); setFocusDay(d); }} /> : null}
+      <div className={cn("grid items-start gap-6", !wide && "lg:grid-cols-[40rem_minmax(0,1fr)]")}>
+        <section aria-label="Time off queue" className="flex min-w-0 flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Segmented<Filter>
+              tone="ink"
+              label="Show"
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "waiting", label: "To approve", hint: String(sum.waiting) },
+                { value: "approved", label: "Approved", hint: String(counts.approved) },
+                { value: "declined", label: "Declined", hint: String(counts.declined) },
+              ]}
+            />
+            {day ? (
+              <button type="button" onClick={() => setDay(null)} aria-label={`Showing ${dayLabel(doc, day)} only. Clear`} className="inline-flex h-11 items-center gap-1.5 rounded-md bg-warn-bg px-3 text-sm font-semibold text-warn">
+                {dayLabel(doc, day)}
+                <X className="size-4" aria-hidden />
+              </button>
+            ) : null}
+          </div>
+          <div key={filter} className="hs-fade">
+            {filter === "waiting" ? <ToApproveList day={dayIso} selected={selected} onSelect={setSelected} /> : <EntryList status={filter} day={dayIso} onEdit={setSeed} />}
+          </div>
+        </section>
 
-      <div role="tablist" aria-label="Time off views" className="flex gap-1 overflow-x-auto border-b border-line [scrollbar-width:none]" onKeyDown={onTabKey}>
-        {(
-          [
-            ["requests", "Requests", sum.waiting],
-            ["calendar", "Calendar", null],
-            ["list", "List", entryCount],
-          ] as const
-        ).map(([id, label, n]) => (
-          <button
-            key={id}
-            ref={(el) => {
-              tabRefs.current[id] = el;
-            }}
-            type="button"
-            role="tab"
-            id={`to-tab-${id}`}
-            aria-selected={tab === id}
-            aria-controls={`to-panel-${id}`}
-            tabIndex={tab === id ? 0 : -1}
-            onClick={() => setTab(id)}
-            className={cn(
-              "-mb-px inline-flex h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold",
-              tab === id ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink",
-            )}
-          >
-            {label}
-            {n ? <span className={cn("rounded-full px-2 text-xs", id === "requests" ? "bg-warn-bg text-warn" : "bg-paper text-muted")}>{n}</span> : null}
-          </button>
-        ))}
-      </div>
-
-      <div key={tab} role="tabpanel" id={`to-panel-${tab}`} aria-labelledby={`to-tab-${tab}`} tabIndex={-1} className="hs-fade">
-        {tab === "requests" ? <RequestsTab /> : null}
-        {tab === "calendar" ? <CalendarTab focusDay={focusDay} onFocusDay={setFocusDay} onAdd={setSeed} /> : null}
-        {tab === "list" ? <ListTab onEdit={setSeed} /> : null}
+        <aside aria-label="Month" className={cn("flex min-w-0 flex-col gap-3 max-lg:order-first", !wide && "lg:sticky lg:top-4")}>
+          <TimeOffMonth loads={loads} lit={lit} day={day} onDay={setDay} />
+          {sum.busiest ? (
+            <p className="text-sm text-muted">
+              Busiest day: {dayLabel(doc, sum.busiest.day)}, {sum.busiest.off} of {sum.busiest.total} off.
+            </p>
+          ) : null}
+          {day ? <DayDetail day={day} load={loads[day - 1]!} onClose={() => setDay(null)} onAdd={setSeed} /> : null}
+        </aside>
       </div>
 
       <AddTimeOffDrawer key={seed ? JSON.stringify(seed) : "closed"} seed={seed} onClose={() => setSeed(null)} />

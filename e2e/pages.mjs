@@ -43,14 +43,14 @@ export default async function run() {
   {
     const { page: p } = await open(browser, "time-off");
     // Watch for the class from before the click, so a busy machine that runs the click late cannot miss the moment (a fixed 60 ms wait did).
-    const tab = p.getByRole("tab", { name: /Calendar/ });
+    const tab = p.getByRole("group", { name: "Show" }).getByRole("button", { name: /Approved/ });
     await tab.evaluate((el) => { window.__selected = false; new MutationObserver(() => { if (el.classList.contains("hs-select")) window.__selected = true; }).observe(el, { attributes: true, attributeFilter: ["class"] }); });
     await tab.click();
     await p.waitForTimeout(150);
     const popped = await p.evaluate(() => window.__selected);
     check("selecting a tab gives a visible response", popped);
     await p.waitForTimeout(500);
-    check("and it clears itself", !(await p.getByRole("tab", { name: /Calendar/ }).evaluate((el) => el.classList.contains("hs-select"))));
+    check("and it clears itself", !(await p.getByRole("group", { name: "Show" }).getByRole("button", { name: /Approved/ }).evaluate((el) => el.classList.contains("hs-select"))));
     await p.close();
   }
 
