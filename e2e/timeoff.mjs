@@ -4,6 +4,8 @@ import { check, launch, open } from "./lib.mjs";
 export default async function run() {
   const browser = await launch();
   const { page: p, errors } = await open(browser, "time-off");
+  // With requests waiting and no tab remembered, the page opens on the queue.
+  check("opens on Requests when something is waiting", (await p.getByRole("tab", { name: /Requests/ }).getAttribute("aria-selected")) === "true");
   const count = async () => Number((await p.getByRole("tab", { name: /List/ }).innerText()).replace(/\D/g, ""));
   const start = await count();
   const add = p.getByRole("button", { name: "Add time off" }).first();
