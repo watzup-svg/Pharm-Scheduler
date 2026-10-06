@@ -9,7 +9,8 @@ import type { Assignment, DomainState } from "./types.ts";
 type Metrics = { fails: Record<string, number>; failTotal: number; overrides: number; open: number; unverified: number; exceptions: number; travel: number };
 
 function metrics(state: DomainState, asOf: ISODate, dates: ISODate[]): Metrics {
-  const ev = evaluate(state, asOf, { range: { from: dates[0]!, to: dates[dates.length - 1]! } });
+  const range = { from: dates[0]!, to: dates[dates.length - 1]! };
+  const ev = evaluate(state, asOf, { range, window: range });
   const fails: Record<string, number> = {};
   let failTotal = 0;
   const inRange = new Set(dates);
@@ -55,6 +56,8 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
   const movable = (a: Assignment) => a.agreed && a.source !== "emergency" && !a.pinned && !a.partialNote && a.date >= earliest;
   const changedNet = (s: DomainState) => Object.values(original.assignments).filter((a) => s.assignments[a.id]?.pharmacistId !== a.pharmacistId).length;
 
+  let day: ISODate[] = [dates[0]!];
+  let dayM = curM;
   const tryApply = (edits: Edit[]): boolean => {
     const next = applyScratch(cur, edits);
     if ("refused" in next) return false;
@@ -64,14 +67,16 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
       if (e.t !== "swap") continue;
       if (ev.assignments[e.assignmentId]!.results.some((r) => r.verdict === "Unknown")) return false;
     }
-    const m = metrics(next, asOf, dates);
-    if (!notWorse(curM, m) || !better(curM, m)) return false;
+    const m = metrics(next, asOf, day);
+    if (!notWorse(dayM, m) || !better(dayM, m)) return false;
     cur = next;
-    curM = m;
+    dayM = m;
     return true;
   };
 
   for (const date of dates) {
+    day = [date];
+    dayM = metrics(cur, asOf, day);
     const slots = () => Object.values(cur.assignments).filter((a) => a.date === date && movable(a)).sort((a, b) => cmp(a.id, b.id));
     // 1. restore standing assignments: follow desired slots until the chain closes
     const exp = expectedOn(cur, date);
@@ -107,15 +112,31 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
     }
     // 2. pair swaps for travel and violations
     const S = slots();
+    const evDay = evaluate(cur, asOf, { range: { from: date, to: date }, window: { from: date, to: date } });
+    const bad = (id: string) => evDay.assignments[id]?.results.some((r) => r.verdict === "Fail" || r.overridden) ?? false;
+    const drive = (ph: string, store: string): number | null => {
+      const b = cur.pharmacists[ph]?.baseStoreId;
+      if (!b) return 0;
+      if (b === store) return 0;
+      return cur.travel[`${b}|${store}`]?.minutes ?? null;
+    };
+    const useful = (x: Assignment, y: Assignment): boolean => {
+      if (bad(x.id) || bad(y.id)) return true;
+      if (want.get(x.pharmacistId) === y.storeId || want.get(y.pharmacistId) === x.storeId) return true;
+      const a = [drive(x.pharmacistId, x.storeId), drive(y.pharmacistId, y.storeId), drive(x.pharmacistId, y.storeId), drive(y.pharmacistId, x.storeId)];
+      if (a.some((v) => v === null)) return false;
+      return a[2]! + a[3]! < a[0]! + a[1]!;
+    };
     for (let i = 0; i < S.length; i++) {
       for (let j = i + 1; j < S.length; j++) {
         const x = cur.assignments[S[i]!.id], y = cur.assignments[S[j]!.id];
-        if (!x || !y || x.pharmacistId === y.pharmacistId || x.storeId === y.storeId) continue;
+        if (!x || !y || x.pharmacistId === y.pharmacistId || x.storeId === y.storeId || !useful(x, y)) continue;
         tryApply([{ t: "swap", assignmentId: x.id, toPharmacistId: y.pharmacistId }, { t: "swap", assignmentId: y.id, toPharmacistId: x.pharmacistId }]);
       }
     }
   }
 
+  curM = metrics(cur, asOf, dates);
   const removed = base.failTotal + base.overrides - (curM.failTotal + curM.overrides);
   const restored = base.exceptions - curM.exceptions;
   const saved = base.travel - curM.travel;

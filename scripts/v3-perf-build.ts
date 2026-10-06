@@ -1,0 +1,13 @@
+import { api } from "../domain/src/api.ts";
+import { importV2 } from "../domain/src/import-v2.ts";
+import { readFileSync } from "node:fs";
+const doc = JSON.parse(readFileSync(new URL("../fixtures/demo-v2.json", import.meta.url), "utf8"));
+const { world } = importV2([doc]);
+const asOf = process.argv[2] ?? "2026-10-06";
+const r = { from: "2026-10-01", to: "2026-10-31" };
+let t = performance.now();
+const b = api.build(world, r, asOf);
+console.log("build ms", (performance.now() - t).toFixed(0), "edits", b.proposal?.edits.length, "unresolved", b.report.unresolvedGaps.length);
+t = performance.now();
+const i = api.improve(world, { ...r, includeNext14: true }, asOf);
+console.log("improve ms", (performance.now() - t).toFixed(0), i.status);
