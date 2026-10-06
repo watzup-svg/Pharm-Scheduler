@@ -1,5 +1,6 @@
 // Setup Check: data gaps that make the schedule less trustworthy. Pure; it only lists, it never blocks anything.
-import { addDays, api, checkIntegrity, cmp, dateRange, expectedOn, RULE_BY_ID, standingMatches, type DomainState, type ISODate } from "@domain";
+import { addDays, checkIntegrity, cmp, dateRange, expectedOn, RULE_BY_ID, standingMatches, type DomainState, type ISODate } from "@domain";
+import { evaluateCached } from "../../derive.ts";
 import type { View } from "../../store.ts";
 import { pharmacistActiveOn, storeActiveOn, shortDate } from "../travel/travel-util.ts";
 
@@ -94,7 +95,7 @@ export function buildChecks(state: DomainState, asOf: ISODate, win: { from: ISOD
   }
 
   // Evaluation-based checks
-  const ev = api.evaluate(state, asOf);
+  const ev = evaluateCached(state, asOf);
   let unverified = 0;
   const doubles = new Map<string, { pharmacistId: string; date: ISODate; stores: Set<string> }>();
   for (const a of Object.values(state.assignments).sort((x, y) => cmp(x.date, y.date) || cmp(x.id, y.id))) {

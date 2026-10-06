@@ -1,8 +1,8 @@
 // What the header band says on each view. Every number clicks through to something.
 import { useMemo } from "react";
-import { api, dateRange, RULES, type DomainState } from "@domain";
+import { dateRange, RULES, type DomainState } from "@domain";
 import { useApp } from "../../store.ts";
-import { useEvaluation, useIssues, useViewState } from "../../derive.ts";
+import { evaluateCached, useEvaluation, useIssues, useViewState } from "../../derive.ts";
 import { countsOf, stepIssue, goTo } from "../chrome/shared.tsx";
 import { Pic } from "../../ui/icons.tsx";
 import { plural } from "../../copy.ts";
@@ -118,7 +118,7 @@ export function PrintHero() {
   if (!world) return null;
   const snaps = world.journal.snapshots;
   const stores = Object.keys(world.state.stores).length;
-  const ev = api.evaluate(world.state, asOf, { range: win });
+  const ev = evaluateCached(world.state, asOf, { range: win });
   const open = Object.values(ev.cells).reduce((n, c) => n + c.open, 0);
   const days = dateRange(win.from, win.to).length;
   const tiles: Tile[] = [{ kind: "open", n: open, word: "open shifts print as boxes" }, { kind: "pinned", n: snaps.length, word: plural(snaps.length, "posting").replace(/^\d+ /, "") }];

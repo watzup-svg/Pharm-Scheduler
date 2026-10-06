@@ -1,8 +1,8 @@
 // The old month dial: a ring with one segment per day, coloured by that day's worst state, a hand at today. Click a day to go there.
 // It is the navigator, not a dashboard: every segment acts.
 import { useMemo } from "react";
-import { api, dateRange, daysInMonth, type DomainState, type ISODate } from "@domain";
-import { useViewState } from "../../derive.ts";
+import { dateRange, daysInMonth, type DomainState, type ISODate } from "@domain";
+import { evaluateCached, useViewState } from "../../derive.ts";
 import { useApp } from "../../store.ts";
 import { goTo } from "../chrome/shared.tsx";
 import { fmtDate } from "../../copy.ts";
@@ -12,7 +12,7 @@ const FILL: Record<Day, string> = { ok: "#6fb78d", fix: "#f0cfc7", closed: "#4a4
 
 export function dayStates(state: DomainState, asOf: ISODate, month: string): Map<ISODate, Day> {
   const dates = dateRange(`${month}-01`, `${month}-${String(daysInMonth(Number(month.slice(0, 4)), Number(month.slice(5, 7)))).padStart(2, "0")}`);
-  const ev = api.evaluate(state, asOf, { range: { from: dates[0]!, to: dates[dates.length - 1]! } });
+  const ev = evaluateCached(state, asOf, { range: { from: dates[0]!, to: dates[dates.length - 1]! } });
   const out = new Map<ISODate, Day>();
   for (const d of dates) out.set(d, "closed");
   for (const c of Object.values(ev.cells)) {

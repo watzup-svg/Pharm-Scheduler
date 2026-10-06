@@ -24,13 +24,14 @@ fs.mkdirSync(shotDir, { recursive: true });
 // ---------------- budgets (ms unless noted); generous on purpose: they catch regressions of 3x or more, not noise ----------------
 const B = {
   loadRender: 8000, // setWorld of the big world until the grid is on screen
-  viewSwitch: 2500, // one click on a top-bar tab until two frames after
-  cellClick: 1200,
-  keyStep: 800,
+  viewSwitch: 1500, // one click on a top-bar tab until two frames after
+  cellClick: 600,
+  keyStep: 500,
+  wallChange: 1000, // a wall control (week, month, People / Stores) until two frames after
   frameGap: 700, // longest main-thread stall while the engine works
   inputWhileBusy: 600, // a UI click answered while a search runs
 };
-// Real use is 16-18 stores; low and medium go well past that, high is the 120-store extreme (known slow: Time off ~5 s, see docs/v3/PRESSURE.md).
+// Real use is 16-18 stores; low and medium go well past that, high is the 120-store extreme.
 const SCALE = pick3(L, { stores: 40, people: 150 }, { stores: 60, people: 250 }, { stores: 120, people: 500 });
 
 // ---------------- build freshness ----------------
@@ -211,7 +212,7 @@ add("scale-interact", 240_000, async (ctx) => {
     await E.page.waitForSelector('[role="gridcell"]', { timeout: 60000 });
     const times = { view: [], cell: [], key: [], ctrl: [] };
     const worst = {}; // label -> slowest ms, for every action over its budget
-    const limit = { view: B.viewSwitch, cell: B.cellClick, key: B.keyStep, ctrl: B.viewSwitch };
+    const limit = { view: B.viewSwitch, cell: B.cellClick, key: B.keyStep, ctrl: B.wallChange };
     const timed = async (kind, label, f) => {
       const t = performance.now(); await f(); await settle(E.page);
       const ms = Math.round(performance.now() - t);
@@ -238,7 +239,7 @@ add("scale-interact", 240_000, async (ctx) => {
     for (const l of E.log) { const m = l.match(/ view (.+?) (\d+)ms$/); if (m) byView[m[1]] = Math.max(byView[m[1]] ?? 0, Number(m[2])); }
     ctx.note(`p95: view ${p95(times.view)}ms, cell ${p95(times.cell)}ms, key ${p95(times.key)}ms, wall controls ${p95(times.ctrl)}ms; slowest view ${JSON.stringify(byView)}`);
     const over = Object.entries(worst);
-    if (over.length) throw new Invariant("interaction-budget", `with ${SCALE.stores} stores / ${SCALE.people} people these took longer than their budget (view ${B.viewSwitch} ms, cell ${B.cellClick} ms, key ${B.keyStep} ms): ${over.map(([l, ms]) => `${l} ${ms} ms`).join(", ")}`);
+    if (over.length) throw new Invariant("interaction-budget", `with ${SCALE.stores} stores / ${SCALE.people} people these took longer than their budget (view ${B.viewSwitch} ms, cell ${B.cellClick} ms, key ${B.keyStep} ms, wall control ${B.wallChange} ms): ${over.map(([l, ms]) => `${l} ${ms} ms`).join(", ")}`);
   });
 });
 

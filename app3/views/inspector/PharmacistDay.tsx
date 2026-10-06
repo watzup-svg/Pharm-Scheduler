@@ -1,7 +1,7 @@
 // Inspector for one pharmacist on one day: where they are, time-off records, and where they could go.
 import { useMemo, useState } from "react";
-import { api, requiredFor, indexRequirements, type ISODate, type UnavailStatus } from "@domain";
-import { useEvaluation, useViewState } from "../../derive.ts";
+import { prepareChoices, requiredFor, indexRequirements, type ISODate, type UnavailStatus } from "@domain";
+import { evaluateCached, useEvaluation, useViewState } from "../../derive.ts";
 import { useApp } from "../../store.ts";
 import { Chip, Section } from "../../ui/primitives.tsx";
 import { codeOf, choiceFor, commitEdits, describeChoice, nameOf, shortDate, useLock } from "./lib.ts";
@@ -20,14 +20,15 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
   const [removing, setRemoving] = useState<string | null>(null);
 
   const state = vs?.state;
-  const dayEv = useMemo(() => (state ? api.evaluate(state, asOf, { range: { from: date, to: date }, ...(vs?.scenario ? { includeRequested: true } : {}) }) : null), [state, vs?.scenario, asOf, date]);
+  const dayEv = useMemo(() => (state ? evaluateCached(state, asOf, { range: { from: date, to: date }, window: { from: date, to: date }, ...(vs?.scenario ? { includeRequested: true } : {}) }) : null), [state, vs?.scenario, asOf, date]);
   const rows = useMemo(() => {
     if (!state || !dayEv) return [];
     const idx = indexRequirements(state);
+    const prepared = prepareChoices(state, date, asOf, dayEv);
     const out = Object.values(state.stores)
       .filter((s) => requiredFor(state, idx, s.id, date) > 0)
       .map((s) => {
-        const choice = choiceFor(state, asOf, pharmacistId, s.id, date, dayEv);
+        const choice = choiceFor(state, asOf, pharmacistId, s.id, date, dayEv, prepared);
         const cell = dayEv.cells[`${s.id}|${date}`];
         return choice ? { store: s, choice, open: cell?.open ?? 0 } : null;
       })
