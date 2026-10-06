@@ -134,7 +134,7 @@ export function PrintView() {
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-4 p-4" data-print-view>
       <style>{printCss(opts)}</style>
-      <h1 className="text-lg font-semibold">Post and print</h1>
+      <h2 className="text-lg font-semibold">Post and print</h2>
 
       {/* 1. Post */}
       <section className="surface p-4" aria-labelledby="post-h">

@@ -26,6 +26,8 @@
   --color-line: #d9d3c7;
   /* Borders of things you press (buttons, fields): a step stronger than the dividers. */
   --color-edge: #c6bdac;
+  /* Outline of a text field or select: 3:1 against white (WCAG 1.4.11), still a warm grey. */
+  --color-field: #8f8574;
   --color-night: #201820;
   --color-brand: #c8102e;
   --color-brand-fg: #ffffff;
@@ -68,15 +70,15 @@
 }
 
 @layer base {
-  /* Phones: no grey flash on tap, and no double-tap zoom on controls. */
-  button,
-  a,
-  select,
-  input,
-  [role="button"],
-  [role="tab"] {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+  /* Fallback focus ring for anything that does not draw its own (date fields, selects, scroll areas). */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 1px;
+  }
+  /* Panels that scroll are also the containing block for sr-only text, or that text sits at the bottom of the page and makes the whole page scroll. */
+  main,
+  aside {
+    position: relative;
   }
   html {
     -webkit-font-smoothing: antialiased;
@@ -348,4 +350,11 @@
 section.bg-night :is(button, a, [role="button"], [tabindex]):not([data-ring-day]):focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
+}
+
+/* Field outlines at 3:1. Unlayered on purpose, so it wins over the border-edge utility on inputs. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select,
+textarea {
+  border-color: var(--color-field);
 }

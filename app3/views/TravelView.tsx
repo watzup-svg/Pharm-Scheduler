@@ -39,7 +39,7 @@ export function TravelView() {
 
   return (
     <div className="px-4 py-3">
-      <h1 className="text-lg font-semibold">Travel &amp; mileage</h1>
+      <h2 className="text-lg font-semibold">Travel &amp; mileage</h2>
       <p className="mt-0.5 text-xs text-muted">
         One-way drive from the row store to the column store. Drive times feed the long-drive rules and mileage pay. A pair that is not known stays unknown: it is never treated as zero and the engine never proposes it.
       </p>

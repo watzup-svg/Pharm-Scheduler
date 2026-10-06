@@ -37,7 +37,7 @@ export function Setup() {
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-3 p-3">
       <header>
-        <h1 className="font-display text-xl font-semibold">Setup</h1>
+        <h2 className="font-display text-xl font-semibold">Setup</h2>
         <p className="text-sm text-muted">The stores, people and routines the schedule is built from. Changes here are recorded in History and can be undone.</p>
       </header>
       {locked && <p role="status" className="rounded-md bg-warn-bg px-3 py-2 text-sm text-warn ring-1 ring-warn/35">▲ {locked}</p>}

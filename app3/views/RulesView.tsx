@@ -12,7 +12,7 @@ export function RulesView() {
   const cfg = world.state.config;
   return (
     <div className="px-4 py-3">
-      <h1 className="text-lg font-semibold">Rules</h1>
+      <h2 className="text-lg font-semibold">Rules</h2>
       <p className="mt-0.5 text-sm">
         Licensing can never be overridden. The engine never proposes an override, except on rules marked &ldquo;Engine may suggest&rdquo; below, and then only as a suggestion you accept.
       </p>

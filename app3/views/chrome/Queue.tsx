@@ -45,10 +45,10 @@ export function Queue() {
         if (!rows.length) return null;
         return (
           <section key={g.kind} className="mt-3" aria-label={g.title}>
-            <h3 className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            <h2 className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
               {g.title}
               <Chip tone={g.tone}>{rows.length}</Chip>
-            </h3>
+            </h2>
             <ul className="space-y-1">
               {rows.map((i) => {
                 const on = sel?.storeId === i.storeId && sel.date === i.date;

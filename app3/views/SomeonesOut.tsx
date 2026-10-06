@@ -229,7 +229,7 @@ export function SomeonesOut() {
 
       <h4 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-muted">Upcoming</h4>
       {records.length === 0 && <p className="text-sm">No time off recorded from {fmtShort(asOf)} on.</p>}
-      <ul className="max-h-[200px] space-y-1.5 overflow-y-auto" aria-label="Upcoming time off">
+      <ul tabIndex={0} className="max-h-[200px] space-y-1.5 overflow-y-auto focus-visible:outline-2 focus-visible:outline-ink" aria-label="Upcoming time off">
         {records.map((u) => {
           const p = state.pharmacists[u.pharmacistId];
           const prev = previews.get(u.id);

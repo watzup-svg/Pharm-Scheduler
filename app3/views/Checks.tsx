@@ -26,7 +26,7 @@ export function Checks() {
 
   return (
     <div className="px-4 py-3">
-      <h1 className="text-lg font-semibold">Setup Check</h1>
+      <h2 className="text-lg font-semibold">Setup Check</h2>
       <p className="mt-0.5 text-xs text-muted">
         Gaps in the data that make the schedule less trustworthy, looking {LOOKAHEAD_DAYS / 7} weeks ahead from {asOf}. This only lists things; it never blocks you from working.
       </p>
