@@ -10,6 +10,7 @@ import { SaveControls } from "./SaveControls.tsx";
 import { goTo, isTyping, stepIssue, undoTarget } from "./chrome/shared.tsx";
 import { fmtDate } from "../copy.ts";
 import { copyDiagnostics } from "../diagnostics.ts";
+import { getPersist } from "../persist-bridge.ts";
 
 const TABS: { id: Screen; label: string; also?: Screen }[] = [
   { id: "wall", label: "Schedule", also: "plan" },
@@ -88,6 +89,11 @@ export function TopBar() {
       <Menu.Separator className="my-1 h-px bg-line" />
       <Menu.Item className={item} onSelect={() => setPanel("checkpoint")}>Save a checkpoint…</Menu.Item>
       <Menu.Item className={item} onSelect={() => useApp.getState().setDrawer(true, "history")}>History and revert</Menu.Item>
+      <Menu.Item className={item} data-close-schedule onSelect={() => {
+        const st = getPersist().status();
+        if (st.unsavedChanges > 0 && !window.confirm("Go back to the Start screen?\n\nYou have changes that are not saved to a file. They stay in this browser's copy, and a safety copy is kept when you start or open another schedule.")) return;
+        useApp.getState().closeSchedule();
+      }}>Back to the Start screen…</Menu.Item>
       <Menu.Item className={item} onSelect={() => setPanel("asof")}>As of {fmtDate(asOf)}…</Menu.Item>
       <Menu.Separator className="my-1 h-px bg-line" />
       <Menu.Item className={item} onSelect={() => togglePref(PREF.large, "text-large")}>Larger text</Menu.Item>

@@ -27,6 +27,15 @@ await page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeo
 x = await st();
 check("Improve runs and ends not busy", !x.busy);
 check("the posted schedule left someone to tell", await page.evaluate(() => window.__v3.app.getState().world.journal.told !== undefined));
+// back to the Start screen from the File menu, then into the other practice month
+page.on("dialog", (d) => d.accept());
+await page.locator('[aria-label="File menu"]').click();
+await page.locator("[data-close-schedule]").click();
+await page.waitForSelector("[data-practice-problems]", { timeout: 5000 });
+check("File menu: Back to the Start screen shows the Start screen", (await page.evaluate(() => !window.__v3.app.getState().world)));
+await page.getByRole("button", { name: "Try the practice month" }).click();
+await page.waitForSelector('[role="gridcell"]');
+check("and the plain practice month opens from it", (await page.evaluate(() => !!window.__v3.app.getState().world)));
 check("no console errors", errors.length === 0, errors.join(" | "));
 await b.close(); s.close();
 process.exit(failed() ? 1 : 0);

@@ -58,6 +58,8 @@ export type AppState = {
   clearNotice(): void;
 
   // world
+  /** Leave the open schedule and show the Start screen again. Unsaved work is set aside by the save layer when the next schedule is started. */
+  closeSchedule(): void;
   setWorld(world: World, opts?: { fileName?: string | null; readOnlyProblems?: string[] | null }): void;
   /** One manual change set. Returns true if it went through; otherwise a notice says why. */
   commit(edits: Edit[], label?: string): boolean;
@@ -155,6 +157,8 @@ export const useApp = create<AppState>((set, get) => {
     setAsOf: (asOf) => set({ asOf }),
     say: (kind, text, undoId) => set({ notice: { id: ++noticeId, kind, text, ...(undoId ? { undoId } : {}) } }),
     clearNotice: () => set({ notice: null }),
+
+    closeSchedule: () => (diag("persist", "schedule closed (back to Start)"), set({ world: null, readOnlyProblems: null, fileName: null, selection: null, drawer: false, outForm: false, view: "wall", notice: null })),
 
     setWorld: (w, opts = {}) => (diag("persist", `schedule opened${opts.fileName ? " (file)" : ""}`), set({ world: w, fileName: opts.fileName ?? get().fileName, readOnlyProblems: opts.readOnlyProblems ?? null, repairResult: null, selection: null })),
 
