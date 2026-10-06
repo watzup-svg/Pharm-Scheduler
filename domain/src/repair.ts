@@ -21,7 +21,7 @@ export function repair(world: World, gaps: Gap[], opts: RepairOpts, asOf: ISODat
   const base: RepairResult = { status: "options", message: "", options: [], excludedUnknownTravel: [], gapsUsed: used, gapsDropped: dropped };
   if (!used.length) return { ...base, message: "Nothing to repair." };
 
-  const out = searchGaps(state, used, opts.wider ? SCOPE_WIDER : SCOPE_DEFAULT, asOf, state.config.searchNodeLimit);
+  const out = searchGaps(state, used, opts.wider ? SCOPE_WIDER : SCOPE_DEFAULT, asOf, state.config.searchNodeLimit, opts.showNearMiss === true);
   const r: RepairResult = { ...base, excludedUnknownTravel: out.excludedUnknownTravel };
   if (out.clean.length) {
     r.options = out.clean.slice(0, 3);

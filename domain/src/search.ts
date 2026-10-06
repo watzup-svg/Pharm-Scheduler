@@ -55,11 +55,11 @@ function travelTotal(state: DomainState, dates: Set<ISODate>): number {
 
 type Leaf = { option: RepairOption; clean: boolean; key: string; sortKey: string[] };
 
-export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate, nodeLimit: number): SearchOut {
+export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate, nodeLimit: number, wantNearMiss = false): SearchOut {
   const dates = new Set(gaps.map((g) => g.date));
   const sortedDates = [...dates].sort(cmp);
   const range = { from: sortedDates[0]!, to: sortedDates[sortedDates.length - 1]! };
-  const ev = (s: DomainState) => evaluate(s, asOf, { range });
+  const ev = (s: DomainState) => evaluate(s, asOf, { range, window: range });
   const baseEv = ev(base);
   const baseViol = failPairs(base, baseEv, "presence");
   const baseOver = failPairs(base, baseEv, "suggestible");
@@ -70,6 +70,7 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
   let nodes = 0;
   let limitHit = false;
   let legalCandidates = 0;
+  let allowSkip = false;
 
   type Pending = { storeId: string; date: ISODate; depth: number };
   type Move = { edit: Edit; ph: string; store: string; date: ISODate; from: string | null };
@@ -121,8 +122,16 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
     }
     if (moves.length < scope.changed && head.depth < scope.chain) {
       for (const c of cands) {
+        if (c.from && c.fromAsg && !allowSkip && (head.depth + 1 >= scope.chain || moves.length + 1 >= scope.changed)) {
+          // Cheap look-ahead: would leaving the old store open a hole we then could not fill?
+          const vc = evc.cells[ck(c.from, head.date)];
+          if (vc) {
+            const newCovered = vc.covered - (evc.assignments[c.fromAsg]?.counts ? 1 : 0);
+            if (Math.max(0, vc.required - newCovered - vc.acceptedShort) > vc.open) continue;
+          }
+        }
         if (++nodes > nodeLimit) { limitHit = true; return; }
-        const next = applyScratch(state, [c.edit], "repair");
+        const next = applyScratch(state, [c.edit], "repair", { skipMoot: true });
         if ("refused" in next) continue;
         const ev2 = ev(next);
         const mine = c.fromAsg ? next.assignments[c.fromAsg] : Object.values(next.assignments).find((a) => a.pharmacistId === c.ph && a.storeId === head.storeId && a.date === head.date);
@@ -144,18 +153,29 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
         if (c.from) {
           const vk = ck(c.from, head.date);
           w2.add(vk);
-          if ((ev2.cells[vk]?.open ?? 0) > (evc.cells[vk]?.open ?? 0)) np = [{ storeId: c.from, date: head.date, depth: head.depth + 1 }, ...rest];
+          if ((ev2.cells[vk]?.open ?? 0) > (evc.cells[vk]?.open ?? 0)) {
+            // The chain must continue to be clean. If it cannot (out of chain length or people), only the nearest-miss pass wants it.
+            if (!allowSkip && (head.depth + 1 >= scope.chain || moves.length + 1 >= scope.changed)) continue;
+            np = [{ storeId: c.from, date: head.date, depth: head.depth + 1 }, ...rest];
+          }
         }
         dfs(next, ev2, [...moves, m], np, w2);
         if (limitHit) return;
       }
     }
     // leave this one open and carry on with the rest
-    dfs(state, evc, moves, rest, watch);
+    if (allowSkip) dfs(state, evc, moves, rest, watch);
+    else if (!cands.length || moves.length >= scope.changed || head.depth >= scope.chain) dfs(state, evc, moves, rest, watch);
   };
 
   const watch = new Set(gaps.map((g) => ck(g.storeId, g.date)));
-  dfs(base, baseEv, [], gaps.map((g) => ({ ...g, depth: 0 })), watch);
+  const startPending = gaps.map((g) => ({ ...g, depth: 0 }));
+  dfs(base, baseEv, [], startPending, watch);
+  if (wantNearMiss && ![...leaves.values()].some((l) => l.clean && l.option.edits.length) && !limitHit) {
+    allowSkip = true;
+    dfs(base, baseEv, [], startPending, watch);
+  }
+  if (process.env.V3_DEBUG) console.log("search nodes", nodes, "legal", legalCandidates);
 
   const all = [...leaves.values()].filter((l) => l.option.edits.length > 0);
   const byKey = (a: Leaf, b: Leaf) => {

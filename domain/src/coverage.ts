@@ -4,7 +4,7 @@ import type { EvalOptions } from "./api-types.ts";
 import type {
   Assignment, AssignmentEval, CellCoverage, DomainState, Evaluation, ISODate, Override, RuleResult, Verdict,
 } from "./types.ts";
-import { RULES } from "./rules.ts";
+import { RULE_BY_ID } from "./rules.ts";
 
 const cellKey = (storeId: string, date: ISODate) => `${storeId}|${date}`;
 
@@ -27,7 +27,10 @@ export function requiredFor(state: DomainState, idx: ReqIndex, storeId: string, 
 
 export type ReqIndex = Map<string, { effectiveFrom: ISODate; count: number }[]>;
 
+const REQ_CACHE = new WeakMap<object, ReqIndex>();
 export function indexRequirements(state: DomainState): ReqIndex {
+  const hit = REQ_CACHE.get(state.requirements);
+  if (hit) return hit;
   const idx: ReqIndex = new Map();
   for (const key of Object.keys(state.requirements).sort(cmp)) {
     const r = state.requirements[key]!;
@@ -37,11 +40,31 @@ export function indexRequirements(state: DomainState): ReqIndex {
     idx.set(k, arr);
   }
   for (const arr of idx.values()) arr.sort((a, b) => cmp(a.effectiveFrom, b.effectiveFrom));
+  REQ_CACHE.set(state.requirements, idx);
   return idx;
 }
 
 function result(ruleId: string, verdict: Verdict, signature: string, detail: string): RuleResult {
   return { ruleId, verdict, signature, detail, overridden: false, outdated: false };
+}
+
+type UnavIndex = Map<string, { id: string; first: ISODate; last: ISODate; scope?: string }[]>;
+const UNAV_CACHE = [new WeakMap<object, UnavIndex>(), new WeakMap<object, UnavIndex>()];
+function indexUnavailability(state: DomainState, includeRequested: boolean): UnavIndex {
+  const cache = UNAV_CACHE[includeRequested ? 1 : 0]!;
+  const hit = cache.get(state.unavailability);
+  if (hit) return hit;
+  const m: UnavIndex = new Map();
+  for (const uid of Object.keys(state.unavailability).sort(cmp)) {
+    const u = state.unavailability[uid]!;
+    const ok = u.status === "Approved" || u.status === "Actual" || (includeRequested && u.status === "Requested");
+    if (!ok) continue;
+    const arr = m.get(u.pharmacistId) ?? [];
+    arr.push({ id: u.id, first: u.first, last: u.last, ...(u.scopeStoreId ? { scope: u.scopeStoreId } : {}) });
+    m.set(u.pharmacistId, arr);
+  }
+  cache.set(state.unavailability, m);
+  return m;
 }
 
 export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = {}): Evaluation {
@@ -62,15 +85,7 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
     const o = state.overrides[oid]!;
     ovByAR.set(`${o.assignmentId}|${o.ruleId}`, o);
   }
-  const unavByP = new Map<string, { id: string; first: ISODate; last: ISODate; scope?: string }[]>();
-  for (const uid of Object.keys(state.unavailability).sort(cmp)) {
-    const u = state.unavailability[uid]!;
-    const ok = u.status === "Approved" || u.status === "Actual" || (opts.includeRequested === true && u.status === "Requested");
-    if (!ok) continue;
-    const arr = unavByP.get(u.pharmacistId) ?? [];
-    arr.push({ id: u.id, first: u.first, last: u.last, ...(u.scopeStoreId ? { scope: u.scopeStoreId } : {}) });
-    unavByP.set(u.pharmacistId, arr);
-  }
+  const unavByP = indexUnavailability(state, opts.includeRequested === true);
   // consecutive-day runs per pharmacist
   const runInfo = new Map<string, { index: number; length: number }>(); // key p|date
   const datesByP = new Map<string, Set<ISODate>>();
@@ -108,7 +123,9 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
     groupResolved.set(k, resolved);
   }
 
+  const win = opts.window;
   for (const a of asg) {
+    if (win && (a.date < win.from || a.date > win.to)) continue;
     const store = state.stores[a.storeId];
     const ph = state.pharmacists[a.pharmacistId];
     const results: RuleResult[] = [];
@@ -176,7 +193,7 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
     let unresolved = false;
     let unknown = false;
     for (const r of results) {
-      const def = RULES.find((d) => d.id === r.ruleId)!;
+      const def = RULE_BY_ID[r.ruleId]!;
       const o = ovByAR.get(`${a.id}|${r.ruleId}`);
       if (r.verdict === "Fail" && o) {
         if (o.signature === r.signature) r.overridden = r.ruleId === "double-booking" ? groupResolved.get(`${a.pharmacistId}|${a.date}`) === true : true;
@@ -213,6 +230,7 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
     touch(c.storeId, c.date);
   }
   for (const a of asg) {
+    if (!evals[a.id]) continue;
     const cell = touch(a.storeId, a.date);
     const ev = evals[a.id]!;
     if (ev.counts) cell.counted++;

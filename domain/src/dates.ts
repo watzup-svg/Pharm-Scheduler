@@ -23,10 +23,15 @@ export function isValidDate(s: string): s is ISODate {
   return m >= 1 && m <= 12 && d >= 1 && d <= daysInMonth(y, m);
 }
 
+const PARTS = new Map<string, [number, number, number]>();
 function parts(s: ISODate): [number, number, number] {
+  const hit = PARTS.get(s);
+  if (hit) return hit;
   const mt = RE.exec(s);
   if (!mt) throw new Error(`bad date: ${s}`);
-  return [Number(mt[1]), Number(mt[2]), Number(mt[3])];
+  const out: [number, number, number] = [Number(mt[1]), Number(mt[2]), Number(mt[3])];
+  if (PARTS.size < 50000) PARTS.set(s, out);
+  return out;
 }
 
 /** Days since 1970-01-01 (Hinnant's days_from_civil). */
@@ -97,15 +102,21 @@ export function compareDates(a: ISODate, b: ISODate): number {
 
 /** Code-point ordering. Locale-aware comparison is banned in the domain. */
 export function cmp(a: string, b: string): number {
-  const x = Array.from(a);
-  const y = Array.from(b);
-  const n = Math.min(x.length, y.length);
+  if (a === b) return 0;
+  const n = Math.min(a.length, b.length);
   for (let i = 0; i < n; i++) {
-    const p = x[i]!.codePointAt(0)!;
-    const q = y[i]!.codePointAt(0)!;
-    if (p !== q) return p < q ? -1 : 1;
+    let p = a.charCodeAt(i);
+    let q = b.charCodeAt(i);
+    if (p === q) continue;
+    // UTF-16 order differs from code-point order only when a surrogate pair meets a BMP unit above the surrogates.
+    if (p >= 0xd800 || q >= 0xd800) {
+      p = a.codePointAt(i)!;
+      q = b.codePointAt(i)!;
+      if (p === q) continue;
+    }
+    return p < q ? -1 : 1;
   }
-  return x.length === y.length ? 0 : x.length < y.length ? -1 : 1;
+  return a.length < b.length ? -1 : 1;
 }
 
 export function hhmmToMinutes(s: string): number {

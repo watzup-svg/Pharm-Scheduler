@@ -56,10 +56,20 @@ export function invert(events: DomainEvent[]): DomainEvent[] {
 class Builder {
   events: DomainEvent[] = [];
   state: DomainState;
-  constructor(state: DomainState) {
+  /** When set, tables are copied the first time they are written (scratch states share untouched tables). */
+  private cow: Set<string> | null;
+  constructor(state: DomainState, cow = false) {
     this.state = state;
+    this.cow = cow ? new Set() : null;
   }
   set(type: EventType, key: string, after: unknown): void {
+    if (this.cow) {
+      const f = TABLE[splitKey(key)[0]];
+      if (f && !this.cow.has(f)) {
+        (this.state as unknown as Record<string, unknown>)[f] = { ...(this.state[f] as object) };
+        this.cow.add(f);
+      }
+    }
     const before = readKey(this.state, key);
     writeKey(this.state, key, after);
     const prev = this.events.find((e) => e.key === key);
@@ -372,13 +382,14 @@ function eventTypeFor(key: string, before: unknown, after: unknown): EventType {
 }
 
 /** Apply edits to a copy of the state without touching any journal. For search and what-if. */
-export function applyScratch(state: DomainState, edits: Edit[], src?: AssignmentSource): DomainState | Refusal {
-  const st = clone(state);
-  const b = new Builder(st);
+export function applyScratch(state: DomainState, edits: Edit[], src?: AssignmentSource, opts: { skipMoot?: boolean } = {}): DomainState | Refusal {
+  // Tables are shallow-copied: rows are replaced, never mutated, so sharing them is safe and much cheaper than a deep clone.
+  const st: DomainState = { ...state, nextId: { ...state.nextId } };
+  const b = new Builder(st, true);
   for (const e of edits) {
     const f = applyEdit(b, e, src);
     if (f) return f;
   }
-  dropMoot(b);
+  if (!opts.skipMoot) dropMoot(b);
   return st;
 }

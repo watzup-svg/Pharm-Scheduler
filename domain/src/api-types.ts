@@ -62,6 +62,8 @@ export type EvalOptions = {
   includeRequested?: boolean;
   /** Also emit a cell for every store-date in the range (so holes show). Without it, cells exist only where there is an assignment, count row or date override. */
   range?: { from: ISODate; to: ISODate };
+  /** Judge only assignments dated inside this window (other dates still feed run-length and double-booking context). For search speed. */
+  window?: { from: ISODate; to: ISODate };
 };
 
 export type BuildReport = {
