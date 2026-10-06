@@ -1,6 +1,6 @@
 // Joint gap search shared by Repair and Build. Exhaustive, deterministic, bounded by a node count.
 import { cmp, dateRange, type ISODate } from "./dates.ts";
-import { evalDelta, makeCtx, type AsgIndex } from "./coverage.ts";
+import { evalDelta, evaluate, makeCtx, type AsgIndex } from "./coverage.ts";
 import { expectedOn } from "./patterns.ts";
 import { RULE_BY_ID } from "./rules.ts";
 import type { Edit, RepairMetrics, RepairOption } from "./api-types.ts";
@@ -227,14 +227,15 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
         legalCandidates++;
         const m: Move = { edit: c.edit, ph: c.ph, store: head.storeId, date: head.date, from: c.from };
         const w2 = new Set(watch);
-        let np = rest;
+        // A cell short by more than one stays at the front until it is full (the loop at the top drops it once it is); without this a cell needing two people could never be filled cleanly.
+        let np = [head, ...rest];
         if (c.from) {
           const vk = ck(c.from, head.date);
           w2.add(vk);
           if ((ev2.cells[vk]?.open ?? 0) > (evc.cells[vk]?.open ?? 0)) {
             // The chain must continue to be clean. If it cannot (out of chain length or people), only the nearest-miss pass wants it.
             if (!allowSkip && (head.depth + 1 >= scope.chain || moves.length + 1 >= scope.changed)) { if (moves.length + 1 >= scope.changed) prunedByChanged = true; continue; }
-            np = [{ storeId: c.from, date: head.date, depth: head.depth + 1 }, ...rest];
+            np = [{ storeId: c.from, date: head.date, depth: head.depth + 1 }, head, ...rest];
           }
         }
         dfs(state, ev2, [...moves, m], np, w2);
@@ -303,11 +304,14 @@ function searchGroup(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate
     const out = searchCore(base, gaps, { ...scope, changed: k }, asOf, Math.max(1, nodeLimit - spent), false, prep);
     spent += out.nodes;
     last = { ...out, nodes: spent, limitHit: out.limitHit || spent >= nodeLimit };
-    if (out.clean.length >= 3 || last.limitHit || !out.prunedByChanged) break;
+    // Fewer people changed ranks ahead only after overrides: a larger budget can still beat the third option by needing fewer overrides.
+    if ((out.clean.length >= 3 && out.clean[2]!.metrics.overridesNeeded === 0) || last.limitHit || !out.prunedByChanged) break;
   }
   if (last && !last.clean.length && wantNearMiss && !last.limitHit) {
     const near = searchCore(base, gaps, scope, asOf, Math.max(1, nodeLimit - spent), true, prep);
-    return { ...near, nodes: spent + near.nodes };
+    // The near-miss pass explores candidates the clean pass never looks at (people who leave a hole). Its data must not change what the
+    // status says, or turning "show near miss" on or off would turn "none" into "cannot evaluate" and back.
+    return { ...near, limitHit: last.limitHit, legalCandidates: last.legalCandidates, excludedUnknownTravel: last.excludedUnknownTravel, missing: last.missing, nodes: spent + near.nodes };
   }
   return last ?? searchCore(base, gaps, scope, asOf, nodeLimit, wantNearMiss, prep);
 }
@@ -366,11 +370,23 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
     // edits in (pharmacist, store, date) order, like a single search
     return keyed.map((k) => ({ ...k.o, edits: k.o.edits.map((e, i) => ({ e, t: tupleOf(base, e), i })).sort((x, y) => cmp(x.t[0], y.t[0]) || cmp(x.t[1], y.t[1]) || cmp(x.t[2], y.t[2])).map((x) => x.e) }));
   };
-  // Clean: every date needs a clean answer. Keep the best three of each date (the global best three cannot need more).
-  const clean = parts.every((p) => p.clean.length) ? combine(parts.map((p) => p.clean.slice(0, 3))) : [];
+  // Clean: every date needs a clean answer. The dates only meet through the shared people-changed budget, so a date's third best
+  // option may be too big to fit beside the others while its fourth (fewer people, more overrides) fits. Keep the best three for each
+  // number of people changed on each date: for a fixed split of the budget no other option of that date can reach the global best three.
+  const keepBest = (list: RepairOption[]): RepairOption[] => {
+    const seen = new Map<number, number>();
+    return list.filter((o) => { const k = o.metrics.changedPharmacistDates; const n = seen.get(k) ?? 0; seen.set(k, n + 1); return n < 3; });
+  };
+  const clean = parts.every((p) => p.clean.length) ? combine(parts.map((p) => keepBest(p.clean))) : [];
   let near: RepairOption | null = null;
   if (!clean.length && wantNearMiss) {
-    const per = parts.map((p) => (p.clean[0] ? [p.clean[0]] : p.nearMiss ? [p.nearMiss] : [{ edits: [], metrics: { violationsIntroduced: 0, openRemaining: 0, overridesNeeded: 0, changedPharmacistDates: 0, patternNet: 0, travelMinutes: 0 }, explanation: [] }]));
+    // A date with no candidate at all contributes no edits, but its gaps stay open and its travel still counts in the total.
+    const noEdits = (d: ISODate): RepairOption => {
+      const ev = evaluate(base, asOf, { range: { from: d, to: d } });
+      const open = (byDate.get(d) ?? []).reduce((n, g) => n + (ev.cells[ck(g.storeId, d)]?.open ?? 0), 0);
+      return { edits: [], metrics: { violationsIntroduced: 0, openRemaining: open, overridesNeeded: 0, changedPharmacistDates: 0, patternNet: 0, travelMinutes: travelTotal(base, Object.values(base.assignments).filter((a) => a.date === d)) }, explanation: [] };
+    };
+    const per = parts.map((p, i) => (p.clean[0] ? [p.clean[0]] : p.nearMiss ? [p.nearMiss] : [noEdits(dates[i]!)]));
     near = combine(per).find((o) => o.edits.length > 0) ?? null;
   }
   return { clean, nearMiss: near, ...common };

@@ -2,7 +2,7 @@
 import { addDays, cmp, dateOk, dateRange, type ISODate } from "./dates.ts";
 import { evalDelta, evaluate, makeCtx } from "./coverage.ts";
 import type { Evaluation } from "./types.ts";
-import { ENGINE_VERSION, stateHash } from "./changeset.ts";
+import { applyScratch, ENGINE_VERSION, stateHash } from "./changeset.ts";
 import { expectedOn, patternConflicts } from "./patterns.ts";
 import type { Edit, ImproveOpts, ImproveResult, World } from "./api-types.ts";
 import type { Assignment, DomainState } from "./types.ts";
@@ -73,6 +73,8 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
   let changed = new Set<string>();
   const movable = (a: Assignment) => a.agreed && a.source !== "emergency" && !a.pinned && !a.partialNote && a.date >= earliest;
 
+  /** Every swap that was kept, in the order it was applied: always a valid sequence, though not a minimal one. */
+  const log: Edit[] = [];
   let day: ISODate[] = [dates[0]!];
   let dayM = curM;
   const tryApply = (edits: Edit[]): boolean => {
@@ -112,6 +114,7 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
     curEv = ev;
     changed = nextChanged;
     dayM = m;
+    log.push(...edits);
     return true;
   };
 
@@ -183,10 +186,13 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
   const meaningful = removed > 0 || restored >= cfg.minRestoredStanding || saved >= cfg.minTravelSavedMinutes;
   if (!meaningful) return nothing;
 
-  const edits: Edit[] = Object.values(original.assignments)
+  const net: Edit[] = Object.values(original.assignments)
     .filter((a) => cur.assignments[a.id]?.pharmacistId !== a.pharmacistId)
     .sort((a, b) => cmp(cur.assignments[a.id]?.pharmacistId ?? "", cur.assignments[b.id]?.pharmacistId ?? "") || cmp(a.storeId, b.storeId) || cmp(a.date, b.date))
     .map((a) => ({ t: "swap", assignmentId: a.id, toPharmacistId: cur.assignments[a.id]?.pharmacistId ?? a.pharmacistId }));
+  // Accepting applies the edits one after another, and a swap is refused while its new person still holds another slot at that store and
+  // date (a cycle that includes two slots of one store). Put the edits in an order that applies cleanly; if none exists, replay the log.
+  const edits = inApplyOrder(original, net) ?? log;
   const explanation: string[] = [];
   if (removed > 0) explanation.push(`Removes ${removed} violation${removed === 1 ? "" : "s"} or override${removed === 1 ? "" : "s"}`);
   if (restored > 0) explanation.push(`Restores ${restored} standing assignment${restored === 1 ? "" : "s"}`);
@@ -195,4 +201,23 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
     status: "changes", message: "",
     proposal: { kind: "improve", label: "Improve", edits, explanation, stateHash: stateHash(original), engineVersion: ENGINE_VERSION },
   };
+}
+
+/** The edits reordered so each one applies to the state the earlier ones leave (sorted order kept where it already works), or null if no order does. */
+function inApplyOrder(start: DomainState, edits: Edit[]): Edit[] | null {
+  const pending = edits.slice();
+  const out: Edit[] = [];
+  let st = start;
+  while (pending.length) {
+    let picked = -1;
+    let next: DomainState | null = null;
+    for (let i = 0; i < pending.length && picked < 0; i++) {
+      const r = applyScratch(st, [pending[i]!], undefined, { skipMoot: true });
+      if (!("refused" in r)) { picked = i; next = r; }
+    }
+    if (picked < 0 || !next) return null;
+    st = next;
+    out.push(pending.splice(picked, 1)[0]!);
+  }
+  return out;
 }

@@ -160,7 +160,8 @@ function evalPharmacist(state: DomainState, ctx: EvalCtx, list: Assignment[], em
     for (const r of results) {
       const def = RULE_BY_ID[r.ruleId];
       const o = ctx.ovByAR.get(`${a.id}|${r.ruleId}`);
-      if (r.verdict === "Fail" && o) {
+      // A row for a non-overridable rule (licensing, I-1) can only come from loaded data: commit refuses to create one. It never resolves a Fail.
+      if (r.verdict === "Fail" && o && def?.overridable !== false) {
         if (o.signature === r.signature) r.overridden = r.ruleId === "double-booking" ? groupResolved.get(a.date) === true : true;
         else r.outdated = true;
       }
