@@ -14,6 +14,9 @@ const get = (fn, arg) => page.evaluate(fn, arg);
 const settle = async () => { await page.waitForTimeout(100); await page.waitForFunction(() => !window.__v3.app.getState().busy); await page.waitForTimeout(100); };
 const status = async () => (await insp.getByTestId("cell-status").innerText()).trim();
 const select = async (sel) => { await get((s) => window.__v3.app.getState().select(s), sel); await settle(); };
+const openDetails = async (scope = insp) => { const b = scope.getByRole("button", { name: "Details" }).first(); if ((await b.getAttribute("aria-expanded")) !== "true") await b.click(); };
+const openMore = async () => { const b = insp.getByRole("button", { name: "More for this day" }); if ((await b.getAttribute("aria-expanded")) !== "true") await b.click(); };
+const controlCount = () => get(() => { const a = document.querySelector('aside[aria-label="Inspector"]'); return [...a.querySelectorAll("button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])")].filter((e) => e.getBoundingClientRect().width > 0).length; });
 const commit = (edits) => get((e) => window.__v3.app.getState().commit(e), edits);
 
 // An open day at Rogue River (S10) on 2026-10-07: its one pharmacist is removed. Another store (S2) gets an extra
@@ -33,14 +36,19 @@ await select(null);
 check("empty state shows one hint", /Select a store day or a person/.test(await insp.innerText()));
 await select({ storeId: cell.storeId, date: cell.date });
 check("open cell says Needs 1 more", (await status()) === "Needs 1 more", await status());
-check("counts in words", /Needs one; nobody counted/.test(await insp.getByTestId("cell-counts").innerText()));
 const rows = insp.locator('ul[aria-label="Who can work here"] > li');
-check("choices render", (await rows.count()) === 8, String(await rows.count()));
-check("Show all is offered", await insp.getByRole("button", { name: /^Show all \(\d+\)$/ }).isVisible());
-await insp.getByRole("button", { name: /^Show all/ }).click();
-check("Show all lists everyone", (await rows.count()) > 8);
-await insp.getByRole("button", { name: "Show fewer" }).click();
+check("best three candidates render", (await rows.count()) === 3, String(await rows.count()));
+check("Show all N is offered", await insp.getByRole("button", { name: /^Show all \d+$/ }).isVisible());
+check("each candidate has a one-line consequence and a button", (await rows.locator("button").count()) === 3 && /(Free|At \w+ today|Not|Drive)/.test(await rows.first().innerText()), await rows.first().innerText());
 check("Find cover button is shown for an open cell", await insp.getByRole("button", { name: "Find cover" }).isVisible());
+check("Details and More for this day start collapsed", (await insp.getByRole("button", { name: "More for this day" }).getAttribute("aria-expanded")) === "false");
+const nControls = await controlCount();
+check("12 or fewer controls on an open cell before any disclosure", nControls <= 12, String(nControls));
+check("no stepper or close control before More is opened", (await insp.getByRole("button", { name: /Accept being short|Close this store/ }).count()) === 0);
+await page.screenshot({ path: shot.replace(".png", "-open.png") });
+await insp.getByRole("button", { name: /^Show all/ }).click();
+check("Show all lists everyone", (await rows.count()) > 3);
+await insp.getByRole("button", { name: "Show fewer" }).click();
 
 // 2. place someone: the cell becomes covered
 const placeBtn = insp.locator('button[aria-label^="Place: "]:not([disabled]), button[aria-label^="Move here: "]:not([disabled])').first();
@@ -51,7 +59,11 @@ check("placing makes the cell covered", (await status()).startsWith("Covered"), 
 check("selection kept after commit", await get(() => { const s = window.__v3.app.getState().selection; return !!s && !!s.storeId; }));
 const placed = await get((c) => Object.values(window.__v3.app.getState().world.state.assignments).filter((a) => a.storeId === c.storeId && a.date === c.date).map((a) => ({ id: a.id, p: a.pharmacistId, src: a.source, agreed: a.agreed })), cell);
 check("a manual unconfirmed assignment was written", placed.length === 1 && placed[0].src === "manual" && !placed[0].agreed, JSON.stringify(placed));
-check("row says who placed it", /Placed by you\./.test(await insp.innerText()) && /Unconfirmed/.test(await insp.innerText()));
+const row1 = insp.locator("section", { hasText: "Working here" });
+check("Details starts collapsed on a row", (await row1.getByRole("button", { name: "Details" }).getAttribute("aria-expanded")) === "false" && (await row1.getByRole("button", { name: "Remove" }).count()) === 0);
+check("a covered cell shows no Next step", (await insp.getByRole("button", { name: "Find cover" }).count()) === 0 && (await rows.count()) === 0);
+await openDetails();
+check("row says it is not confirmed yet", /Not confirmed yet/.test(await insp.innerText()));
 void placedLabel;
 
 // row actions: agreed, pin, partial note
@@ -85,15 +97,17 @@ check("blocked non-licensing choice offers Place anyway", await anyway.isVisible
 check("its line says why", /Not available: vacation/.test(await insp.locator(`li[data-pharmacist="${freeId}"]`).innerText()));
 await anyway.click(); await settle();
 check("placed anyway does not cover", (await status()) === "Needs 1 more", await status());
+check("row chip says it does not count and why", /Does not count: time off/.test(await insp.getByRole("listitem", { name: /./ }).first().innerText()));
+await openDetails();
 check("failure is shown in plain words with its fix", /Not available: vacation\./.test(await insp.innerText()) && /Pick someone who is available/.test(await insp.innerText()));
-await insp.getByRole("button", { name: "Accept anyway" }).click();
-const accept = insp.getByRole("button", { name: "Accept", exact: true });
+await insp.getByRole("button", { name: "Leave as is", exact: true }).click();
+const accept = insp.getByRole("button", { name: "Save", exact: true });
 check("reason is required for availability", await accept.isDisabled());
-await insp.getByRole("textbox", { name: /Why are you accepting this/ }).fill("Covering a shift swap she agreed to");
+await insp.getByRole("textbox", { name: /Why are you leaving this as is/ }).fill("Covering a shift swap she agreed to");
 await accept.click(); await settle();
 const ov = await get(() => Object.values(window.__v3.app.getState().world.state.overrides));
 check("override stored with the reason", ov.length === 1 && ov[0].ruleId === "availability" && ov[0].reason === "Covering a shift swap she agreed to", JSON.stringify(ov));
-check("accepted failure reads Accepted: <reason>", /Accepted: Covering a shift swap/.test(await insp.innerText()));
+check("accepted failure reads Left as is: <reason>", /Left as is: Covering a shift swap/.test(await insp.innerText()));
 check("cell is covered after accepting", (await status()).startsWith("Covered"), await status());
 await insp.getByRole("button", { name: "Remove acceptance" }).click(); await settle();
 check("Remove acceptance deletes the override", (await get(() => Object.keys(window.__v3.app.getState().world.state.overrides).length)) === 0);
@@ -109,13 +123,19 @@ await settle();
 const wa = await get(() => {
   const s = window.__v3.app.getState();
   const st = s.world.state;
-  const unl = Object.values(st.pharmacists).find((p) => p.licenses && !("WA" in p.licenses));
   const wa = Object.values(st.stores).find((x) => x.state === "WA");
-  const busy = new Set(Object.values(st.assignments).filter((a) => a.pharmacistId === unl.id).map((a) => a.date));
-  const date = ["2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"].find((d) => !busy.has(d));
+  const days = ["2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23"]; // Tuesday to Friday: the store is open
+  let unl, date;
+  for (const p of Object.values(st.pharmacists).filter((q) => q.licenses && !("WA" in q.licenses))) {
+    const busy = new Set(Object.values(st.assignments).filter((a) => a.pharmacistId === p.id).map((a) => a.date));
+    const d = days.find((x) => !busy.has(x));
+    if (d) { unl = p; date = d; break; }
+  }
   return { storeId: wa.id, pharmacistId: unl.id, name: unl.name, date };
 });
 await select({ storeId: wa.storeId, date: wa.date });
+if (!(await insp.getByRole("button", { name: /^Show all/ }).count())) { await openMore(); await insp.getByRole("button", { name: "Add another person" }).click(); } // a covered day lists people only on request
+await insp.getByRole("button", { name: /^Show all/ }).click();
 const unlicRow = insp.locator(`li[data-pharmacist="${wa.pharmacistId}"]`);
 check("unlicensed choice says Not licensed in WA", /Not licensed in WA/.test(await unlicRow.innerText()));
 check("unlicensed choice has only a disabled button", (await unlicRow.getByRole("button").count()) === 1 && (await unlicRow.getByRole("button").isDisabled()));
@@ -123,9 +143,11 @@ check("no Place anyway for licensing", (await unlicRow.getByRole("button", { nam
 await commit([{ t: "place", storeId: wa.storeId, pharmacistId: wa.pharmacistId, date: wa.date }]);
 await settle();
 const wrow = insp.getByRole("listitem", { name: wa.name });
+check("licensing chip says it does not count", await wrow.getByText(/Does not count: not licensed/).waitFor({ timeout: 5000 }).then(() => true, () => false), (await wrow.innerText()).slice(0, 120));
+await openDetails(wrow);
 check("placed unlicensed person fails in plain words", /Not licensed in WA\./.test(await wrow.innerText()));
 check("licensing shows a hard stop", /hard stop/i.test(await wrow.innerText()));
-check("licensing shows no accept button", (await wrow.locator("li", { hasText: "hard stop" }).getByRole("button", { name: /Accept/ }).count()) === 0);
+check("licensing shows no accept button", (await wrow.locator("li", { hasText: "hard stop" }).getByRole("button", { name: /Accept|Leave as is/ }).count()) === 0);
 const lic = await get((a) => window.__v3.app.getState().commit([{ t: "override", assignmentId: Object.values(window.__v3.app.getState().world.state.assignments).find((x) => x.pharmacistId === a.p && x.date === a.d).id, ruleId: "licensing", reason: "x" }]), { p: wa.pharmacistId, d: wa.date });
 check("domain also refuses a licensing override", lic === false);
 await get(() => window.__v3.app.getState().clearNotice());
@@ -134,30 +156,33 @@ await get((a) => { const w = window.__v3.app.getState().world.state; return wind
 // 5. swap mode lists choices and swaps
 await select({ storeId: cell.storeId, date: cell.date });
 await insp.locator('button[aria-label^="Place: "]:not([disabled])').first().click(); await settle();
+await openDetails();
 await insp.getByRole("button", { name: "Swap to someone else" }).click();
 check("swap mode shows a swap list", await insp.getByText(/Pick who takes the place/).isVisible());
 const swapBtn = insp.locator('button[aria-label^="Swap in: "]:not([disabled])').first();
 const swapName = (await swapBtn.getAttribute("aria-label")).replace("Swap in: ", "");
 await swapBtn.click(); await settle();
-check("swap replaced the person", (await insp.getByRole("listitem", { name: swapName }).count()) === 1 && /Unconfirmed/.test(await insp.innerText()));
+check("swap replaced the person", (await insp.getByRole("listitem", { name: swapName }).count()) === 1 );
 const remaining = await get((c) => Object.values(window.__v3.app.getState().world.state.assignments).filter((a) => a.storeId === c.storeId && a.date === c.date).length, cell);
 check("exactly one assignment after swap", remaining === 1);
+await openDetails();
 await insp.getByRole("button", { name: "Remove", exact: true }).click();
 await insp.getByRole("button", { name: "Yes, remove" }).click(); await settle();
 
-// 6. cell controls
+// 6. cell controls (behind More for this day)
+await openMore();
 await insp.getByRole("button", { name: "More: Accept being short" }).click(); await settle();
 check("accept being short", (await status()) === "Accepted short", await status());
 await insp.getByRole("button", { name: "Fewer: Accept being short" }).click(); await settle();
 await insp.getByRole("button", { name: "More: Locum cover" }).click(); await settle();
-check("a locum covers the cell", (await status()).startsWith("Covered") && /one locum/.test(await insp.getByTestId("cell-counts").innerText()), await status());
+check("a locum covers the cell", (await status()).startsWith("Covered"), await status());
 await insp.getByRole("button", { name: "Fewer: Locum cover" }).click(); await settle();
 await insp.getByRole("button", { name: "Close this store this day" }).click();
 const closeBtn = insp.getByRole("button", { name: "Close the day" });
 check("closing asks for a note, not a dialog", await closeBtn.isDisabled());
 await insp.getByRole("textbox", { name: /^Note/ }).fill("Inventory");
 await closeBtn.click(); await settle();
-check("closed with the note shown", (await status()) === "Closed (Inventory)", await status());
+check("closed with the note shown", (await status()) === "Closed: Inventory", await status());
 await insp.getByRole("button", { name: "Reopen" }).click(); await settle();
 check("reopened", (await status()) === "Needs 1 more", await status());
 await insp.getByRole("button", { name: /^Extra clinic/ }).click();
@@ -200,6 +225,8 @@ const ph = await get(() => {
   return { id: u.pharmacistId, date: u.first, uid: u.id, status: u.status };
 });
 await select({ pharmacistId: ph.id, date: ph.date });
+check("pharmacist day keeps the rest behind More for this day", (await insp.getByRole("button", { name: "More for this day" }).getAttribute("aria-expanded")) === "false" && (await controlCount()) <= 12);
+await openMore();
 const txt = await insp.innerText();
 check("pharmacist day shows where they are", (await insp.getByTestId("pharmacist-where").count()) === 1);
 check("pharmacist day lists time off", /Time off covering this day/i.test(txt) && /(Vacation|Sick|Other|Turned down)/.test(txt));

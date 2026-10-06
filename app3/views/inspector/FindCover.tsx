@@ -23,8 +23,8 @@ export function FindCover({ ctx }: { ctx: Ctx }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <Act tone="ink" disabled={!!lock || past || busy} title={lock ?? (past ? "This day has passed" : undefined)} onClick={() => run(false)}>{busy ? "Searching..." : "Find cover"}</Act>
-        <span className="text-xs text-muted">{past ? "This day has passed, so there is nothing to repair." : "Looks for ways to fill this day. Nothing changes until you accept."}</span>
+        <Act tone="ink" disabled={!!lock || past || busy} title={lock ?? (past ? "This day has passed" : "Looks for ways to fill this day. Nothing changes until you accept.")} onClick={() => run(false)}>{busy ? "Searching..." : "Find cover"}</Act>
+        {past && <span className="text-xs text-muted">This day has passed.</span>}
       </div>
 
       {mine && rr && (

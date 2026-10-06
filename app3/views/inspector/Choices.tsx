@@ -2,11 +2,12 @@
 import { useMemo, useState } from "react";
 import { applyScratch, choicesFor, type Choice, type Edit } from "@domain";
 import type { CellAssignment } from "../../derive.ts";
+import { shortName } from "../../names.ts";
 import { Chip } from "../../ui/primitives.tsx";
 import { commitEdits, codeOf, describeChoice, nameOf, type Ctx } from "./lib.ts";
 import { Act } from "./ui.tsx";
 
-const FIRST = 8;
+const FIRST = 3;
 
 export function Choices({ ctx, replace, onDone }: { ctx: Ctx; replace: CellAssignment | null; onDone: () => void }) {
   const { state, asOf, lock, storeId, date } = ctx;
@@ -32,7 +33,7 @@ export function Choices({ ctx, replace, onDone }: { ctx: Ctx; replace: CellAssig
       label = `Swapped ${replace.name} for ${nameOf(state, c.pharmacistId)} at ${store}`;
     } else {
       edits = c.action === "move" && c.assignmentId ? [{ t: "move", assignmentId: c.assignmentId, toStoreId: storeId }] : [{ t: "place", storeId, pharmacistId: c.pharmacistId, date }];
-      label = `${c.action === "move" ? "Moved" : "Placed"} ${nameOf(state, c.pharmacistId)} at ${store}`;
+      label = `${c.action === "move" ? "Moved" : "Scheduled"} ${nameOf(state, c.pharmacistId)} at ${store}`;
     }
     if (commitEdits(edits, label)) onDone();
   };
@@ -56,7 +57,7 @@ export function Choices({ ctx, replace, onDone }: { ctx: Ctx; replace: CellAssig
             <li key={c.pharmacistId} className="py-1.5" data-pharmacist={c.pharmacistId}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold" title={name}>{name}</div>
+                  <div className="truncate text-sm font-semibold" title={name}>{shortName(name, 26)}</div>
                   <div className="flex gap-1.5 text-xs">
                     <Chip tone={p.tone} className="shrink-0 self-start">{p.glyph}</Chip>
                     <span className="min-w-0">{p.text}</span>
@@ -66,20 +67,19 @@ export function Choices({ ctx, replace, onDone }: { ctx: Ctx; replace: CellAssig
                   <Act disabled title={p.text} aria-label={`${verb} ${name}: not allowed. ${p.text}`}>{verb}</Act>
                 ) : (
                   <Act
-                    tone={blocked ? "quiet" : "ink"} disabled={!!lock} title={lock ?? (blocked ? "They would not count until you accept the problem" : undefined)}
+                    tone={blocked ? "quiet" : "ink"} disabled={!!lock} title={lock ?? (blocked ? "They would not count until you leave the problem as is" : undefined)}
                     aria-label={`${blocked ? `${verb} anyway` : verb}: ${name}`} onClick={() => go(c)} className="shrink-0"
                   >
                     {blocked ? `${verb} anyway` : verb}
                   </Act>
                 )}
               </div>
-              {blocked && !hardStop && <p className="mt-0.5 text-xs text-muted">They would not count until you accept the problem on their row.</p>}
             </li>
           );
         })}
       </ul>
       {choices.length > FIRST && (
-        <div className="mt-1.5"><Act onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all (${choices.length})`}</Act></div>
+        <div className="mt-1.5"><Act onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all ${choices.length}`}</Act></div>
       )}
       {!choices.length && <p className="text-sm text-muted">Nobody else is on the list.</p>}
     </div>

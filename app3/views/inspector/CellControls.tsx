@@ -33,20 +33,19 @@ export function CellControls({ ctx }: { ctx: Ctx }) {
   const open = (f: Form) => { setForm(form === f ? null : f); setNote(""); setN(1); };
 
   const dayText = override
-    ? override.count === 0 ? `Closed for this day${override.note ? `: ${override.note}` : "."}` : `Needs ${override.count} instead of the usual ${usual}${override.note ? `: ${override.note}` : "."}`
+    ? override.count === 0 ? `Closed this day${override.note ? `: ${override.note}` : "."}` : `Needs ${override.count} instead of the usual ${usual}${override.note ? `: ${override.note}` : "."}`
     : null;
 
   return (
     <div>
       <Stepper
         label="Accept being short" value={cv.acceptedShort} max={Math.max(cv.required, cv.acceptedShort)} disabled={!!lock || cv.required === 0} title={title}
-        hint="Counts as accepted, not as covered." onChange={(v) => setCount({ acceptedShort: v }, "Accepted short")}
+        onChange={(v) => setCount({ acceptedShort: v }, "Accepted short")}
       />
-      <Stepper label="Locum cover" value={cv.locum} max={9} disabled={!!lock} title={title} hint="A locum filling a place." onChange={(v) => setCount({ locum: v }, "Locum")} />
+      <Stepper label="Locum cover" value={cv.locum} max={9} disabled={!!lock} title={title} onChange={(v) => setCount({ locum: v }, "Locum")} />
 
       <div className="mt-2 border-t border-line pt-2">
-        <h4 className="text-sm font-semibold">This day at {code}</h4>
-        {dayText && <p className="mt-0.5 text-sm" data-testid="override-text">{dayText}</p>}
+        {dayText && <p className="text-sm" data-testid="override-text">{dayText}</p>}
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {override && (
             <Act disabled={!!lock} title={title} onClick={() => commitEdits([{ t: "dateOverride.clear", storeId, date }], `Back to the usual at ${code}`)}>

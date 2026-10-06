@@ -28,7 +28,7 @@ export function ordinal(n: number): string {
 }
 
 export const SOURCE_WORDS: Record<AssignmentSource, string> = {
-  manual: "Placed by you.", pattern: "From the pattern.", build: "Placed by Build.", repair: "Placed by Repair.", improve: "Placed by Improve.", emergency: "Emergency.",
+  manual: "Scheduled by you", pattern: "From the pattern", build: "Scheduled by Build", repair: "Scheduled by Find cover", improve: "Scheduled by Improve", emergency: "Emergency",
 };
 
 /** Why the screen is read-only, or null when edits are allowed. */
@@ -93,7 +93,7 @@ export function describeChoice(state: DomainState, c: Choice, storeId: string, d
   const warn = () => { if (tone === "ok") tone = "warning"; };
   if (c.currently !== "off" && !c.blocks.includes("double-booking")) {
     const here = codeOf(state, c.currently);
-    parts.push(c.leavesShort ? `At ${here} today (would leave ${here} short)` : `At ${here} today (moving them does not leave ${here} short)`);
+    parts.push(c.leavesShort ? `At ${here} today, would leave ${here} short` : `At ${here} today`);
     if (c.leavesShort) warn();
   }
   const requested = Object.values(state.unavailability).some((u) => u.pharmacistId === c.pharmacistId && u.status === "Requested" && u.first <= date && date <= u.last && (!u.scopeStoreId || u.scopeStoreId === storeId));
