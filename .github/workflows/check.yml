@@ -1,0 +1,104 @@
+name: v3 check
+# The v3 scheduler's whole check, with no model tokens and no network beyond installing packages and browsers.
+#   every push and pull request : build, then `node scripts/v3-all.mjs --quick` in Chromium (types, unit tests, PDF check, every browser suite, the
+#                                 offline scan; about 5 minutes). Firefox and WebKit run the same browser suites as separate legs that may fail.
+#   every night                 : `node scripts/v3-all.mjs --level medium` (adds the random-click stress and the pressure test), plus the perf guard.
+# Logs of a failing run are uploaded as an artifact (test-logs/, including test-logs/visual/ with the actual and diff pictures).
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: v3-check-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
+env:
+  # Pixel baselines (e2e/baselines) were taken on one machine; another runner's fonts can move a few pixels. Differences are reported as "warn"
+  # lines here, and fail on a developer machine. Remove this once baselines are recorded on the runner (UPDATE_BASELINES=1, download the artifact).
+  VISUAL_ADVISORY: "1"
+
+jobs:
+  quick:
+    if: github.event_name != 'schedule'
+    name: quick (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # Chromium is the gate. Firefox and WebKit are new here: a red leg is read first and fixed or excused (continue-on-error), never ignored.
+    continue-on-error: ${{ matrix.browser != 'chromium' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        # package.json has no "engines"; the repo runs on Node 22 (type stripping for the domain tests and scripts).
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Install the browser (the playwright-core version in package-lock.json; there is no separate playwright package)
+        run: npx playwright-core install --with-deps ${{ matrix.browser }}
+      - name: Point the tests at that Chromium (e2e/v3-lib.mjs otherwise looks in a fixed path that exists only on the dev container)
+        if: matrix.browser == 'chromium'
+        run: echo "CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Chromium, everything quick
+        if: matrix.browser == 'chromium'
+        run: node scripts/v3-all.mjs --quick
+      - name: Build
+        if: matrix.browser != 'chromium'
+        run: npm run build:v3
+      - name: ${{ matrix.browser }}, the browser suites that run on every engine
+        if: matrix.browser != 'chromium'
+        env:
+          BROWSER: ${{ matrix.browser }}
+          # Suites that need Chromium itself: CDP / page.pdf (v3-print), clipboard permissions (v3-chrome, v3-resilience), OPFS file pickers (v3-persist).
+          # v3-visual, v3-print-browser, v3-races and v3-month-in-the-life skip their Chromium-only parts by themselves when BROWSER is set.
+          SKIP: v3-chrome v3-persist v3-print v3-resilience
+        run: |
+          fail=0
+          for f in e2e/v3-*.mjs; do
+            name=$(basename "$f" .mjs)
+            [ "$name" = "v3-lib" ] && continue
+            case " $SKIP " in *" $name "*) echo "skip $name (Chromium only)"; continue ;; esac
+            echo "::group::$name"
+            node "$f" || { echo "FAILED $name"; fail=1; }
+            echo "::endgroup::"
+          done
+          exit $fail
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v3-logs-${{ matrix.browser }}
+          path: |
+            test-logs/
+            dist-v3/e2e-*
+          if-no-files-found: ignore
+
+  nightly:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # Chromium only: scripts/v3-all.mjs also runs the suites in any other engine it finds installed, and some suites are Chromium-only (see the
+      # SKIP list above), so Firefox and WebKit stay with the per-push legs.
+      - name: Install Chromium (the version playwright-core in package-lock.json wants)
+        run: |
+          npx playwright-core install --with-deps chromium
+          echo "CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Everything, with the random-click stress and the pressure test at medium level
+        run: node scripts/v3-all.mjs --level medium
+      - name: Perf guard (advisory until the baseline is recorded on this runner)
+        continue-on-error: true
+        run: node scripts/v3-perf-baseline.mjs
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v3-nightly-logs
+          path: test-logs/
+          if-no-files-found: ignore

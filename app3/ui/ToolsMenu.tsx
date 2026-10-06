@@ -1,6 +1,6 @@
 // The engine's helpers in one quiet menu: Build, Improve and Cover all open. Each only proposes; nothing is saved until Accept.
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "../store.ts";
 import { useIssues } from "../derive.ts";
 import { Btn } from "./primitives.tsx";
@@ -12,6 +12,13 @@ export function ToolsMenu({ className }: { className?: string }) {
   const issues = useIssues();
   const [improve, setImprove] = useState(false);
   const [next14, setNext14] = useState(false);
+  // The Improve dialog is a plain overlay, so Esc has to be handled here (the shortcut handler in the top bar already leaves Esc to an open Improve dialog).
+  useEffect(() => {
+    if (!improve) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); setImprove(false); } };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [improve]);
   const off = !!busy || proposal || scenario || !!useApp.getState().readOnlyProblems;
   const why = busy ? `${busy} is running.` : proposal ? "Accept or discard the preview first." : scenario ? "A what-if is open." : undefined;
   const coverAll = () => {
