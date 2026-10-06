@@ -27,7 +27,8 @@
     "check:v3": "tsc --noEmit -p domain && tsc --noEmit -p app3 && node --experimental-strip-types --test domain/test/*.test.ts scripts/v3-compare.test.ts && npm run test:persist",
     "test:persist": "node --experimental-strip-types --test persist/test/*.test.ts",
     "build:v3": "vite build -c vite.v3.config.ts",
-    "typecheck:v3": "tsc --noEmit -p app3"
+    "typecheck:v3": "tsc --noEmit -p app3",
+    "e2e:v3": "node scripts/v3-e2e.mjs"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",

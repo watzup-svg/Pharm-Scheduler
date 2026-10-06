@@ -41,6 +41,21 @@ jobs:
           npx playwright-core install --with-deps chromium
           export CHROME="$(node -e "console.log(require('playwright-core').chromium.executablePath())")"
           npm run e2e -- --shard ${{ matrix.shard }}
+  # The v3 app: build the single file, then run its browser checks (Chromium).
+  v3-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck:v3
+      - run: npm run build:v3
+      - name: v3 browser checks
+        run: |
+          npx playwright-core install --with-deps chromium
+          export CHROME="$(node -e "console.log(require('playwright-core').chromium.executablePath())")"
+          npm run e2e:v3
   # The Safari engine (WebKit). Not blocking yet: it is new, so a red here is read first and fixed or excused. Still not a real iPhone.
   webkit:
     runs-on: ubuntu-latest
