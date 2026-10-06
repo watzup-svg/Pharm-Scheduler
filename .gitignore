@@ -5,3 +5,4 @@ dist-real
 test-logs
 dist
 dist-v3
+stress/out
