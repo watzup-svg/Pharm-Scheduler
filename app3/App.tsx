@@ -15,6 +15,7 @@ import { PrintView } from "./views/PrintView.tsx";
 import { Notice } from "./ui/Notice.tsx";
 import { SaveDialogs } from "./views/SaveControls.tsx";
 import { HoverNotes } from "./ui/notes.tsx";
+import { ScheduleHero, SetupHero, TravelHero, RulesHero, ChecksHero, PrintHero } from "./views/hero/Heroes.tsx";
 
 // Shell: schedule dominant in the middle, contextual left panel, docked Inspector on the right with Someone's Out above it,
 // Proposal Bar along the bottom while a proposal is open. Desktop only.
@@ -29,6 +30,12 @@ export function App() {
       <div className="flex min-h-0 flex-1">
         <aside aria-label="Left panel" className="w-[272px] shrink-0 overflow-y-auto border-r border-line bg-cream"><LeftPanel /></aside>
         <main className="min-w-0 flex-1 overflow-auto">
+          {(view === "wall" || view === "plan") && <ScheduleHero />}
+          {view === "setup" && <SetupHero />}
+          {view === "travel" && <TravelHero />}
+          {view === "rules" && <RulesHero />}
+          {view === "checks" && <ChecksHero />}
+          {view === "print" && <PrintHero />}
           {view === "wall" && <Wall />}
           {view === "plan" && <Plan />}
           {view === "setup" && <Setup />}

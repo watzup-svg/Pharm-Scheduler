@@ -7,12 +7,13 @@ import {
 import { getPersist } from "./persist-bridge.ts";
 import { todayISO } from "./clock.ts";
 import { callEngine } from "./engine.ts";
+import { describeEdits } from "./copy.ts";
 
 export type View = "wall" | "plan" | "setup" | "rules" | "travel" | "checks" | "print";
 export type Axis = "store" | "pharmacist";
 export type LeftTab = "queue" | "tell" | "history";
 export type Selection = { storeId?: string; pharmacistId?: string; date: ISODate } | null;
-export type Notice = { id: number; kind: "info" | "ok" | "error"; text: string };
+export type Notice = { id: number; kind: "info" | "ok" | "error"; text: string; /** A change set this line can undo. */ undoId?: string };
 
 let noticeId = 0;
 
@@ -41,7 +42,7 @@ export type AppState = {
   setWindow(from: ISODate, to: ISODate): void;
   shiftWindow(days: number): void;
   setAsOf(d: ISODate): void;
-  say(kind: Notice["kind"], text: string): void;
+  say(kind: Notice["kind"], text: string, undoId?: string): void;
   clearNotice(): void;
 
   // world
@@ -87,13 +88,15 @@ export const useApp = create<AppState>((set, get) => {
     getPersist().recordCommit(w, cs).catch((e) => get().say("error", `Could not keep a browser copy: ${String(e?.message ?? e)}`));
   };
   const blocked = (): string | null => (get().readOnlyProblems ? "This file opened read-only because some data is inconsistent." : null);
-  const apply = (r: { world: World; changeSet: ChangeSet } | { refused: true; reason: string }): boolean => {
+  const apply = (r: { world: World; changeSet: ChangeSet } | { refused: true; reason: string }, said?: string): boolean => {
     if ("refused" in r) {
       get().say("error", r.reason);
       return false;
     }
     set({ world: r.world, repairResult: null });
     record(r.world, r.changeSet);
+    // What happened, in a sentence, with Undo beside it (undo and revert lines carry none).
+    if (said !== undefined && r.changeSet.kind !== "undo" && r.changeSet.kind !== "revert") get().say("ok", said, r.changeSet.id);
     return true;
   };
 
@@ -118,7 +121,7 @@ export const useApp = create<AppState>((set, get) => {
     setWindow: (from, to) => set({ window: { from, to } }),
     shiftWindow: (days) => set((s) => ({ window: { from: addDays(s.window.from, days), to: addDays(s.window.to, days) } })),
     setAsOf: (asOf) => set({ asOf }),
-    say: (kind, text) => set({ notice: { id: ++noticeId, kind, text } }),
+    say: (kind, text, undoId) => set({ notice: { id: ++noticeId, kind, text, ...(undoId ? { undoId } : {}) } }),
     clearNotice: () => set({ notice: null }),
 
     setWorld: (w, opts = {}) => set({ world: w, fileName: opts.fileName ?? get().fileName, readOnlyProblems: opts.readOnlyProblems ?? null, repairResult: null, selection: null }),
@@ -127,7 +130,8 @@ export const useApp = create<AppState>((set, get) => {
       const ro = blocked();
       if (ro) { get().say("error", ro); return false; }
       if (get().busy) { get().say("info", `Wait for ${get().busy} to finish.`); return false; }
-      return apply(api.commit(world(), edits, { kind: "manual", ...(label ? { label } : {}) }));
+      const w0 = world();
+      return apply(api.commit(w0, edits, { kind: "manual", ...(label ? { label } : {}) }), label ?? describeEdits(w0.state, edits));
     },
     undo: (id) => apply(api.undo(world(), id)),
     checkpoint: (name) => {
@@ -187,8 +191,8 @@ export const useApp = create<AppState>((set, get) => {
       set({ world: o });
     },
     acceptProposal: () => {
-      const ok = apply(api.acceptProposal(world()));
-      return ok;
+      const p = world().session.proposal;
+      return apply(api.acceptProposal(world()), p ? `${p.label} accepted: ${p.edits.length === 1 ? "1 change" : `${p.edits.length} changes`}.` : "Accepted.");
     },
     discardProposal: () => set({ world: api.discardProposal(world()) }),
 

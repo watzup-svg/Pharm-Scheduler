@@ -64,11 +64,18 @@ class Builder {
   }
   set(type: EventType, key: string, after: unknown): void {
     if (this.cow) {
-      const f = TABLE[splitKey(key)[0]];
-      if (f && !this.cow.has(f)) {
-        (this.state as unknown as Record<string, unknown>)[f] = { ...(this.state[f] as object) };
-        this.cow.add(f);
+      // Scratch state (search, previews): no event bookkeeping and no deep copies; rows are replaced, never mutated.
+      const [t, k] = splitKey(key);
+      const f = TABLE[t];
+      if (!f && t !== "config") return;
+      if (t === "config") { this.state.config = after as DomainState["config"]; return; }
+      if (!this.cow.has(f!)) {
+        (this.state as unknown as Record<string, unknown>)[f!] = { ...(this.state[f!] as object) };
+        this.cow.add(f!);
       }
+      const tbl = this.state[f!] as Record<string, unknown>;
+      if (after === null || after === undefined) delete tbl[k]; else tbl[k] = after;
+      return;
     }
     const before = readKey(this.state, key);
     writeKey(this.state, key, after);

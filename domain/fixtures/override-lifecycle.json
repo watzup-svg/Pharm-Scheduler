@@ -1,79 +1,262 @@
 {
   "name": "override lifecycle: add, outdated, moot (auto-remove), refusals",
-  "covers": ["overrides", "availability", "licensing", "travel-soft", "I-1", "I-3"],
+  "covers": [
+    "overrides",
+    "availability",
+    "licensing",
+    "travel-soft",
+    "I-1",
+    "I-3"
+  ],
   "asOf": "2026-05-01",
   "seed": {
-    "stores": [{ "id": "S1" }, { "id": "S2" }],
+    "stores": [
+      {
+        "id": "S1"
+      },
+      {
+        "id": "S2"
+      }
+    ],
     "pharmacists": [
-      { "id": "P1", "base": "S1" },
-      { "id": "P2", "base": "S1", "lic": ["WA"] },
-      { "id": "P4", "base": "S2" }
+      {
+        "id": "P1",
+        "base": "S1"
+      },
+      {
+        "id": "P2",
+        "base": "S1",
+        "lic": [
+          "WA"
+        ]
+      },
+      {
+        "id": "P4",
+        "base": "S2"
+      }
     ],
     "assignments": [
-      { "store": "S1", "ph": "P1", "date": "2026-05-05" },
-      { "store": "S1", "ph": "P2", "date": "2026-05-06" },
-      { "store": "S1", "ph": "P1", "date": "2026-05-07" },
-      { "store": "S1", "ph": "P4", "date": "2026-05-08" }
+      {
+        "store": "S1",
+        "ph": "P1",
+        "date": "2026-05-05"
+      },
+      {
+        "store": "S1",
+        "ph": "P2",
+        "date": "2026-05-06"
+      },
+      {
+        "store": "S1",
+        "ph": "P1",
+        "date": "2026-05-07"
+      },
+      {
+        "store": "S1",
+        "ph": "P4",
+        "date": "2026-05-08"
+      }
     ],
     "unavailability": [
-      { "ph": "P1", "first": "2026-05-05", "last": "2026-05-05", "status": "Approved", "type": "Vacation" },
-      { "ph": "P1", "first": "2026-05-05", "last": "2026-05-05", "status": "Requested", "type": "Sick" },
-      { "ph": "P1", "first": "2026-05-07", "last": "2026-05-07", "status": "Approved", "type": "Vacation" }
+      {
+        "ph": "P1",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "ph": "P1",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Requested",
+        "type": "Sick"
+      },
+      {
+        "ph": "P1",
+        "first": "2026-05-07",
+        "last": "2026-05-07",
+        "status": "Approved",
+        "type": "Vacation"
+      }
     ],
-    "travel": [["S2", "S1", 100, 70]]
+    "travel": [
+      [
+        "S2",
+        "S1",
+        100,
+        70
+      ]
+    ]
   },
   "steps": [
     {
       "op": "evaluate",
       "why": "U1 (Approved) covers P1 on Tue 05-05, so availability fails (signature U1). U2 is only Requested and does not count without includeRequested. S1 requires 1, counted 0, open 1.",
       "expect": {
-        "cells": { "S1|2026-05-05": { "required": 1, "counted": 0, "open": 1 } },
-        "assignments": { "S1|P1|2026-05-05": { "counts": false, "fail": ["availability"], "overridden": [], "outdated": [] } }
+        "cells": {
+          "S1|2026-05-05": {
+            "required": 1,
+            "counted": 0,
+            "open": 1
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": false,
+            "fail": [
+              "availability"
+            ],
+            "overridden": [],
+            "outdated": []
+          }
+        }
       }
     },
     {
       "op": "commit",
       "id": "ov1",
-      "edits": [{ "t": "override", "assignmentId": "S1|P1|2026-05-05", "ruleId": "availability", "reason": "Covering a no-show; DM approved" }],
-      "meta": { "kind": "manual" },
-      "expect": { "ok": true, "changeSet": { "events": { "$has": { "type": "override.add" } } } }
+      "edits": [
+        {
+          "t": "override",
+          "assignmentId": "S1|P1|2026-05-05",
+          "ruleId": "availability",
+          "reason": "Covering a no-show; DM approved"
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "expect": {
+        "ok": true,
+        "changeSet": {
+          "events": {
+            "$has": {
+              "type": "override.add"
+            }
+          }
+        }
+      }
     },
     {
       "op": "evaluate",
       "why": "Override signature U1 equals the current signature: the Fail stays a Fail verdict but is overridden, so the assignment counts.",
       "expect": {
-        "cells": { "S1|2026-05-05": { "counted": 1, "open": 0 } },
-        "assignments": { "S1|P1|2026-05-05": { "counts": true, "fail": ["availability"], "overridden": ["availability"], "outdated": [] } }
-      }
-    },
-    {
-      "op": "commit",
-      "edits": [{ "t": "unavail.update", "id": "U2", "patch": { "status": "Approved" } }],
-      "meta": { "kind": "manual" },
-      "why": "The Requested record U2 becomes Approved, so the record id set under the Fail changes from U1 to U1,U2. The Fail persists, so the override is not moot.",
-      "expect": { "ok": true }
-    },
-    {
-      "op": "evaluate",
-      "why": "I-3: signature differs from the stored one, so the override is outdated and does not restore the count.",
-      "expect": {
-        "cells": { "S1|2026-05-05": { "counted": 0, "open": 1 } },
-        "assignments": { "S1|P1|2026-05-05": { "counts": false, "fail": ["availability"], "overridden": [], "outdated": ["availability"] } }
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": true,
+            "fail": [
+              "availability"
+            ],
+            "overridden": [
+              "availability"
+            ],
+            "outdated": []
+          }
+        }
       }
     },
     {
       "op": "commit",
       "edits": [
-        { "t": "unavail.update", "id": "U1", "patch": { "status": "Denied" } },
-        { "t": "unavail.update", "id": "U2", "patch": { "status": "Denied" } }
+        {
+          "t": "pharmacist.set",
+          "pharmacist": {
+            "id": "P1",
+            "name": "P1",
+            "initials": "P1",
+            "baseStoreId": "S1",
+            "licenses": {
+              "OR": null,
+              "WA": null
+            },
+            "inactiveFrom": "2026-05-01"
+          }
+        }
       ],
-      "meta": { "kind": "manual" },
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "P1 also becomes inactive from 05-01, so the reason set under the Fail changes from 'unavailable' to 'inactive,unavailable'. The Fail persists, so the override is not moot. (Adding a second overlapping absence record would NOT change it: overlaps are a union.)",
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "evaluate",
+      "why": "I-3: signature differs from the stored one, so the override is outdated and does not restore the count.",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 0,
+            "open": 1
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": false,
+            "fail": [
+              "availability"
+            ],
+            "overridden": [],
+            "outdated": [
+              "availability"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "pharmacist.set",
+          "pharmacist": {
+            "id": "P1",
+            "name": "P1",
+            "initials": "P1",
+            "baseStoreId": "S1",
+            "licenses": {
+              "OR": null,
+              "WA": null
+            }
+          }
+        },
+        {
+          "t": "unavail.update",
+          "id": "U1",
+          "patch": {
+            "status": "Denied"
+          }
+        },
+        {
+          "t": "unavail.update",
+          "id": "U2",
+          "patch": {
+            "status": "Denied"
+          }
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
       "why": "Denied never counts, so availability now Passes. The override is moot and is removed in the same change set (spec section 4).",
       "expect": {
         "ok": true,
         "changeSet": {
           "events": {
-            "$has": { "type": "override.remove", "after": { "$absent": true } }
+            "$has": {
+              "type": "override.remove",
+              "after": {
+                "$absent": true
+              }
+            }
           }
         }
       }
@@ -81,53 +264,160 @@
     {
       "op": "evaluate",
       "expect": {
-        "cells": { "S1|2026-05-05": { "counted": 1, "open": 0 } },
-        "assignments": { "S1|P1|2026-05-05": { "counts": true, "fail": [], "overridden": [], "outdated": [] } }
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": true,
+            "fail": [],
+            "overridden": [],
+            "outdated": []
+          }
+        }
       }
     },
     {
       "op": "evaluate",
       "why": "Licensing: P2 is licensed in WA only, S1 is in OR, so licensing fails (signature P2|OR|none).",
-      "expect": { "assignments": { "S1|P2|2026-05-06": { "counts": false, "fail": ["licensing"] } } }
+      "expect": {
+        "assignments": {
+          "S1|P2|2026-05-06": {
+            "counts": false,
+            "fail": [
+              "licensing"
+            ]
+          }
+        }
+      }
     },
     {
       "op": "commit",
-      "edits": [{ "t": "override", "assignmentId": "S1|P2|2026-05-06", "ruleId": "licensing", "reason": "Please let it through" }],
-      "meta": { "kind": "manual" },
+      "edits": [
+        {
+          "t": "override",
+          "assignmentId": "S1|P2|2026-05-06",
+          "ruleId": "licensing",
+          "reason": "Please let it through"
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
       "why": "I-1: licensing is not overridable, even with a reason. commit refuses.",
-      "expect": { "refused": true, "reason": { "$any": true } }
+      "expect": {
+        "refused": true,
+        "reason": {
+          "$any": true
+        }
+      }
     },
     {
       "op": "evaluate",
       "why": "The refused commit changed nothing.",
-      "expect": { "assignments": { "S1|P2|2026-05-06": { "counts": false, "overridden": [] } } }
+      "expect": {
+        "assignments": {
+          "S1|P2|2026-05-06": {
+            "counts": false,
+            "overridden": []
+          }
+        }
+      }
     },
     {
       "op": "commit",
-      "edits": [{ "t": "override", "assignmentId": "S1|P1|2026-05-07", "ruleId": "availability", "reason": "" }],
-      "meta": { "kind": "manual" },
+      "edits": [
+        {
+          "t": "override",
+          "assignmentId": "S1|P1|2026-05-07",
+          "ruleId": "availability",
+          "reason": ""
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
       "why": "availability is reasonRequired and U3 (Approved) makes it Fail on 05-07; an empty reason is refused.",
-      "expect": { "refused": true, "reason": { "$any": true } }
+      "expect": {
+        "refused": true,
+        "reason": {
+          "$any": true
+        }
+      }
     },
     {
       "op": "evaluate",
-      "expect": { "assignments": { "S1|P1|2026-05-07": { "counts": false, "fail": ["availability"], "overridden": [] } } }
+      "expect": {
+        "assignments": {
+          "S1|P1|2026-05-07": {
+            "counts": false,
+            "fail": [
+              "availability"
+            ],
+            "overridden": []
+          }
+        }
+      }
     },
     {
       "op": "evaluate",
       "why": "P4 is based at S2 and works S1: 100 minutes > 90 soft limit, <= 150 hard limit. Only travel-soft fails, and policy rules never affect counting.",
-      "expect": { "assignments": { "S1|P4|2026-05-08": { "counts": true, "fail": ["travel-soft"], "overridden": [] } } }
+      "expect": {
+        "assignments": {
+          "S1|P4|2026-05-08": {
+            "counts": true,
+            "fail": [
+              "travel-soft"
+            ],
+            "overridden": []
+          }
+        }
+      }
     },
     {
       "op": "commit",
-      "edits": [{ "t": "override", "assignmentId": "S1|P4|2026-05-08", "ruleId": "travel-soft", "reason": "" }],
-      "meta": { "kind": "manual" },
+      "edits": [
+        {
+          "t": "override",
+          "assignmentId": "S1|P4|2026-05-08",
+          "ruleId": "travel-soft",
+          "reason": ""
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
       "why": "travel-soft is overridable and not reasonRequired, so an empty reason is accepted.",
-      "expect": { "ok": true, "changeSet": { "events": { "$has": { "type": "override.add" } } } }
+      "expect": {
+        "ok": true,
+        "changeSet": {
+          "events": {
+            "$has": {
+              "type": "override.add"
+            }
+          }
+        }
+      }
     },
     {
       "op": "evaluate",
-      "expect": { "assignments": { "S1|P4|2026-05-08": { "counts": true, "fail": ["travel-soft"], "overridden": ["travel-soft"], "outdated": [] } } }
+      "expect": {
+        "assignments": {
+          "S1|P4|2026-05-08": {
+            "counts": true,
+            "fail": [
+              "travel-soft"
+            ],
+            "overridden": [
+              "travel-soft"
+            ],
+            "outdated": []
+          }
+        }
+      }
     }
   ]
 }

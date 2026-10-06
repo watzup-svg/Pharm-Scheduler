@@ -1,6 +1,6 @@
 // Joint gap search shared by Repair and Build. Exhaustive, deterministic, bounded by a node count.
 import { cmp, type ISODate } from "./dates.ts";
-import { evaluate } from "./coverage.ts";
+import { evalDelta, evaluate, makeCtx } from "./coverage.ts";
 import { applyScratch } from "./changeset.ts";
 import { expectedOn } from "./patterns.ts";
 import { RULE_BY_ID } from "./rules.ts";
@@ -21,9 +21,10 @@ export type SearchOut = {
 
 const ck = (s: string, d: string) => `${s}|${d}`;
 
-function failPairs(state: DomainState, ev: Evaluation, kind: "presence" | "suggestible"): Set<string> {
+function failPairs(state: DomainState, ev: Evaluation, kind: "presence" | "suggestible", only?: Set<string>): Set<string> {
   const out = new Set<string>();
   for (const a of Object.values(state.assignments)) {
+    if (only && !only.has(a.pharmacistId)) continue;
     const e = ev.assignments[a.id];
     if (!e) continue;
     for (const r of e.results) {
@@ -53,14 +54,14 @@ function travelTotal(state: DomainState, dates: Set<ISODate>): number {
   return t;
 }
 
-type Leaf = { option: RepairOption; clean: boolean; key: string; sortKey: string[] };
+type Leaf = { option: RepairOption; clean: boolean; key: string; sortKey: string[]; tuple: [string, string, string][] };
 
 export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate, nodeLimit: number, wantNearMiss = false): SearchOut {
   const dates = new Set(gaps.map((g) => g.date));
   const sortedDates = [...dates].sort(cmp);
   const range = { from: sortedDates[0]!, to: sortedDates[sortedDates.length - 1]! };
-  const ev = (s: DomainState) => evaluate(s, asOf, { range, window: range });
-  const baseEv = ev(base);
+  const ctx = makeCtx(base);
+  const baseEv = evaluate(base, asOf, { range }, ctx);
   const baseViol = failPairs(base, baseEv, "presence");
   const baseOver = failPairs(base, baseEv, "suggestible");
   const baseExc = exceptionCount(base, dates);
@@ -79,8 +80,10 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
     const edits = moves.slice().sort((a, b) => cmp(a.ph, b.ph) || cmp(a.store, b.store) || cmp(a.date, b.date));
     const key = edits.map((m) => `${m.ph}|${m.store}|${m.date}`).join(";");
     if (leaves.has(key)) return;
-    const viol = [...failPairs(state, ev, "presence")].filter((p) => !baseViol.has(p)).length;
-    const over = [...failPairs(state, ev, "suggestible")].filter((p) => !baseOver.has(p)).length;
+    // Only the pharmacists who moved can have new failures: everyone else's rules did not change.
+    const movedPh = new Set(moves.map((m) => m.ph));
+    const viol = [...failPairs(state, ev, "presence", movedPh)].filter((p) => !baseViol.has(p)).length;
+    const over = [...failPairs(state, ev, "suggestible", movedPh)].filter((p) => !baseOver.has(p)).length;
     let open = 0;
     for (const k of watch) open += ev.cells[k]?.open ?? 0;
     const touched = new Set(moves.map((m) => `${m.ph}|${m.date}`));
@@ -92,11 +95,11 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
     for (const m of edits) {
       const ini = state.pharmacists[m.ph]?.initials ?? m.ph;
       const to = state.stores[m.store]?.code ?? m.store;
-      expl.push(m.from ? `${ini} moves from ${state.stores[m.from]?.code ?? m.from} to ${to} on ${m.date}` : `${ini} takes an extra shift at ${to} on ${m.date}`);
+      expl.push(m.from ? `${ini} moves from ${state.stores[m.from]?.code ?? m.from} to ${to} on ${m.date}` : `${ini} will take an extra shift at ${to} on ${m.date}`);
     }
     if (over) expl.push(`Needs ${over} override${over === 1 ? "" : "s"} you would have to accept`);
     const sortKey = [String(viol).padStart(6, "0"), String(open).padStart(6, "0"), String(over).padStart(6, "0"), String(touched.size).padStart(6, "0"), String(metrics.patternNet + 100000).padStart(8, "0"), String(metrics.travelMinutes).padStart(8, "0"), key];
-    leaves.set(key, { option: { edits: edits.map((m) => m.edit), metrics, explanation: expl }, clean: viol === 0 && open === 0, key, sortKey });
+    leaves.set(key, { option: { edits: edits.map((m) => m.edit), metrics, explanation: expl }, clean: viol === 0 && open === 0, key, sortKey, tuple: edits.map((m) => [m.ph, m.store, m.date] as [string, string, string]) });
   };
 
   const dfs = (state: DomainState, evc: Evaluation, moves: Move[], pending: Pending[], watch: Set<string>): void => {
@@ -133,10 +136,11 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
         if (++nodes > nodeLimit) { limitHit = true; return; }
         const next = applyScratch(state, [c.edit], "repair", { skipMoot: true });
         if ("refused" in next) continue;
-        const ev2 = ev(next);
+        const ev2 = evalDelta(next, ctx, evc, [c.ph], c.from ? [ck(head.storeId, head.date), ck(c.from, head.date)] : [ck(head.storeId, head.date)]);
         const mine = c.fromAsg ? next.assignments[c.fromAsg] : Object.values(next.assignments).find((a) => a.pharmacistId === c.ph && a.storeId === head.storeId && a.date === head.date);
         const me = mine && ev2.assignments[mine.id];
         if (!me) continue;
+        if (!me.counts) continue; // someone who could never count here is not a "cannot evaluate" case
         const unk = me.results.filter((r) => r.verdict === "Unknown");
         if (unk.length) {
           for (const r of unk) {
@@ -145,7 +149,6 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
           }
           continue;
         }
-        if (!me.counts) continue;
         legalCandidates++;
         const m: Move = { edit: c.edit, ph: c.ph, store: head.storeId, date: head.date, from: c.from };
         const w2 = new Set(watch);
@@ -175,15 +178,19 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
     allowSkip = true;
     dfs(base, baseEv, [], startPending, watch);
   }
-  if (process.env.V3_DEBUG) console.log("search nodes", nodes, "legal", legalCandidates);
 
   const all = [...leaves.values()].filter((l) => l.option.edits.length > 0);
   const byKey = (a: Leaf, b: Leaf) => {
-    for (let i = 0; i < a.sortKey.length; i++) {
+    for (let i = 0; i < a.sortKey.length - 1; i++) {
       const c = cmp(a.sortKey[i]!, b.sortKey[i]!);
       if (c) return c;
     }
-    return 0;
+    for (let i = 0; i < Math.min(a.tuple.length, b.tuple.length); i++) {
+      const x = a.tuple[i]!, y = b.tuple[i]!;
+      const c = cmp(x[0], y[0]) || cmp(x[1], y[1]) || cmp(x[2], y[2]);
+      if (c) return c;
+    }
+    return a.tuple.length - b.tuple.length;
   };
   const clean = all.filter((l) => l.clean).sort(byKey).map((l) => l.option);
   const near = all.filter((l) => !l.clean).sort(byKey)[0]?.option ?? null;

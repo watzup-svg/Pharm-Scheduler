@@ -27,10 +27,8 @@ export function requiredFor(state: DomainState, idx: ReqIndex, storeId: string, 
 
 export type ReqIndex = Map<string, { effectiveFrom: ISODate; count: number }[]>;
 
-const REQ_CACHE = new WeakMap<object, ReqIndex>();
+/** Built per call, never cached by object identity (tables are mutated in place during a commit). */
 export function indexRequirements(state: DomainState): ReqIndex {
-  const hit = REQ_CACHE.get(state.requirements);
-  if (hit) return hit;
   const idx: ReqIndex = new Map();
   for (const key of Object.keys(state.requirements).sort(cmp)) {
     const r = state.requirements[key]!;
@@ -40,7 +38,6 @@ export function indexRequirements(state: DomainState): ReqIndex {
     idx.set(k, arr);
   }
   for (const arr of idx.values()) arr.sort((a, b) => cmp(a.effectiveFrom, b.effectiveFrom));
-  REQ_CACHE.set(state.requirements, idx);
   return idx;
 }
 
@@ -49,11 +46,7 @@ function result(ruleId: string, verdict: Verdict, signature: string, detail: str
 }
 
 type UnavIndex = Map<string, { id: string; first: ISODate; last: ISODate; scope?: string }[]>;
-const UNAV_CACHE = [new WeakMap<object, UnavIndex>(), new WeakMap<object, UnavIndex>()];
 function indexUnavailability(state: DomainState, includeRequested: boolean): UnavIndex {
-  const cache = UNAV_CACHE[includeRequested ? 1 : 0]!;
-  const hit = cache.get(state.unavailability);
-  if (hit) return hit;
   const m: UnavIndex = new Map();
   for (const uid of Object.keys(state.unavailability).sort(cmp)) {
     const u = state.unavailability[uid]!;
@@ -63,78 +56,57 @@ function indexUnavailability(state: DomainState, includeRequested: boolean): Una
     arr.push({ id: u.id, first: u.first, last: u.last, ...(u.scopeStoreId ? { scope: u.scopeStoreId } : {}) });
     m.set(u.pharmacistId, arr);
   }
-  cache.set(state.unavailability, m);
   return m;
 }
 
-export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = {}): Evaluation {
-  const reqIdx = indexRequirements(state);
-  const ids = Object.keys(state.assignments).sort(cmp);
-  const asg = ids.map((id) => state.assignments[id]!);
+/** Everything about a state that does not depend on which assignments exist. Reusable while only assignments change (search). */
+export type EvalCtx = { reqIdx: ReqIndex; unavByP: UnavIndex; ovByAR: Map<string, Override> };
 
-  // indexes
-  const byPD = new Map<string, Assignment[]>();
-  for (const a of asg) {
-    const k = `${a.pharmacistId}|${a.date}`;
-    const arr = byPD.get(k) ?? [];
-    arr.push(a);
-    byPD.set(k, arr);
-  }
+export function makeCtx(state: DomainState, opts: EvalOptions = {}): EvalCtx {
   const ovByAR = new Map<string, Override>();
   for (const oid of Object.keys(state.overrides).sort(cmp)) {
     const o = state.overrides[oid]!;
     ovByAR.set(`${o.assignmentId}|${o.ruleId}`, o);
   }
-  const unavByP = indexUnavailability(state, opts.includeRequested === true);
-  // consecutive-day runs per pharmacist
-  const runInfo = new Map<string, { index: number; length: number }>(); // key p|date
-  const datesByP = new Map<string, Set<ISODate>>();
-  for (const a of asg) {
-    const s = datesByP.get(a.pharmacistId) ?? new Set<ISODate>();
-    s.add(a.date);
-    datesByP.set(a.pharmacistId, s);
-  }
-  for (const [p, set] of datesByP) {
-    const days = [...set].map(toDayNumber).sort((x, y) => x - y);
-    let start = 0;
-    for (let i = 0; i <= days.length; i++) {
-      if (i === days.length || (i > 0 && days[i]! !== days[i - 1]! + 1)) {
-        const length = i - start;
-        for (let j = start; j < i; j++) runInfo.set(`${p}|${fromDayNumber(days[j]!)}`, { index: j - start, length });
-        start = i;
-      }
-    }
-  }
+  return { reqIdx: indexRequirements(state), unavByP: indexUnavailability(state, opts.includeRequested === true), ovByAR };
+}
 
+/** Rule results for every assignment of one pharmacist (their own list is all that double booking and day runs need). */
+function evalPharmacist(state: DomainState, ctx: EvalCtx, list: Assignment[], emit: (a: Assignment) => boolean): AssignmentEval[] {
   const cfg = state.config;
-  const evals: Record<string, AssignmentEval> = {};
-
-  // double-booking groups resolved?
-  const groupResolved = new Map<string, boolean>();
-  for (const [k, members] of byPD) {
+  const byDate = new Map<ISODate, Assignment[]>();
+  for (const a of list) (byDate.get(a.date) ?? byDate.set(a.date, []).get(a.date)!).push(a);
+  const groupResolved = new Map<ISODate, boolean>();
+  for (const [d, members] of byDate) {
     if (members.length < 2) continue;
     const sorted = members.slice().sort((a, b) => a.placedSeq - b.placedSeq || cmp(a.id, b.id));
     const sig = sorted.map((m) => m.storeId).sort(cmp).join(",");
     let resolved = true;
     for (const m of sorted.slice(1)) {
-      const o = ovByAR.get(`${m.id}|double-booking`);
+      const o = ctx.ovByAR.get(`${m.id}|double-booking`);
       if (!o || o.signature !== sig) resolved = false;
     }
-    groupResolved.set(k, resolved);
+    groupResolved.set(d, resolved);
   }
-
-  const win = opts.window;
-  for (const a of asg) {
-    if (win && (a.date < win.from || a.date > win.to)) continue;
+  const runInfo = new Map<ISODate, { index: number; length: number }>();
+  const days = [...byDate.keys()].map(toDayNumber).sort((x, y) => x - y);
+  let start = 0;
+  for (let i = 0; i <= days.length; i++) {
+    if (i === days.length || (i > 0 && days[i]! !== days[i - 1]! + 1)) {
+      const length = i - start;
+      for (let j = start; j < i; j++) runInfo.set(fromDayNumber(days[j]!), { index: j - start, length });
+      start = i;
+    }
+  }
+  const out: AssignmentEval[] = [];
+  for (const a of list) {
+    if (!emit(a)) continue;
     const store = state.stores[a.storeId];
     const ph = state.pharmacists[a.pharmacistId];
     const results: RuleResult[] = [];
-
-    // closure
-    const required = requiredFor(state, reqIdx, a.storeId, a.date);
+    const required = requiredFor(state, ctx.reqIdx, a.storeId, a.date);
     results.push(required === 0 ? result("closure", "Fail", "closed", "Store is closed that day") : result("closure", "Pass", "open", "Store is open"));
 
-    // licensing
     if (!ph || !store) results.push(result("licensing", "Unknown", "unrecorded", "Missing pharmacist or store"));
     else if (store.state === null) results.push(result("licensing", "NotApplicable", "", "Store state not recorded"));
     else if (!ph.licenses) results.push(result("licensing", "Unknown", `${ph.id}|${store.state}|unrecorded`, "Licensing not recorded"));
@@ -145,32 +117,27 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
       else results.push(result("licensing", "Pass", `${ph.id}|${store.state}|ok`, "Licensed"));
     }
 
-    // availability
     {
-      const parts: string[] = [];
-      if (ph) {
-        if ((ph.activeFrom !== undefined && ph.activeFrom > a.date) || (ph.inactiveFrom !== undefined && ph.inactiveFrom <= a.date)) parts.push("inactive");
-      }
-      for (const u of unavByP.get(a.pharmacistId) ?? []) {
-        if (u.first <= a.date && a.date <= u.last && (u.scope === undefined || u.scope === a.storeId)) parts.push(u.id);
-      }
-      results.push(parts.length ? result("availability", "Fail", parts.join(","), "Not available") : result("availability", "Pass", "", "Available"));
+      // The signature is coarse on purpose: adding a second overlapping record does not make an earlier acceptance outdated.
+      const why: string[] = [];
+      if (ph && ((ph.activeFrom !== undefined && ph.activeFrom > a.date) || (ph.inactiveFrom !== undefined && ph.inactiveFrom <= a.date))) why.push("inactive");
+      let off = false;
+      for (const u of ctx.unavByP.get(a.pharmacistId) ?? []) if (u.first <= a.date && a.date <= u.last && (u.scope === undefined || u.scope === a.storeId)) off = true;
+      if (off) why.push("unavailable");
+      results.push(why.length ? result("availability", "Fail", why.join(","), "Not available") : result("availability", "Pass", "", "Available"));
     }
 
-    // double-booking
     {
-      const k = `${a.pharmacistId}|${a.date}`;
-      const members = byPD.get(k) ?? [a];
+      const members = byDate.get(a.date) ?? [a];
       if (members.length < 2) results.push(result("double-booking", "NotApplicable", "", "Only one assignment"));
       else {
         const sorted = members.slice().sort((x, y) => x.placedSeq - y.placedSeq || cmp(x.id, y.id));
         const sig = sorted.map((m) => m.storeId).sort(cmp).join(",");
-        if (groupResolved.get(k) && sorted[0]!.id === a.id) results.push(result("double-booking", "Pass", sig, "Earliest placed; the others are overridden"));
+        if (groupResolved.get(a.date) && sorted[0]!.id === a.id) results.push(result("double-booking", "Pass", sig, "Earliest placed; the others are overridden"));
         else results.push(result("double-booking", "Fail", sig, "Booked at two stores"));
       }
     }
 
-    // travel
     for (const [id, limit] of [["travel-soft", cfg.travelSoftMinutes], ["travel-hard", cfg.travelHardMinutes]] as const) {
       if (!ph || ph.baseStoreId === null) results.push(result(id, "NotApplicable", "", "No base store"));
       else if (ph.baseStoreId === a.storeId) results.push(result(id, "Pass", "0", "At base store"));
@@ -182,21 +149,19 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
       }
     }
 
-    // consecutive days
     {
-      const info = runInfo.get(`${a.pharmacistId}|${a.date}`);
+      const info = runInfo.get(a.date);
       if (info && info.index >= cfg.maxConsecutiveDays) results.push(result("consecutive-days", "Fail", String(info.length), `Day ${info.index + 1} in a row`));
       else results.push(result("consecutive-days", "Pass", String(info?.length ?? 1), "Within the limit"));
     }
 
-    // overrides
     let unresolved = false;
     let unknown = false;
     for (const r of results) {
       const def = RULE_BY_ID[r.ruleId]!;
-      const o = ovByAR.get(`${a.id}|${r.ruleId}`);
+      const o = ctx.ovByAR.get(`${a.id}|${r.ruleId}`);
       if (r.verdict === "Fail" && o) {
-        if (o.signature === r.signature) r.overridden = r.ruleId === "double-booking" ? groupResolved.get(`${a.pharmacistId}|${a.date}`) === true : true;
+        if (o.signature === r.signature) r.overridden = r.ruleId === "double-booking" ? groupResolved.get(a.date) === true : true;
         else r.outdated = true;
       }
       if (def.kind === "presence") {
@@ -206,42 +171,82 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
     }
     results.sort((x, y) => cmp(x.ruleId, y.ruleId));
     const counts = !unresolved;
-    evals[a.id] = { assignmentId: a.id, results, counts, unverified: counts && unknown };
+    out.push({ assignmentId: a.id, results, counts, unverified: counts && unknown });
   }
+  return out;
+}
 
-  // cells
+function buildCell(state: DomainState, ctx: EvalCtx, evals: Record<string, AssignmentEval>, storeId: string, date: ISODate): CellCoverage {
+  const c = state.cellCounts[cellKey(storeId, date)];
+  const cell: CellCoverage = {
+    storeId, date, required: requiredFor(state, ctx.reqIdx, storeId, date), counted: 0, unverified: 0,
+    locum: c?.locum ?? 0, acceptedShort: c?.acceptedShort ?? 0, covered: 0, open: 0, surplus: 0,
+  };
+  for (const a of Object.values(state.assignments)) {
+    if (a.storeId !== storeId || a.date !== date) continue;
+    const e = evals[a.id];
+    if (!e) continue;
+    if (e.counts) cell.counted++;
+    if (e.unverified) cell.unverified++;
+  }
+  return finishCell(cell);
+}
+function finishCell(cell: CellCoverage): CellCoverage {
+  cell.covered = cell.counted + cell.locum;
+  cell.open = Math.max(0, cell.required - cell.covered - cell.acceptedShort);
+  cell.surplus = Math.max(0, cell.covered - cell.required);
+  return cell;
+}
+
+export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = {}, ctxIn?: EvalCtx): Evaluation {
+  const ctx = ctxIn ?? makeCtx(state, opts);
+  const win = opts.window;
+  const byPh = new Map<string, Assignment[]>();
+  for (const id of Object.keys(state.assignments).sort(cmp)) {
+    const a = state.assignments[id]!;
+    (byPh.get(a.pharmacistId) ?? byPh.set(a.pharmacistId, []).get(a.pharmacistId)!).push(a);
+  }
+  const raw: Record<string, AssignmentEval> = {};
+  for (const list of byPh.values()) for (const e of evalPharmacist(state, ctx, list, (a) => !win || (a.date >= win.from && a.date <= win.to))) raw[e.assignmentId] = e;
+  const evals: Record<string, AssignmentEval> = {};
+  for (const id of Object.keys(raw).sort(cmp)) evals[id] = raw[id]!;
+
   const cells: Record<string, CellCoverage> = {};
   const touch = (storeId: string, date: ISODate) => {
     const k = cellKey(storeId, date);
     if (cells[k]) return cells[k]!;
     const c = state.cellCounts[k];
-    const cell: CellCoverage = {
-      storeId, date, required: requiredFor(state, reqIdx, storeId, date), counted: 0, unverified: 0,
-      locum: c?.locum ?? 0, acceptedShort: c?.acceptedShort ?? 0, covered: 0, open: 0, surplus: 0,
-    };
-    cells[k] = cell;
-    return cell;
+    return (cells[k] = { storeId, date, required: requiredFor(state, ctx.reqIdx, storeId, date), counted: 0, unverified: 0, locum: c?.locum ?? 0, acceptedShort: c?.acceptedShort ?? 0, covered: 0, open: 0, surplus: 0 });
   };
-  if (opts.range) {
-    for (const sid of Object.keys(state.stores).sort(cmp)) for (const d of dateRange(opts.range.from, opts.range.to)) touch(sid, d);
-  }
-  for (const k of Object.keys(state.cellCounts).sort(cmp)) {
-    const c = state.cellCounts[k]!;
-    touch(c.storeId, c.date);
-  }
-  for (const a of asg) {
-    if (!evals[a.id]) continue;
+  if (opts.range) for (const sid of Object.keys(state.stores).sort(cmp)) for (const d of dateRange(opts.range.from, opts.range.to)) touch(sid, d);
+  for (const k of Object.keys(state.cellCounts).sort(cmp)) touch(state.cellCounts[k]!.storeId, state.cellCounts[k]!.date);
+  for (const id of Object.keys(evals)) {
+    const a = state.assignments[id]!;
     const cell = touch(a.storeId, a.date);
-    const ev = evals[a.id]!;
-    if (ev.counts) cell.counted++;
-    if (ev.unverified) cell.unverified++;
+    if (evals[id]!.counts) cell.counted++;
+    if (evals[id]!.unverified) cell.unverified++;
   }
-  for (const cell of Object.values(cells)) {
-    cell.covered = cell.counted + cell.locum;
-    cell.open = Math.max(0, cell.required - cell.covered - cell.acceptedShort);
-    cell.surplus = Math.max(0, cell.covered - cell.required);
-  }
+  for (const cell of Object.values(cells)) finishCell(cell);
   const sortedCells: Record<string, CellCoverage> = {};
   for (const k of Object.keys(cells).sort(cmp)) sortedCells[k] = cells[k]!;
   return { asOf, assignments: evals, cells: sortedCells };
+}
+
+/** Re-judge only what changed: the listed pharmacists' assignments (their double booking and day runs) and the listed cells. Used by search; the rest is reused from `prev`. */
+export function evalDelta(state: DomainState, ctx: EvalCtx, prev: Evaluation, pharmacists: string[], cellKeys: string[]): Evaluation {
+  // Prototype chaining instead of copying: the search only reads by key, and each node adds a few entries over its parent's.
+  const assignments: Record<string, AssignmentEval> = Object.create(prev.assignments);
+  const wanted = new Set(pharmacists);
+  const lists = new Map<string, Assignment[]>();
+  for (const a of Object.values(state.assignments)) if (wanted.has(a.pharmacistId)) (lists.get(a.pharmacistId) ?? lists.set(a.pharmacistId, []).get(a.pharmacistId)!).push(a);
+  for (const l of lists.values()) {
+    l.sort((x, y) => cmp(x.id, y.id));
+    for (const e of evalPharmacist(state, ctx, l, () => true)) assignments[e.assignmentId] = e;
+  }
+  const cells: Record<string, CellCoverage> = Object.create(prev.cells);
+  for (const k of new Set(cellKeys)) {
+    const [storeId, date] = k.split("|") as [string, ISODate];
+    cells[k] = buildCell(state, ctx, assignments, storeId, date);
+  }
+  return { asOf: prev.asOf, assignments, cells };
 }
