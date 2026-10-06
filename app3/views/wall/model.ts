@@ -4,6 +4,7 @@ import {
   type Assignment, type DomainState, type Evaluation, type ISODate, type Pharmacist, type Store,
 } from "@domain";
 import { buildCellView } from "../../derive.ts";
+import { RULE_MARK, type MarkKind } from "../../ui/icons.tsx";
 import type { Ghost } from "../../derive.ts";
 
 export const DOW_LETTER = ["S", "M", "T", "W", "T", "F", "S"] as const;
@@ -118,7 +119,21 @@ export type CellModel = {
   label: string;
   /** Can an initials chip be dragged from here (store axis, live wall)? */
   hasDrag: boolean;
+  /** The one picture chip for this cell (serious, then warning, then info), and its count (open spots). */
+  chip: MarkKind | null;
+  chipN: number;
+  /** Shape for state, in addition to the chip: dashed = open, ring = two places, dotted = licence, hatched = closed. */
+  shape: "open" | "twice" | "licence" | null;
+  /** Hover note: "Title | line | line". */
+  tip: string;
+  tone: "bad" | "off" | "ok" | "plain";
 };
+
+const RULE_WORDS: Record<string, string> = {
+  availability: "is away that day", closure: "is on a closed day", "double-booking": "booked at two stores",
+  licensing: "is not licensed here", "consecutive-days": "too many days in a row", "travel-soft": "long drive", "travel-hard": "drive over the limit",
+};
+const SHAPE_OF: Record<string, CellModel["shape"]> = { "double-booking": "twice", licensing: "licence" };
 
 const MARK_WORD = { serious: "problem", warning: "warning", info: "to check" } as const;
 
@@ -156,10 +171,41 @@ export function buildStoreModels(
     if (v.open) parts.push(`needs ${v.open} more`);
     if (v.marker) parts.push(MARK_WORD[v.marker]);
     if (!parts.length) parts.push("empty");
+    // The one chip: serious (a presence rule, then an open spot), warning, info, then the quiet ones.
+    const blockRule = v.assignments.flatMap((a) => a.blocks)[0];
+    const warnRule = v.assignments.flatMap((a) => a.warns)[0];
+    const base = state.pharmacists;
+    const covering = v.assignments.some((a) => a.counts && base[a.pharmacistId]?.baseStoreId && base[a.pharmacistId]!.baseStoreId !== s.id);
+    let chip: MarkKind | null = null;
+    let chipN = 0;
+    if (blockRule) chip = RULE_MARK[blockRule] ?? "double";
+    else if (v.open > 0) { chip = "open"; chipN = v.open; }
+    else if (warnRule) chip = RULE_MARK[warnRule] ?? "drive";
+    else if (v.assignments.some((a) => a.unverified || a.outdated.length)) chip = "unverified";
+    else if (v.acceptedShort > 0) chip = "short";
+    else if (v.assignments.some((a) => a.pinned)) chip = "pinned";
+    else if (covering) chip = "covering";
+    const shape = blockRule ? SHAPE_OF[blockRule] ?? null : v.open > 0 ? "open" : null;
+    // Hover note, old style.
+    const facts: string[] = [];
+    for (const a of v.assignments) {
+      const rs = [...a.blocks, ...a.warns];
+      if (rs.length) facts.push(`${a.name} ${a.blocks.length ? "does not count" : "has a warning"}: ${rs.map((r) => RULE_WORDS[r] ?? r).join(", ")}`);
+    }
+    if (v.open) facts.push(`Needs ${v.open} more`);
+    if (v.acceptedShort) facts.push(`${v.acceptedShort} accepted short`);
+    if (v.locum) facts.push(v.locum > 1 ? `${v.locum} locums cover` : "A locum covers");
+    if (!facts.length) {
+      if (v.closed && !chips.length) facts.push("Closed");
+      else if (v.assignments.length) facts.push(`${v.assignments.map((a) => a.name).join(", ")}${v.assignments.some((a) => !a.agreed) ? " (not all confirmed)" : ""}`);
+      else facts.push("Nobody placed");
+    }
+    const tip = [`${s.code} · ${niceDate(date)}`, ...facts.slice(0, 2), "Open this day"].join(" | ");
     return {
       axis: "store", r, c, date, storeId: s.id, past: date < asOf, weekend: isWeekend(date), asOfCol: date === asOf, closed: v.closed,
       chips, open: v.open, short: v.acceptedShort, locum: v.locum, marker: v.marker,
       label: `${s.code}, ${niceDate(date)}: ${parts.join(", ")}`, hasDrag: !readOnly,
+      chip, chipN, shape, tip, tone: v.marker === "serious" ? "bad" : v.marker === "warning" ? "off" : "plain",
     } satisfies CellModel;
   }));
 }
@@ -191,9 +237,9 @@ export function buildPharmacistModels(
   }
   const code = (id: string) => state.stores[id]?.code ?? id;
   return people.map((p, r) => dates.map((date, c) => {
-    const base = { axis: "pharmacist" as const, r, c, date, pharmacistId: p.id, past: date < asOf, weekend: isWeekend(date), asOfCol: date === asOf, closed: false, open: 0, short: 0, locum: 0, hasDrag: false };
+    const base = { axis: "pharmacist" as const, r, c, date, pharmacistId: p.id, past: date < asOf, weekend: isWeekend(date), asOfCol: date === asOf, closed: false, open: 0, short: 0, locum: 0, hasDrag: false, chip: null as MarkKind | null, chipN: 0, shape: null as CellModel["shape"], tip: "", tone: "plain" as CellModel["tone"] };
     const active = (!p.activeFrom || p.activeFrom <= date) && (!p.inactiveFrom || p.inactiveFrom > date);
-    if (!active) return { ...base, chips: [], marker: null, label: `${p.name}, ${niceDate(date)}: not working here` } satisfies CellModel;
+    if (!active) return { ...base, chips: [], marker: null, label: `${p.name}, ${niceDate(date)}: not working here`, tip: `${p.name} · ${niceDate(date)} | Not working here yet` } satisfies CellModel;
     const list = (byPD.get(`${p.id}|${date}`) ?? []).slice().sort((a, b) => a.placedSeq - b.placedSeq || cmp(a.id, b.id));
     const rem = new Set(gRem.get(`${p.id}|${date}`) ?? []);
     const chips: Chip[] = list.map((a) => {
@@ -224,7 +270,17 @@ export function buildPharmacistModels(
     } else {
       label = `${p.name}, ${niceDate(date)}: at ${where}${live.length > 1 ? ", booked in two places" : ""}${absStatus === "OFF" ? ", but away" : ""}${marker ? `, ${MARK_WORD[marker]}` : ""}`;
     }
-    return { ...base, chips, marker, word, hatchedAway: absStatus === "OFF" && !chips.length, label } satisfies CellModel;
+    const failIds = fails.map((x) => x.ruleId);
+    const chip: MarkKind | null = live.length > 1 ? "double" : absStatus === "OFF" && live.length ? "away" : failIds.length ? RULE_MARK[failIds[0]!] ?? "drive" : null;
+    const tfacts: string[] = [];
+    if (live.length > 1) tfacts.push(`Booked at ${live.map((x) => x.text).join(" and ")}`);
+    else if (live.length) tfacts.push(`At ${live[0]!.text}${live[0]!.unconfirmed ? " (not confirmed)" : ""}`);
+    if (absStatus === "OFF") tfacts.push(live.length ? "Away that day, does not count" : "Away (approved)");
+    else if (absStatus === "Req") tfacts.push("Away requested, not decided");
+    for (const id of failIds) if (id !== "double-booking" && id !== "availability") tfacts.push(RULE_WORDS[id] ? `Rule: ${RULE_WORDS[id]}` : id);
+    if (!tfacts.length) tfacts.push("Not scheduled");
+    const tip = [`${p.name} · ${niceDate(date)}`, ...tfacts.slice(0, 2), ...(live.length ? ["Open this day"] : [])].join(" | ");
+    return { ...base, chips, marker, word, hatchedAway: absStatus === "OFF" && !chips.length, label, chip, shape: live.length > 1 ? "twice" as const : null, tip, tone: marker === "serious" ? "bad" as const : marker === "warning" ? "off" as const : "plain" as const } satisfies CellModel;
   }));
 }
 
@@ -237,4 +293,23 @@ export function openByStore(ev: Evaluation, stores: Store[], win: { from: ISODat
     m.set(c.storeId, (m.get(c.storeId) ?? 0) + c.open);
   }
   return m;
+}
+
+/** Per day, across all stores in the window: places needed and places covered. */
+export function coverageByDay(ev: Evaluation, stores: Store[], dates: ISODate[]): Map<ISODate, { need: number; got: number }> {
+  const ids = new Set(stores.map((s) => s.id));
+  const m = new Map<ISODate, { need: number; got: number }>(dates.map((d) => [d, { need: 0, got: 0 }]));
+  for (const c of Object.values(ev.cells)) {
+    const e = m.get(c.date);
+    if (!e || !ids.has(c.storeId) || c.required <= 0) continue;
+    e.need += c.required;
+    e.got += Math.max(0, c.required - c.open);
+  }
+  return m;
+}
+
+/** Hex status for a row: any open spot or problem from today on = needs fixing; all closed = closed; else covered. */
+export function rowStatus(cells: CellModel[], asOf: ISODate): "ok" | "fix" | "closed" {
+  if (cells.every((c) => c.closed && c.chips.length === 0)) return "closed";
+  return cells.some((c) => c.date >= asOf && (c.open > 0 || c.marker === "serious")) ? "fix" : "ok";
 }

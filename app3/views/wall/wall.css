@@ -64,11 +64,11 @@
   align-items: center;
   justify-content: center;
   gap: 0;
-  padding: 3px 0 2px;
+  padding: 2px 0 1px;
   border-left: 1px solid var(--w-line);
   border-top: 1px solid var(--w-line);
   color: var(--color-ink);
-  min-height: 56px;
+  min-height: 38px;
 }
 .w-day.w-first {
   border-left: 2px solid var(--color-edge);
@@ -76,6 +76,7 @@
 .w-dow {
   color: var(--color-muted);
   font-weight: 600;
+  line-height: 16px;
 }
 .w-num {
   font-size: 16px;
@@ -83,7 +84,6 @@
   line-height: 1.15;
 }
 .w-today {
-  height: 16px;
   font-size: 13px;
   font-weight: 700;
   line-height: 16px;
@@ -114,37 +114,14 @@
   padding: 3px 8px;
   border-top: 1px solid var(--w-line);
 }
-.w-l1 {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  min-width: 0;
-}
-.w-l1 b {
-  font-weight: 700;
-  white-space: nowrap;
-}
-.w-l1 .w-count {
-  font-weight: 700;
-  color: var(--color-illegal);
-  white-space: nowrap;
-}
-.w-l2 {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-muted);
-}
 
 .w-cell {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
-  padding: 2px 1px;
+  min-height: 34px;
+  padding: 1px;
   border-top: 1px solid var(--w-line);
   border-left: 1px solid var(--w-line);
   scroll-margin-left: 130px;
@@ -201,10 +178,10 @@
 
 .w-body {
   display: flex;
-  flex-direction: column;
+  flex-flow: row wrap;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 0 2px;
   max-width: 100%;
   text-align: center;
 }
@@ -218,11 +195,6 @@
   color: var(--color-muted);
 }
 @container (min-width: 70px) {
-  .w-body {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0 2px;
-  }
   .w-dot {
     display: inline;
   }
@@ -278,14 +250,6 @@
   white-space: nowrap;
   letter-spacing: 0.02em;
 }
-.w-open {
-  color: var(--color-illegal);
-  font-size: 15px;
-}
-.w-short {
-  color: var(--color-warn);
-  font-size: 15px;
-}
 .w-loc {
   color: var(--color-ink);
   font-size: 13px;
@@ -303,23 +267,6 @@
 .w-none {
   color: var(--color-edge);
   font-weight: 400;
-}
-.w-mark {
-  position: absolute;
-  top: 0;
-  right: 2px;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 14px;
-}
-.w-serious {
-  color: var(--color-illegal);
-}
-.w-warning {
-  color: var(--color-warn);
-}
-.w-info {
-  color: var(--color-muted);
 }
 
 /* strips and controls */
@@ -368,18 +315,189 @@
 .w-btn:hover {
   background: var(--color-line);
 }
-.w-legend {
+.w-controls .w-btn {
+  height: 28px;
+}
+.w-label {
+  align-items: flex-start;
+}
+.w-person {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px 14px;
-  padding: 5px 12px;
-  border-bottom: 1px solid var(--color-line);
-  background: var(--color-cream);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.w-disc {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.w-pname {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* chips and shapes for state: the picture says what, the shape says where it shows at a glance */
+.w-pic {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+.w-picn {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-illegal);
+}
+.w-cell[data-shape]::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+  border-radius: 5px;
+}
+.w-cell[data-shape="open"]::after {
+  border: 1.5px dashed var(--color-illegal);
+}
+.w-cell[data-shape="twice"]::after {
+  border: 2px solid var(--color-illegal);
+  border-radius: 999px;
+}
+.w-cell[data-shape="licence"]::after {
+  border: 2px dotted var(--color-illegal);
+}
+
+/* day coverage bars under the date header */
+.w-cover .w-corner {
+  min-height: 12px;
+  padding: 0 8px;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 14px;
+}
+.w-bar {
+  display: flex;
+  align-items: center;
+  padding: 0 3px;
+  border-left: 1px solid var(--w-line);
+}
+.w-bar-t {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-line);
+  overflow: hidden;
+}
+.w-bar:not([data-need="0"]) .w-bar-t {
+  background: var(--color-illegal);
+}
+.w-bar-got {
+  display: block;
+  height: 100%;
+  background: var(--color-ok);
+}
+
+/* strips, controls and the key */
+.w-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: var(--color-fill);
+  border-bottom: 1px solid var(--color-edge);
   color: var(--color-ink);
 }
-.w-legend span.k {
+.w-seg {
+  display: inline-flex;
+  border-radius: 8px;
+  background: var(--color-fill);
+  padding: 2px;
+  gap: 2px;
+}
+.w-seg button {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.w-seg button:hover {
+  background: var(--color-line);
+}
+.w-seg button[aria-pressed="true"] {
+  background: var(--color-ink);
+  color: #fff;
+}
+.w-seg button:focus-visible,
+.w-btn:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 1px;
+}
+.w-btn {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--color-fill);
+  font-weight: 600;
+}
+.w-btn:hover {
+  background: var(--color-line);
+}
+.w-btn[aria-expanded="true"] {
+  background: var(--color-line);
+}
+.w-keypanel {
+  position: absolute;
+  top: 100%;
+  right: 12px;
+  z-index: 60;
+  width: min(640px, calc(100% - 24px));
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.18), 0 0 0 1px rgb(0 0 0 / 0.1);
+  color: var(--color-ink);
+  font-size: 13px;
+}
+.w-key-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+}
+.w-key-shapes {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-line);
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.w-key-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.w-key-ini {
   display: inline-block;
-  min-width: 14px;
-  text-align: center;
+  min-width: 22px;
   font-weight: 700;
 }
+.w-key-shape {
+  display: inline-block;
+  flex: none;
+  width: 22px;
+  height: 16px;
+  border-radius: 4px;
+}
+.w-key-shape.k-open { border: 1.5px dashed var(--color-illegal); }
+.w-key-shape.k-twice { border: 2px solid var(--color-illegal); border-radius: 999px; }
+.w-key-shape.k-licence { border: 2px dotted var(--color-illegal); }
+.w-key-shape.k-closed { border: 1px solid var(--color-edge); }
