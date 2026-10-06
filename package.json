@@ -30,6 +30,7 @@
     "typecheck:v3": "tsc --noEmit -p app3",
     "e2e:v3": "node scripts/v3-e2e.mjs",
     "check:all": "node scripts/v3-all.mjs",
+    "pdf:v3": "node scripts/v3-pdf-check.mjs",
     "check:all:quick": "node scripts/v3-all.mjs --quick",
     "stress:v3": "node --experimental-strip-types --no-warnings stress/v3-monkey.mjs",
     "pressure:v3": "node scripts/v3-pressure/run.mjs",
