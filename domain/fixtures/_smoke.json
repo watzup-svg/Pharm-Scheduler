@@ -1,0 +1,13 @@
+{
+  "name": "smoke: one store, one pharmacist, one day",
+  "covers": ["runner"],
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [{ "id": "S1" }],
+    "pharmacists": [{ "id": "P1", "base": "S1" }],
+    "assignments": [{ "store": "S1", "ph": "P1", "date": "2026-05-04" }]
+  },
+  "steps": [
+    { "op": "evaluate", "expect": { "cells": { "S1|2026-05-04": { "required": 1, "counted": 1, "open": 0 } }, "assignments": { "S1|P1|2026-05-04": { "counts": true } } } }
+  ]
+}
