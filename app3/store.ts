@@ -6,6 +6,7 @@ import {
 } from "@domain";
 import { getPersist } from "./persist-bridge.ts";
 import { todayISO } from "./clock.ts";
+import { callEngine } from "./engine.ts";
 
 export type View = "wall" | "plan" | "setup" | "rules" | "travel" | "checks" | "print";
 export type Axis = "store" | "pharmacist";
@@ -29,6 +30,8 @@ export type AppState = {
   repairResult: { gaps: { storeId: string; date: ISODate }[]; wider: boolean; result: RepairResult } | null;
   /** When a file opened read-only because the data is inconsistent. */
   readOnlyProblems: string[] | null;
+  /** Name of the search running right now (Build, Improve, Find cover), or null. */
+  busy: string | null;
 
   // view state
   setView(v: View): void;
@@ -50,9 +53,9 @@ export type AppState = {
   revert(name: string): boolean;
 
   // engine
-  runBuild(range?: { from: ISODate; to: ISODate }): void;
-  runImprove(includeNext14?: boolean): void;
-  runRepair(gaps: { storeId: string; date: ISODate }[], wider?: boolean): void;
+  runBuild(range?: { from: ISODate; to: ISODate }): Promise<void>;
+  runImprove(includeNext14?: boolean): Promise<void>;
+  runRepair(gaps: { storeId: string; date: ISODate }[], wider?: boolean): Promise<void>;
   previewRepair(option: RepairOption): void;
   acceptProposal(): boolean;
   discardProposal(): void;
@@ -106,6 +109,7 @@ export const useApp = create<AppState>((set, get) => {
     notice: null,
     repairResult: null,
     readOnlyProblems: null,
+    busy: null,
 
     setView: (view) => set({ view }),
     setAxis: (axis) => set({ axis }),
@@ -122,6 +126,7 @@ export const useApp = create<AppState>((set, get) => {
     commit: (edits, label) => {
       const ro = blocked();
       if (ro) { get().say("error", ro); return false; }
+      if (get().busy) { get().say("info", `Wait for ${get().busy} to finish.`); return false; }
       return apply(api.commit(world(), edits, { kind: "manual", ...(label ? { label } : {}) }));
     },
     undo: (id) => apply(api.undo(world(), id)),
@@ -134,27 +139,42 @@ export const useApp = create<AppState>((set, get) => {
     },
     revert: (name) => apply(api.revertToCheckpoint(world(), name)),
 
-    runBuild: (range) => {
+    runBuild: async (range) => {
       const s = get();
+      if (s.busy) return;
       const r = range ?? s.window;
-      const res = api.build(world(), r, s.asOf);
-      if (!res.proposal) { s.say("info", `Build found nothing to do. ${res.report.unresolvedGaps.length} gap(s) left open.`); return; }
-      const o = api.openProposal(world(), res.proposal);
-      if ("refused" in o) { s.say("error", o.reason); return; }
-      set({ world: o });
+      const w0 = world();
+      set({ busy: "Build" });
+      try {
+        const res = await callEngine<ReturnType<typeof api.build>>({ op: "build", world: w0, range: r, asOf: s.asOf });
+        if (get().world !== w0) { get().say("info", "The schedule changed while Build ran. Run it again."); return; }
+        if (!res.proposal) { get().say("info", `Build found nothing to do. ${res.report.unresolvedGaps.length} gap(s) left open.`); return; }
+        const o = api.openProposal(w0, res.proposal);
+        if ("refused" in o) get().say("error", o.reason); else set({ world: o });
+      } catch (e) { get().say("error", String((e as Error).message)); } finally { set({ busy: null }); }
     },
-    runImprove: (includeNext14) => {
+    runImprove: async (includeNext14) => {
       const s = get();
-      const res = api.improve(world(), { from: s.window.from, to: s.window.to, ...(includeNext14 ? { includeNext14 } : {}) }, s.asOf);
-      if (!res.proposal) { s.say("info", res.message); return; }
-      const o = api.openProposal(world(), res.proposal);
-      if ("refused" in o) { s.say("error", o.reason); return; }
-      set({ world: o });
+      if (s.busy) return;
+      const w0 = world();
+      set({ busy: "Improve" });
+      try {
+        const res = await callEngine<ReturnType<typeof api.improve>>({ op: "improve", world: w0, opts: { from: s.window.from, to: s.window.to, ...(includeNext14 ? { includeNext14 } : {}) }, asOf: s.asOf });
+        if (get().world !== w0) { get().say("info", "The schedule changed while Improve ran. Run it again."); return; }
+        if (!res.proposal) { get().say("info", res.message); return; }
+        const o = api.openProposal(w0, res.proposal);
+        if ("refused" in o) get().say("error", o.reason); else set({ world: o });
+      } catch (e) { get().say("error", String((e as Error).message)); } finally { set({ busy: null }); }
     },
-    runRepair: (gaps, wider = false) => {
+    runRepair: async (gaps, wider = false) => {
       const s = get();
-      const result = api.repair(world(), gaps, { wider, showNearMiss: true }, s.asOf);
-      set({ repairResult: { gaps, wider, result } });
+      if (s.busy) return;
+      const w0 = world();
+      set({ busy: "Find cover" });
+      try {
+        const result = await callEngine<RepairResult>({ op: "repair", world: w0, gaps, opts: { wider, showNearMiss: true }, asOf: s.asOf });
+        if (get().world === w0) set({ repairResult: { gaps, wider, result } });
+      } catch (e) { get().say("error", String((e as Error).message)); } finally { set({ busy: null }); }
     },
     previewRepair: (option) => {
       const w = world();
