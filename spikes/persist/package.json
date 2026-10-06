@@ -1,0 +1,1 @@
+{"name":"persist-spike","private":true,"type":"module","scripts":{"build":"node build.mjs","test":"node unit-fake.mjs && node run-tests.mjs"},"dependencies":{"sql.js":"^1.13.0"},"devDependencies":{"esbuild":"^0.28.2","playwright-core":"^1.56.1"}}

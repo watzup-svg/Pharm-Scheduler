@@ -1,0 +1,243 @@
+{
+ "chromium": "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+ "results": [
+  {
+   "id": "1a",
+   "name": "file:// : isSecureContext, indexedDB, showSaveFilePicker/showOpenFilePicker, crypto.subtle, CompressionStream, WASM",
+   "pass": true,
+   "info": {
+    "origin": "file://",
+    "protocol": "file:",
+    "isSecureContext": true,
+    "indexedDB": true,
+    "localStorage": true,
+    "opfs": true,
+    "showSaveFilePicker": true,
+    "showOpenFilePicker": true,
+    "cryptoSubtle": true,
+    "compressionStream": true,
+    "wasm": true,
+    "opfsWorks": "SecurityError: It was determined that certain files are unsafe for access within a Web application, or that too many calls are being made on file resources.",
+    "idbWorks": true,
+    "quotaMB": 162332,
+    "persisted": false
+   }
+  },
+  {
+   "id": "1b",
+   "name": "file:// : OPFS usable (navigator.storage.getDirectory present AND works)",
+   "pass": false,
+   "info": {
+    "present": true,
+    "works": "SecurityError: It was determined that certain files are unsafe for access within a Web application, or that too many calls are being made on file resources."
+   }
+  },
+  {
+   "id": "2a",
+   "name": "IndexedDB mirror + stored file handle (structured-cloned) survive close/reopen (same profile, same URL)",
+   "pass": true,
+   "info": {
+    "resumed": {
+     "state": "recovery-available",
+     "fileRev": 2,
+     "mirrorRev": 3,
+     "source": "idb",
+     "journalReplayed": 0
+    },
+    "note": "file was saved at rev 2; one later edit existed only in the IDB mirror -> app offers it as recovery",
+    "rowsFileOnly": 2588,
+    "rowsBefore": 2589,
+    "rowsAfterRecovery": 2589,
+    "opfs": {
+     "userFilesOnDisk": [
+      "pharm-scheduler.sqlite"
+     ]
+    },
+    "hasHandle": true,
+    "opfsMirror": "unavailable on file://"
+   }
+  },
+  {
+   "id": "2b",
+   "name": "Same profile, HTML moved/renamed/copied to another path: storage SHARED (all file:// pages = one origin)",
+   "pass": true,
+   "info": {
+    "origin": "file://",
+    "resumed": "recovery-available",
+    "rows": 2588,
+    "linkedFile": "pharm-scheduler.sqlite",
+    "note": "data visible from any other file:// page in this profile (also a risk: other local HTML files can read/clobber it)"
+   }
+  },
+  {
+   "id": "2c",
+   "name": "Different browser profile (another browser/PC/user): nothing carried over",
+   "pass": true,
+   "info": {
+    "resumed": "empty"
+   }
+  },
+  {
+   "id": "3a",
+   "name": "SIGKILL after 3 acknowledged edits (journal only; no mirror, no file save): edits recovered",
+   "pass": true,
+   "info": {
+    "killedProcs": 8,
+    "atKill": {
+     "rev": 5,
+     "savedRev": 2,
+     "mirrorRev": 2,
+     "rows": 2591
+    },
+    "resumed": {
+     "state": "recovery-available",
+     "fileRev": 2,
+     "mirrorRev": 5,
+     "source": "idb",
+     "journalReplayed": 3
+    },
+    "rowsAfterRecovery": 2591
+   }
+  },
+  {
+   "id": "3b",
+   "name": "SIGKILL during an in-flight mirror write (5 timings): IDB snapshot never corrupt, app resumes",
+   "pass": true,
+   "info": [
+    {
+     "killAfterMs": 0,
+     "resumed": "recovery-available",
+     "rev": 3,
+     "opfsMirrorIntegrity": "n/a (OPFS blocked on file://)",
+     "fileIntegrityOk": true
+    },
+    {
+     "killAfterMs": 5,
+     "resumed": "recovery-available",
+     "rev": 3,
+     "opfsMirrorIntegrity": "n/a (OPFS blocked on file://)",
+     "fileIntegrityOk": true
+    },
+    {
+     "killAfterMs": 15,
+     "resumed": "recovery-available",
+     "rev": 3,
+     "opfsMirrorIntegrity": "n/a (OPFS blocked on file://)",
+     "fileIntegrityOk": true
+    },
+    {
+     "killAfterMs": 40,
+     "resumed": "recovery-available",
+     "rev": 3,
+     "opfsMirrorIntegrity": "n/a (OPFS blocked on file://)",
+     "fileIntegrityOk": true
+    },
+    {
+     "killAfterMs": 100,
+     "resumed": "recovery-available",
+     "rev": 3,
+     "opfsMirrorIntegrity": "n/a (OPFS blocked on file://)",
+     "fileIntegrityOk": true
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "name": "Site data cleared -> empty; user-owned exported file restores everything (rows, log, checkpoints) via <input type=file>",
+   "pass": true,
+   "info": {
+    "how": "CDP Storage.clearDataForOrigin(file://)",
+    "backend": "download",
+    "stateAfterClear": "empty",
+    "rowsBefore": 2589,
+    "rowsAfter": 2589,
+    "logBefore": 2002,
+    "logAfter": 2002,
+    "checkpoints": 1,
+    "lost": "edits made after the last export (here: 1 assignment)"
+   }
+  },
+  {
+   "id": "7",
+   "name": "createWritable (real Chromium, OPFS handle on http://127.0.0.1): target unchanged during write and after abort(); replaced only on close()",
+   "pass": true,
+   "info": {
+    "duringWrite": "OLD-CONTENT",
+    "entriesDuringWrite": [
+     "atomic.bin.crswap",
+     "atomic.bin"
+    ],
+    "afterAbort": "OLD-CONTENT",
+    "afterClose": "NEW"
+   }
+  },
+  {
+   "id": "6",
+   "name": "Measurements (realistic db: 16 stores, 60 pharmacists, 730 days, 50k log rows)",
+   "pass": null,
+   "info": {
+    "htmlKB": 917,
+    "htmlGzipKB": 417,
+    "coldLoadToFirstQuery_median5": {
+     "firstQueryMs": 142,
+     "wasmInitMs": 72
+    },
+    "all": [
+     {
+      "firstQueryMs": 142,
+      "wasmInitMs": 73,
+      "domContentLoadedMs": 120
+     },
+     {
+      "firstQueryMs": 142,
+      "wasmInitMs": 70,
+      "domContentLoadedMs": 120
+     },
+     {
+      "firstQueryMs": 137,
+      "wasmInitMs": 71,
+      "domContentLoadedMs": 116
+     },
+     {
+      "firstQueryMs": 139,
+      "wasmInitMs": 72,
+      "domContentLoadedMs": 119
+     },
+     {
+      "firstQueryMs": 150,
+      "wasmInitMs": 76,
+      "domContentLoadedMs": 130
+     }
+    ],
+    "rows": {
+     "assignments": 31307,
+     "change_log": 50005,
+     "stores": 16,
+     "pharmacists": 60
+    },
+    "seedMs": 330,
+    "dbBytes": 5423104,
+    "exportMs": 3.6,
+    "importMs": 3.3,
+    "integrityCheckMs": 20,
+    "integrity": "ok",
+    "quickCheckMs": 15,
+    "monthQueryMs": 1.7,
+    "mirrorIdbPlusOpfsMs": 27,
+    "saveAdapterMs_excl_disk": 79,
+    "saveOk": true,
+    "journaledEditMs": 2.1,
+    "checkpoint": {
+     "rawBytes": 5328896,
+     "gzBytes": 816256,
+     "ms": 738
+    },
+    "revertMs": 726,
+    "jsHeapMB": 167,
+    "wasmMemoryNote": "sql.js heap lives in WASM memory (not in JS heap)",
+    "rssIdleMB": 726,
+    "rssAfterWorkloadMB": 775
+   }
+  }
+ ]
+}
