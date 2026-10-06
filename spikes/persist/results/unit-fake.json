@@ -1,0 +1,57 @@
+[
+ {
+  "name": "saveAs writes a verified, integrity-clean file",
+  "pass": true,
+  "info": "114688 bytes"
+ },
+ {
+  "name": "save: failed mid-write leaves previous file intact and stays dirty",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "name": "save: read-back verification detects a silently-corrupting writer",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "name": "change_log is append-only (UPDATE/DELETE rejected)",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "name": "checkpoint + revert: data restored, log and checkpoints kept, revert undoable",
+  "pass": true,
+  "info": "ckpt 114688B raw -> 14967B gz"
+ },
+ {
+  "name": "reload after crash: IDB snapshot + journal recover un-saved edits newer than the file",
+  "pass": true,
+  "info": "{\"fileRev\":2,\"mirrorRev\":5}"
+ },
+ {
+  "name": "permission lost on reopen -> needs-permission -> reconnect (user gesture)",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "name": "integrity failure: open refuses, current db untouched, offers checkpoint",
+  "pass": true,
+  "info": "database disk image is malformed | offers: idb-ckpt,file-ckpt"
+ },
+ {
+  "name": "truncated file / garbage file refused with friendly reason",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "name": "open with unsaved changes asks first; saveAs gives new lineage id",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "name": "fallback backend (no handles): save() reports no-handle, download() hands out bytes, open from bytes",
+  "pass": true,
+  "info": ""
+ }
+]
