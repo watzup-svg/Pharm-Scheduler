@@ -4,7 +4,7 @@
 //   npm run check:all -- --level medium   pressure level (low default; high is long)
 //   npm run check:all -- --no-prototype   skip the old prototype's tests
 // Phase 1 runs side by side because none of it measures speed: types and unit tests (`check:v3`), the old prototype's tests, the
-// dependency audit (skipped when offline) and a scan that the built file asks the network for nothing.
+// dependency audit (skipped when offline), the print PDF check (pure Node, no browser) and a scan that the built file asks the network for nothing.
 // Phase 2 runs one at a time on an otherwise quiet machine because it has time budgets: the browser suites, the same suites in
 // Firefox and WebKit when installed, random-click stress, and the pressure test.
 // Output: a one-screen summary, test-logs/check-all-<stamp>/REPORT.md (+ report.json), full logs per step. Exit 1 on any failure.
@@ -85,6 +85,7 @@ const build = await run("build v3", "npm", ["run", "build:v3"]);
 console.log("\n-- phase 1: correctness, in parallel --");
 await Promise.all([
   run("types + unit tests (check:v3)", "npm", ["run", "check:v3"]),
+  run("print PDF check", "node", ["scripts/v3-pdf-check.mjs"]),
   run("old prototype tests", "npm", ["run", "check"], { skipIf: () => (flag("--no-prototype") ? "--no-prototype" : null) }),
   run("dependency audit", "npm", ["audit", "--omit=dev", "--audit-level=high"], { offlineOk: true }),
   (async () => { const r = offlineScan(); const file = path.join(dir, "offline-scan.log"); fs.writeFileSync(file, r.out); results.push({ name: "built file makes no network requests", status: r.status, secs: 0, log: path.relative(root, file), detail: r.detail, out: r.out }); console.log(`${r.status === "ok" ? "ok  " : "FAIL"} built file makes no network requests  ${r.detail}`); })(),
