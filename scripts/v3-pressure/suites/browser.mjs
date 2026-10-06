@@ -32,7 +32,9 @@ const B = {
   inputWhileBusy: 600, // a UI click answered while a search runs
 };
 // Real use is 16-18 stores; low and medium go well past that, high is the 120-store extreme.
-const SCALE = pick3(L, { stores: 40, people: 150 }, { stores: 60, people: 250 }, { stores: 120, people: 500 });
+// Real use is 16-18 stores. Low and medium go well past that; high is 60 stores / 250 people (3x), enough to expose the super-linear
+// code that hides at 18 (Improve and choices were quadratic and showed at 60). PRESSURE_EXTREME=1 runs 120 / 500 for the rare deep look.
+const SCALE = process.env.PRESSURE_EXTREME ? { stores: 120, people: 500 } : pick3(L, { stores: 40, people: 150 }, { stores: 60, people: 250 }, { stores: 60, people: 250 });
 
 // ---------------- build freshness ----------------
 function newestSource() {

@@ -11,7 +11,8 @@ import { Invariant, genWorld, parseArgs, pick3, rng, runSuite, type Case, type L
 
 const START = "2026-10-01";
 const DAYS = 31;
-const SIZES = [18, 60, 120];
+// 120 stores is 7x real use: only with PRESSURE_EXTREME=1 (see docs/v3/PRESSURE.md).
+const SIZES = process.env.PRESSURE_EXTREME ? [18, 60, 120] : [18, 60];
 
 function randomEdit(w: World, r: Rng): Edit {
   const s = w.state;
