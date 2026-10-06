@@ -4,7 +4,7 @@ import { useApp } from "./store.ts";
 
 export async function boot(): Promise<void> {
   const r = await getPersist().boot();
-  if (r.state === "world") useApp.getState().setWorld(r.world);
+  if (r.state === "world") useApp.getState().setWorld(r.world, { fileName: r.fileName ?? null, readOnlyProblems: r.readOnly?.problems ?? null });
   // Other states (needs-permission, recovery, refused) are shown by the Start screen from the persist status.
   (window as unknown as { __bootResult?: unknown }).__bootResult = r.state;
 }
