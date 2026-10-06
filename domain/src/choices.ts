@@ -31,7 +31,8 @@ export type Choice = {
 
 /** Every active pharmacist, with the effect of putting them at `storeId` on `date`. Sorted: counts first, fewer warnings, then name. */
 export function choicesFor(state: DomainState, storeId: StoreId, date: ISODate, asOf: ISODate): Choice[] {
-  const base = evaluate(state, asOf, { range: { from: date, to: date } });
+  const one = { from: date, to: date };
+  const base = evaluate(state, asOf, { range: one, window: one });
   const out: Choice[] = [];
   const onDate = Object.values(state.assignments).filter((a) => a.date === date);
   for (const id of Object.keys(state.pharmacists).sort(cmp)) {
@@ -39,9 +40,9 @@ export function choicesFor(state: DomainState, storeId: StoreId, date: ISODate, 
     if (mine.some((a) => a.storeId === storeId)) continue;
     const move = mine.length === 1 ? mine[0]! : null;
     const edit = move ? ({ t: "move", assignmentId: move.id, toStoreId: storeId } as const) : ({ t: "place", storeId, pharmacistId: id, date } as const);
-    const next = applyScratch(state, [edit]);
+    const next = applyScratch(state, [edit], undefined, { skipMoot: true });
     if ("refused" in next) continue;
-    const ev = evaluate(next, asOf, { range: { from: date, to: date } });
+    const ev = evaluate(next, asOf, { range: one, window: one });
     const a = move ? next.assignments[move.id]! : Object.values(next.assignments).find((x) => x.pharmacistId === id && x.storeId === storeId && x.date === date)!;
     const res = ev.assignments[a.id]!;
     const fails = res.results.filter((r) => r.verdict === "Fail" && !r.overridden);
