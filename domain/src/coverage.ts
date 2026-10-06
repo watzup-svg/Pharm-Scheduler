@@ -176,13 +176,16 @@ function evalPharmacist(state: DomainState, ctx: EvalCtx, list: Assignment[], em
   return out;
 }
 
-function buildCell(state: DomainState, ctx: EvalCtx, evals: Record<string, AssignmentEval>, storeId: string, date: ISODate): CellCoverage {
+/** Lookups a caller that already keeps its assignments indexed can hand to evalDelta, to skip scanning the whole table. */
+export type AsgIndex = { ofPharmacist(id: string): Iterable<Assignment>; onDate(date: ISODate): Iterable<Assignment> };
+
+function buildCell(state: DomainState, ctx: EvalCtx, evals: Record<string, AssignmentEval>, storeId: string, date: ISODate, onDate?: Iterable<Assignment>): CellCoverage {
   const c = state.cellCounts[cellKey(storeId, date)];
   const cell: CellCoverage = {
     storeId, date, required: requiredFor(state, ctx.reqIdx, storeId, date), counted: 0, unverified: 0,
     locum: c?.locum ?? 0, acceptedShort: c?.acceptedShort ?? 0, covered: 0, open: 0, surplus: 0,
   };
-  for (const a of Object.values(state.assignments)) {
+  for (const a of onDate ?? Object.values(state.assignments)) {
     if (a.storeId !== storeId || a.date !== date) continue;
     const e = evals[a.id];
     if (!e) continue;
@@ -234,21 +237,22 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
   return { asOf, assignments: evals, cells: sortedCells };
 }
 
-/** Re-judge only what changed: the listed pharmacists' assignments (their double booking and day runs) and the listed cells. Used by search; the rest is reused from `prev`. */
-export function evalDelta(state: DomainState, ctx: EvalCtx, prev: Evaluation, pharmacists: string[], cellKeys: string[]): Evaluation {
+/** Re-judge only what changed (with `only`, just the assignments it accepts, such as one date: right when they kept the same set of days, as a move between stores does): the listed pharmacists' assignments (their double booking and day runs) and the listed cells. Used by search; the rest is reused from `prev`. */
+export function evalDelta(state: DomainState, ctx: EvalCtx, prev: Evaluation, pharmacists: string[], cellKeys: string[], idx?: AsgIndex, only?: (a: Assignment) => boolean): Evaluation {
   // Prototype chaining instead of copying: the search only reads by key, and each node adds a few entries over its parent's.
   const assignments: Record<string, AssignmentEval> = Object.create(prev.assignments);
   const wanted = new Set(pharmacists);
   const lists = new Map<string, Assignment[]>();
-  for (const a of Object.values(state.assignments)) if (wanted.has(a.pharmacistId)) (lists.get(a.pharmacistId) ?? lists.set(a.pharmacistId, []).get(a.pharmacistId)!).push(a);
+  if (idx) for (const ph of wanted) lists.set(ph, [...idx.ofPharmacist(ph)]);
+  else for (const a of Object.values(state.assignments)) if (wanted.has(a.pharmacistId)) (lists.get(a.pharmacistId) ?? lists.set(a.pharmacistId, []).get(a.pharmacistId)!).push(a);
   for (const l of lists.values()) {
     l.sort((x, y) => cmp(x.id, y.id));
-    for (const e of evalPharmacist(state, ctx, l, () => true)) assignments[e.assignmentId] = e;
+    for (const e of evalPharmacist(state, ctx, l, only ?? (() => true))) assignments[e.assignmentId] = e;
   }
   const cells: Record<string, CellCoverage> = Object.create(prev.cells);
   for (const k of new Set(cellKeys)) {
     const [storeId, date] = k.split("|") as [string, ISODate];
-    cells[k] = buildCell(state, ctx, assignments, storeId, date);
+    cells[k] = buildCell(state, ctx, assignments, storeId, date, idx?.onDate(date));
   }
   return { asOf: prev.asOf, assignments, cells };
 }

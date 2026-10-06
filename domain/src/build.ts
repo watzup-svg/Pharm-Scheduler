@@ -4,7 +4,7 @@ import { clone } from "./canonical.ts";
 import { evaluate } from "./coverage.ts";
 import { applyScratch, ENGINE_VERSION, stateHash } from "./changeset.ts";
 import { expectedOn, patternConflicts } from "./patterns.ts";
-import { searchGaps, type Gap, type Scope } from "./search.ts";
+import { makePrep, searchGaps, type Gap, type Scope } from "./search.ts";
 import { PRESENCE_RULES } from "./rules.ts";
 import type { BuildReport, BuildResult, Edit, Proposal, World } from "./api-types.ts";
 import type { DomainState, Evaluation, RuleResult } from "./types.ts";
@@ -108,15 +108,17 @@ export function build(world: World, range: { from: ISODate; to: ISODate }, asOf:
       const gs: Gap[] = Object.values(ev.cells).filter((c) => c.open > 0).map((c) => ({ storeId: c.storeId, date })).sort((a, b) => cmp(a.storeId, b.storeId));
       if (!gs.length) break;
       let done = false;
+      // Every search in this pass sees the same state, so they share one preparation.
+      const prep = makePrep(W, { from: date, to: date }, asOf);
       if (budget <= 0) { report.searchLimitHit = true; break; }
-      const joint = searchGaps(W, gs.slice(0, MAX_GROUP), BUILD_SCOPE, asOf, Math.min(W.config.searchNodeLimit, budget));
+      const joint = searchGaps(W, gs.slice(0, MAX_GROUP), BUILD_SCOPE, asOf, Math.min(W.config.searchNodeLimit, budget), false, prep);
       budget -= joint.nodes;
       if (joint.limitHit) report.searchLimitHit = true;
       if (joint.clean.length) { apply(asBuild(joint.clean[0]!.edits)); done = true; }
       else if (gs.length > 1) {
         for (const g of gs) {
           if (budget <= 0) { report.searchLimitHit = true; break; }
-          const one = searchGaps(W, [g], BUILD_SCOPE, asOf, Math.min(W.config.searchNodeLimit, budget));
+          const one = searchGaps(W, [g], BUILD_SCOPE, asOf, Math.min(W.config.searchNodeLimit, budget), false, prep);
           budget -= one.nodes;
           if (one.limitHit) report.searchLimitHit = true;
           if (one.clean.length) { apply(asBuild(one.clean[0]!.edits)); done = true; break; }
