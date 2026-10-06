@@ -9,6 +9,7 @@ import { BrandMark } from "../ui/brand.tsx";
 import { SaveControls } from "./SaveControls.tsx";
 import { goTo, isTyping, stepIssue, undoTarget } from "./chrome/shared.tsx";
 import { fmtDate } from "../copy.ts";
+import { copyDiagnostics } from "../diagnostics.ts";
 
 const TABS: { id: Screen; label: string; also?: Screen }[] = [
   { id: "wall", label: "Schedule", also: "plan" },
@@ -92,6 +93,7 @@ export function TopBar() {
       <Menu.Item className={item} onSelect={() => togglePref(PREF.large, "text-large")}>Larger text</Menu.Item>
       <Menu.Item className={item} onSelect={() => togglePref(PREF.contrast, "contrast")}>High contrast</Menu.Item>
       <Menu.Item className={item} onSelect={() => setPanel("keys")}>Keyboard shortcuts</Menu.Item>
+      <Menu.Item className={item} onSelect={() => void copyDiagnostics().then((ok) => useApp.getState().say(ok ? "ok" : "info", ok ? "Diagnostics copied." : "Could not copy automatically."))}>Copy diagnostics</Menu.Item>
     </>
   );
 

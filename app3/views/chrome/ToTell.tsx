@@ -1,4 +1,5 @@
 // To tell: who has a changed schedule they have not heard about yet.
+import { record } from "../../diagnostics.ts";
 import { useMemo, useState } from "react";
 import { api, type ToTellEntry } from "@domain";
 import { useApp } from "../../store.ts";
@@ -34,7 +35,8 @@ export function ToTell() {
       await navigator.clipboard.writeText(text);
       setFallback(null);
       setCopied(title);
-    } catch {
+    } catch (e) {
+      record("ui", `clipboard blocked (to tell): ${String((e as Error)?.message ?? e)}`);
       setCopied(null);
       setFallback({ title, text });
     }

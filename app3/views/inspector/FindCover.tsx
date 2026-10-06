@@ -13,6 +13,7 @@ export function FindCover({ ctx }: { ctx: Ctx }) {
   const past = date < asOf;
   const mine = !!rr && rr.gaps.some((g) => g.storeId === storeId && g.date === date);
   const [busy, setBusy] = useState(false);
+  const running = useApp((s) => s.busy);
   // The search runs in the page; let "Searching..." paint first, since a wider search can take a while.
   const run = (wider: boolean) => {
     setNear(false);
@@ -24,6 +25,7 @@ export function FindCover({ ctx }: { ctx: Ctx }) {
     <div>
       <div className="flex flex-wrap items-center gap-2">
         <Act tone="ink" disabled={!!lock || past || busy} title={lock ?? (past ? "This day has passed" : "Looks for ways to fill this day. Nothing changes until you accept.")} onClick={() => run(false)}>{busy ? "Searching..." : "Find cover"}</Act>
+        {running && <Act onClick={() => useApp.getState().cancelEngine()}>Cancel</Act>}
         {past && <span className="text-xs text-muted">This day has passed.</span>}
       </div>
 

@@ -11,6 +11,7 @@ import { Plan } from "./views/Plan.tsx";
 import { Setup } from "./views/Setup.tsx";
 import { TimeOff } from "./views/TimeOff.tsx";
 import { PrintView } from "./views/PrintView.tsx";
+import { ErrorBoundary } from "./ui/ErrorBoundary.tsx";
 import { Notice } from "./ui/Notice.tsx";
 import { SaveDialogs } from "./views/SaveControls.tsx";
 import { HoverNotes } from "./ui/notes.tsx";
@@ -37,7 +38,7 @@ export function App() {
         {drawer ? (
           <aside aria-label="Left panel" className="relative w-[300px] shrink-0 overflow-y-auto border-r border-line bg-cream">
             <button type="button" aria-label="Close the list" onClick={() => setDrawer(false)} className="absolute right-2 top-2 z-10 rounded px-2 py-1 text-sm text-muted hover:bg-fill">Close ✕</button>
-            <LeftPanel />
+            <ErrorBoundary name="the list"><LeftPanel /></ErrorBoundary>
           </aside>
         ) : (
           <button type="button" aria-label="Open the list" aria-expanded={false} data-tip="Queue, who to tell, history | Open the list" onClick={() => setDrawer(true)}
@@ -48,22 +49,24 @@ export function App() {
           </button>
         )}
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-          {(view === "wall" || view === "plan") && <ScheduleHero />}
-          {view === "setup" && <SetupHero />}
-          {view === "timeoff" && <TimeOffHero />}
-          {view === "print" && <PrintHero />}
-          <div className="relative min-h-0 flex-1 overflow-auto">
-            {view === "wall" && <Wall />}
-            {view === "plan" && <Plan />}
-            {view === "timeoff" && <TimeOff />}
-            {view === "setup" && <Setup />}
-            {view === "print" && <PrintView />}
-          </div>
+          <ErrorBoundary name={`the ${view} screen`} resetKey={view} probe>
+            {(view === "wall" || view === "plan") && <ScheduleHero />}
+            {view === "setup" && <SetupHero />}
+            {view === "timeoff" && <TimeOffHero />}
+            {view === "print" && <PrintHero />}
+            <div className="relative min-h-0 flex-1 overflow-auto">
+              {view === "wall" && <Wall />}
+              {view === "plan" && <Plan />}
+              {view === "timeoff" && <TimeOff />}
+              {view === "setup" && <Setup />}
+              {view === "print" && <PrintView />}
+            </div>
+          </ErrorBoundary>
         </main>
         {(view === "wall" || view === "plan") && (
           <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
             {(outForm || !!world.session.scenario) && <SomeonesOut compact showForm={outForm} onClose={() => useApp.getState().setOutForm(false)} />}
-            {view === "wall" && <Inspector />}
+            {view === "wall" && <ErrorBoundary name="the inspector"><Inspector /></ErrorBoundary>}
           </aside>
         )}
       </div>

@@ -8,6 +8,7 @@ import type { LoadOk } from "./codec.ts";
 import { makeEntry, replayEntry } from "./replay.ts";
 import type { JournalEntry } from "./replay.ts";
 import type { FileBackend, HandleLike } from "./backends.ts";
+import { isQuotaError } from "./idb.ts";
 import type { Kv } from "./idb.ts";
 import type { SqlJs } from "./sql-types.ts";
 
@@ -35,6 +36,9 @@ const MAX_SAVED_COPIES = 3;
 const MAX_SET_ASIDE = 5;
 
 const msg = (e: unknown): string => String((e as { message?: unknown })?.message ?? e);
+const MIRROR_ERR = "Browser copy full or unavailable";
+/** Status text for a failed browser-copy write; a full disk is named, anything else carries the reason. */
+const mirrorError = (e: unknown): string => `${MIRROR_ERR}${isQuotaError(e) ? " (storage is full)" : ""}. Download a copy to be safe. ${msg(e)}`;
 const isAbort = (e: unknown): boolean => !!e && ((e as { name?: string }).name === "AbortError" || !!(e as { cancelled?: boolean }).cancelled);
 const sameBytes = (a: Uint8Array, b: Uint8Array): boolean => {
   if (a.length !== b.length) return false;
@@ -179,7 +183,7 @@ export function createPersist(deps: PersistDeps): Persist {
       await idb.delUpTo("journal", r);
     } catch (e) {
       mirrorOk = false;
-      error = `Could not keep a copy in this browser: ${msg(e)}`;
+      error = mirrorError(e);
       notify();
       throw e;
     }
@@ -187,7 +191,7 @@ export function createPersist(deps: PersistDeps): Persist {
     baseline = true;
     journalGap = false;
     mirrorOk = true;
-    if (error?.startsWith("Could not keep a copy")) error = null;
+    if (error?.startsWith(MIRROR_ERR)) error = null;
     notify();
   }
 
@@ -391,7 +395,7 @@ export function createPersist(deps: PersistDeps): Persist {
       } catch (e) {
         journalGap = true;
         mirrorOk = false;
-        error = `Could not keep a copy in this browser: ${msg(e)}`;
+        error = mirrorError(e);
         notify();
         schedule(0);
         throw e;

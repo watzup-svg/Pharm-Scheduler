@@ -14,6 +14,12 @@ export interface Kv {
   clear(store: KvStoreName): Promise<void>;
 }
 
+/** The browser refused a write because storage is full (name differs by browser; Firefox also uses a numeric code). */
+export const isQuotaError = (e: unknown): boolean => {
+  const x = e as { name?: string; code?: number; message?: string } | null;
+  return x?.name === "QuotaExceededError" || x?.name === "NS_ERROR_DOM_QUOTA_REACHED" || x?.code === 22 || /quota/i.test(x?.message ?? "");
+};
+
 const isHandle = (v: unknown): boolean => typeof (v as { getFile?: unknown })?.getFile === "function";
 
 export function idbMem(): Kv & { _failPuts?: boolean } {
@@ -46,7 +52,7 @@ export function idbReal(indexedDB: IDBFactory, name = "hischool-scheduler-v3"): 
   const open = () => (dbp ??= new Promise<IDBDatabase>((res, rej) => {
     const r = indexedDB.open(name, 1);
     r.onupgradeneeded = () => STORES.forEach((s) => r.result.createObjectStore(s));
-    r.onsuccess = () => res(r.result);
+    r.onsuccess = () => { const d = r.result; d.onclose = () => { dbp = null; }; d.onversionchange = () => { d.close(); dbp = null; }; res(d); };
     r.onerror = () => { dbp = null; rej(r.error); };
     r.onblocked = () => { dbp = null; rej(new Error("The browser storage is busy in another window.")); };
   }));
@@ -54,9 +60,13 @@ export function idbReal(indexedDB: IDBFactory, name = "hischool-scheduler-v3"): 
     const db = await open();
     return new Promise<T>((res, rej) => {
       // 'strict' makes the browser flush to disk before oncomplete: an acknowledged edit survives a crash.
-      const t = db.transaction(n, mode, { durability: "strict" });
+      let t: IDBTransaction;
+      let q: IDBRequest | undefined;
       let out: unknown;
-      const q = fn(t.objectStore(n));
+      try {
+        t = db.transaction(n, mode, { durability: "strict" });
+        q = fn(t.objectStore(n));
+      } catch (e) { dbp = null; rej(e); return; } // closed connection or a synchronous quota error: reopen next time
       if (q) q.onsuccess = () => { out = q.result; };
       t.oncomplete = () => res(out as T);
       t.onerror = () => rej(t.error);

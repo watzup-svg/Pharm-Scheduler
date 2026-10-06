@@ -4,6 +4,7 @@ import initSqlJs from "sql.js/dist/sql-wasm-browser.js";
 // Vite inlines the WASM as a data URL, so the single HTML file works from file:// with no network.
 import wasmDataUrl from "sql.js/dist/sql-wasm-browser.wasm?url";
 import { createPersist, detectBackend, idbReal } from "@persist";
+import { record } from "./diagnostics.ts";
 import type { PersistApi, SaveStatus } from "./persist-types.ts";
 
 export function createMemoryPersist(): PersistApi {
@@ -43,10 +44,10 @@ function createBrowserPersist(): PersistApi {
     fs: detectBackend(window as unknown as Parameters<typeof detectBackend>[0]),
     idb: idbReal(window.indexedDB),
     debounceMs: w.__persistDebounce ?? 2000,
-    onError: (what, e) => console.warn(`[save] ${what}`, e),
+    onError: (what, e) => { console.warn(`[save] ${what}`, e); record("persist", `${what}: ${String((e as Error)?.message ?? e)}`); },
   });
   // Get the latest snapshot into the browser copy when the tab is hidden or closed.
-  const flush = () => { p.flush().catch(() => {}); };
+  const flush = () => { p.flush().catch((e) => record("persist", `flush failed: ${String(e?.message ?? e)}`)); };
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(); });
   window.addEventListener("pagehide", flush);
   (window as unknown as { __persist: unknown }).__persist = p; // test hook, harmless in real use

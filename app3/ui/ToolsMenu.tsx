@@ -21,6 +21,7 @@ export function ToolsMenu({ className }: { className?: string }) {
   };
   return (
     <>
+      {busy && <Btn className={className} aria-label={`Cancel ${busy}`} data-testid="cancel-engine" onClick={() => useApp.getState().cancelEngine()}>Cancel</Btn>}
       <Menu.Root>
         <Menu.Trigger asChild>
           <Btn className={className} title={why} aria-label="Tools">{busy ? `${busy}…` : "Tools ▾"}</Btn>
