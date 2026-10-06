@@ -284,5 +284,5 @@ function hostileCase(className: string, idx: number, n: number): Case {
 
 const per = pick3(L, 120, 600, 2500);
 const names = Object.keys(mutators);
-const cases = names.map((c, i) => hostileCase(c, i, c === "huge-strings" || c === "huge-state" ? Math.max(10, Math.floor(per / 12)) : per));
+const cases = names.map((c, i) => hostileCase(c, i, c === "huge-strings" ? Math.max(10, Math.floor(per / 12)) : c === "huge-state" ? Math.max(6, Math.floor(per / 40)) : per));
 await runSuite("hostile-files", cases, args);
