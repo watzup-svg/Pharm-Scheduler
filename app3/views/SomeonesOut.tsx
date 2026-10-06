@@ -52,6 +52,7 @@ export function SomeonesOut() {
   const [added, setAdded] = useState<Added | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const state = world?.state;
   const sc = world?.session.scenario ?? null;
   const proposal = world?.session.proposal ?? null;
@@ -108,6 +109,7 @@ export function SomeonesOut() {
     );
     if (ok) {
       setAdded({ id, pharmacistId: chosenPid });
+      setFormOpen(false);
       setFirst("");
       setLast("");
     }
@@ -148,6 +150,8 @@ export function SomeonesOut() {
         </div>
       )}
 
+      <Btn aria-expanded={formOpen} onClick={() => setFormOpen((o) => !o)} className="mb-2">{formOpen ? "Close" : "+ Someone's out…"}</Btn>
+      {formOpen && (
       <form onSubmit={add} aria-label="Add time off" className="space-y-1.5">
         <div>
           <label htmlFor="out-who" className="text-xs font-medium">Who</label>
@@ -196,6 +200,7 @@ export function SomeonesOut() {
           {busy && <span className="text-xs text-muted">{proposal ? "Accept or discard the proposal first." : "Park or discard the what-if first."}</span>}
         </div>
       </form>
+      )}
 
       {addedRec && addedInfo && (
         <div className="mt-2 rounded-md bg-white p-2 text-sm ring-1 ring-line" role="status" aria-label="What this changes">

@@ -137,5 +137,8 @@ export function seedWorld(seed: Seed): World {
   st.nextId.seq = seq;
   st.nextId.unavail = Math.max(uid, 1);
   st.nextId.standing = Math.max(tid, 1);
-  return { state: st, journal: { changeSets: [], snapshots: [], told: {}, checkpoints: [] }, session: emptySession() };
+  // Agreed implies told: an agreed assignment is already known to its pharmacist.
+  const told: Record<string, string> = {};
+  for (const a of Object.values(st.assignments)) if (a.agreed) told[`${a.pharmacistId}|${a.date}`] = a.storeId;
+  return { state: st, journal: { changeSets: [], snapshots: [], told, checkpoints: [] }, session: emptySession() };
 }

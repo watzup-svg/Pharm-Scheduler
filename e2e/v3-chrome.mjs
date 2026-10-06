@@ -60,6 +60,7 @@ s = await get();
 check("p goes back", s.sel && s.sel.date === sel1.date && s.sel.storeId === sel1.storeId, JSON.stringify(s.sel));
 await shot("1-queue");
 
+const openOutForm = async () => { if ((await right.getByRole("form", { name: "Add time off" }).count()) === 0) await right.getByRole("button", { name: /Someone's out/ }).click(); };
 // ---- someone's out: add an absence, see affected count, find cover, preview, accept ----
 // find a person and day where a cover exists, trying the real domain through the store, then undoing the trial
 const pick = await st(async () => {
@@ -85,6 +86,7 @@ const pick = await st(async () => {
 });
 console.log("trial", JSON.stringify(pick));
 check("found a day with a cover option", !!pick, "");
+await openOutForm();
 await right.getByRole("form", { name: "Add time off" }).getByLabel("Who").selectOption(pick.pid);
 await right.getByLabel("First day").fill(pick.date);
 await right.getByLabel("Type").selectOption("Sick");
@@ -150,6 +152,7 @@ check("the unavailability record is gone after the two undos", s.nUnav === befor
 check("top bar Undo is disabled when nothing is left to undo (this test's changes)", true);
 
 // refused undo: add a Requested record, approve it, then undo the add from History
+await openOutForm();
 await right.getByRole("form", { name: "Add time off" }).getByLabel("Who").selectOption(pick.pid);
 await right.getByLabel("First day").fill(pick.date);
 await right.getByLabel("Type").selectOption("Vacation");
@@ -184,6 +187,7 @@ await left.getByLabel("Checkpoint name").fill("Before test");
 await left.getByRole("button", { name: "Checkpoint now" }).click();
 check("checkpoint is listed", (await get()).checkpoints.some((c) => c.name === "Before test") && (await left.innerText()).includes("Before test"));
 const snapUnav = (await get()).nUnav;
+await openOutForm();
 await right.getByRole("form", { name: "Add time off" }).getByLabel("Who").selectOption(pick.pid);
 await right.getByLabel("First day").fill(pick.date);
 await right.getByLabel("Type").selectOption("Other");

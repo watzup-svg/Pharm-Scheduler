@@ -55,7 +55,6 @@ const SHORTCUTS: [string, string][] = [
 
 export function TopBar() {
   const world = useApp((s) => s.world);
-  const fileName = useApp((s) => s.fileName);
   const view = useApp((s) => s.view);
   const setView = useApp((s) => s.setView);
   const asOf = useApp((s) => s.asOf);
@@ -80,9 +79,18 @@ export function TopBar() {
       <div className="flex h-12 items-center gap-2.5 whitespace-nowrap px-3">
         <div className="flex shrink-0 items-baseline gap-2">
           <h1 className="shrink-0 text-sm font-bold">Scheduler</h1>
-          <span className="max-w-[130px] truncate text-xs text-muted" title={fileName ?? undefined} data-testid="file-name">{fileName ?? "Unsaved"}</span>
         </div>
-        <div className="min-w-0 shrink overflow-hidden"><SaveControls /></div>
+        <div className="min-w-0 flex-1"><SaveControls /></div>
+        <div className="ml-auto flex shrink-0 items-center gap-2.5">
+          <p className="whitespace-nowrap text-sm" aria-label="Summary for this period" data-testid="counts">
+            <span className={counts.open ? "font-semibold" : ""}>{counts.open} open</span> · <span className={counts.problems ? "font-semibold" : ""}>{plural(counts.problems, "problem")}</span>
+          </p>
+          <Btn tone="ink" disabled={engineOff} title={why ?? "Fill the pattern and look for cover in this period. You review it before anything is saved."} onClick={() => useApp.getState().runBuild()}>Build this period</Btn>
+          <Btn aria-expanded={panel === "improve"} onClick={() => setPanel(panel === "improve" ? null : "improve")} disabled={engineOff} title={why}>Improve…</Btn>
+          <Btn tone="ghost" className="w-8 justify-center px-0" aria-label="Keyboard shortcuts" aria-expanded={panel === "keys"} onClick={() => setPanel(panel === "keys" ? null : "keys")}>?</Btn>
+        </div>
+      </div>
+      <div className="flex h-11 items-center gap-3 whitespace-nowrap border-t border-line px-3">
         <nav aria-label="Views" className="flex shrink-0 items-center gap-0.5">
           {TABS.map((t) => (
             <button
@@ -116,12 +124,6 @@ export function TopBar() {
           >
             ↶ Undo
           </Btn>
-          <p className="whitespace-nowrap text-sm" aria-label="Summary for this period" data-testid="counts">
-            <span className={counts.open ? "font-semibold" : ""}>{counts.open} open</span> · <span className={counts.problems ? "font-semibold" : ""}>{plural(counts.problems, "problem")}</span>
-          </p>
-          <Btn tone="ink" disabled={engineOff} title={why ?? "Fill the pattern and look for cover in this period. You review it before anything is saved."} onClick={() => useApp.getState().runBuild()}>Build this period</Btn>
-          <Btn aria-expanded={panel === "improve"} onClick={() => setPanel(panel === "improve" ? null : "improve")} disabled={engineOff} title={why}>Improve…</Btn>
-          <Btn tone="ghost" className="w-8 justify-center px-0" aria-label="Keyboard shortcuts" aria-expanded={panel === "keys"} onClick={() => setPanel(panel === "keys" ? null : "keys")}>?</Btn>
         </div>
       </div>
       {panel === "improve" && !engineOff && (
