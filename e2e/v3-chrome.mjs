@@ -264,6 +264,8 @@ const cell = page.locator('table[aria-label="Open shifts by week"] tbody button'
 await cell.click();
 s = await get();
 check("clicking a Plan cell opens the wall on that week", s.view === "wall" && s.win.to > s.win.from && (new Date(s.win.to) - new Date(s.win.from)) / 864e5 === 6, JSON.stringify(s.win));
+await page.waitForFunction(() => !window.__v3.app.getState().busy);
+await st(() => { const a = window.__v3.app.getState(); if (a.world.session.proposal) a.discardProposal(); });
 await bar.getByRole("button", { name: "Plan", exact: true }).click();
 await page.getByLabel("What-if name").fill("Try something");
 await page.getByRole("button", { name: "Start a what-if" }).click();

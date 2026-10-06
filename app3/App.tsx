@@ -29,13 +29,14 @@ export function App() {
       <TopBar />
       <div className="flex min-h-0 flex-1">
         <aside aria-label="Left panel" className="w-[272px] shrink-0 overflow-y-auto border-r border-line bg-cream"><LeftPanel /></aside>
-        <main className="min-w-0 flex-1 overflow-auto">
+        <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           {(view === "wall" || view === "plan") && <ScheduleHero />}
           {view === "setup" && <SetupHero />}
           {view === "travel" && <TravelHero />}
           {view === "rules" && <RulesHero />}
           {view === "checks" && <ChecksHero />}
           {view === "print" && <PrintHero />}
+          <div className="relative min-h-0 flex-1 overflow-auto">
           {view === "wall" && <Wall />}
           {view === "plan" && <Plan />}
           {view === "setup" && <Setup />}
@@ -43,6 +44,7 @@ export function App() {
           {view === "travel" && <TravelView />}
           {view === "checks" && <Checks />}
           {view === "print" && <PrintView />}
+          </div>
         </main>
         <aside aria-label="Inspector" className="flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
           <SomeonesOut />
