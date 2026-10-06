@@ -7,6 +7,7 @@ export { idbMem, idbReal } from "./idb.ts";
 export type { Kv } from "./idb.ts";
 export { fsaBackend, downloadBackend, detectBackend } from "./backends.ts";
 export type { FileBackend, HandleLike, Picked } from "./backends.ts";
+export { safeFileName } from "./filename.ts";
 export { replayEntry, makeEntry, diffTold } from "./replay.ts";
 export type { JournalEntry } from "./replay.ts";
 export type { SqlJs, SqlDatabase, SqlInit } from "./sql-types.ts";

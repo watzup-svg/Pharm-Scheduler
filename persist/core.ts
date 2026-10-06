@@ -5,6 +5,7 @@ import type { ChangeSet, World } from "../domain/src/index.ts";
 import type { BootResult, Offer, OpenResult, PersistApi, SaveResult, SaveStatus } from "../app3/persist-types.ts";
 import { exportWorld, loadBytes, salvageBytes } from "./codec.ts";
 import type { LoadOk } from "./codec.ts";
+import { safeFileName } from "./filename.ts";
 import { makeEntry, replayEntry } from "./replay.ts";
 import type { JournalEntry } from "./replay.ts";
 import type { FileBackend, HandleLike } from "./backends.ts";
@@ -503,7 +504,7 @@ export function createPersist(deps: PersistDeps): Persist {
     async saveAs(world: World): Promise<SaveResult> {
       if (!fs.pickSave) return { ok: false, reason: "unsupported" };
       let h: HandleLike;
-      try { h = await fs.pickSave(fileName ?? "Schedule.sqlite"); } catch (e) {
+      try { h = await fs.pickSave(safeFileName(fileName ?? "Schedule.sqlite")); } catch (e) {
         if (isAbort(e)) return { ok: false, reason: "cancelled" };
         return { ok: false, reason: "write-failed", error: msg(e) };
       }
@@ -541,7 +542,7 @@ export function createPersist(deps: PersistDeps): Persist {
       const SQL = await getSQL();
       const at = now();
       const bytes = exportWorld(SQL, world, { dbUuid: ensureUuid(), rev, savedAt: at });
-      try { fs.download(fileName ?? "Schedule.sqlite", bytes); } catch (e) { return { ok: false, reason: "write-failed", error: msg(e) }; }
+      try { fs.download(safeFileName(fileName ?? "Schedule.sqlite"), bytes); } catch (e) { return { ok: false, reason: "write-failed", error: msg(e) }; }
       // A download is a copy the browser cannot verify. With no linked file it is the best "saved" there is; with one it changes nothing.
       if (!handle) {
         savedRev = rev;

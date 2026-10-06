@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { api, type ToTellEntry } from "@domain";
 import { useApp } from "../../store.ts";
 import { Btn } from "../../ui/primitives.tsx";
-import { fmtDate, firstName, placeWords } from "./shared.tsx";
+import { fmtDate, firstName, placeWords as placeWordsRaw } from "./shared.tsx";
+import { oneLine } from "../../exportText.ts";
 
 type Group = { pharmacistId: string; name: string; entries: ToTellEntry[] };
 
@@ -24,11 +25,13 @@ export function ToTell() {
     return [...out.values()];
   }, [world, asOf, state]);
 
+  // Store codes are typed text: one line each, so a code cannot start a new line (a new row when pasted into a spreadsheet).
+  const placeWords = (st: typeof state, v: string) => oneLine(placeWordsRaw(st, v));
   const line = (e: ToTellEntry) => `${fmtDate(e.date)}: was ${placeWords(state, e.was)}, now ${placeWords(state, e.now)}`;
   const message = (g: Group) => {
     const parts = g.entries.map((e) => (e.now === "off" ? `off ${fmtDate(e.date)}` : `at ${placeWords(state, e.now)} ${fmtDate(e.date)}`));
     const joined = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0] ?? "";
-    return `Hi ${firstName(g.name)}, you're ${joined}.`;
+    return `Hi ${oneLine(firstName(g.name))}, you're ${joined}.`;
   };
   const copy = async (title: string, text: string) => {
     try {

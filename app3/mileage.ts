@@ -5,6 +5,7 @@
 // directed pair base -> store. Pay only when one-way miles are over the free miles:
 //   cents = 2 x (one-way miles - free miles) x rate (cents per mile), rate = the entry with the latest effectiveFrom <= the date.
 // A missing pair is unknown, never zero: it is listed apart and adds nothing to the totals.
+import { csvLine } from "./exportText.ts";
 import { cmp } from "../domain/src/dates.ts";
 import type { DomainState, ISODate, MileageRate } from "../domain/src/types.ts";
 
@@ -103,15 +104,10 @@ export function dollars(cents: number): string {
   return `${sign}$${Math.floor(c / 100)}.${String(c % 100).padStart(2, "0")}`;
 }
 
-const csvCell = (v: string | number): string => {
-  const s = String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
-
 /** One line per trip, then the trips that cannot be priced (blank miles or rate, never 0), then the total. */
 export function mileageCsv(state: DomainState, report: MileageReport): string {
   const code = (id: string | null) => (id ? state.stores[id]?.code ?? id : "");
-  const line = (cells: (string | number)[]) => cells.map(csvCell).join(",");
+  const line = csvLine;
   const out: string[] = [line(["Pharmacist", "Base store", "Date", "Store", "One-way miles", "Free miles", "Rate (cents per mile)", "Pay", "Note"])];
   for (const r of report.rows) {
     for (const t of r.trips) {

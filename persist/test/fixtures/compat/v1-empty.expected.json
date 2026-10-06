@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "stateHash": "7674d448959b41d56a2e9638ca6d759efcb891bb500586910dcf3297f6710216",
+  "tableCounts": {
+    "assignments": 0,
+    "built": 0,
+    "cellCounts": 0,
+    "change_sets": 0,
+    "checkpoints": 0,
+    "config": 1,
+    "dateOverrides": 0,
+    "meta": 7,
+    "nextId": 1,
+    "overrides": 0,
+    "pharmacists": 0,
+    "requirements": 7,
+    "snapshots": 0,
+    "standing": 0,
+    "stores": 1,
+    "told": 0,
+    "travel": 0,
+    "unavailability": 0
+  },
+  "journalLength": 0,
+  "checkpoints": 0,
+  "snapshots": 0,
+  "toldEntries": 0
+}
