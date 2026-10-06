@@ -1,11 +1,10 @@
 // Joint gap search shared by Repair and Build. Exhaustive, deterministic, bounded by a node count.
 import { cmp, type ISODate } from "./dates.ts";
 import { evalDelta, evaluate, makeCtx } from "./coverage.ts";
-import { applyScratch } from "./changeset.ts";
 import { expectedOn } from "./patterns.ts";
 import { RULE_BY_ID } from "./rules.ts";
 import type { Edit, RepairMetrics, RepairOption } from "./api-types.ts";
-import type { DomainState, Evaluation } from "./types.ts";
+import type { Assignment, DomainState, Evaluation } from "./types.ts";
 
 export type Scope = { chain: number; changed: number; offDuty: boolean; /** Which existing assignments the search may move. Default: any unpinned, un-noted one. */ movable?: (a: import("./types.ts").Assignment) => boolean };
 export type Gap = { storeId: string; date: ISODate };
@@ -65,9 +64,19 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
   const sortedDates = [...dates].sort(cmp);
   const range = { from: sortedDates[0]!, to: sortedDates[sortedDates.length - 1]! };
   const ctx = makeCtx(base);
-  const baseEv = evaluate(base, asOf, { range }, ctx);
-  const baseViol = failPairs(base, baseEv, "presence");
-  const baseOver = failPairs(base, baseEv, "suggestible");
+  // Only the gap dates are judged up front; a person who moves is judged in full (evalDelta), and so is their baseline, on demand.
+  const baseEv = evaluate(base, asOf, { range, window: range }, ctx);
+  const baseFails = new Map<string, Set<string>>();
+  const baseFailsFor = (kind: "presence" | "suggestible", phs: Set<string>): Set<string> => {
+    const out = new Set<string>();
+    for (const ph of phs) {
+      const k = `${kind}|${ph}`;
+      let set = baseFails.get(k);
+      if (!set) { set = failPairs(base, evalDelta(base, ctx, baseEv, [ph], []), kind, new Set([ph])); baseFails.set(k, set); }
+      for (const x of set) out.add(x);
+    }
+    return out;
+  };
   const baseExc = exceptionCount(base, dates);
   const leaves = new Map<string, Leaf>();
   const excluded = new Map<string, { pharmacistId: string; storeId: string; date: ISODate }>();
@@ -87,6 +96,8 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
     if (leaves.has(key)) return;
     // Only the pharmacists who moved can have new failures: everyone else's rules did not change.
     const movedPh = new Set(moves.map((m) => m.ph));
+    const baseViol = baseFailsFor("presence", movedPh);
+    const baseOver = baseFailsFor("suggestible", movedPh);
     const viol = [...failPairs(state, ev, "presence", movedPh)].filter((p) => !baseViol.has(p)).length;
     const over = [...failPairs(state, ev, "suggestible", movedPh)].filter((p) => !baseOver.has(p)).length;
     let open = 0;
@@ -105,6 +116,29 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
     if (over) expl.push(`Needs ${over} override${over === 1 ? "" : "s"} you would have to accept`);
     const sortKey = [String(viol).padStart(6, "0"), String(open).padStart(6, "0"), String(over).padStart(6, "0"), String(touched.size).padStart(6, "0"), String(metrics.patternNet + 100000).padStart(8, "0"), String(metrics.travelMinutes).padStart(8, "0"), key];
     leaves.set(key, { option: { edits: edits.map((m) => m.edit), metrics, explanation: expl }, clean: viol === 0 && open === 0, key, sortKey, tuple: edits.map((m) => [m.ph, m.store, m.date] as [string, string, string]) });
+  };
+
+  // One private working copy of the assignments table, edited in place and restored after each candidate: no per-node copying.
+  const work: DomainState = { ...base, assignments: { ...base.assignments }, nextId: { ...base.nextId } };
+  /** Apply one candidate to `work` and return how to take it back (null when it cannot be applied). */
+  const applyInPlace = (e: Edit, onDate: Assignment[]): (() => void) | null => {
+    if (e.t === "move") {
+      const a = work.assignments[e.assignmentId];
+      if (!a) return null;
+      if (onDate.some((x) => x.id !== a.id && x.storeId === e.toStoreId && x.pharmacistId === a.pharmacistId)) return null;
+      const n: Assignment = { ...a, storeId: e.toStoreId, agreed: false, source: "repair" };
+      delete (n as { partialNote?: string }).partialNote;
+      work.assignments[a.id] = n;
+      return () => { work.assignments[a.id] = a; };
+    }
+    if (e.t === "place") {
+      if (onDate.some((x) => x.storeId === e.storeId && x.pharmacistId === e.pharmacistId)) return null;
+      const id = `A${work.nextId.assignment++}`;
+      const seq = work.nextId.seq++;
+      work.assignments[id] = { id, date: e.date, storeId: e.storeId, pharmacistId: e.pharmacistId, placedSeq: seq, source: "repair", agreed: false, pinned: false };
+      return () => { delete work.assignments[id]; work.nextId.assignment--; work.nextId.seq--; };
+    }
+    return null;
   };
 
   const dfs = (state: DomainState, evc: Evaluation, moves: Move[], pending: Pending[], watch: Set<string>): void => {
@@ -139,10 +173,11 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
           }
         }
         if (++nodes > nodeLimit) { limitHit = true; return; }
-        const next = applyScratch(state, [c.edit], "repair", { skipMoot: true });
-        if ("refused" in next) continue;
-        const ev2 = evalDelta(next, ctx, evc, [c.ph], c.from ? [ck(head.storeId, head.date), ck(c.from, head.date)] : [ck(head.storeId, head.date)]);
-        const mine = c.fromAsg ? next.assignments[c.fromAsg] : Object.values(next.assignments).find((a) => a.pharmacistId === c.ph && a.storeId === head.storeId && a.date === head.date);
+        const undo = applyInPlace(c.edit, onDate);
+        if (!undo) continue;
+        try {
+        const ev2 = evalDelta(state, ctx, evc, [c.ph], c.from ? [ck(head.storeId, head.date), ck(c.from, head.date)] : [ck(head.storeId, head.date)]);
+        const mine = c.fromAsg ? state.assignments[c.fromAsg] : Object.values(state.assignments).find((a) => a.pharmacistId === c.ph && a.storeId === head.storeId && a.date === head.date);
         const me = mine && ev2.assignments[mine.id];
         if (!me) continue;
         if (!me.counts) continue; // someone who could never count here is not a "cannot evaluate" case
@@ -167,7 +202,8 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
             np = [{ storeId: c.from, date: head.date, depth: head.depth + 1 }, ...rest];
           }
         }
-        dfs(next, ev2, [...moves, m], np, w2);
+        dfs(state, ev2, [...moves, m], np, w2);
+        } finally { undo(); }
         if (limitHit) return;
       }
     }
@@ -192,10 +228,10 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
     if (!closer) return { clean: [], nearMiss: null, excludedUnknownTravel: [], missing: [], limitHit: false, legalCandidates: 0, nodes: 0, prunedByChanged: false };
   }
   const startPending = gaps.map((g) => ({ ...g, depth: 0 }));
-  dfs(base, baseEv, [], startPending, watch);
+  dfs(work, baseEv, [], startPending, watch);
   if (wantNearMiss && ![...leaves.values()].some((l) => l.clean && l.option.edits.length) && !limitHit) {
     allowSkip = true;
-    dfs(base, baseEv, [], startPending, watch);
+    dfs(work, baseEv, [], startPending, watch);
   }
 
   const all = [...leaves.values()].filter((l) => l.option.edits.length > 0);

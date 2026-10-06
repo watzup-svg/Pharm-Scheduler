@@ -207,7 +207,9 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
     (byPh.get(a.pharmacistId) ?? byPh.set(a.pharmacistId, []).get(a.pharmacistId)!).push(a);
   }
   const raw: Record<string, AssignmentEval> = {};
-  for (const list of byPh.values()) for (const e of evalPharmacist(state, ctx, list, (a) => !win || (a.date >= win.from && a.date <= win.to))) raw[e.assignmentId] = e;
+  const inWin = (a: Assignment) => !win || (a.date >= win.from && a.date <= win.to);
+  // Someone with nothing inside the window cannot contribute an emitted result: skip their whole list (a run of days needs their full list only when they have a day in the window).
+  for (const list of byPh.values()) if (!win || list.some(inWin)) for (const e of evalPharmacist(state, ctx, list, inWin)) raw[e.assignmentId] = e;
   const evals: Record<string, AssignmentEval> = {};
   for (const id of Object.keys(raw).sort(cmp)) evals[id] = raw[id]!;
 
