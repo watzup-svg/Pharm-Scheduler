@@ -165,6 +165,12 @@ Pair data is minutes and miles from the pharmacist's **base** store to the assig
 - **I-12** Improve re-deals pharmacists among existing slots on one date (swap cycles up to the max); it never places off-duty pharmacists. A cycle too long to finish may close early with the last pharmacist taking the first slot; the result must still be meaningful and legal.
 - **I-13** State hash excludes `nextId` counters so Undo and Revert reproduce it.
 - **I-14** Edits `move` and `swap` clear `agreed` (new placement is Unconfirmed) and drop the partial-day note; `place` is Unconfirmed unless source is pattern.
+- **I-15** (review fixes) Availability override signatures are coarse (`unavailable`, `inactive`, or both) so adding a second overlapping absence does not outdate an acceptance; Requested-only records cannot be overridden (they only count in Plan and What-if).
+- **I-16** Search is bounded by counts: `searchNodeLimit` (default 4000) per search and ten times that per Build. Moves never leave a gap's date, so gaps are searched per date and combined; fewer people changed is tried first. When a limit is hit the result says so (`limitHit`, `searchLimitHit`) and the message reads "Search limit reached; a solution may exist".
+- **I-17** Build only re-deals assignments that came from a pattern or an earlier engine run; it never moves a manual or emergency one (it keeps legal existing assignments). Reset to Pattern places or moves with source `pattern`, Agreed, and skips any restore that would introduce any rule failure.
+- **I-18** Undo and Revert put the To-tell ledger back where the undone change sets wrote it (deltas are stored on the change set). A commit that changes nothing is refused ("Nothing changed.").
+- **I-19** Every edit is validated (whole numbers, weekday 0-6, cycle 1-4, valid dates, known ids, soft <= hard drive limit). Standing recurrences are normalized before the duplicate check.
+- **I-20** Improve judges every slot it touches: it must end up counting and fully checkable, and no per-rule Fail, override, open or unverified count may rise.
 - **I-9** Same-id ordering is code-point on the id string ("S10" sorts before "S2"); IDs are opaque.
 
 ## 16. Fixture format
