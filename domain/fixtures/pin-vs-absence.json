@@ -1,0 +1,394 @@
+{
+  "name": "pin: a pinned assignment that becomes a violation is an ordinary Fail; repair never moves it until unpinned",
+  "covers": [
+    "pin",
+    "availability",
+    "repair"
+  ],
+  "asOf": "2026-05-01",
+  "shuffle": 2,
+  "seed": {
+    "stores": [
+      {
+        "id": "S1"
+      },
+      {
+        "id": "S2"
+      },
+      {
+        "id": "S3"
+      },
+      {
+        "id": "S4"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "P1",
+        "base": "S1"
+      },
+      {
+        "id": "P2",
+        "base": "S3"
+      },
+      {
+        "id": "P3",
+        "base": "S3"
+      },
+      {
+        "id": "P4",
+        "base": "S4"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "A1",
+        "seq": 1,
+        "store": "S1",
+        "ph": "P1",
+        "date": "2026-05-05",
+        "pinned": true
+      },
+      {
+        "id": "A2",
+        "seq": 2,
+        "store": "S3",
+        "ph": "P2",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A3",
+        "seq": 3,
+        "store": "S3",
+        "ph": "P3",
+        "date": "2026-05-05",
+        "pinned": true
+      },
+      {
+        "id": "A4",
+        "seq": 4,
+        "store": "S4",
+        "ph": "P4",
+        "date": "2026-05-05",
+        "pinned": true
+      }
+    ],
+    "travel": [
+      [
+        "S1",
+        "S2",
+        30,
+        15
+      ],
+      [
+        "S1",
+        "S3",
+        60,
+        30
+      ],
+      [
+        "S1",
+        "S4",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S1",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S3",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S4",
+        60,
+        30
+      ],
+      [
+        "S3",
+        "S1",
+        20,
+        10
+      ],
+      [
+        "S3",
+        "S2",
+        40,
+        20
+      ],
+      [
+        "S3",
+        "S4",
+        60,
+        30
+      ],
+      [
+        "S4",
+        "S1",
+        60,
+        30
+      ],
+      [
+        "S4",
+        "S2",
+        60,
+        30
+      ],
+      [
+        "S4",
+        "S3",
+        60,
+        30
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "S2|2026-05-05": {
+            "counted": 0,
+            "open": 1
+          },
+          "S3|2026-05-05": {
+            "counted": 2,
+            "surplus": 1
+          },
+          "S4|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "id": "absence",
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "New Approved absences for two pinned pharmacists: P1 is turned down at S1 only (store-scoped, so P1 stays movable to other stores); P4 gets a vacation covering the day. Pins are not rules.",
+      "edits": [
+        {
+          "t": "unavail.add",
+          "pharmacistId": "P1",
+          "first": "2026-05-05",
+          "last": "2026-05-05",
+          "status": "Approved",
+          "type": "Turned-down",
+          "scopeStoreId": "S1",
+          "note": "turned down at S1"
+        },
+        {
+          "t": "unavail.add",
+          "pharmacistId": "P4",
+          "first": "2026-05-05",
+          "last": "2026-05-05",
+          "status": "Approved",
+          "type": "Vacation"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "why": "Pinned assignments with an absence are ordinary availability Fails: counts false, no special state. The cells open up.",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 0,
+            "open": 1
+          },
+          "S4|2026-05-05": {
+            "counted": 0,
+            "open": 1
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": false,
+            "unverified": false,
+            "fail": [
+              "availability"
+            ]
+          },
+          "S4|P4|2026-05-05": {
+            "counts": false,
+            "fail": [
+              "availability"
+            ]
+          },
+          "S3|P3|2026-05-05": {
+            "counts": true,
+            "fail": []
+          }
+        }
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        }
+      ],
+      "why": "S1 alone: the pinned P1 is never moved or proposed for moving; the pinned P3 is not a donor either. The only free surplus pharmacist is P2: P2->S1 (travel 20). P1's failing assignment stays untouched.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A2",
+                "toStoreId": "S1"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 1,
+              "patternNet": 0,
+              "travelMinutes": 20
+            }
+          }
+        ]
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        },
+        {
+          "storeId": "S2",
+          "date": "2026-05-05"
+        }
+      ],
+      "why": "S1 and S2 together: P2 can fill only one of them, and the only other mover (P1 -> S2) is pinned, so no clean solution exists.",
+      "expect": {
+        "status": "none",
+        "message": "No solution within scope; search complete",
+        "options": []
+      }
+    },
+    {
+      "op": "commit",
+      "meta": {
+        "kind": "manual"
+      },
+      "edits": [
+        {
+          "t": "update",
+          "assignmentId": "S1|P1|2026-05-05",
+          "patch": {
+            "pinned": false
+          }
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        },
+        {
+          "storeId": "S2",
+          "date": "2026-05-05"
+        }
+      ],
+      "accept": 0,
+      "why": "Unpinned, P1 may move S1->S2 (the turn-down is scoped to S1), and P2 takes S1: changed 2, travel 30+20=50. Edits in pharmacistId order. P3 and P4 stay pinned.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A1",
+                "toStoreId": "S2"
+              },
+              {
+                "t": "move",
+                "assignmentId": "A2",
+                "toStoreId": "S1"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 2,
+              "patternNet": 0,
+              "travelMinutes": 50
+            }
+          }
+        ]
+      }
+    },
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "S2|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "S3|2026-05-05": {
+            "counted": 1,
+            "surplus": 0
+          }
+        },
+        "assignments": {
+          "S2|P1|2026-05-05": {
+            "counts": true,
+            "fail": []
+          },
+          "S1|P2|2026-05-05": {
+            "counts": true,
+            "fail": []
+          }
+        }
+      }
+    }
+  ]
+}

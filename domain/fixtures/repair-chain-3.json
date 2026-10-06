@@ -1,0 +1,1069 @@
+{
+  "name": "repair: closed chain of 3 moves found by default scope; chain of 4 needs Search Wider",
+  "covers": [
+    "repair",
+    "chain",
+    "scope",
+    "wider"
+  ],
+  "asOf": "2026-05-01",
+  "shuffle": 2,
+  "seed": {
+    "stores": [
+      {
+        "id": "SA1"
+      },
+      {
+        "id": "SA2"
+      },
+      {
+        "id": "SA3"
+      },
+      {
+        "id": "SA4"
+      },
+      {
+        "id": "SB1"
+      },
+      {
+        "id": "SB2"
+      },
+      {
+        "id": "SB3"
+      },
+      {
+        "id": "SB4"
+      },
+      {
+        "id": "SB5"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "PA0",
+        "base": "SA1"
+      },
+      {
+        "id": "PA1",
+        "base": "SA2"
+      },
+      {
+        "id": "PA2",
+        "base": "SA3"
+      },
+      {
+        "id": "PA3",
+        "base": "SA4"
+      },
+      {
+        "id": "PA4",
+        "base": "SA4"
+      },
+      {
+        "id": "PB0",
+        "base": "SB1"
+      },
+      {
+        "id": "PB1",
+        "base": "SB2"
+      },
+      {
+        "id": "PB2",
+        "base": "SB3"
+      },
+      {
+        "id": "PB3",
+        "base": "SB4"
+      },
+      {
+        "id": "PB4",
+        "base": "SB5"
+      },
+      {
+        "id": "PB5",
+        "base": "SB5"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "A1",
+        "seq": 1,
+        "store": "SA2",
+        "ph": "PA1",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A2",
+        "seq": 2,
+        "store": "SA3",
+        "ph": "PA2",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A3",
+        "seq": 3,
+        "store": "SA4",
+        "ph": "PA3",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A4",
+        "seq": 4,
+        "store": "SA4",
+        "ph": "PA4",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A5",
+        "seq": 5,
+        "store": "SB2",
+        "ph": "PB1",
+        "date": "2026-05-06"
+      },
+      {
+        "id": "A6",
+        "seq": 6,
+        "store": "SB3",
+        "ph": "PB2",
+        "date": "2026-05-06"
+      },
+      {
+        "id": "A7",
+        "seq": 7,
+        "store": "SB4",
+        "ph": "PB3",
+        "date": "2026-05-06"
+      },
+      {
+        "id": "A8",
+        "seq": 8,
+        "store": "SB5",
+        "ph": "PB4",
+        "date": "2026-05-06"
+      },
+      {
+        "id": "A9",
+        "seq": 9,
+        "store": "SB5",
+        "ph": "PB5",
+        "date": "2026-05-06"
+      }
+    ],
+    "unavailability": [
+      {
+        "id": "U1",
+        "ph": "PA0",
+        "first": "2026-05-05",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U2",
+        "ph": "PA1",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U3",
+        "ph": "PA2",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U4",
+        "ph": "PA3",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U5",
+        "ph": "PA4",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U6",
+        "ph": "PB0",
+        "first": "2026-05-05",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U7",
+        "ph": "PB1",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U8",
+        "ph": "PB2",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U9",
+        "ph": "PB3",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U10",
+        "ph": "PB4",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U11",
+        "ph": "PB5",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U12",
+        "ph": "PA2",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SA1"
+      },
+      {
+        "id": "U13",
+        "ph": "PA3",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SA1"
+      },
+      {
+        "id": "U14",
+        "ph": "PA3",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SA2"
+      },
+      {
+        "id": "U15",
+        "ph": "PA4",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SA1"
+      },
+      {
+        "id": "U16",
+        "ph": "PA4",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SA2"
+      },
+      {
+        "id": "U17",
+        "ph": "PA4",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SA3"
+      },
+      {
+        "id": "U18",
+        "ph": "PB2",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB1"
+      },
+      {
+        "id": "U19",
+        "ph": "PB3",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB1"
+      },
+      {
+        "id": "U20",
+        "ph": "PB3",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB2"
+      },
+      {
+        "id": "U21",
+        "ph": "PB4",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB1"
+      },
+      {
+        "id": "U22",
+        "ph": "PB4",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB2"
+      },
+      {
+        "id": "U23",
+        "ph": "PB4",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB3"
+      },
+      {
+        "id": "U24",
+        "ph": "PB5",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB1"
+      },
+      {
+        "id": "U25",
+        "ph": "PB5",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB2"
+      },
+      {
+        "id": "U26",
+        "ph": "PB5",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB3"
+      },
+      {
+        "id": "U27",
+        "ph": "PB5",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "SB4"
+      }
+    ],
+    "dateOverrides": [
+      {
+        "store": "SA1",
+        "date": "2026-05-06",
+        "count": 0,
+        "note": "closed"
+      },
+      {
+        "store": "SA2",
+        "date": "2026-05-06",
+        "count": 0,
+        "note": "closed"
+      },
+      {
+        "store": "SA3",
+        "date": "2026-05-06",
+        "count": 0,
+        "note": "closed"
+      },
+      {
+        "store": "SA4",
+        "date": "2026-05-06",
+        "count": 0,
+        "note": "closed"
+      },
+      {
+        "store": "SB1",
+        "date": "2026-05-05",
+        "count": 0,
+        "note": "closed"
+      },
+      {
+        "store": "SB2",
+        "date": "2026-05-05",
+        "count": 0,
+        "note": "closed"
+      },
+      {
+        "store": "SB3",
+        "date": "2026-05-05",
+        "count": 0,
+        "note": "closed"
+      },
+      {
+        "store": "SB4",
+        "date": "2026-05-05",
+        "count": 0,
+        "note": "closed"
+      },
+      {
+        "store": "SB5",
+        "date": "2026-05-05",
+        "count": 0,
+        "note": "closed"
+      }
+    ],
+    "travel": [
+      [
+        "SA1",
+        "SA2",
+        20,
+        10
+      ],
+      [
+        "SA1",
+        "SA3",
+        20,
+        10
+      ],
+      [
+        "SA1",
+        "SA4",
+        20,
+        10
+      ],
+      [
+        "SA1",
+        "SB1",
+        20,
+        10
+      ],
+      [
+        "SA1",
+        "SB2",
+        20,
+        10
+      ],
+      [
+        "SA1",
+        "SB3",
+        20,
+        10
+      ],
+      [
+        "SA1",
+        "SB4",
+        20,
+        10
+      ],
+      [
+        "SA1",
+        "SB5",
+        20,
+        10
+      ],
+      [
+        "SA2",
+        "SA1",
+        25,
+        13
+      ],
+      [
+        "SA2",
+        "SA3",
+        20,
+        10
+      ],
+      [
+        "SA2",
+        "SA4",
+        20,
+        10
+      ],
+      [
+        "SA2",
+        "SB1",
+        20,
+        10
+      ],
+      [
+        "SA2",
+        "SB2",
+        20,
+        10
+      ],
+      [
+        "SA2",
+        "SB3",
+        20,
+        10
+      ],
+      [
+        "SA2",
+        "SB4",
+        20,
+        10
+      ],
+      [
+        "SA2",
+        "SB5",
+        20,
+        10
+      ],
+      [
+        "SA3",
+        "SA1",
+        20,
+        10
+      ],
+      [
+        "SA3",
+        "SA2",
+        35,
+        18
+      ],
+      [
+        "SA3",
+        "SA4",
+        20,
+        10
+      ],
+      [
+        "SA3",
+        "SB1",
+        20,
+        10
+      ],
+      [
+        "SA3",
+        "SB2",
+        20,
+        10
+      ],
+      [
+        "SA3",
+        "SB3",
+        20,
+        10
+      ],
+      [
+        "SA3",
+        "SB4",
+        20,
+        10
+      ],
+      [
+        "SA3",
+        "SB5",
+        20,
+        10
+      ],
+      [
+        "SA4",
+        "SA1",
+        20,
+        10
+      ],
+      [
+        "SA4",
+        "SA2",
+        20,
+        10
+      ],
+      [
+        "SA4",
+        "SA3",
+        45,
+        23
+      ],
+      [
+        "SA4",
+        "SB1",
+        20,
+        10
+      ],
+      [
+        "SA4",
+        "SB2",
+        20,
+        10
+      ],
+      [
+        "SA4",
+        "SB3",
+        20,
+        10
+      ],
+      [
+        "SA4",
+        "SB4",
+        20,
+        10
+      ],
+      [
+        "SA4",
+        "SB5",
+        20,
+        10
+      ],
+      [
+        "SB1",
+        "SA1",
+        20,
+        10
+      ],
+      [
+        "SB1",
+        "SA2",
+        20,
+        10
+      ],
+      [
+        "SB1",
+        "SA3",
+        20,
+        10
+      ],
+      [
+        "SB1",
+        "SA4",
+        20,
+        10
+      ],
+      [
+        "SB1",
+        "SB2",
+        20,
+        10
+      ],
+      [
+        "SB1",
+        "SB3",
+        20,
+        10
+      ],
+      [
+        "SB1",
+        "SB4",
+        20,
+        10
+      ],
+      [
+        "SB1",
+        "SB5",
+        20,
+        10
+      ],
+      [
+        "SB2",
+        "SA1",
+        20,
+        10
+      ],
+      [
+        "SB2",
+        "SA2",
+        20,
+        10
+      ],
+      [
+        "SB2",
+        "SA3",
+        20,
+        10
+      ],
+      [
+        "SB2",
+        "SA4",
+        20,
+        10
+      ],
+      [
+        "SB2",
+        "SB1",
+        25,
+        13
+      ],
+      [
+        "SB2",
+        "SB3",
+        20,
+        10
+      ],
+      [
+        "SB2",
+        "SB4",
+        20,
+        10
+      ],
+      [
+        "SB2",
+        "SB5",
+        20,
+        10
+      ],
+      [
+        "SB3",
+        "SA1",
+        20,
+        10
+      ],
+      [
+        "SB3",
+        "SA2",
+        20,
+        10
+      ],
+      [
+        "SB3",
+        "SA3",
+        20,
+        10
+      ],
+      [
+        "SB3",
+        "SA4",
+        20,
+        10
+      ],
+      [
+        "SB3",
+        "SB1",
+        20,
+        10
+      ],
+      [
+        "SB3",
+        "SB2",
+        35,
+        18
+      ],
+      [
+        "SB3",
+        "SB4",
+        20,
+        10
+      ],
+      [
+        "SB3",
+        "SB5",
+        20,
+        10
+      ],
+      [
+        "SB4",
+        "SA1",
+        20,
+        10
+      ],
+      [
+        "SB4",
+        "SA2",
+        20,
+        10
+      ],
+      [
+        "SB4",
+        "SA3",
+        20,
+        10
+      ],
+      [
+        "SB4",
+        "SA4",
+        20,
+        10
+      ],
+      [
+        "SB4",
+        "SB1",
+        20,
+        10
+      ],
+      [
+        "SB4",
+        "SB2",
+        20,
+        10
+      ],
+      [
+        "SB4",
+        "SB3",
+        45,
+        23
+      ],
+      [
+        "SB4",
+        "SB5",
+        20,
+        10
+      ],
+      [
+        "SB5",
+        "SA1",
+        20,
+        10
+      ],
+      [
+        "SB5",
+        "SA2",
+        20,
+        10
+      ],
+      [
+        "SB5",
+        "SA3",
+        20,
+        10
+      ],
+      [
+        "SB5",
+        "SA4",
+        20,
+        10
+      ],
+      [
+        "SB5",
+        "SB1",
+        20,
+        10
+      ],
+      [
+        "SB5",
+        "SB2",
+        20,
+        10
+      ],
+      [
+        "SB5",
+        "SB3",
+        20,
+        10
+      ],
+      [
+        "SB5",
+        "SB4",
+        55,
+        28
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-06"
+      },
+      "why": "Date 1 (Tue 05-05) uses stores SA*, date 2 (Wed 05-06) uses stores SB*; each set is closed on the other date and its pharmacists are on vacation on the other date, so no off-duty pharmacist exists for Search Wider to use. PA0 / PB0 are the call-outs (vacation, no assignment).",
+      "expect": {
+        "cells": {
+          "SA1|2026-05-05": {
+            "required": 1,
+            "counted": 0,
+            "open": 1
+          },
+          "SA4|2026-05-05": {
+            "counted": 2,
+            "surplus": 1
+          },
+          "SA1|2026-05-06": {
+            "required": 0
+          },
+          "SB1|2026-05-06": {
+            "required": 1,
+            "counted": 0,
+            "open": 1
+          },
+          "SB5|2026-05-06": {
+            "counted": 2,
+            "surplus": 1
+          },
+          "SB1|2026-05-05": {
+            "required": 0
+          }
+        }
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "SA1",
+          "date": "2026-05-05"
+        }
+      ],
+      "accept": 0,
+      "why": "Turned-down records force the order: only PA1 may work SA1 (PA2 is turned down there), only PA2 may work SA2 (PA3 and PA4 turned down), only PA3 may work SA3 (PA4 turned down). So the unique clean answer is the 3-move chain PA1->SA1, PA2->SA2, PA3->SA3, ended by the surplus pharmacist at SA4. Travel 25+35+45=105; edits in pharmacistId order.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A1",
+                "toStoreId": "SA1"
+              },
+              {
+                "t": "move",
+                "assignmentId": "A2",
+                "toStoreId": "SA2"
+              },
+              {
+                "t": "move",
+                "assignmentId": "A3",
+                "toStoreId": "SA3"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 3,
+              "patternNet": 0,
+              "travelMinutes": 105
+            }
+          }
+        ],
+        "excludedUnknownTravel": [],
+        "gapsUsed": [
+          {
+            "storeId": "SA1",
+            "date": "2026-05-05"
+          }
+        ],
+        "gapsDropped": []
+      }
+    },
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "expect": {
+        "cells": {
+          "SA1|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "SA2|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "SA3|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "SA4|2026-05-05": {
+            "counted": 1,
+            "open": 0,
+            "surplus": 0
+          }
+        }
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "SB1",
+          "date": "2026-05-06"
+        }
+      ],
+      "why": "Same structure with a 4-move chain (PB1->SB1, PB2->SB2, PB3->SB3, PB4->SB4, ended by the surplus pharmacist at SB5). Default scope allows chains of at most 3 moves, so nothing clean exists. No showNearMiss, so no nearMiss key.",
+      "expect": {
+        "status": "none",
+        "message": "No solution within scope; search complete",
+        "options": [],
+        "nearMiss": {
+          "$absent": true
+        },
+        "excludedUnknownTravel": [],
+        "gapsUsed": [
+          {
+            "storeId": "SB1",
+            "date": "2026-05-06"
+          }
+        ],
+        "gapsDropped": []
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "SB1",
+          "date": "2026-05-06"
+        }
+      ],
+      "wider": true,
+      "why": "Search Wider allows chains up to 5 moves and 8 changed. The 4-move chain is the unique clean answer (PB5 is turned down at SB1..SB4, so only PB4 can be the last link). Travel 25+35+45+55=160.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A5",
+                "toStoreId": "SB1"
+              },
+              {
+                "t": "move",
+                "assignmentId": "A6",
+                "toStoreId": "SB2"
+              },
+              {
+                "t": "move",
+                "assignmentId": "A7",
+                "toStoreId": "SB3"
+              },
+              {
+                "t": "move",
+                "assignmentId": "A8",
+                "toStoreId": "SB4"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 4,
+              "patternNet": 0,
+              "travelMinutes": 160
+            }
+          }
+        ],
+        "excludedUnknownTravel": []
+      }
+    }
+  ]
+}

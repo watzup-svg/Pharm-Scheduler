@@ -1,0 +1,320 @@
+{
+  "name": "double booking resolved only by overriding every later-placed member",
+  "covers": [
+    "double-booking",
+    "overrides",
+    "moot",
+    "spec-4"
+  ],
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [
+      {
+        "id": "S1"
+      },
+      {
+        "id": "S2"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "P1",
+        "base": "S1"
+      }
+    ],
+    "assignments": [
+      {
+        "store": "S1",
+        "ph": "P1",
+        "date": "2026-05-05",
+        "seq": 1
+      },
+      {
+        "store": "S2",
+        "ph": "P1",
+        "date": "2026-05-05",
+        "seq": 2
+      }
+    ],
+    "travel": [
+      [
+        "S1",
+        "S2",
+        30,
+        20
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "why": "One pharmacist at two stores on Tue 05-05: every member fails double-booking, neither counts. S1 placed first (seq 1), S2 second (seq 2).",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "required": 1,
+            "counted": 0,
+            "open": 1
+          },
+          "S2|2026-05-05": {
+            "required": 1,
+            "counted": 0,
+            "open": 1
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": false,
+            "fail": [
+              "double-booking"
+            ]
+          },
+          "S2|P1|2026-05-05": {
+            "counts": false,
+            "fail": [
+              "double-booking"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "override",
+          "assignmentId": "S2|P1|2026-05-05",
+          "ruleId": "double-booking",
+          "reason": "Later member only"
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "An override on only the later-placed member is enough: the earliest member needs none, and BOTH members count.",
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "S2|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": true
+          },
+          "S2|P1|2026-05-05": {
+            "counts": true,
+            "overridden": [
+              "double-booking"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "unoverride",
+          "assignmentId": "S2|P1|2026-05-05",
+          "ruleId": "double-booking"
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "Removing the override re-evaluates immediately: both stop counting.",
+      "expect": {
+        "ok": true,
+        "changeSet": {
+          "events": {
+            "$has": {
+              "type": "override.remove"
+            }
+          }
+        }
+      }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 0,
+            "open": 1
+          },
+          "S2|2026-05-05": {
+            "counted": 0,
+            "open": 1
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": false
+          },
+          "S2|P1|2026-05-05": {
+            "counts": false,
+            "overridden": []
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "override",
+          "assignmentId": "S1|P1|2026-05-05",
+          "ruleId": "double-booking",
+          "reason": "Override on the earliest only"
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "An override on only the earliest member restores nothing (spec section 4).",
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 0,
+            "open": 1
+          },
+          "S2|2026-05-05": {
+            "counted": 0,
+            "open": 1
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": false
+          },
+          "S2|P1|2026-05-05": {
+            "counts": false,
+            "overridden": []
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "override",
+          "assignmentId": "S2|P1|2026-05-05",
+          "ruleId": "double-booking",
+          "reason": "Override on the later member too"
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "Now every member except the earliest has an override: the group is resolved and BOTH count. Whether the earliest's own override is kept or dropped as redundant is not specified, so it is not asserted.",
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "S2|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          }
+        },
+        "assignments": {
+          "S1|P1|2026-05-05": {
+            "counts": true
+          },
+          "S2|P1|2026-05-05": {
+            "counts": true,
+            "overridden": [
+              "double-booking"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "remove",
+          "assignmentId": "S1|P1|2026-05-05"
+        },
+        {
+          "t": "place",
+          "storeId": "S1",
+          "pharmacistId": "P1",
+          "date": "2026-05-06",
+          "agreed": false
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "Move the earliest member to Wed 05-06 (remove + place; there is no date-move edit). P1 is now alone on 05-05 at S2, so double-booking Passes and the override on S2 is moot: removed in this same change set.",
+      "expect": {
+        "ok": true,
+        "changeSet": {
+          "events": {
+            "$has": {
+              "type": "override.remove",
+              "after": {
+                "$absent": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "cells": {
+          "S2|2026-05-05": {
+            "counted": 1,
+            "open": 0
+          },
+          "S1|2026-05-06": {
+            "counted": 1,
+            "open": 0
+          }
+        },
+        "assignments": {
+          "S2|P1|2026-05-05": {
+            "counts": true,
+            "fail": [],
+            "overridden": [],
+            "outdated": []
+          },
+          "S1|P1|2026-05-06": {
+            "counts": true,
+            "fail": []
+          }
+        }
+      }
+    }
+  ]
+}

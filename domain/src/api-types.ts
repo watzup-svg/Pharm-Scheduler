@@ -27,7 +27,9 @@ export type Edit =
   | { t: "store.set"; store: Store }
   | { t: "pharmacist.set"; pharmacist: Pharmacist }
   | { t: "travel.set"; pair: TravelPair }
-  | { t: "config.set"; patch: Partial<Config> };
+  | { t: "config.set"; patch: Partial<Config> }
+  /** Build bookkeeping: this date has had its patterns instantiated. */
+  | { t: "built.set"; date: ISODate };
 
 export type Meta = { kind: ChangeSetKind; label?: string; explanation?: string[] };
 
@@ -40,6 +42,8 @@ export type Proposal = {
   explanation: string[];
   stateHash: string; // hash of the state the engine saw
   engineVersion: string;
+  /** Build bookkeeping applied on accept (not shown as edits). */
+  builtDates?: ISODate[];
 };
 
 export type Scenario = {
@@ -68,6 +72,10 @@ export type BuildReport = {
   /** Existing assignments that differ from the pattern and created gaps. */
   exceptionsCreatedGaps: { storeId: StoreId; date: ISODate }[];
   patternConflicts: { pharmacistId: PharmacistId; date: ISODate; storeIds: StoreId[] }[];
+  /** Illegal assignments Build removed (pattern/build/repair/improve source, not pinned). */
+  conflictsRemoved: { storeId: StoreId; pharmacistId: PharmacistId; date: ISODate; why: string }[];
+  /** Illegal assignments Build left alone (manual, emergency, pinned or partial-noted). */
+  conflictsLeft: { storeId: StoreId; pharmacistId: PharmacistId; date: ISODate; why: string }[];
   unresolvedGaps: { storeId: StoreId; date: ISODate }[];
 };
 

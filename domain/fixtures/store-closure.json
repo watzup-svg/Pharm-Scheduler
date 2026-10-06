@@ -1,0 +1,83 @@
+{
+  "name": "closed stores with assignments: closure fails, counts toward nothing, required 0, open 0",
+  "covers": ["closure", "dateOverride", "inactiveFrom", "activeFrom", "coverage"],
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [
+      { "id": "S1" },
+      { "id": "S2", "inactiveFrom": "2026-06-01" },
+      { "id": "S3" },
+      { "id": "S4", "activeFrom": "2026-06-15" }
+    ],
+    "pharmacists": [
+      { "id": "P1", "base": "S1" },
+      { "id": "P2", "base": "S2" },
+      { "id": "P3", "base": "S3" },
+      { "id": "P4", "base": "S4" }
+    ],
+    "dateOverrides": [{ "store": "S1", "date": "2026-05-25", "count": 0, "note": "Memorial Day" }],
+    "assignments": [
+      { "id": "A1", "store": "S1", "ph": "P1", "date": "2026-05-25", "seq": 1 },
+      { "id": "A2", "store": "S1", "ph": "P1", "date": "2026-05-26", "seq": 2 },
+      { "id": "A3", "store": "S2", "ph": "P2", "date": "2026-05-29", "seq": 3 },
+      { "id": "A4", "store": "S2", "ph": "P2", "date": "2026-06-01", "seq": 4 },
+      { "id": "A5", "store": "S3", "ph": "P3", "date": "2026-05-31", "seq": 5 },
+      { "id": "A6", "store": "S4", "ph": "P4", "date": "2026-06-10", "seq": 6 },
+      { "id": "A7", "store": "S4", "ph": "P4", "date": "2026-06-15", "seq": 7 }
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "why": "05-25 Mon: date override 0. 06-01 Mon: S2 inactiveFrom <= date (first inactive day) so requirement 0. 05-31 Sun: weekly requirement 0. 06-10 Wed: S4 activeFrom 06-15 > date. 06-15 is the first active day: normal. required 0 gives covered 0, open 0, surplus 0 because nothing counts.",
+      "expect": {
+        "assignments": {
+          "S1|P1|2026-05-25": { "counts": false, "unverified": false, "fail": ["closure"], "unknown": [] },
+          "S1|P1|2026-05-26": { "counts": true, "fail": [] },
+          "S2|P2|2026-05-29": { "counts": true, "fail": [] },
+          "S2|P2|2026-06-01": { "counts": false, "fail": ["closure"] },
+          "S3|P3|2026-05-31": { "counts": false, "fail": ["closure"] },
+          "S4|P4|2026-06-10": { "counts": false, "fail": ["closure"] },
+          "S4|P4|2026-06-15": { "counts": true, "fail": [] }
+        },
+        "cells": {
+          "S1|2026-05-25": { "required": 0, "counted": 0, "covered": 0, "open": 0, "surplus": 0 },
+          "S1|2026-05-26": { "required": 1, "counted": 1, "open": 0, "surplus": 0 },
+          "S2|2026-05-29": { "required": 1, "counted": 1, "open": 0 },
+          "S2|2026-06-01": { "required": 0, "counted": 0, "covered": 0, "open": 0, "surplus": 0 },
+          "S3|2026-05-31": { "required": 0, "counted": 0, "covered": 0, "open": 0, "surplus": 0 },
+          "S4|2026-06-10": { "required": 0, "counted": 0, "covered": 0, "open": 0, "surplus": 0 },
+          "S4|2026-06-15": { "required": 1, "counted": 1, "open": 0 }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "dateOverride.clear", "storeId": "S1", "date": "2026-05-25" }],
+      "meta": { "kind": "manual" },
+      "why": "Clearing the override falls back to the Monday weekly requirement (1).",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "assignments": { "S1|P1|2026-05-25": { "counts": true, "fail": [] } },
+        "cells": { "S1|2026-05-25": { "required": 1, "counted": 1, "open": 0, "surplus": 0 } }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "dateOverride.set", "storeId": "S1", "date": "2026-05-26", "count": 0, "note": "Closed for inventory" }],
+      "meta": { "kind": "manual" },
+      "expect": { "ok": true }
+    },
+    {
+      "op": "evaluate",
+      "why": "A new count-0 override closes a day that had a counting assignment.",
+      "expect": {
+        "assignments": { "S1|P1|2026-05-26": { "counts": false, "fail": ["closure"] } },
+        "cells": { "S1|2026-05-26": { "required": 0, "counted": 0, "covered": 0, "open": 0, "surplus": 0 } }
+      }
+    }
+  ]
+}

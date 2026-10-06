@@ -1,0 +1,132 @@
+{
+  "name": "multi-day sick call as one change set; undo restores; undo refused after a later change to the same key",
+  "covers": ["commit", "undo", "unavailability", "availability", "history"],
+  "asOf": "2026-05-04",
+  "seed": {
+    "stores": [{ "id": "S1" }],
+    "pharmacists": [{ "id": "P1", "base": "S1" }],
+    "assignments": [
+      { "id": "A1", "store": "S1", "ph": "P1", "date": "2026-05-05", "seq": 1 },
+      { "id": "A2", "store": "S1", "ph": "P1", "date": "2026-05-06", "seq": 2 },
+      { "id": "A3", "store": "S1", "ph": "P1", "date": "2026-05-07", "seq": 3 },
+      { "id": "A4", "store": "S1", "ph": "P1", "date": "2026-05-08", "seq": 4 },
+      { "id": "A5", "store": "S1", "ph": "P1", "date": "2026-05-12", "seq": 5 },
+      { "id": "A6", "store": "S1", "ph": "P1", "date": "2026-05-13", "seq": 6 },
+      { "id": "A7", "store": "S1", "ph": "P1", "date": "2026-05-14", "seq": 7 }
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": { "counted": 1, "open": 0 },
+          "S1|2026-05-08": { "counted": 1, "open": 0 },
+          "S1|2026-05-12": { "counted": 1, "open": 0 }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "id": "sick1",
+      "edits": [{ "t": "unavail.add", "pharmacistId": "P1", "first": "2026-05-05", "last": "2026-05-07", "status": "Actual", "type": "Sick", "note": "flu" }],
+      "meta": { "kind": "manual", "label": "Sick call for P1." },
+      "why": "One range row is one event, one change set (C1 on an empty journal).",
+      "expect": { "ok": true, "changeSet": { "id": "C1", "kind": "manual", "events": [{ "type": "unavailability.add", "before": null }] } }
+    },
+    {
+      "op": "evaluate",
+      "why": "05-05 Tue, 05-06 Wed, 05-07 Thu fail availability; Fri 05-08 is outside the range.",
+      "expect": {
+        "assignments": {
+          "S1|P1|2026-05-05": { "counts": false, "fail": ["availability"] },
+          "S1|P1|2026-05-06": { "counts": false, "fail": ["availability"] },
+          "S1|P1|2026-05-07": { "counts": false, "fail": ["availability"] },
+          "S1|P1|2026-05-08": { "counts": true, "fail": [] }
+        },
+        "cells": {
+          "S1|2026-05-05": { "required": 1, "counted": 0, "open": 1 },
+          "S1|2026-05-06": { "required": 1, "counted": 0, "open": 1 },
+          "S1|2026-05-07": { "required": 1, "counted": 0, "open": 1 },
+          "S1|2026-05-08": { "required": 1, "counted": 1, "open": 0 }
+        }
+      }
+    },
+    {
+      "op": "undo",
+      "changeSet": "$last",
+      "expect": { "ok": true, "changeSet": { "id": "C2", "kind": "undo", "reverses": "C1" } }
+    },
+    {
+      "op": "evaluate",
+      "why": "Undo restores all three days at once.",
+      "expect": {
+        "assignments": {
+          "S1|P1|2026-05-05": { "counts": true, "fail": [] },
+          "S1|P1|2026-05-06": { "counts": true, "fail": [] },
+          "S1|P1|2026-05-07": { "counts": true, "fail": [] }
+        },
+        "cells": {
+          "S1|2026-05-05": { "counted": 1, "open": 0 },
+          "S1|2026-05-06": { "counted": 1, "open": 0 },
+          "S1|2026-05-07": { "counted": 1, "open": 0 }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "id": "sick2",
+      "edits": [{ "t": "unavail.add", "pharmacistId": "P1", "first": "2026-05-12", "last": "2026-05-14", "status": "Actual", "type": "Sick" }],
+      "meta": { "kind": "manual", "label": "Sick call for P1." },
+      "why": "Case 2. Change set C3. The unavailability row is new key U2 (counters never rewind on undo, so U1 is not reused).",
+      "expect": { "ok": true, "changeSet": { "id": "C3", "kind": "manual" } }
+    },
+    {
+      "op": "commit",
+      "id": "shorten",
+      "edits": [{ "t": "unavail.update", "id": "U2", "patch": { "last": "2026-05-13" } }],
+      "meta": { "kind": "manual", "label": "Sick call shortened." },
+      "why": "C4 touches the same key as C3 (unavailability U2).",
+      "expect": { "ok": true, "changeSet": { "id": "C4", "events": [{ "type": "unavailability.update" }] } }
+    },
+    {
+      "op": "undo",
+      "changeSet": "sick2",
+      "why": "Current U2 (last 05-13) differs from C3's after (last 05-14): refuse and name the later change set C4.",
+      "expect": { "refused": true, "reason": { "$any": true }, "laterChangeSets": ["C4"] }
+    },
+    {
+      "op": "evaluate",
+      "why": "Refusal changed nothing: 05-12 and 05-13 still fail, 05-14 is outside the shortened range.",
+      "expect": {
+        "assignments": {
+          "S1|P1|2026-05-12": { "counts": false, "fail": ["availability"] },
+          "S1|P1|2026-05-13": { "counts": false, "fail": ["availability"] },
+          "S1|P1|2026-05-14": { "counts": true, "fail": [] }
+        }
+      }
+    },
+    {
+      "op": "undo",
+      "changeSet": "shorten",
+      "why": "Undoing the later change set first (C5) makes U2 equal C3's after again.",
+      "expect": { "ok": true, "changeSet": { "id": "C5", "kind": "undo", "reverses": "C4" } }
+    },
+    {
+      "op": "undo",
+      "changeSet": "sick2",
+      "expect": { "ok": true, "changeSet": { "id": "C6", "kind": "undo", "reverses": "C3" } }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "assignments": {
+          "S1|P1|2026-05-12": { "counts": true, "fail": [] },
+          "S1|P1|2026-05-13": { "counts": true, "fail": [] },
+          "S1|P1|2026-05-14": { "counts": true, "fail": [] }
+        },
+        "cells": { "S1|2026-05-12": { "counted": 1, "open": 0 }, "S1|2026-05-13": { "counted": 1, "open": 0 } }
+      }
+    }
+  ]
+}

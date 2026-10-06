@@ -1,5 +1,11 @@
 // Facade. Phase 3 replaces each stub with the real implementation, one function per commit.
 import type { Api } from "./api-types.ts";
+import { evaluate } from "./coverage.ts";
+import { acceptProposal, discardProposal, discardScenario, openProposal, openScenario, parkScenario, scenarioEdit } from "./session.ts";
+import { build, resetToPattern } from "./build.ts";
+import { repair } from "./repair.ts";
+import { changedSincePosting, markTold, post, toTell } from "./posting.ts";
+import { checkpoint, commit, revertToCheckpoint, stateHash, undo } from "./changeset.ts";
 
 export class NotImplementedError extends Error {
   constructor(fn: string) {
@@ -13,25 +19,25 @@ const ni = (fn: string) => () => {
 };
 
 export const api: Api = {
-  evaluate: ni("evaluate"),
-  commit: ni("commit"),
-  undo: ni("undo"),
-  checkpoint: ni("checkpoint"),
-  revertToCheckpoint: ni("revertToCheckpoint"),
-  build: ni("build"),
-  resetToPattern: ni("resetToPattern"),
-  repair: ni("repair"),
+  evaluate,
+  commit,
+  undo,
+  checkpoint,
+  revertToCheckpoint,
+  build,
+  resetToPattern,
+  repair,
   improve: ni("improve"),
-  openProposal: ni("openProposal"),
-  acceptProposal: ni("acceptProposal"),
-  discardProposal: ni("discardProposal"),
-  openScenario: ni("openScenario"),
-  scenarioEdit: ni("scenarioEdit"),
-  discardScenario: ni("discardScenario"),
-  parkScenario: ni("parkScenario"),
-  post: ni("post"),
-  toTell: ni("toTell"),
-  markTold: ni("markTold"),
-  changedSincePosting: ni("changedSincePosting"),
-  stateHash: ni("stateHash"),
+  openProposal,
+  acceptProposal,
+  discardProposal,
+  openScenario,
+  scenarioEdit,
+  discardScenario,
+  parkScenario,
+  post,
+  toTell,
+  markTold,
+  changedSincePosting,
+  stateHash,
 };

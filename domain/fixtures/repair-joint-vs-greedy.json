@@ -1,0 +1,438 @@
+{
+  "name": "repair: joint search beats greedy (two call-outs, one shared best donor)",
+  "covers": [
+    "repair",
+    "joint-search",
+    "ordering",
+    "metrics"
+  ],
+  "asOf": "2026-05-01",
+  "shuffle": 2,
+  "seed": {
+    "stores": [
+      {
+        "id": "S1"
+      },
+      {
+        "id": "S2"
+      },
+      {
+        "id": "S3"
+      },
+      {
+        "id": "S4"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "PA",
+        "base": "S1"
+      },
+      {
+        "id": "PB",
+        "base": "S2"
+      },
+      {
+        "id": "PV",
+        "base": "S4"
+      },
+      {
+        "id": "PW",
+        "base": "S3"
+      },
+      {
+        "id": "PX",
+        "base": "S3"
+      },
+      {
+        "id": "PY",
+        "base": "S4"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "A1",
+        "seq": 1,
+        "store": "S3",
+        "ph": "PX",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A2",
+        "seq": 2,
+        "store": "S3",
+        "ph": "PW",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A3",
+        "seq": 3,
+        "store": "S4",
+        "ph": "PY",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A4",
+        "seq": 4,
+        "store": "S4",
+        "ph": "PV",
+        "date": "2026-05-05"
+      }
+    ],
+    "unavailability": [
+      {
+        "id": "U1",
+        "ph": "PA",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U2",
+        "ph": "PB",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U3",
+        "ph": "PW",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S1"
+      },
+      {
+        "id": "U4",
+        "ph": "PW",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S2"
+      },
+      {
+        "id": "U5",
+        "ph": "PV",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S1"
+      },
+      {
+        "id": "U6",
+        "ph": "PV",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S2"
+      },
+      {
+        "id": "U7",
+        "ph": "PY",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S2"
+      }
+    ],
+    "travel": [
+      [
+        "S1",
+        "S2",
+        60,
+        30
+      ],
+      [
+        "S1",
+        "S3",
+        60,
+        30
+      ],
+      [
+        "S1",
+        "S4",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S1",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S3",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S4",
+        60,
+        30
+      ],
+      [
+        "S3",
+        "S1",
+        20,
+        10
+      ],
+      [
+        "S3",
+        "S2",
+        30,
+        15
+      ],
+      [
+        "S3",
+        "S4",
+        60,
+        30
+      ],
+      [
+        "S4",
+        "S1",
+        40,
+        20
+      ],
+      [
+        "S4",
+        "S2",
+        50,
+        25
+      ],
+      [
+        "S4",
+        "S3",
+        60,
+        30
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "why": "Two call-outs (PA at S1, PB at S2 are on approved vacation and hold no assignment): S1 and S2 are open. S3 and S4 each carry one surplus pharmacist.",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "required": 1,
+            "counted": 0,
+            "open": 1
+          },
+          "S2|2026-05-05": {
+            "required": 1,
+            "counted": 0,
+            "open": 1
+          },
+          "S3|2026-05-05": {
+            "counted": 2,
+            "open": 0,
+            "surplus": 1
+          },
+          "S4|2026-05-05": {
+            "counted": 2,
+            "open": 0,
+            "surplus": 1
+          }
+        }
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        }
+      ],
+      "why": "Greedy trap, step 1: S1 alone. PX (S3->S1 20 min) and PY (S4->S1 40 min) are both clean with 1 changed; PW and PV are turned down at S1 (availability fail, not clean). Travel ranks PX first, so a gap-by-gap greedy would commit PX->S1.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A1",
+                "toStoreId": "S1"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 1,
+              "patternNet": 0,
+              "travelMinutes": 20
+            }
+          },
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A3",
+                "toStoreId": "S1"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 1,
+              "patternNet": 0,
+              "travelMinutes": 40
+            }
+          }
+        ],
+        "excludedUnknownTravel": [],
+        "gapsUsed": [
+          {
+            "storeId": "S1",
+            "date": "2026-05-05"
+          }
+        ],
+        "gapsDropped": []
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S2",
+          "date": "2026-05-05"
+        }
+      ],
+      "why": "Greedy trap, step 2: S2 alone has exactly one clean donor, PX (PW and PV are turned down at S2, PY is turned down at S2). If PX was already spent on S1, S2 cannot be filled.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A1",
+                "toStoreId": "S2"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 1,
+              "patternNet": 0,
+              "travelMinutes": 30
+            }
+          }
+        ]
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        },
+        {
+          "storeId": "S2",
+          "date": "2026-05-05"
+        }
+      ],
+      "accept": 0,
+      "why": "Joint search over both gaps: the only clean pair is PY->S1 and PX->S2 (changed 2, travel 40+30=70). PX->S1 (the greedy pick) appears in no joint solution. Edits are listed in (pharmacistId, storeId, date) order: PX before PY.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A1",
+                "toStoreId": "S2"
+              },
+              {
+                "t": "move",
+                "assignmentId": "A3",
+                "toStoreId": "S1"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 2,
+              "patternNet": 0,
+              "travelMinutes": 70
+            }
+          }
+        ],
+        "excludedUnknownTravel": [],
+        "gapsUsed": [
+          {
+            "storeId": "S1",
+            "date": "2026-05-05"
+          },
+          {
+            "storeId": "S2",
+            "date": "2026-05-05"
+          }
+        ],
+        "gapsDropped": []
+      }
+    },
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 1,
+            "open": 0,
+            "surplus": 0
+          },
+          "S2|2026-05-05": {
+            "counted": 1,
+            "open": 0,
+            "surplus": 0
+          },
+          "S3|2026-05-05": {
+            "counted": 1,
+            "open": 0,
+            "surplus": 0
+          },
+          "S4|2026-05-05": {
+            "counted": 1,
+            "open": 0,
+            "surplus": 0
+          }
+        },
+        "assignments": {
+          "S2|PX|2026-05-05": {
+            "counts": true,
+            "fail": []
+          },
+          "S1|PY|2026-05-05": {
+            "counts": true,
+            "fail": []
+          }
+        }
+      }
+    }
+  ]
+}

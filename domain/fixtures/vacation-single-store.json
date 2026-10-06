@@ -1,0 +1,84 @@
+{
+  "name": "approved vacation at a single-pharmacist store; Requested only counts with includeRequested",
+  "covers": ["availability", "unavailability", "includeRequested", "coverage"],
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [{ "id": "S1" }],
+    "pharmacists": [{ "id": "P1", "base": "S1" }],
+    "assignments": [
+      { "id": "A1", "store": "S1", "ph": "P1", "date": "2026-05-04", "seq": 1 },
+      { "id": "A2", "store": "S1", "ph": "P1", "date": "2026-05-05", "seq": 2 }
+    ],
+    "unavailability": [
+      { "id": "U1", "ph": "P1", "first": "2026-05-05", "last": "2026-05-05", "status": "Approved", "type": "Vacation" }
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "why": "2026-05-05 is a Tuesday (05-04 is Monday). Approved vacation covers it, no scope: availability Fails, the only presence rule that fails; the single required slot is open.",
+      "expect": {
+        "assignments": {
+          "S1|P1|2026-05-04": { "counts": true, "fail": [], "unknown": [] },
+          "S1|P1|2026-05-05": { "counts": false, "unverified": false, "fail": ["availability"], "unknown": [] }
+        },
+        "cells": {
+          "S1|2026-05-04": { "required": 1, "counted": 1, "covered": 1, "open": 0, "surplus": 0 },
+          "S1|2026-05-05": { "required": 1, "counted": 0, "covered": 0, "open": 1, "surplus": 0 }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.update", "id": "U1", "patch": { "status": "Requested" } }],
+      "meta": { "kind": "manual" },
+      "expect": { "ok": true }
+    },
+    {
+      "op": "evaluate",
+      "why": "Requested does not count by default (Build/Repair view).",
+      "expect": {
+        "assignments": { "S1|P1|2026-05-05": { "counts": true, "fail": [] } },
+        "cells": { "S1|2026-05-05": { "required": 1, "counted": 1, "open": 0 } }
+      }
+    },
+    {
+      "op": "evaluate",
+      "includeRequested": true,
+      "why": "Plan / What-If view: Requested counts too.",
+      "expect": {
+        "assignments": { "S1|P1|2026-05-05": { "counts": false, "fail": ["availability"] } },
+        "cells": { "S1|2026-05-05": { "required": 1, "counted": 0, "open": 1 } }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.update", "id": "U1", "patch": { "status": "Denied" } }],
+      "meta": { "kind": "manual" },
+      "expect": { "ok": true }
+    },
+    {
+      "op": "evaluate",
+      "includeRequested": true,
+      "why": "Denied never counts, even with includeRequested.",
+      "expect": {
+        "assignments": { "S1|P1|2026-05-05": { "counts": true, "fail": [] } },
+        "cells": { "S1|2026-05-05": { "counted": 1, "open": 0 } }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.update", "id": "U1", "patch": { "status": "Actual" } }],
+      "meta": { "kind": "manual" },
+      "expect": { "ok": true }
+    },
+    {
+      "op": "evaluate",
+      "why": "Actual counts like Approved, without includeRequested.",
+      "expect": {
+        "assignments": { "S1|P1|2026-05-05": { "counts": false, "fail": ["availability"] } },
+        "cells": { "S1|2026-05-05": { "counted": 0, "open": 1 } }
+      }
+    }
+  ]
+}

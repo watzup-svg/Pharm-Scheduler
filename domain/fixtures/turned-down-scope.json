@@ -1,0 +1,101 @@
+{
+  "name": "Turned-down is scoped to one store on one date",
+  "covers": ["availability", "turned-down", "unavailability-shape", "spec-13"],
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [{ "id": "S1" }, { "id": "S2" }],
+    "pharmacists": [{ "id": "P1", "base": "S1" }, { "id": "P2", "base": "S2" }],
+    "assignments": [
+      { "store": "S1", "ph": "P1", "date": "2026-05-05" },
+      { "store": "S1", "ph": "P1", "date": "2026-05-06" },
+      { "store": "S2", "ph": "P2", "date": "2026-05-06" }
+    ],
+    "unavailability": [
+      { "ph": "P1", "first": "2026-05-05", "last": "2026-05-05", "status": "Approved", "type": "Turned-down", "scope": "S1" },
+      { "ph": "P2", "first": "2026-05-06", "last": "2026-05-06", "status": "Approved", "type": "Vacation" }
+    ],
+    "travel": [["S1", "S2", 30, 20], ["S2", "S1", 30, 20]]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "why": "Turned-down (scope S1) on 05-05 covers P1 at S1 only: availability fails there. On 05-06 the record does not apply (first = last = 05-05), so P1 at S1 passes. P2 has an unscoped Vacation on 05-06, which fails at any store (contrast).",
+      "expect": {
+        "cells": { "S1|2026-05-05": { "required": 1, "counted": 0, "open": 1 } },
+        "assignments": {
+          "S1|P1|2026-05-05": { "counts": false, "fail": ["availability"] },
+          "S1|P1|2026-05-06": { "counts": true, "fail": [] },
+          "S2|P2|2026-05-06": { "counts": false, "fail": ["availability"] }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "move", "assignmentId": "S1|P1|2026-05-05", "toStoreId": "S2" }],
+      "meta": { "kind": "manual" },
+      "why": "Same pharmacist, same date, but at S2: the S1-scoped record does not apply.",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "cells": { "S2|2026-05-05": { "required": 1, "counted": 1, "open": 0 } },
+        "assignments": { "S2|P1|2026-05-05": { "counts": true, "fail": [] } }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.add", "pharmacistId": "P1", "first": "2026-05-07", "last": "2026-05-07", "status": "Approved", "type": "Turned-down" }],
+      "meta": { "kind": "manual" },
+      "why": "Turned-down needs scopeStoreId.",
+      "expect": { "refused": true, "reason": { "$any": true } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.add", "pharmacistId": "P1", "first": "2026-05-07", "last": "2026-05-08", "status": "Approved", "type": "Turned-down", "scopeStoreId": "S1" }],
+      "meta": { "kind": "manual" },
+      "why": "Turned-down needs first === last.",
+      "expect": { "refused": true, "reason": { "$any": true } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.add", "pharmacistId": "P1", "first": "2026-05-07", "last": "2026-05-07", "status": "Approved", "type": "Vacation", "scopeStoreId": "S1" }],
+      "meta": { "kind": "manual" },
+      "why": "Every other type must not have a scope.",
+      "expect": { "refused": true, "reason": { "$any": true } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.add", "pharmacistId": "P1", "first": "2026-05-07", "last": "2026-05-07", "status": "Actual", "type": "Sick", "scopeStoreId": "S1" }],
+      "meta": { "kind": "manual" },
+      "expect": { "refused": true, "reason": { "$any": true } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.add", "pharmacistId": "P1", "first": "2026-05-07", "last": "2026-05-07", "status": "Approved", "type": "Other", "scopeStoreId": "S2" }],
+      "meta": { "kind": "manual" },
+      "expect": { "refused": true, "reason": { "$any": true } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "unavail.update", "id": "U1", "patch": { "last": "2026-05-06" } }],
+      "meta": { "kind": "manual" },
+      "why": "Reading section 13 literally, commit refuses any change that leaves a Turned-down with first !== last (the spec names add shapes only; update is my reading).",
+      "expect": { "refused": true, "reason": { "$any": true } }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        { "t": "unavail.add", "pharmacistId": "P1", "first": "2026-05-07", "last": "2026-05-07", "status": "Approved", "type": "Turned-down", "scopeStoreId": "S1" },
+        { "t": "place", "storeId": "S1", "pharmacistId": "P1", "date": "2026-05-07", "agreed": false }
+      ],
+      "meta": { "kind": "manual" },
+      "why": "A well-formed Turned-down (scope, first = last) is accepted; placing P1 at S1 that day then fails availability.",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "evaluate",
+      "expect": { "assignments": { "S1|P1|2026-05-07": { "counts": false, "fail": ["availability"] } } }
+    }
+  ]
+}

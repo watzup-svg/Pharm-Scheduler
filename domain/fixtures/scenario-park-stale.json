@@ -1,0 +1,350 @@
+{
+  "name": "scenario open, park, stale; one scenario at a time; proposal excludes scenario",
+  "covers": [
+    "scenario",
+    "park",
+    "stale",
+    "I-4",
+    "proposal",
+    "post",
+    "spec-6"
+  ],
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [
+      {
+        "id": "S1"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "P1",
+        "initials": "AA",
+        "base": "S1"
+      },
+      {
+        "id": "P2",
+        "initials": "BB",
+        "base": "S1"
+      }
+    ],
+    "assignments": [
+      {
+        "store": "S1",
+        "ph": "P2",
+        "date": "2026-05-05"
+      }
+    ],
+    "standing": [
+      {
+        "store": "S1",
+        "ph": "P1",
+        "recurrence": {
+          "weekdays": [
+            2
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-05-04"
+        },
+        "from": "2026-05-12",
+        "to": "2026-05-12"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "build",
+      "range": {
+        "from": "2026-05-12",
+        "to": "2026-05-12"
+      },
+      "why": "Produces a proposal (the pattern puts P1 at S1 on Tue 05-12). Not accepted here; kept so proposal.open can be attempted later.",
+      "expect": {
+        "hasProposal": true
+      }
+    },
+    {
+      "op": "scenario.open",
+      "name": "What if",
+      "expect": {
+        "ok": true,
+        "session": {
+          "scenario": {
+            "name": "What if",
+            "parked": false,
+            "stale": false,
+            "edits": {
+              "$count": 0
+            }
+          },
+          "proposal": {
+            "$absent": true
+          }
+        }
+      }
+    },
+    {
+      "op": "proposal.open",
+      "why": "A proposal and a scenario cannot both be open (task ruling; the spec only says at most one of each and that the live schedule is read-only meanwhile).",
+      "expect": {
+        "refused": true,
+        "reason": {
+          "$any": true
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "place",
+          "storeId": "S1",
+          "pharmacistId": "P2",
+          "date": "2026-05-06",
+          "agreed": false
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "An unparked scenario makes the live schedule read-only; commit refuses with a reason.",
+      "expect": {
+        "refused": true,
+        "reason": {
+          "$any": true
+        }
+      }
+    },
+    {
+      "op": "scenario.edit",
+      "edits": [
+        {
+          "t": "place",
+          "storeId": "S1",
+          "pharmacistId": "P1",
+          "date": "2026-05-07",
+          "agreed": false
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "session": {
+          "scenario": {
+            "parked": false,
+            "stale": false,
+            "edits": {
+              "$count": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "op": "scenario.park",
+      "expect": {
+        "session": {
+          "scenario": {
+            "parked": true,
+            "stale": false,
+            "edits": {
+              "$count": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "op": "post",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "why": "Posting while parked is allowed and does NOT stale the scenario (section 6). S1 is covered by BB on 05-05.",
+      "expect": {
+        "revision": 1,
+        "cells": {
+          "S1|2026-05-05": {
+            "initials": [
+              "BB"
+            ],
+            "required": 1
+          }
+        },
+        "warnings": {
+          "open": 0,
+          "violations": 0,
+          "overrides": 0
+        }
+      }
+    },
+    {
+      "op": "state",
+      "expect": {
+        "session": {
+          "scenario": {
+            "parked": true,
+            "stale": false
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "place",
+          "storeId": "S1",
+          "pharmacistId": "P2",
+          "date": "2026-05-06",
+          "agreed": false
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "Parked: the live schedule is editable again.",
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "state",
+      "why": "Any change set committed while parked sets stale = true.",
+      "expect": {
+        "session": {
+          "scenario": {
+            "parked": true,
+            "stale": true
+          }
+        }
+      }
+    },
+    {
+      "op": "scenario.edit",
+      "edits": [
+        {
+          "t": "place",
+          "storeId": "S1",
+          "pharmacistId": "P2",
+          "date": "2026-05-08",
+          "agreed": false
+        }
+      ],
+      "why": "A stale scenario is read-only (export or discard only).",
+      "expect": {
+        "refused": true,
+        "reason": {
+          "$any": true
+        }
+      }
+    },
+    {
+      "op": "scenario.open",
+      "name": "Second",
+      "why": "I-4: one scenario at a time, parked or stale included.",
+      "expect": {
+        "refused": true,
+        "reason": {
+          "$any": true
+        }
+      }
+    },
+    {
+      "op": "scenario.discard",
+      "expect": {
+        "session": {
+          "scenario": {
+            "$absent": true
+          },
+          "proposal": {
+            "$absent": true
+          }
+        }
+      }
+    },
+    {
+      "op": "scenario.open",
+      "name": "Fresh",
+      "why": "After discard a new scenario can be opened.",
+      "expect": {
+        "ok": true,
+        "session": {
+          "scenario": {
+            "name": "Fresh",
+            "parked": false,
+            "stale": false
+          }
+        }
+      }
+    },
+    {
+      "op": "scenario.discard",
+      "expect": {
+        "session": {
+          "scenario": {
+            "$absent": true
+          }
+        }
+      }
+    },
+    {
+      "op": "build",
+      "range": {
+        "from": "2026-05-12",
+        "to": "2026-05-12"
+      },
+      "why": "Rebuild so the proposal carries the current state hash (the live schedule changed since the first proposal).",
+      "expect": {
+        "hasProposal": true
+      }
+    },
+    {
+      "op": "proposal.open",
+      "why": "With no scenario open, the proposal opens.",
+      "expect": {
+        "ok": true,
+        "session": {
+          "proposal": {
+            "kind": "build"
+          },
+          "scenario": {
+            "$absent": true
+          }
+        }
+      }
+    },
+    {
+      "op": "scenario.open",
+      "name": "Blocked",
+      "why": "The reverse: a scenario cannot open while a proposal is open.",
+      "expect": {
+        "refused": true,
+        "reason": {
+          "$any": true
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "place",
+          "storeId": "S1",
+          "pharmacistId": "P2",
+          "date": "2026-05-08",
+          "agreed": false
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "why": "An open proposal also makes the live schedule read-only.",
+      "expect": {
+        "refused": true,
+        "reason": {
+          "$any": true
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,299 @@
+{
+  "name": "surplus: partial-day note assignments are never repair donors; a manual move drops the note",
+  "covers": [
+    "surplus",
+    "partialNote",
+    "repair",
+    "commit-move"
+  ],
+  "asOf": "2026-05-01",
+  "shuffle": 2,
+  "seed": {
+    "stores": [
+      {
+        "id": "S1"
+      },
+      {
+        "id": "S2"
+      },
+      {
+        "id": "S4"
+      },
+      {
+        "id": "S5"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "P1",
+        "base": "S2"
+      },
+      {
+        "id": "P2",
+        "base": "S2"
+      },
+      {
+        "id": "P3",
+        "base": "S5"
+      },
+      {
+        "id": "P4",
+        "base": "S5"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "A1",
+        "seq": 1,
+        "store": "S2",
+        "ph": "P1",
+        "date": "2026-05-05",
+        "partialNote": "leaves at 2pm"
+      },
+      {
+        "id": "A2",
+        "seq": 2,
+        "store": "S2",
+        "ph": "P2",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A3",
+        "seq": 3,
+        "store": "S5",
+        "ph": "P3",
+        "date": "2026-05-06",
+        "partialNote": "starts at noon"
+      },
+      {
+        "id": "A4",
+        "seq": 4,
+        "store": "S5",
+        "ph": "P4",
+        "date": "2026-05-06",
+        "partialNote": "leaves at 3pm"
+      }
+    ],
+    "travel": [
+      [
+        "S1",
+        "S2",
+        60,
+        30
+      ],
+      [
+        "S1",
+        "S4",
+        60,
+        30
+      ],
+      [
+        "S1",
+        "S5",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S1",
+        40,
+        20
+      ],
+      [
+        "S2",
+        "S4",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S5",
+        60,
+        30
+      ],
+      [
+        "S4",
+        "S1",
+        60,
+        30
+      ],
+      [
+        "S4",
+        "S2",
+        60,
+        30
+      ],
+      [
+        "S4",
+        "S5",
+        60,
+        30
+      ],
+      [
+        "S5",
+        "S1",
+        60,
+        30
+      ],
+      [
+        "S5",
+        "S2",
+        60,
+        30
+      ],
+      [
+        "S5",
+        "S4",
+        30,
+        15
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "why": "A partial-day note is a whole day to evaluate: both S2 assignments count; required 1, counted 2, surplus 1 by the section 3 formula. S1 is a gap.",
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "required": 1,
+            "counted": 0,
+            "open": 1
+          },
+          "S2|2026-05-05": {
+            "required": 1,
+            "counted": 2,
+            "open": 0,
+            "surplus": 1
+          }
+        },
+        "assignments": {
+          "S2|P1|2026-05-05": {
+            "counts": true,
+            "fail": []
+          },
+          "S2|P2|2026-05-05": {
+            "counts": true,
+            "fail": []
+          }
+        }
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        }
+      ],
+      "why": "P1 (noted) and P2 (plain) are equal on every metric (same base store, same 40 min pair) and P1 < P2 by id, so without the note P1 would rank first and P2 second. The engine never moves a noted assignment, so only P2 is offered.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "move",
+                "assignmentId": "A2",
+                "toStoreId": "S1"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 1,
+              "patternNet": 0,
+              "travelMinutes": 40
+            }
+          }
+        ],
+        "excludedUnknownTravel": []
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S4",
+          "date": "2026-05-06"
+        }
+      ],
+      "why": "S5 on 05-06 has two pharmacists on a one-required day (surplus 1 by formula) but both carry partial-day notes, so neither is a surplus donor: no solution.",
+      "expect": {
+        "status": "none",
+        "message": "No solution within scope; search complete",
+        "options": []
+      }
+    },
+    {
+      "op": "commit",
+      "meta": {
+        "kind": "manual"
+      },
+      "edits": [
+        {
+          "t": "move",
+          "assignmentId": "S2|P1|2026-05-05",
+          "toStoreId": "S1"
+        }
+      ],
+      "why": "The DM may move a noted assignment by hand. Reading: Edit.move keeps the assignment (same id, same pharmacist/date) and the note is not carried over (types.ts: partialNote 'Not carried over'), so the moved assignment has no partialNote. The spec text itself is silent on move.",
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "state",
+      "expect": {
+        "state": {
+          "assignments": {
+            "A1": {
+              "storeId": "S1",
+              "pharmacistId": "P1",
+              "date": "2026-05-05",
+              "partialNote": {
+                "$absent": true
+              }
+            },
+            "A2": {
+              "storeId": "S2",
+              "partialNote": {
+                "$absent": true
+              }
+            },
+            "A3": {
+              "partialNote": "starts at noon"
+            }
+          }
+        }
+      }
+    },
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-05-05",
+        "to": "2026-05-05"
+      },
+      "expect": {
+        "cells": {
+          "S1|2026-05-05": {
+            "counted": 1,
+            "open": 0,
+            "surplus": 0
+          },
+          "S2|2026-05-05": {
+            "counted": 1,
+            "open": 0,
+            "surplus": 0
+          }
+        }
+      }
+    }
+  ]
+}

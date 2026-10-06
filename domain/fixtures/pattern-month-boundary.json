@@ -1,0 +1,106 @@
+{
+  "name": "pattern expansion across a month boundary: 4-week rotation plus 1st/3rd Saturday",
+  "covers": ["standing", "build", "recurrence", "nth", "cycleWeeks"],
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [
+      { "id": "S1", "closedWeekdays": [0, 2, 4, 6] },
+      { "id": "S2", "closedWeekdays": [0, 1, 2, 3, 4, 5] }
+    ],
+    "pharmacists": [
+      { "id": "P1", "base": "S1" },
+      { "id": "P2", "base": "S2" }
+    ],
+    "standing": [
+      {
+        "id": "T1", "store": "S1", "ph": "P1", "from": "2026-04-01",
+        "recurrence": { "weekdays": [1, 3, 5], "cycleWeeks": 4, "anchor": "2026-05-27" }
+      },
+      {
+        "id": "T2", "store": "S2", "ph": "P2", "from": "2026-04-01",
+        "recurrence": { "weekdays": [6], "cycleWeeks": 1, "anchor": "2026-05-02", "nth": [1, 3] }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "build",
+      "range": { "from": "2026-05-01", "to": "2026-06-30" },
+      "why": "T1: anchor Wed 2026-05-27, Sunday of its week = 2026-05-24 = week 0. Week index of Mon/Wed/Fri: 2026-05-01 is in the week of Sun 04-26 (index -4, mod 4 = 0, match); 05-25/27/29 index 0 (match); weeks of 05-03, 05-10, 05-17 (idx -3..-1) and 05-31, 06-07, 06-14 (idx 1..3) do not match; 06-22/24/26 are in the week of Sun 06-21 (idx 4, match); 06-28 week idx 5, no. T2: Saturdays with occurrence 1 or 3: 05-02, 05-16, 06-06, 06-20; 05-30 is the 5th Saturday of May and is excluded; 06-27 is the 4th. 7 + 4 = 11 edits. S1 is open Mon/Wed/Fri (9 Mon + 8 Wed + 9 Fri = 26 cells in range), 7 filled -> 19 unresolved; S2 open Sat (9 in range), 4 filled -> 5 unresolved. Nobody else is assigned on any gap date, so default-scope search cannot fill them.",
+      "expect": {
+        "hasProposal": true,
+        "edits": { "$count": 11 },
+        "report": {
+          "edits": 11,
+          "instantiated": 11,
+          "patternCannotApply": [],
+          "patternConflicts": [],
+          "unresolvedGaps": { "$count": 24 }
+        }
+      }
+    },
+    {
+      "op": "build",
+      "range": { "from": "2026-05-01", "to": "2026-06-30" },
+      "why": "Phase continues across the boundary: Mon 2026-06-22 is exactly 28 days after Mon 05-25.",
+      "expect": { "edits": { "$has": { "t": "place", "storeId": "S1", "pharmacistId": "P1", "date": "2026-06-22", "source": "pattern", "agreed": true } } }
+    },
+    {
+      "op": "build",
+      "range": { "from": "2026-05-01", "to": "2026-06-30" },
+      "why": "3rd Saturday of June.",
+      "expect": { "edits": { "$has": { "t": "place", "storeId": "S2", "pharmacistId": "P2", "date": "2026-06-20", "source": "pattern", "agreed": true } } }
+    },
+    {
+      "op": "build",
+      "range": { "from": "2026-05-01", "to": "2026-06-30" },
+      "why": "Friday 2026-05-01 is week index -4 (floored mod 4 = 0) and is before the anchor; it must match.",
+      "expect": { "edits": { "$has": { "t": "place", "storeId": "S1", "pharmacistId": "P1", "date": "2026-05-01", "source": "pattern", "agreed": true } } }
+    },
+    {
+      "op": "build",
+      "range": { "from": "2026-05-01", "to": "2026-06-30" },
+      "accept": true,
+      "expect": { "hasProposal": true, "edits": { "$count": 11 }, "report": { "instantiated": 11 } }
+    },
+    {
+      "op": "evaluate",
+      "range": { "from": "2026-05-01", "to": "2026-06-30" },
+      "why": "Exact placed dates are proven by which cells are counted and which assignment keys are absent.",
+      "expect": {
+        "cells": {
+          "S1|2026-05-01": { "required": 1, "counted": 1, "open": 0 },
+          "S1|2026-05-04": { "required": 1, "counted": 0, "open": 1 },
+          "S1|2026-05-25": { "required": 1, "counted": 1, "open": 0 },
+          "S1|2026-05-27": { "required": 1, "counted": 1, "open": 0 },
+          "S1|2026-05-29": { "required": 1, "counted": 1, "open": 0 },
+          "S1|2026-06-01": { "required": 1, "counted": 0, "open": 1 },
+          "S1|2026-06-08": { "required": 1, "counted": 0, "open": 1 },
+          "S1|2026-06-22": { "required": 1, "counted": 1, "open": 0 },
+          "S1|2026-06-24": { "required": 1, "counted": 1, "open": 0 },
+          "S1|2026-06-26": { "required": 1, "counted": 1, "open": 0 },
+          "S1|2026-06-29": { "required": 1, "counted": 0, "open": 1 },
+          "S2|2026-05-02": { "required": 1, "counted": 1, "open": 0 },
+          "S2|2026-05-09": { "required": 1, "counted": 0, "open": 1 },
+          "S2|2026-05-16": { "required": 1, "counted": 1, "open": 0 },
+          "S2|2026-05-23": { "required": 1, "counted": 0, "open": 1 },
+          "S2|2026-05-30": { "required": 1, "counted": 0, "open": 1 },
+          "S2|2026-06-06": { "required": 1, "counted": 1, "open": 0 },
+          "S2|2026-06-13": { "required": 1, "counted": 0, "open": 1 },
+          "S2|2026-06-20": { "required": 1, "counted": 1, "open": 0 },
+          "S2|2026-06-27": { "required": 1, "counted": 0, "open": 1 }
+        },
+        "assignments": {
+          "S1|P1|2026-05-01": { "counts": true },
+          "S1|P1|2026-05-25": { "counts": true },
+          "S1|P1|2026-06-26": { "counts": true },
+          "S1|P1|2026-05-04": { "$absent": true },
+          "S1|P1|2026-06-01": { "$absent": true },
+          "S1|P1|2026-06-29": { "$absent": true },
+          "S2|P2|2026-05-30": { "$absent": true },
+          "S2|P2|2026-06-27": { "$absent": true }
+        }
+      }
+    }
+  ]
+}

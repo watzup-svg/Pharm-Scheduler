@@ -1,0 +1,242 @@
+{
+  "name": "repair: no clean solution -> status none; nearMiss only on request",
+  "covers": [
+    "repair",
+    "none",
+    "nearMiss"
+  ],
+  "asOf": "2026-05-01",
+  "shuffle": 2,
+  "seed": {
+    "stores": [
+      {
+        "id": "S1"
+      },
+      {
+        "id": "S2"
+      },
+      {
+        "id": "S3"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "PA",
+        "base": "S1"
+      },
+      {
+        "id": "PB",
+        "base": "S2"
+      },
+      {
+        "id": "PW",
+        "base": "S3"
+      },
+      {
+        "id": "PX",
+        "base": "S3"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "A1",
+        "seq": 1,
+        "store": "S3",
+        "ph": "PX",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A2",
+        "seq": 2,
+        "store": "S3",
+        "ph": "PW",
+        "date": "2026-05-05"
+      }
+    ],
+    "unavailability": [
+      {
+        "id": "U1",
+        "ph": "PA",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U2",
+        "ph": "PB",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U3",
+        "ph": "PW",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S1"
+      },
+      {
+        "id": "U4",
+        "ph": "PW",
+        "first": "2026-05-05",
+        "last": "2026-05-05",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S2"
+      }
+    ],
+    "travel": [
+      [
+        "S1",
+        "S2",
+        60,
+        30
+      ],
+      [
+        "S1",
+        "S3",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S1",
+        60,
+        30
+      ],
+      [
+        "S2",
+        "S3",
+        60,
+        30
+      ],
+      [
+        "S3",
+        "S1",
+        20,
+        10
+      ],
+      [
+        "S3",
+        "S2",
+        30,
+        15
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        },
+        {
+          "storeId": "S2",
+          "date": "2026-05-05"
+        }
+      ],
+      "why": "Two gaps, one donor. S3 has one surplus (PX and PW), PW is turned down at both gaps, PA and PB are on vacation. PX can fill one gap, never both. Without showNearMiss the key is absent.",
+      "expect": {
+        "status": "none",
+        "message": "No solution within scope; search complete",
+        "options": [],
+        "nearMiss": {
+          "$absent": true
+        },
+        "excludedUnknownTravel": [],
+        "gapsUsed": [
+          {
+            "storeId": "S1",
+            "date": "2026-05-05"
+          },
+          {
+            "storeId": "S2",
+            "date": "2026-05-05"
+          }
+        ],
+        "gapsDropped": []
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        },
+        {
+          "storeId": "S2",
+          "date": "2026-05-05"
+        }
+      ],
+      "showNearMiss": true,
+      "why": "Best non-clean candidate: PX->S1 (0 violations, 1 open remaining; beats PX->S2 on travel 20 < 30, and beats doing nothing which leaves 2 open). Metrics show what remains open.",
+      "expect": {
+        "status": "none",
+        "message": "No solution within scope; search complete",
+        "options": [],
+        "nearMiss": {
+          "edits": [
+            {
+              "t": "move",
+              "assignmentId": "A1",
+              "toStoreId": "S1"
+            }
+          ],
+          "metrics": {
+            "violationsIntroduced": 0,
+            "openRemaining": 1,
+            "overridesNeeded": 0,
+            "changedPharmacistDates": 1,
+            "patternNet": 0,
+            "travelMinutes": 20
+          }
+        }
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "S1",
+          "date": "2026-05-05"
+        },
+        {
+          "storeId": "S2",
+          "date": "2026-05-05"
+        }
+      ],
+      "wider": true,
+      "showNearMiss": true,
+      "why": "Search Wider finds nothing more: no off-duty pharmacist is available (PA, PB on vacation), and PW is blocked. Same answer.",
+      "expect": {
+        "status": "none",
+        "message": "No solution within scope; search complete",
+        "options": [],
+        "nearMiss": {
+          "edits": [
+            {
+              "t": "move",
+              "assignmentId": "A1",
+              "toStoreId": "S1"
+            }
+          ],
+          "metrics": {
+            "violationsIntroduced": 0,
+            "openRemaining": 1,
+            "overridesNeeded": 0,
+            "changedPharmacistDates": 1,
+            "patternNet": 0,
+            "travelMinutes": 20
+          }
+        }
+      }
+    }
+  ]
+}

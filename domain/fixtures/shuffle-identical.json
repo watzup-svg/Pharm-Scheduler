@@ -1,0 +1,111 @@
+{
+  "name": "mid-size scenario gives identical output under shuffled input order",
+  "covers": ["shuffle", "evaluate", "coverage", "travel-soft", "travel-hard", "availability", "double-booking", "override", "commit"],
+  "asOf": "2026-05-01",
+  "shuffle": 5,
+  "seed": {
+    "stores": [
+      { "id": "S1", "state": "OR" },
+      { "id": "S2", "state": "OR" },
+      { "id": "S3", "state": "WA", "twoDays": [1] }
+    ],
+    "pharmacists": [
+      { "id": "P1", "base": "S1" },
+      { "id": "P2", "base": "S2" },
+      { "id": "P3", "base": "S3", "lic": ["WA"] },
+      { "id": "P4", "base": "S1" },
+      { "id": "P5", "base": "S2" }
+    ],
+    "travel": [
+      ["S1", "S2", 40, 30], ["S2", "S1", 40, 30],
+      ["S1", "S3", 100, 80], ["S3", "S1", 100, 80],
+      ["S2", "S3", 160, 120], ["S3", "S2", 160, 120]
+    ],
+    "unavailability": [
+      { "id": "U1", "ph": "P1", "first": "2026-05-06", "last": "2026-05-06", "status": "Approved", "type": "Vacation" }
+    ],
+    "dateOverrides": [{ "store": "S2", "date": "2026-05-08", "count": 2, "note": "Flu clinic" }],
+    "cells": [
+      { "store": "S3", "date": "2026-05-06", "locum": 1 },
+      { "store": "S1", "date": "2026-05-07", "acceptedShort": 1 }
+    ],
+    "assignments": [
+      { "id": "A1", "store": "S1", "ph": "P1", "date": "2026-05-04", "seq": 1 },
+      { "id": "A2", "store": "S2", "ph": "P2", "date": "2026-05-04", "seq": 2 },
+      { "id": "A3", "store": "S3", "ph": "P3", "date": "2026-05-04", "seq": 3 },
+      { "id": "A4", "store": "S3", "ph": "P4", "date": "2026-05-04", "seq": 4 },
+      { "id": "A5", "store": "S1", "ph": "P1", "date": "2026-05-05", "seq": 5 },
+      { "id": "A6", "store": "S2", "ph": "P2", "date": "2026-05-05", "seq": 6 },
+      { "id": "A7", "store": "S3", "ph": "P3", "date": "2026-05-05", "seq": 7 },
+      { "id": "A8", "store": "S3", "ph": "P5", "date": "2026-05-05", "seq": 8 },
+      { "id": "A9", "store": "S1", "ph": "P1", "date": "2026-05-06", "seq": 9 },
+      { "id": "A10", "store": "S2", "ph": "P2", "date": "2026-05-06", "seq": 10 },
+      { "id": "A11", "store": "S3", "ph": "P3", "date": "2026-05-06", "seq": 11 },
+      { "id": "A12", "store": "S1", "ph": "P4", "date": "2026-05-07", "seq": 12 },
+      { "id": "A13", "store": "S2", "ph": "P4", "date": "2026-05-07", "seq": 13 },
+      { "id": "A14", "store": "S2", "ph": "P5", "date": "2026-05-07", "seq": 14 },
+      { "id": "A15", "store": "S1", "ph": "P1", "date": "2026-05-08", "seq": 15 },
+      { "id": "A16", "store": "S2", "ph": "P2", "date": "2026-05-08", "seq": 16 },
+      { "id": "A17", "store": "S3", "ph": "P3", "date": "2026-05-08", "seq": 17 }
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "why": "Mon 05-04 .. Fri 05-08. S3 needs 2 on Monday. A4: P4 base S1 -> S3 = 100 min > 90 (soft) <= 150: policy Fail, still counts. A8: P5 base S2 -> S3 = 160 > 150: travel-hard and travel-soft (ids sorted). A9: P1 on Approved vacation 05-06: availability. A12+A13: P4 double booked on 05-07, no override: both fail. Cell S3|05-06 has locum 1; S1|05-07 has acceptedShort 1; S2|05-08 override count 2.",
+      "expect": {
+        "assignments": {
+          "S1|P1|2026-05-04": { "counts": true, "unverified": false, "fail": [], "unknown": [] },
+          "S3|P3|2026-05-04": { "counts": true, "fail": [], "unknown": [] },
+          "S3|P4|2026-05-04": { "counts": true, "fail": ["travel-soft"] },
+          "S3|P5|2026-05-05": { "counts": true, "fail": ["travel-hard", "travel-soft"] },
+          "S1|P1|2026-05-06": { "counts": false, "fail": ["availability"] },
+          "S1|P4|2026-05-07": { "counts": false, "fail": ["double-booking"] },
+          "S2|P4|2026-05-07": { "counts": false, "fail": ["double-booking"] },
+          "S2|P5|2026-05-07": { "counts": true, "fail": [] },
+          "S1|P1|2026-05-08": { "counts": true, "fail": [] }
+        },
+        "cells": {
+          "S1|2026-05-04": { "required": 1, "counted": 1, "open": 0, "surplus": 0 },
+          "S2|2026-05-04": { "required": 1, "counted": 1, "open": 0, "surplus": 0 },
+          "S3|2026-05-04": { "required": 2, "counted": 2, "open": 0, "surplus": 0 },
+          "S3|2026-05-05": { "required": 1, "counted": 2, "covered": 2, "open": 0, "surplus": 1 },
+          "S1|2026-05-06": { "required": 1, "counted": 0, "covered": 0, "open": 1, "surplus": 0 },
+          "S2|2026-05-06": { "required": 1, "counted": 1, "open": 0 },
+          "S3|2026-05-06": { "required": 1, "counted": 1, "locum": 1, "covered": 2, "open": 0, "surplus": 1 },
+          "S1|2026-05-07": { "required": 1, "counted": 0, "acceptedShort": 1, "covered": 0, "open": 0, "surplus": 0 },
+          "S2|2026-05-07": { "required": 1, "counted": 1, "open": 0, "surplus": 0 },
+          "S1|2026-05-08": { "required": 1, "counted": 1, "open": 0 },
+          "S2|2026-05-08": { "required": 2, "counted": 1, "open": 1, "surplus": 0 },
+          "S3|2026-05-08": { "required": 1, "counted": 1, "open": 0 }
+        }
+      }
+    },
+    {
+      "op": "evaluate",
+      "range": { "from": "2026-05-04", "to": "2026-05-08" },
+      "why": "With range, empty store-dates appear: S3 Thursday has no assignment, required 1.",
+      "expect": { "cells": { "S3|2026-05-07": { "required": 1, "counted": 0, "open": 1, "surplus": 0 } } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "override", "assignmentId": "S2|P4|2026-05-07", "ruleId": "double-booking", "reason": "Split day agreed with P4" }],
+      "meta": { "kind": "manual" },
+      "why": "Every member except the earliest placedSeq (A12, seq 12) has an override: group resolved, all members count.",
+      "expect": { "ok": true, "changeSet": { "id": "C1", "kind": "manual", "events": [{ "type": "override.add" }] } }
+    },
+    {
+      "op": "evaluate",
+      "expect": {
+        "assignments": {
+          "S1|P4|2026-05-07": { "counts": true },
+          "S2|P4|2026-05-07": { "counts": true }
+        },
+        "cells": {
+          "S1|2026-05-07": { "required": 1, "counted": 1, "acceptedShort": 1, "covered": 1, "open": 0, "surplus": 0 },
+          "S2|2026-05-07": { "required": 1, "counted": 2, "covered": 2, "open": 0, "surplus": 1 }
+        }
+      }
+    }
+  ]
+}

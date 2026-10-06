@@ -1,0 +1,393 @@
+{
+  "name": "travel: unknown pair is never proposed; evaluate verdicts Unknown / Fail / Pass",
+  "covers": [
+    "travel",
+    "unknown",
+    "repair",
+    "excludedUnknownTravel"
+  ],
+  "asOf": "2026-05-01",
+  "shuffle": 2,
+  "seed": {
+    "stores": [
+      {
+        "id": "S1"
+      },
+      {
+        "id": "S2"
+      },
+      {
+        "id": "S3"
+      },
+      {
+        "id": "S4"
+      },
+      {
+        "id": "S5"
+      },
+      {
+        "id": "S6"
+      },
+      {
+        "id": "S7"
+      },
+      {
+        "id": "S8"
+      },
+      {
+        "id": "G1"
+      },
+      {
+        "id": "G3"
+      },
+      {
+        "id": "G4"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "Q0",
+        "base": "S1"
+      },
+      {
+        "id": "Q1",
+        "base": "S1"
+      },
+      {
+        "id": "Q2",
+        "base": "S1"
+      },
+      {
+        "id": "Q3",
+        "base": "S1"
+      },
+      {
+        "id": "Q4",
+        "base": "S1"
+      },
+      {
+        "id": "Q5",
+        "base": "S1"
+      },
+      {
+        "id": "Q6",
+        "base": "S1"
+      },
+      {
+        "id": "Q7",
+        "base": null
+      },
+      {
+        "id": "PX",
+        "base": "G3"
+      },
+      {
+        "id": "PY",
+        "base": "G4"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "A1",
+        "seq": 1,
+        "store": "S1",
+        "ph": "Q0",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A2",
+        "seq": 2,
+        "store": "S2",
+        "ph": "Q1",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A3",
+        "seq": 3,
+        "store": "S3",
+        "ph": "Q2",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A4",
+        "seq": 4,
+        "store": "S4",
+        "ph": "Q3",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A5",
+        "seq": 5,
+        "store": "S5",
+        "ph": "Q4",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A6",
+        "seq": 6,
+        "store": "S6",
+        "ph": "Q5",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A7",
+        "seq": 7,
+        "store": "S7",
+        "ph": "Q6",
+        "date": "2026-05-05"
+      },
+      {
+        "id": "A8",
+        "seq": 8,
+        "store": "S8",
+        "ph": "Q7",
+        "date": "2026-05-05"
+      }
+    ],
+    "unavailability": [
+      {
+        "id": "U1",
+        "ph": "Q0",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U2",
+        "ph": "Q1",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U3",
+        "ph": "Q2",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U4",
+        "ph": "Q3",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U5",
+        "ph": "Q4",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U6",
+        "ph": "Q5",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U7",
+        "ph": "Q6",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      },
+      {
+        "id": "U8",
+        "ph": "Q7",
+        "first": "2026-05-06",
+        "last": "2026-05-06",
+        "status": "Approved",
+        "type": "Vacation"
+      }
+    ],
+    "travel": [
+      [
+        "S1",
+        "S3",
+        100,
+        50
+      ],
+      [
+        "S1",
+        "S4",
+        160,
+        80
+      ],
+      [
+        "S1",
+        "S5",
+        90,
+        45
+      ],
+      [
+        "S1",
+        "S6",
+        150,
+        75
+      ],
+      [
+        "S1",
+        "S7",
+        151,
+        76
+      ],
+      [
+        "S1",
+        "G1",
+        20,
+        10
+      ],
+      [
+        "G4",
+        "G1",
+        25,
+        12
+      ]
+    ]
+  },
+  "steps": [
+    {
+      "op": "evaluate",
+      "why": "Policy rules never affect counting, and `unverified` is defined only for presence Unknown (spec section 3 item 3), so every assignment here counts with unverified false. Thresholds: Fail when minutes > 90 (soft) / > 150 (hard); exactly 90 and exactly 150 do not exceed. Q1's base->store pair S1->S2 is missing: both travel rules Unknown. Q7 has no base store: NotApplicable (neither fail nor unknown). Q0 is same-store: Pass. Fail/unknown lists are in ruleId order.",
+      "expect": {
+        "assignments": {
+          "S1|Q0|2026-05-05": {
+            "counts": true,
+            "unverified": false,
+            "fail": [],
+            "unknown": []
+          },
+          "S2|Q1|2026-05-05": {
+            "counts": true,
+            "unverified": false,
+            "fail": [],
+            "unknown": [
+              "travel-hard",
+              "travel-soft"
+            ]
+          },
+          "S3|Q2|2026-05-05": {
+            "counts": true,
+            "unverified": false,
+            "fail": [
+              "travel-soft"
+            ],
+            "unknown": []
+          },
+          "S4|Q3|2026-05-05": {
+            "counts": true,
+            "unverified": false,
+            "fail": [
+              "travel-hard",
+              "travel-soft"
+            ],
+            "unknown": []
+          },
+          "S5|Q4|2026-05-05": {
+            "counts": true,
+            "unverified": false,
+            "fail": [],
+            "unknown": []
+          },
+          "S6|Q5|2026-05-05": {
+            "counts": true,
+            "unverified": false,
+            "fail": [
+              "travel-soft"
+            ],
+            "unknown": []
+          },
+          "S7|Q6|2026-05-05": {
+            "counts": true,
+            "unverified": false,
+            "fail": [
+              "travel-hard",
+              "travel-soft"
+            ],
+            "unknown": []
+          },
+          "S8|Q7|2026-05-05": {
+            "counts": true,
+            "unverified": false,
+            "fail": [],
+            "unknown": []
+          }
+        }
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "G1",
+          "date": "2026-05-06"
+        }
+      ],
+      "why": "Default scope only moves existing assignments; G1 on 05-06 has no donor (Q* are on vacation that day), so none. Off-duty pharmacists are not considered in default scope, hence nothing is excluded for unknown travel either.",
+      "expect": {
+        "status": "none",
+        "message": "No solution within scope; search complete",
+        "options": [],
+        "excludedUnknownTravel": []
+      }
+    },
+    {
+      "op": "repair",
+      "gaps": [
+        {
+          "storeId": "G1",
+          "date": "2026-05-06"
+        }
+      ],
+      "wider": true,
+      "why": "Search Wider adds off-duty pharmacists. PX (base G3) has no G3->G1 pair: Unknown, never proposed, listed in excludedUnknownTravel. PY (base G4->G1 25 min) is proposed as a place edit. Q0..Q7 are on vacation that day.",
+      "expect": {
+        "status": "options",
+        "options": [
+          {
+            "edits": [
+              {
+                "t": "place",
+                "storeId": "G1",
+                "pharmacistId": "PY",
+                "date": "2026-05-06"
+              }
+            ],
+            "metrics": {
+              "violationsIntroduced": 0,
+              "openRemaining": 0,
+              "overridesNeeded": 0,
+              "changedPharmacistDates": 1,
+              "patternNet": 0,
+              "travelMinutes": 25
+            }
+          }
+        ],
+        "excludedUnknownTravel": [
+          {
+            "pharmacistId": "PX",
+            "storeId": "G1",
+            "date": "2026-05-06"
+          }
+        ],
+        "gapsUsed": [
+          {
+            "storeId": "G1",
+            "date": "2026-05-06"
+          }
+        ],
+        "gapsDropped": []
+      }
+    }
+  ]
+}

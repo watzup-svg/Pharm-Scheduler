@@ -1,0 +1,200 @@
+{
+  "name": "post a range, change A to B to C, To-tell is net, markTold, restore",
+  "covers": ["post", "toTell", "markTold", "changedSincePosting", "spec-7", "I-5"],
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [
+      { "id": "S1" },
+      { "id": "S2", "twoDays": [1] },
+      { "id": "S3", "twoDays": [1] }
+    ],
+    "pharmacists": [
+      { "id": "P1", "initials": "PA", "base": "S1" },
+      { "id": "P2", "initials": "MB" },
+      { "id": "P3", "initials": "CD" },
+      { "id": "P4", "initials": "AK" }
+    ],
+    "assignments": [
+      { "id": "A1", "store": "S1", "ph": "P1", "date": "2026-05-04", "seq": 1, "source": "manual", "agreed": false },
+      { "id": "A2", "store": "S2", "ph": "P2", "date": "2026-05-04", "seq": 2, "source": "manual", "agreed": false },
+      { "id": "A3", "store": "S2", "ph": "P4", "date": "2026-05-04", "seq": 3, "source": "manual", "agreed": false },
+      { "id": "A4", "store": "S3", "ph": "P3", "date": "2026-05-04", "seq": 4, "source": "manual", "agreed": false }
+    ],
+    "travel": [["S1", "S2", 40, 30], ["S1", "S3", 60, 45]]
+  },
+  "steps": [
+    {
+      "op": "toTell",
+      "why": "The ledger starts empty (default off) and the seed writes nothing to it, so all four seeded placements differ. Order is not specified, so only the count is asserted.",
+      "expect": { "entries": { "$count": 4 } }
+    },
+    {
+      "op": "markTold",
+      "entries": [
+        { "pharmacistId": "P1", "date": "2026-05-04" },
+        { "pharmacistId": "P2", "date": "2026-05-04" },
+        { "pharmacistId": "P3", "date": "2026-05-04" },
+        { "pharmacistId": "P4", "date": "2026-05-04" }
+      ],
+      "expect": { "entries": { "$count": 0 } }
+    },
+    {
+      "op": "post",
+      "range": { "from": "2026-05-04", "to": "2026-05-04" },
+      "why": "Mon 05-04: S1 needs 1 (PA), S2 needs 2 (MB and AK, listed sorted: AK, MB), S3 needs 2 but only has CD, so exactly one cell is open. The open requirement is a warning: posting is not blocked (I-5). No violations, no overrides.",
+      "expect": {
+        "revision": 1,
+        "postedOn": "2026-05-01",
+        "from": "2026-05-04",
+        "to": "2026-05-04",
+        "cells": {
+          "S1|2026-05-04": { "initials": ["PA"], "required": 1 },
+          "S2|2026-05-04": { "initials": ["AK", "MB"], "required": 2 },
+          "S3|2026-05-04": { "initials": ["CD"], "required": 2 }
+        },
+        "placements": {
+          "P1|2026-05-04": "S1",
+          "P2|2026-05-04": "S2",
+          "P4|2026-05-04": "S2",
+          "P3|2026-05-04": "S3"
+        },
+        "warnings": { "open": 1, "violations": 0, "overrides": 0 }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "move", "assignmentId": "S1|P1|2026-05-04", "toStoreId": "S2" }],
+      "meta": { "kind": "manual" },
+      "why": "Live change P1: S1 to S2 (A to B). The live schedule stays editable after posting.",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "toTell",
+      "expect": { "entries": [{ "pharmacistId": "P1", "date": "2026-05-04", "was": "S1", "now": "S2" }] }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "move", "assignmentId": "S2|P1|2026-05-04", "toStoreId": "S3" }],
+      "meta": { "kind": "manual" },
+      "why": "P1 moves again, S2 to S3 (B to C).",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "toTell",
+      "why": "Net: one entry S1 to S3, not two. The ledger value stays S1.",
+      "expect": { "entries": [{ "pharmacistId": "P1", "date": "2026-05-04", "was": "S1", "now": "S3" }] }
+    },
+    {
+      "op": "changed",
+      "why": "Overlay compares live to the latest snapshot (revision 1): P1 posted at S1, now at S3. Nobody else differs.",
+      "expect": { "entries": [{ "pharmacistId": "P1", "date": "2026-05-04", "posted": "S1", "now": "S3" }] }
+    },
+    {
+      "op": "markTold",
+      "entries": [{ "pharmacistId": "P1", "date": "2026-05-04" }],
+      "why": "Ledger for P1 becomes S3 (the current value); To-tell is empty.",
+      "expect": { "entries": { "$count": 0 } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "move", "assignmentId": "S3|P1|2026-05-04", "toStoreId": "S1" }],
+      "meta": { "kind": "manual" },
+      "why": "A change back to S1 (the original, but no longer the told value) is a new entry S3 to S1.",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "toTell",
+      "expect": { "entries": [{ "pharmacistId": "P1", "date": "2026-05-04", "was": "S3", "now": "S1" }] }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "move", "assignmentId": "S1|P1|2026-05-04", "toStoreId": "S3" }],
+      "meta": { "kind": "manual" },
+      "why": "Restoring the told value (S3): the live state equals the ledger, so the entry vanishes.",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "toTell",
+      "expect": { "entries": { "$count": 0 } }
+    },
+    {
+      "op": "changed",
+      "why": "The told ledger and the posting snapshot are independent: live S3 still differs from the revision 1 snapshot (S1).",
+      "expect": { "entries": [{ "pharmacistId": "P1", "date": "2026-05-04", "posted": "S1", "now": "S3" }] }
+    },
+    {
+      "op": "post",
+      "range": { "from": "2026-05-04", "to": "2026-05-04" },
+      "why": "Second post is revision 2. Now S1 (needs 1) is empty so open = 1; S2 has MB and AK (full); S3 has CD and PA (full). Single open cell again.",
+      "expect": {
+        "revision": 2,
+        "cells": {
+          "S2|2026-05-04": { "initials": ["AK", "MB"], "required": 2 },
+          "S3|2026-05-04": { "initials": ["CD", "PA"], "required": 2 }
+        },
+        "placements": { "P1|2026-05-04": "S3" },
+        "warnings": { "open": 1, "violations": 0, "overrides": 0 }
+      }
+    },
+    {
+      "op": "state",
+      "why": "Snapshots are immutable: revision 1 still shows P1 at S1 and PA under S1.",
+      "expect": {
+        "journal": {
+          "snapshots": [
+            { "revision": 1, "cells": { "S1|2026-05-04": { "initials": ["PA"] }, "S3|2026-05-04": { "initials": ["CD"] } }, "placements": { "P1|2026-05-04": "S1" } },
+            { "revision": 2, "placements": { "P1|2026-05-04": "S3" } }
+          ]
+        }
+      }
+    },
+    {
+      "op": "changed",
+      "expect": { "entries": { "$count": 0 } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "place", "storeId": "S2", "pharmacistId": "P2", "date": "2026-05-05", "agreed": true }],
+      "meta": { "kind": "manual" },
+      "why": "Agreed implies told: placing with agreed:true writes told = S2 in the same change set, so no To-tell entry.",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "toTell",
+      "expect": { "entries": { "$count": 0 } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "place", "storeId": "S1", "pharmacistId": "P3", "date": "2026-05-05", "agreed": false }],
+      "meta": { "kind": "manual" },
+      "why": "Contrast: an Unconfirmed placement is not told, so it shows as off to S1.",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "toTell",
+      "expect": { "entries": [{ "pharmacistId": "P3", "date": "2026-05-05", "was": "off", "now": "S1" }] }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "update", "assignmentId": "S1|P3|2026-05-05", "patch": { "agreed": true } }],
+      "meta": { "kind": "manual" },
+      "why": "Updating agreed to true also writes told = S1 (section 7), so the entry disappears.",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "toTell",
+      "expect": { "entries": { "$count": 0 } }
+    },
+    {
+      "op": "commit",
+      "edits": [{ "t": "move", "assignmentId": "S3|P1|2026-05-04", "toStoreId": "S2" }],
+      "meta": { "kind": "manual" },
+      "why": "After revision 2 the overlay compares to revision 2 (P1 posted at S3), not revision 1 (S1).",
+      "expect": { "ok": true }
+    },
+    {
+      "op": "changed",
+      "expect": { "entries": [{ "pharmacistId": "P1", "date": "2026-05-04", "posted": "S3", "now": "S2" }] }
+    }
+  ]
+}
