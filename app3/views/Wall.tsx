@@ -5,9 +5,18 @@ import { useApp } from "../store.ts";
 import { useEvaluation, useGhosts, useViewState, useWindowDates } from "../derive.ts";
 import { Controls } from "./wall/Controls.tsx";
 import { Grid, type RowDef } from "./wall/Grid.tsx";
+import { HexBadge } from "../ui/HexBadge.tsx";
+import { shortName } from "../names.ts";
 import {
-  activePharmacists, activeStores, buildPharmacistModels, buildStoreModels, indexByCell, indexByPharmacist, openByStore, shortName,
+  activePharmacists, activeStores, buildPharmacistModels, buildStoreModels, coverageByDay, indexByCell, indexByPharmacist, openByStore, rowStatus,
 } from "./wall/model.ts";
+
+/** A stable colour for a person: one of the eight palette tokens, by a hash of the id. */
+function paletteVar(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return `var(--color-p${h % 8})`;
+}
 
 export function Wall() {
   const world = useApp((s) => s.world);
@@ -32,15 +41,12 @@ export function Wall() {
       const opens = openByStore(ev, stores, win, asOf);
       return stores.map((s, i) => {
         const n = opens.get(s.id) ?? 0;
+        const status = rowStatus(models[i]!, asOf);
         return {
           key: s.id,
           label: `${s.code} ${s.name}${n ? `, ${n} open` : ""}`,
-          head: (
-            <>
-              <span className="w-l1"><b>{s.code}</b>{n > 0 && <span className="w-count" aria-hidden="true" title={`${n} open from today on`}>{"□"}{n}</span>}</span>
-              <span className="w-l2" title={s.name}>{s.name}</span>
-            </>
-          ),
+          tip: `${s.code} · ${s.name} | ${n ? `${n} ${n === 1 ? "needs" : "need"} more this month` : status === "closed" ? "Closed this month" : "Covered this month"}`,
+          head: <HexBadge label={s.code} status={status} size={26} className="pointer-events-none" />,
           cells: models[i]!,
         };
       });
@@ -52,16 +58,19 @@ export function Wall() {
       return {
         key: p.id,
         label: `${p.name}, ${days} days in view`,
+        tip: `${p.name} | ${days} ${days === 1 ? "day" : "days"} in view`,
         head: (
-          <>
-            <span className="w-l1"><b title={p.name}>{shortName(p.name, 13)}</b></span>
-            <span className="w-l2">{p.initials} {"·"} {days} {days === 1 ? "day" : "days"}</span>
-          </>
+          <span className="w-person">
+            <span className="w-disc" aria-hidden="true" style={{ background: paletteVar(p.id) }}>{p.initials}</span>
+            <span className="w-pname">{shortName(p.name, 12)}</span>
+          </span>
         ),
         cells: models[i]!,
       };
     });
   }, [vs, ev, axis, win, dates, asOf, ghosts, readOnly]);
+
+  const cover = useMemo(() => (vs && ev ? coverageByDay(ev, activeStores(vs.state, win), dates) : new Map()), [vs, ev, win, dates]);
 
   if (!world || !vs || !ev) return null;
   return (
@@ -73,7 +82,8 @@ export function Wall() {
           dates={dates}
           axis={axis}
           asOf={asOf}
-          corner={axis === "store" ? "Stores" : "Pharmacists"}
+          cover={cover}
+          corner={axis === "store" ? "Stores" : "People"}
           ariaLabel={axis === "store" ? "Schedule by store" : "Schedule by pharmacist"}
         />
       </div>

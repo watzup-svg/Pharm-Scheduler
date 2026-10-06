@@ -18,14 +18,42 @@ try {
   const cells = page.locator('[role="gridcell"]');
   check("practice month loads: 16 stores x 31 days", (await cells.count()) === 16 * 31, `got ${await cells.count()}`);
   const text = await grid.innerText();
-  check("open requirement glyph appears", text.includes("□"));
+  check("open spot picture chip appears", (await page.locator('.w-cell [data-statemark="open"]').count()) > 0);
+  void text;
   check("initials appear", (await page.locator(".w-chip").count()) > 20);
   check("closed hatched cell appears", (await page.locator('.w-cell.hatch[data-kind="closed"]').count()) > 0);
   check("as-of column is marked with the word Today", (await page.locator(".w-asof-head .w-today").innerText()) === "Today");
   check("month label in the header", (await page.locator(".w-month").first().innerText()).includes("October 2026"));
-  check("legend is present", (await page.locator("#wall-legend").count()) === 1);
+  // One control line, no permanent legend
+  check("no legend visible until Key is pressed", (await page.locator("#wall-key, #wall-legend").count()) === 0);
+  const controls = page.locator(".w-controls");
+  check("control line has Previous, Today, Next, Month, 2 weeks, Stores, People, Key, Tools", (await Promise.all(["Previous week", "Today", "Next week", "Month", "2 weeks", "Stores", "People", "Key", "Tools"].map((n) => controls.getByRole("button", { name: n, exact: true }).count()))).every((n) => n === 1));
+  check("4 weeks is gone", (await page.getByRole("button", { name: "4 weeks" }).count()) === 0);
+  const hdrCount = await page.evaluate(() => {
+    const q = 'button,a[href],input,select,textarea,[role="button"],[role="tab"],[tabindex="0"]:not([role="gridcell"])';
+    // The wall's control line plus everything above the grid inside <main> (hero band, strips).
+    const main = document.querySelector("main");
+    const gridTop = document.querySelector(".w-scroll")?.getBoundingClientRect().top ?? 0;
+    return [...(main?.querySelectorAll(q) ?? [])].filter((e) => e instanceof HTMLElement).filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.bottom <= gridTop + 1; }).length;
+  });
+  check("header area has 14 or fewer interactive elements", hdrCount <= 14, `${hdrCount}`);
+  check("hex badges on store rows", (await page.locator('[role="rowheader"] [role="img"]').count()) === 16);
+  check("coverage bar row under the dates, one bar per day", (await page.locator(".w-cover .w-bar").count()) === 31);
+  check("coverage bar has a note", /\d+ of \d+ covered/.test((await page.locator(".w-bar[data-need]:not([data-need='0'])").first().getAttribute("data-tip")) ?? ""));
+  check("row label note has the name", /·.*\|/.test((await page.locator(".w-label").first().getAttribute("data-tip")) ?? ""));
+  await page.getByRole("button", { name: "Tools", exact: true }).click();
+  check("Tools menu has Build / Improve / Cover all open", (await page.getByRole("menuitem", { name: /^Build/ }).count()) === 1 && (await page.getByRole("menuitem", { name: /^Improve/ }).count()) === 1 && (await page.getByRole("menuitem", { name: /^Cover all open/ }).count()) === 1);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Key", exact: true }).click();
+  check("Key opens the legend panel", (await page.locator("#wall-key").count()) === 1 && (await page.locator("#wall-key [data-statemark]").count()) > 5);
+  await page.keyboard.press("Escape");
+  check("Esc closes the Key", (await page.locator("#wall-key").count()) === 0);
+  await page.getByRole("button", { name: "Key", exact: true }).click();
+  await page.locator(".w-scroll").click({ position: { x: 5, y: 5 } });
+  check("a click elsewhere closes the Key", (await page.locator("#wall-key").count()) === 0);
 
   // Accessible name
+  check("every cell has a hover note", (await page.locator('[role="gridcell"]:not([data-tip])').count()) === 0);
   const name = await page.locator('[role="gridcell"][data-store][data-date="2026-10-06"]').first().getAttribute("aria-label");
   check("cell has an accessible name with store, date and state", /^[A-Z]+, Tue Oct 6: /.test(name ?? ""), name ?? "");
 
@@ -36,6 +64,9 @@ try {
   const sel = await st(() => window.__v3.app.getState().selection);
   check("clicking a cell selects store + date", sel?.storeId === wantStore && sel?.date === "2026-10-09", JSON.stringify(sel));
   check("selected cell has strong outline class", (await target.getAttribute("class")).includes("w-sel"));
+  await target.click({ button: "right" });
+  check("right click on a cell opens its hover note", (await page.getByText("Open this day").count()) >= 1);
+  await page.keyboard.press("Escape");
 
   // Keyboard
   await target.focus();
@@ -64,17 +95,14 @@ try {
   await page.getByRole("button", { name: "Next week" }).click();
   w = await st(() => window.__v3.app.getState().window);
   check("Next shifts by 7", w.from === "2026-10-11", JSON.stringify(w));
-  await page.getByRole("button", { name: /Prev/ }).click();
-  await page.getByRole("button", { name: /Prev/ }).click();
+  await page.getByRole("button", { name: "Previous week" }).click();
+  await page.getByRole("button", { name: "Previous week" }).click();
   w = await st(() => window.__v3.app.getState().window);
   check("Prev shifts back by 7", w.from === "2026-09-27", JSON.stringify(w));
   await page.getByRole("group", { name: "Move the window" }).getByRole("button", { name: "Today" }).click();
   w = await st(() => window.__v3.app.getState().window);
   check("Today brings the as-of date back into view", w.from <= "2026-10-06" && w.to >= "2026-10-06", JSON.stringify(w));
-  await page.getByRole("button", { name: "4 weeks" }).click();
-  w = await st(() => window.__v3.app.getState().window);
-  check("4 weeks is 28 days", w.from === "2026-10-04" && w.to === "2026-10-31", JSON.stringify(w));
-  await page.getByRole("button", { name: "Month" }).click();
+  await page.getByRole("button", { name: "Month", exact: true }).click();
   w = await st(() => window.__v3.app.getState().window);
   check("Month is the calendar month", w.from === "2026-10-01" && w.to === "2026-10-31", JSON.stringify(w));
   await page.locator('[role="gridcell"][data-r="0"][data-c="0"]').focus();
@@ -90,16 +118,31 @@ try {
   check("label column stays put while scrolling sideways", lab < 2, `offset ${lab}`);
   await page.evaluate(() => { document.querySelector(".w-scroll").scrollLeft = 0; });
 
+  // Size: 18 day columns and 12 store rows visible at 1366x768 with the drawer closed
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.waitForTimeout(150);
+  const vis = await page.evaluate(() => {
+    const sc = document.querySelector(".w-scroll").getBoundingClientRect();
+    const cs = [...document.querySelectorAll('[role="gridcell"]')].filter((e) => { const r = e.getBoundingClientRect(); return r.left >= sc.left - 1 && r.right <= sc.right + 1 && r.top >= sc.top && r.bottom <= sc.bottom + 1; });
+    return { cols: new Set(cs.map((e) => e.dataset.c)).size, rows: new Set(cs.map((e) => e.dataset.r)).size };
+  });
+  check("at least 12 store rows visible at 1366x768", vis.rows >= 12, JSON.stringify(vis));
+  const cols = await page.evaluate(() => { const sc = document.querySelector(".w-scroll").getBoundingClientRect(); return new Set([...document.querySelectorAll('[role="gridcell"][data-r="0"]')].filter((e) => { const r = e.getBoundingClientRect(); return r.left >= sc.left - 1 && r.right <= sc.right + 1; }).map((e) => e.dataset.c)).size; });
+  check("at least 18 day columns visible at 1366x768", cols >= 18, `${cols}`);
+  await page.screenshot({ path: path.join(shots, "wall-768.png") });
+  await page.setViewportSize({ width: 1366, height: 800 });
+  await page.waitForTimeout(100);
   // Screenshot of the store axis
   await page.screenshot({ path: path.join(shots, "wall-store.png") });
   const pad = (n) => n;
   void pad;
 
   // Pharmacist axis
-  await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "Pharmacists" }).click();
+  await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "People" }).click();
   check("axis toggle: pharmacist rows", (await page.locator('[role="rowheader"]').count()) === 20 + 0 || (await page.locator('[role="row"]').count()) > 20, `${await page.locator('[role="row"]').count()} rows`);
   const ptext = await grid.innerText();
   check("pharmacist axis shows OFF for approved absence", ptext.includes("OFF"));
+  check("people rows have a coloured initials disc", (await page.locator('[role="rowheader"] .w-disc').count()) > 10);
   check("pharmacist axis shows store codes", /\bEST\b|\bCAT\b|\bSIL\b/.test(ptext));
   await page.locator('[role="gridcell"][data-r="2"][data-c="9"]').click();
   const psel = await st(() => window.__v3.app.getState().selection);
@@ -107,11 +150,6 @@ try {
   await page.screenshot({ path: path.join(shots, "wall-pharm.png") });
   await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "Stores" }).click();
   check("axis toggles back to stores", (await page.locator('[role="gridcell"][data-store]').count()) === 16 * 31);
-
-  // Legend collapses
-  await page.getByRole("button", { name: "Hide legend" }).click();
-  check("legend collapses", (await page.locator("#wall-legend").count()) === 0);
-  await page.getByRole("button", { name: "Legend" }).click();
 
   // Drag a chip to another store on the same day: one commit
   await st(() => window.__v3.app.getState().select(null));
