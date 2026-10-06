@@ -1,0 +1,240 @@
+{
+ "format": "hischool-schedule",
+ "version": 2,
+ "year": 2026,
+ "month": 9,
+ "stores": [
+  {
+   "code": "EST",
+   "name": "Estacada",
+   "satOpen": true,
+   "sunOpen": false,
+   "address": "325 S Broadway St, Estacada, OR 97023"
+  },
+  {
+   "code": "MOL",
+   "name": "Molalla",
+   "satOpen": true,
+   "sunOpen": false,
+   "address": "111 Robbins St, Molalla, OR 97038"
+  },
+  {
+   "code": "SCA",
+   "name": "Scappoose",
+   "satOpen": true,
+   "sunOpen": false,
+   "address": "51601 Columbia River Hwy, Scappoose, OR 97056"
+  },
+  {
+   "code": "WL",
+   "name": "West Linn",
+   "satOpen": false,
+   "sunOpen": false,
+   "address": "22000 Willamette Dr, West Linn, OR 97068"
+  }
+ ],
+ "people": [
+  {
+   "name": "Jane Smith",
+   "role": "Pharmacist",
+   "home": "EST",
+   "lead": false,
+   "phone": "",
+   "color": ""
+  },
+  {
+   "name": "Tom Reyes",
+   "role": "Pharmacist",
+   "home": "MOL",
+   "lead": false,
+   "phone": "",
+   "color": ""
+  },
+  {
+   "name": "Priya Nair",
+   "role": "Pharmacist",
+   "home": "SCA",
+   "lead": false,
+   "phone": "",
+   "color": ""
+  },
+  {
+   "name": "Mark Chen",
+   "role": "Pharmacist",
+   "home": "WL",
+   "lead": false,
+   "phone": "",
+   "color": ""
+  },
+  {
+   "name": "Susan Brown",
+   "role": "Float Pharmacist",
+   "home": "EST",
+   "lead": false,
+   "phone": "",
+   "color": ""
+  },
+  {
+   "name": "Chris Hale",
+   "role": "Float Pharmacist",
+   "home": "MOL",
+   "lead": false,
+   "phone": "",
+   "color": ""
+  }
+ ],
+ "holidays": [
+  {
+   "date": "2026-09-07",
+   "store": "ALL",
+   "label": "Labor Day",
+   "repeat": false
+  },
+  {
+   "date": "2026-12-25",
+   "store": "ALL",
+   "label": "Christmas",
+   "repeat": true
+  }
+ ],
+ "timeOff": [
+  {
+   "name": "Jane Smith",
+   "dates": [
+    "2026-09-14",
+    "2026-09-15"
+   ],
+   "from": "2026-09-14",
+   "to": "2026-09-15",
+   "note": "SAMPLE — unplaced"
+  }
+ ],
+ "grid": {
+  "EST": {
+   "pharmacist": {
+    "1": "Jane Smith",
+    "2": "Jane Smith",
+    "3": "Jane Smith",
+    "4": "Jane Smith",
+    "5": "Jane Smith",
+    "8": "Jane Smith",
+    "9": "Jane Smith",
+    "10": "Jane Smith",
+    "11": "Jane Smith",
+    "12": "Jane Smith",
+    "17": "Jane Smith",
+    "18": "Jane Smith",
+    "19": "Jane Smith",
+    "21": "Jane Smith",
+    "22": "Jane Smith",
+    "23": "Jane Smith",
+    "24": "Jane Smith",
+    "25": "Jane Smith",
+    "26": "Jane Smith",
+    "28": "Jane Smith",
+    "29": "Jane Smith",
+    "30": "Jane Smith"
+   },
+   "pharmacist2": {
+    "14": "Susan Brown",
+    "15": "Susan Brown"
+   }
+  },
+  "MOL": {
+   "pharmacist": {
+    "1": "Tom Reyes",
+    "2": "Tom Reyes",
+    "3": "Tom Reyes",
+    "4": "Tom Reyes",
+    "5": "Tom Reyes",
+    "8": "Tom Reyes",
+    "9": "Tom Reyes",
+    "10": "Tom Reyes",
+    "11": "Tom Reyes",
+    "12": "Tom Reyes",
+    "14": "Tom Reyes",
+    "15": "Tom Reyes",
+    "16": "Tom Reyes",
+    "17": "Tom Reyes",
+    "19": "Tom Reyes",
+    "21": "Tom Reyes",
+    "22": "Tom Reyes",
+    "23": "Tom Reyes",
+    "24": "Tom Reyes",
+    "25": "Tom Reyes",
+    "26": "Tom Reyes",
+    "28": "Tom Reyes",
+    "29": "Tom Reyes",
+    "30": "Tom Reyes"
+   },
+   "pharmacist2": {
+    "4": "Jane Smith",
+    "18": "Chris Hale"
+   }
+  },
+  "SCA": {
+   "pharmacist": {
+    "1": "Priya Nair",
+    "2": "Priya Nair",
+    "3": "Priya Nair",
+    "4": "Priya Nair",
+    "5": "Priya Nair",
+    "8": "Priya Nair",
+    "9": "Priya Nair",
+    "10": "Priya Nair",
+    "11": "Priya Nair",
+    "12": "Priya Nair",
+    "14": "Priya Nair",
+    "15": "Priya Nair",
+    "16": "Priya Nair",
+    "17": "Priya Nair",
+    "18": "Priya Nair",
+    "19": "Priya Nair",
+    "21": "Priya Nair",
+    "22": "Priya Nair",
+    "23": "Priya Nair",
+    "24": "Priya Nair",
+    "25": "Priya Nair",
+    "26": "Priya Nair",
+    "28": "Priya Nair",
+    "29": "Priya Nair",
+    "30": "Priya Nair"
+   }
+  },
+  "WL": {
+   "pharmacist": {
+    "1": "Mark Chen",
+    "2": "Mark Chen",
+    "3": "Mark Chen",
+    "4": "Mark Chen",
+    "8": "Mark Chen",
+    "9": "Mark Chen",
+    "10": "Mark Chen",
+    "11": "Mark Chen",
+    "14": "Mark Chen",
+    "15": "Mark Chen",
+    "16": "Mark Chen",
+    "17": "Mark Chen",
+    "18": "Mark Chen",
+    "21": "Mark Chen",
+    "22": "Mark Chen",
+    "23": "Mark Chen",
+    "24": "Mark Chen",
+    "25": "Mark Chen",
+    "28": "Mark Chen",
+    "29": "Mark Chen",
+    "30": "Mark Chen"
+   }
+  }
+ },
+ "pattern": {},
+ "dayNotes": {},
+ "printPrefs": {
+  "paper": "letter",
+  "typeSize": "large",
+  "grayscale": false,
+  "twoUp": false,
+  "punch": false,
+  "includeStaff": false
+ }
+}

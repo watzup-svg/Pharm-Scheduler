@@ -70,3 +70,21 @@ test("no wall clock or locale in domain source", async () => {
     assert.ok(!/new Date\(|Date\.now|localeCompare|Math\.random|performance\.now/.test(text), `${f} uses clock, locale or randomness`);
   }
 });
+
+test("choicesFor: counts first, shows what a move leaves short", async () => {
+  const { choicesFor } = await import("../src/choices.ts");
+  const w = seedWorld({
+    stores: [{ id: "S1" }, { id: "S2" }],
+    pharmacists: [{ id: "P1", base: "S1" }, { id: "P2", base: "S2" }, { id: "P3", base: "S1" }],
+    assignments: [{ id: "A1", store: "S2", ph: "P2", date: "2026-05-04" }],
+    unavailability: [{ ph: "P3", first: "2026-05-04" }],
+    travel: [["S1", "S2", 30, 20], ["S2", "S1", 30, 20]],
+  });
+  const c = choicesFor(w.state, "S1", "2026-05-04", "2026-05-01");
+  assert.deepEqual(c.map((x) => x.pharmacistId), ["P1", "P2", "P3"]);
+  assert.equal(c[0]!.counts, true);
+  assert.equal(c[0]!.currently, "off");
+  assert.equal(c[1]!.leavesShort?.storeId, "S2");
+  assert.equal(c[2]!.counts, false);
+  assert.equal(c[2]!.unavailable, true);
+});

@@ -1,0 +1,351 @@
+@import "@fontsource/source-sans-3/latin-400.css";
+@import "@fontsource/source-sans-3/latin-500.css";
+@import "@fontsource/source-sans-3/latin-600.css";
+@import "@fontsource/source-sans-3/latin-700.css";
+@import "tailwindcss";
+
+/*
+ * Hi-School Pharmacy scheduler style. Buttons and selections are ink; everything else is quiet.
+ * Brand red #C8102E is for the logo and today's date only (no red buttons). Errors and closed use a dark brick (#8C3A2F) so they never read as a button; green (#2F6F4E)
+ * means available or open and nothing else. The logo's own red (#E82020) belongs to the artwork.
+ */
+@theme {
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+
+  /* The smallest text is 13px, not 12: labels, hints and table headers are read all day. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.375rem;
+
+  --color-paper: #f7f4ef;
+  --color-cream: #ffffff;
+  --color-ink: #1c1c1c;
+  --color-muted: #5c5854;
+  --color-line: #d9d3c7;
+  /* Borders of things you press (buttons, fields): a step stronger than the dividers. */
+  --color-edge: #c6bdac;
+  --color-night: #201820;
+  --color-brand: #c8102e;
+  --color-brand-fg: #ffffff;
+  --color-wordmark: #e82020;
+  --color-ok: #2f6f4e;
+  --color-ok-bg: #dcebe2;
+  /* Green that still reads on the dark page headers. */
+  --color-ok-lite: #6fb78d;
+  --color-illegal: #8c3a2f;
+  --color-illegal-bg: #efd8d2;
+  --color-warn: #7a4e08;
+  --color-warn-bg: #f4e2a3;
+  --color-why: #f0c48a;
+  --color-shut: #ddd7cb;
+  /* Quiet button fill: readable on both the page and on white cards, so secondary buttons need no outline. */
+  --color-fill: #efebe3;
+  --color-cover: #dcebe2;
+  --color-p0: #201820;
+  --color-p1: #3d2a1c;
+  --color-p2: #1c304a;
+  --color-p3: #4a1e2e;
+  --color-p4: #2e3a1c;
+  --color-p5: #3a1c4a;
+  --color-p6: #1c403a;
+  --color-p7: #4a301c;
+
+  --width-tabloid: 11in;
+  --height-tabloid: 17in;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+  --radius-3xl: 14px;
+  --width-letter: 8.5in;
+  --height-letter: 11in;
+  --spacing-sheet: 0.48in;
+  --spacing-punch: 0.88in;
+}
+
+@layer base {
+  /* Phones: no grey flash on tap, and no double-tap zoom on controls. */
+  button,
+  a,
+  select,
+  input,
+  [role="button"],
+  [role="tab"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  /* "Larger text" in the File menu. Everything sized in rem grows with it. */
+  html.text-large {
+    font-size: 118.75%;
+  }
+
+  /* "High contrast": darker secondary text and stronger lines and rings. */
+  html.contrast {
+    --color-muted: #3d3a37;
+    --color-line: #b9b1a3;
+    --color-edge: #7f786c;
+    --color-shut: #c9c1b3;
+    --color-fill: #e2dccf;
+  }
+  html.contrast .ring-line {
+    --tw-ring-color: #8f887c;
+  }
+
+  body {
+    /* A barely-there paper grain, so the page reads as a printed sheet and not a flat fill. */
+    background-color: var(--color-paper);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .11 0 0 0 0 .1 0 0 0 0 .09 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Digits are the same width everywhere, so counts, times and dates line up. */
+  body {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Every control answers a press: a small, quick dip, then the colour change settles. */
+  button,
+  [role="tab"],
+  summary {
+    transition:
+      transform 90ms ease-out,
+      background-color 140ms ease-out,
+      color 140ms ease-out,
+      box-shadow 140ms ease-out,
+      opacity 140ms ease-out;
+  }
+  button:not(:disabled):active,
+  [role="tab"]:active,
+  summary:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Anything drawn as a white card with a hairline ring gets the same soft lift as `surface`, so cards match everywhere. */
+@layer components {
+  .ring-1.ring-line {
+    --tw-shadow: 0 1px 2px rgb(28 25 23 / 0.05), 0 10px 18px -14px rgb(28 25 23 / 0.22);
+  }
+}
+
+/* Closed days read as "not a day" even in grayscale. */
+.hatch {
+  background-image: repeating-linear-gradient(135deg, transparent 0 5px, rgb(28 25 23 / 0.09) 5px 6px);
+}
+
+/* Quiet entrances for dialogs, menus and toasts. Off when the person asks for less motion. */
+@keyframes hs-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes hs-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes hs-slide-in {
+  from {
+    opacity: 0.6;
+    transform: translateX(24px);
+  }
+}
+.hs-fade {
+  animation: hs-fade 140ms ease-out;
+}
+.hs-rise {
+  animation: hs-rise 180ms ease-out;
+}
+.hs-slide-in {
+  animation: hs-slide-in 200ms ease-out;
+}
+/* The "more here" marker on a noted element: it waits a beat, so passing over things never flickers. */
+.note-marker {
+  animation: hs-fade 160ms ease-out 140ms backwards;
+}
+
+/* Noted things that draw no corner marker (the big header number) say "a note is here" with the cursor instead. */
+[data-tip-quiet] {
+  cursor: context-menu;
+  position: relative;
+}
+/* A hairline that fades in under the number on hover or focus: "there is more here", without a chip. */
+[data-tip-quiet]::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -6px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+  pointer-events: none;
+}
+[data-tip-quiet]:hover::after,
+[data-tip-quiet]:focus-visible::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  /* The hold fill is the timer itself: with motion reduced it still has to fill over the hold time, not jump to done. */
+  [data-hold-fill] {
+    transition-duration: var(--hold-ms, 700ms) !important;
+  }
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+
+  body {
+    background: var(--color-cream);
+  }
+
+  .print-chrome,
+  .app-shell-header,
+  .app-shell-tabs {
+    display: none !important;
+  }
+
+  .print-preview {
+    overflow: visible;
+    padding: 0;
+  }
+
+  .letter-sheet {
+    box-shadow: none;
+    width: 8.5in;
+    min-height: 11in;
+  }
+}
+
+@keyframes hs-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.hs-pop {
+  animation: hs-pop 360ms ease-out;
+}
+
+/* One look for every card, panel and list row container. */
+@utility surface {
+  border-radius: var(--radius-xl);
+  background-color: var(--color-cream);
+  box-shadow:
+    0 0 0 1px var(--color-line),
+    0 1px 2px rgb(28 25 23 / 0.05),
+    0 10px 18px -14px rgb(28 25 23 / 0.22);
+}
+
+/*
+ * A subject's colour on a card: a slim tab on the left edge, following the card's corners, and a faint glow fading out from it.
+ * Use with `surface` (or any card). One class per subject, the same families as the marks: away (yellow), problem (light red),
+ * cover (green).
+ */
+@utility accent-away {
+  --accent-edge: #e3c25a;
+  --accent-glow: #f4e2a3;
+}
+@utility accent-problem {
+  --accent-edge: #cf8a7c;
+  --accent-glow: #efd8d2;
+}
+@utility accent-cover {
+  --accent-edge: #6fb78d;
+  --accent-glow: #dcebe2;
+}
+[class*="accent-"] {
+  background-image:
+    linear-gradient(var(--accent-edge), var(--accent-edge)),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-glow) 40%, transparent), transparent 9rem);
+  background-size:
+    4px 100%,
+    100% 100%;
+  background-repeat: no-repeat;
+  background-position: left top;
+}
+
+/* A choice landing: one short pop and a soft ring that fades, on whatever was just selected. */
+@keyframes hs-select {
+  0% {
+    transform: scale(0.94);
+    box-shadow: 0 0 0 0 rgb(28 28 28 / 0.28);
+  }
+  55% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 7px rgb(28 28 28 / 0);
+  }
+}
+.hs-select {
+  animation: hs-select 280ms ease-out;
+}
+
+/* Clickable cards lift a little under the pointer. */
+@utility lift {
+  transition:
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px var(--color-edge),
+      0 12px 22px -14px rgb(28 25 23 / 0.38);
+  }
+}
+
+/* Keyboard focus on the dark header: one clear white outline for every control (the browser's own ring is near-black
+   there). The ring's day segments draw their own white stroke. */
+section.bg-night :is(button, a, [role="button"], [tabindex]):not([data-ring-day]):focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

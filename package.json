@@ -24,7 +24,9 @@
     "audit": "node scripts/audit.mjs",
     "coverage": "node scripts/coverage.mjs",
     "pressure": "node scripts/pressure.mjs",
-    "check:v3": "tsc --noEmit -p domain && node --experimental-strip-types --test domain/test/*.test.ts scripts/v3-compare.test.ts"
+    "check:v3": "tsc --noEmit -p domain && tsc --noEmit -p app3 && node --experimental-strip-types --test domain/test/*.test.ts scripts/v3-compare.test.ts",
+    "build:v3": "vite build -c vite.v3.config.ts",
+    "typecheck:v3": "tsc --noEmit -p app3"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",
@@ -39,6 +41,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "sonner": "^2.0.8",
+    "sql.js": "^1.14.2",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.5",
     "zustand": "^5.0.15"
