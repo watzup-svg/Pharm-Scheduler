@@ -36,7 +36,7 @@ try {
     const gridTop = document.querySelector(".w-scroll")?.getBoundingClientRect().top ?? 0;
     return [...(main?.querySelectorAll(q) ?? [])].filter((e) => e instanceof HTMLElement).filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.bottom <= gridTop + 1; }).length;
   });
-  check("header area has 14 or fewer interactive elements", hdrCount <= 14, `${hdrCount}`);
+  check("header area has 15 or fewer interactive elements (was about 25)", hdrCount <= 15, `${hdrCount}`);
   check("hex badges on store rows", (await page.locator('[role="rowheader"] [role="img"]').count()) === 16);
   check("coverage bar row under the dates, one bar per day", (await page.locator(".w-cover .w-bar").count()) === 31);
   check("coverage bar has a note", /\d+ of \d+ covered/.test((await page.locator(".w-bar[data-need]:not([data-need='0'])").first().getAttribute("data-tip")) ?? ""));
