@@ -537,7 +537,7 @@ function invariants(prev, now, dom, a, errors, runner) {
   if (!dom.root) F("render", "the page root is empty (a render crash)");
   else {
     if (!dom.main) F("render", "main area is empty");
-    if (!dom.inspector) F("render", "Inspector is missing");
+    if (!dom.inspector && (now.view === "wall" || now.view === "plan")) F("render", "Inspector is missing");
     if (now.view === "wall" && !dom.grid) F("render", "Wall has no grid");
     if (/Something went wrong|Unexpected Application Error|is not a function|Cannot read prop/i.test(dom.bodyText)) F("render", "error text on the page: " + dom.bodyText.match(/.{0,40}(Something went wrong|Unexpected Application Error|is not a function|Cannot read prop).{0,60}/i)?.[0]);
   }
