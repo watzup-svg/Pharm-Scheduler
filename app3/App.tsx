@@ -60,10 +60,12 @@ export function App() {
             {view === "print" && <PrintView />}
           </div>
         </main>
-        <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
-          {outForm && <SomeonesOut compact onClose={() => useApp.getState().setOutForm(false)} />}
-          <Inspector />
-        </aside>
+        {(view === "wall" || view === "plan") && (
+          <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
+            {(outForm || !!world.session.scenario) && <SomeonesOut compact showForm={outForm} onClose={() => useApp.getState().setOutForm(false)} />}
+            {view === "wall" && <Inspector />}
+          </aside>
+        )}
       </div>
       {proposal && <ProposalBar />}
       <Notice />

@@ -38,14 +38,18 @@ export function WhatIfNotice() {
   );
 }
 
-export function SomeonesOut({ onClose }: { compact?: boolean; onClose?: () => void } = {}) {
+export function SomeonesOut({ showForm = true, onClose }: { compact?: boolean; showForm?: boolean; onClose?: () => void } = {}) {
   const world = useApp((s) => s.world);
   if (!world) return null;
   return (
     <Section title="Someone's out" className="bg-cream">
       <WhatIfNotice />
-      <Btn tone="ghost" onClick={() => onClose?.()} className="mb-2">Close</Btn>
-      <OutForm />
+      {showForm && (
+        <>
+          <Btn tone="ghost" onClick={() => onClose?.()} className="mb-2">Close</Btn>
+          <OutForm />
+        </>
+      )}
     </Section>
   );
 }

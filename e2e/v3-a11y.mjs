@@ -396,14 +396,14 @@ try {
           pageScrollX: document.documentElement.scrollWidth - vw, bodyScrollX: document.body.scrollWidth - vw, pageScrollY: document.documentElement.scrollHeight - vh,
           hdr: box("header"), left: box('aside[aria-label="Left panel"]'), insp: box('aside[aria-label="Inspector"]'), main: box("main"),
           hdrOverflow: hdr.scrollWidth - hdr.clientWidth, cut,
-          inspScrolls: (() => { const a = document.querySelector('aside[aria-label="Inspector"]'); return getComputedStyle(a).overflowY; })(),
+          inspScrolls: (() => { const a = document.querySelector('aside[aria-label="Inspector"]'); return a ? getComputedStyle(a).overflowY : null; })(),
           vw, vh,
         };
       });
       check(`${tag} ${view}: no horizontal page scroll`, m.pageScrollX <= 0 && m.bodyScrollX <= 0, `${m.pageScrollX}`);
       check(`${tag} ${view}: no vertical page scroll (panels scroll inside themselves)`, m.pageScrollY <= 0, `${m.pageScrollY}`);
       check(`${tag} ${view}: top bar fits (nothing cut off)`, m.hdrOverflow <= 0 && m.cut.length === 0, `${m.hdrOverflow}px ${m.cut.join(",")}`);
-      check(`${tag} ${view}: Inspector fully on screen and scrolls inside`, m.insp && m.insp.r <= m.vw + 0.5 && m.insp.b <= m.vh + 0.5 && m.insp.l >= m.main.l && (m.inspScrolls === "auto" || m.inspScrolls === "scroll"), JSON.stringify(m.insp));
+      if (view === "Wall" || m.insp) check(`${tag} ${view}: Inspector fully on screen and scrolls inside`, m.insp && m.insp.r <= m.vw + 0.5 && m.insp.b <= m.vh + 0.5 && m.insp.l >= m.main.l && (m.inspScrolls === "auto" || m.inspScrolls === "scroll"), JSON.stringify(m.insp));
       check(`${tag} ${view}: the schedule area keeps real room`, m.main.r - m.main.l >= 600 && m.main.b - m.main.t >= 380, `${Math.round(m.main.r - m.main.l)}x${Math.round(m.main.b - m.main.t)}`);
       if (["Wall", "Time off", "Setup", "Print"].includes(view)) await p.screenshot({ path: `${SHOTS}/${tag}-${view}.png` });
     }

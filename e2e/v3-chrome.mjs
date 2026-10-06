@@ -89,7 +89,7 @@ s = await get();
 check("p goes back", s.sel && s.sel.date === sel1.date && s.sel.storeId === sel1.storeId, JSON.stringify(s.sel));
 await shot("1-queue");
 
-const openOutForm = async () => { await st(() => window.__v3.app.getState().setOutForm(true)); await right.getByRole("form", { name: "Add time off" }).waitFor(); };
+const openOutForm = async () => { await st(() => { const a = window.__v3.app.getState(); a.setView("wall"); a.setOutForm(true); }); await right.getByRole("form", { name: "Add time off" }).waitFor(); };
 await page.getByRole("button", { name: /Someone.s out/ }).first().click();
 check("the yellow Someone's out button opens the form above the Inspector", (await right.getByRole("form", { name: "Add time off" }).count()) === 1 && (await get()).view === "wall");
 await right.getByRole("button", { name: "Close", exact: true }).click();
