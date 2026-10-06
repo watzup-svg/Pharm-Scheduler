@@ -3,14 +3,13 @@
 // in the days ahead; no random numbers, so the same day gives the same schedule.
 import { api } from "./api.ts";
 import { seedWorld, type Seed } from "./seed.ts";
+import { addDays, weekday } from "./dates.ts";
 import type { World } from "./api-types.ts";
 
 type SeedAsg = NonNullable<Seed["assignments"]>[number];
 
-const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
-const T = (d: string) => Date.parse(`${d}T00:00:00Z`);
-const add = (d: string, n: number) => iso(T(d) + n * 86_400_000);
-const dow = (d: string) => new Date(T(d)).getUTCDay();
+const add = addDays;
+const dow = weekday;
 
 /** `today` is the app's today. The month shown can be any; every date below is an offset from it. */
 export function problemsWorld(today: string): { world: World; summary: string[] } {
