@@ -35,6 +35,13 @@ function parts(s: ISODate): [number, number, number] {
   return out;
 }
 
+/** Non-throwing validity guard for dates that come from callers or stored data. Cached, so cheap on hot paths. */
+export function dateOk(s: unknown): s is ISODate {
+  if (typeof s !== "string") return false;
+  if (PARTS.has(s)) return true;
+  return isValidDate(s) && (parts(s), true);
+}
+
 /** Days since 1970-01-01 (Hinnant's days_from_civil). */
 export function toDayNumber(s: ISODate): number {
   const [y0, m, d] = parts(s);

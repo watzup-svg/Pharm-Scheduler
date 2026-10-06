@@ -1,5 +1,5 @@
 // Build and Reset to Pattern. Both return proposals; nothing is applied here.
-import { cmp, dateRange, type ISODate } from "./dates.ts";
+import { cmp, dateOk, dateRange, type ISODate } from "./dates.ts";
 import { clone } from "./canonical.ts";
 import { evaluate } from "./coverage.ts";
 import { applyScratch, ENGINE_VERSION, stateHash } from "./changeset.ts";
@@ -29,6 +29,7 @@ function must(r: DomainState | { refused: true; reason: string }): DomainState {
 }
 
 export function build(world: World, range: { from: ISODate; to: ISODate }, asOf: ISODate): BuildResult {
+  if (!dateOk(range.from) || !dateOk(range.to) || !dateOk(asOf)) return { proposal: null, report: emptyReport() };
   const baseState = world.state;
   let W = clone(baseState);
   const edits: Edit[] = [];
@@ -56,9 +57,9 @@ export function build(world: World, range: { from: ISODate; to: ISODate }, asOf:
       const ok: Edit[] = [];
       for (let i = 0; i < cands.length; i++) {
         const c = cands[i]!;
-        const a = Object.values(scratch.assignments).find((x) => x.date === date && x.pharmacistId === c.pharmacistId && x.storeId === c.storeId)!;
-        if (ev.assignments[a.id]!.counts) ok.push(places[i]!);
-        else report.patternCannotApply.push({ storeId: c.storeId, pharmacistId: c.pharmacistId, date, why: firstFail(ev, a.id)?.detail ?? "Not legal" });
+        const a = Object.values(scratch.assignments).find((x) => x.date === date && x.pharmacistId === c.pharmacistId && x.storeId === c.storeId);
+        if (a && ev.assignments[a.id]?.counts) ok.push(places[i]!);
+        else report.patternCannotApply.push({ storeId: c.storeId, pharmacistId: c.pharmacistId, date, why: firstFail(ev, a?.id ?? "")?.detail ?? "Not legal" });
       }
       if (ok.length) apply(ok);
       report.instantiated += ok.length;
@@ -71,7 +72,7 @@ export function build(world: World, range: { from: ISODate; to: ISODate }, asOf:
   for (;;) {
     const ev = evaluate(W, asOf);
     const bad = Object.values(W.assignments)
-      .filter((a) => a.date >= range.from && a.date <= range.to && a.date >= asOf && !ev.assignments[a.id]!.counts)
+      .filter((a) => a.date >= range.from && a.date <= range.to && a.date >= asOf && !ev.assignments[a.id]?.counts)
       .sort((a, b) => cmp(a.date, b.date) || b.placedSeq - a.placedSeq || cmp(a.id, b.id));
     const target = bad.find((a) => !a.pinned && !a.partialNote && a.source !== "manual" && a.source !== "emergency");
     if (!target) {
@@ -144,6 +145,7 @@ export function build(world: World, range: { from: ISODate; to: ISODate }, asOf:
 }
 
 export function resetToPattern(world: World, range: { from: ISODate; to: ISODate }, storeIds: string[] | null, asOf: ISODate): BuildResult {
+  if (!dateOk(range.from) || !dateOk(range.to) || !dateOk(asOf)) return { proposal: null, report: emptyReport() };
   const baseState = world.state;
   let W = clone(baseState);
   const edits: Edit[] = [];
@@ -151,7 +153,7 @@ export function resetToPattern(world: World, range: { from: ISODate; to: ISODate
   const viol = (s: DomainState) => {
     const ev = evaluate(s, asOf);
     const set = new Set<string>();
-    for (const a of Object.values(s.assignments)) for (const r of ev.assignments[a.id]!.results) if (r.verdict === "Fail" && !r.overridden) set.add(`${a.pharmacistId}|${a.storeId}|${a.date}|${r.ruleId}`);
+    for (const a of Object.values(s.assignments)) for (const r of ev.assignments[a.id]?.results ?? []) if (r.verdict === "Fail" && !r.overridden) set.add(`${a.pharmacistId}|${a.storeId}|${a.date}|${r.ruleId}`);
     return set;
   };
   for (const date of dateRange(range.from, range.to)) {

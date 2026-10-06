@@ -1,5 +1,5 @@
 // Improve: explicit trigger only. Re-deals pharmacists among existing slots on one date. Never adds shifts.
-import { addDays, cmp, dateRange, type ISODate } from "./dates.ts";
+import { addDays, cmp, dateOk, dateRange, type ISODate } from "./dates.ts";
 import { evalDelta, evaluate, makeCtx } from "./coverage.ts";
 import type { Evaluation } from "./types.ts";
 import { applyScratch, ENGINE_VERSION, stateHash } from "./changeset.ts";
@@ -48,6 +48,7 @@ function better(a: Metrics, b: Metrics): boolean {
 export function improve(world: World, opts: ImproveOpts, asOf: ISODate): ImproveResult {
   const nothing: ImproveResult = { status: "nothing", message: "Nothing to improve.", proposal: null };
   const cfg = world.state.config.improve;
+  if (!dateOk(opts.from) || !dateOk(opts.to) || !dateOk(asOf)) return nothing;
   const earliest = opts.includeNext14 ? asOf : addDays(asOf, cfg.excludeNextDays);
   const dates = dateRange(opts.from, opts.to).filter((d) => d >= earliest);
   if (!dates.length) return { status: "nothing", message: !opts.includeNext14 && dateRange(opts.from, opts.to).some((d) => d >= asOf && d < earliest) ? "Nothing to improve: the next 14 days are left alone. Include them to look there." : "Nothing to improve.", proposal: null };
@@ -73,7 +74,8 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
     const cells = new Set<string>();
     for (const e of edits) {
       if (e.t !== "swap") continue;
-      const was = cur.assignments[e.assignmentId]!;
+      const was = cur.assignments[e.assignmentId];
+      if (!was) continue;
       phs.add(was.pharmacistId); phs.add(e.toPharmacistId);
       cells.add(`${was.storeId}|${was.date}`);
       if (origPh.get(e.assignmentId) === e.toPharmacistId) nextChanged.delete(e.assignmentId); else nextChanged.add(e.assignmentId);
@@ -165,8 +167,8 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
 
   const edits: Edit[] = Object.values(original.assignments)
     .filter((a) => cur.assignments[a.id]?.pharmacistId !== a.pharmacistId)
-    .sort((a, b) => cmp(cur.assignments[a.id]!.pharmacistId, cur.assignments[b.id]!.pharmacistId) || cmp(a.storeId, b.storeId) || cmp(a.date, b.date))
-    .map((a) => ({ t: "swap", assignmentId: a.id, toPharmacistId: cur.assignments[a.id]!.pharmacistId }));
+    .sort((a, b) => cmp(cur.assignments[a.id]?.pharmacistId ?? "", cur.assignments[b.id]?.pharmacistId ?? "") || cmp(a.storeId, b.storeId) || cmp(a.date, b.date))
+    .map((a) => ({ t: "swap", assignmentId: a.id, toPharmacistId: cur.assignments[a.id]?.pharmacistId ?? a.pharmacistId }));
   const explanation: string[] = [];
   if (removed > 0) explanation.push(`Removes ${removed} violation${removed === 1 ? "" : "s"} or override${removed === 1 ? "" : "s"}`);
   if (restored > 0) explanation.push(`Restores ${restored} standing assignment${restored === 1 ? "" : "s"}`);

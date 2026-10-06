@@ -157,8 +157,8 @@ function applyEdit(b: Builder, e: Edit, src?: AssignmentSource): Fail | null {
       if (!def.overridable) return bad(`${def.id} cannot be overridden`);
       if (def.reasonRequired && !e.reason.trim()) return bad("A reason is required");
       for (const o of Object.values(s.overrides)) if (o.assignmentId === a.id && o.ruleId === e.ruleId) return bad("Already overridden");
-      const r = evaluate(s, "0000-01-01").assignments[a.id]!.results.find((x) => x.ruleId === e.ruleId)!;
-      if (r.verdict !== "Fail") return bad("Nothing to override: that rule is not failing");
+      const r = evaluate(s, "0000-01-01").assignments[a.id]?.results.find((x) => x.ruleId === e.ruleId);
+      if (!r || r.verdict !== "Fail") return bad("Nothing to override: that rule is not failing");
       const id = `O${s.nextId.override++}`;
       b.set("override.add", `override:${id}`, { id, assignmentId: a.id, ruleId: e.ruleId, signature: r.signature, reason: e.reason });
       return null;

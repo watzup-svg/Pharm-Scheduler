@@ -1,5 +1,5 @@
 // evaluate(): the single place that decides what counts. Everything else asks this.
-import { cmp, dateRange, fromDayNumber, toDayNumber, weekday } from "./dates.ts";
+import { cmp, dateOk, dateRange, fromDayNumber, toDayNumber, weekday } from "./dates.ts";
 import type { EvalOptions } from "./api-types.ts";
 import type {
   Assignment, AssignmentEval, CellCoverage, DomainState, Evaluation, ISODate, Override, RuleResult, Verdict,
@@ -158,13 +158,13 @@ function evalPharmacist(state: DomainState, ctx: EvalCtx, list: Assignment[], em
     let unresolved = false;
     let unknown = false;
     for (const r of results) {
-      const def = RULE_BY_ID[r.ruleId]!;
+      const def = RULE_BY_ID[r.ruleId];
       const o = ctx.ovByAR.get(`${a.id}|${r.ruleId}`);
       if (r.verdict === "Fail" && o) {
         if (o.signature === r.signature) r.overridden = r.ruleId === "double-booking" ? groupResolved.get(a.date) === true : true;
         else r.outdated = true;
       }
-      if (def.kind === "presence") {
+      if (def?.kind === "presence") {
         if (r.verdict === "Fail" && !r.overridden) unresolved = true;
         if (r.verdict === "Unknown") unknown = true;
       }
@@ -203,7 +203,9 @@ function finishCell(cell: CellCoverage): CellCoverage {
 
 export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = {}, ctxIn?: EvalCtx): Evaluation {
   const ctx = ctxIn ?? makeCtx(state, opts);
-  const win = opts.window;
+  // A caller-supplied window or range with a bad date is ignored rather than thrown on.
+  const win = opts.window && dateOk(opts.window.from) && dateOk(opts.window.to) ? opts.window : undefined;
+  const range = opts.range && dateOk(opts.range.from) && dateOk(opts.range.to) ? opts.range : undefined;
   const byPh = new Map<string, Assignment[]>();
   for (const id of Object.keys(state.assignments).sort(cmp)) {
     const a = state.assignments[id]!;
@@ -223,13 +225,14 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
     const c = state.cellCounts[k];
     return (cells[k] = { storeId, date, required: requiredFor(state, ctx.reqIdx, storeId, date), counted: 0, unverified: 0, locum: c?.locum ?? 0, acceptedShort: c?.acceptedShort ?? 0, covered: 0, open: 0, surplus: 0 });
   };
-  if (opts.range) for (const sid of Object.keys(state.stores).sort(cmp)) for (const d of dateRange(opts.range.from, opts.range.to)) touch(sid, d);
+  if (range) for (const sid of Object.keys(state.stores).sort(cmp)) for (const d of dateRange(range.from, range.to)) touch(sid, d);
   for (const k of Object.keys(state.cellCounts).sort(cmp)) touch(state.cellCounts[k]!.storeId, state.cellCounts[k]!.date);
   for (const id of Object.keys(evals)) {
-    const a = state.assignments[id]!;
+    const a = state.assignments[id], e = evals[id];
+    if (!a || !e) continue;
     const cell = touch(a.storeId, a.date);
-    if (evals[id]!.counts) cell.counted++;
-    if (evals[id]!.unverified) cell.unverified++;
+    if (e.counts) cell.counted++;
+    if (e.unverified) cell.unverified++;
   }
   for (const cell of Object.values(cells)) finishCell(cell);
   const sortedCells: Record<string, CellCoverage> = {};

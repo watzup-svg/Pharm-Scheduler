@@ -31,7 +31,8 @@ function failPairs(list: Iterable<Assignment>, ev: Evaluation, kind: "presence" 
     if (!e) continue;
     for (const r of e.results) {
       if (r.verdict !== "Fail" || r.overridden) continue;
-      const def = RULE_BY_ID[r.ruleId]!;
+      const def = RULE_BY_ID[r.ruleId];
+      if (!def) continue;
       if (kind === "presence" ? def.kind === "presence" : def.kind === "policy" && def.suggestible) out.add(`${a.pharmacistId}|${a.storeId}|${a.date}|${r.ruleId}`);
     }
   }

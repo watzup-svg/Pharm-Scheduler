@@ -135,8 +135,11 @@ export function seedWorld(seed: Seed): World {
   for (const d of seed.built ?? []) st.built[d] = true;
   st.nextId.assignment = Math.max(aid, ...Object.keys(st.assignments).map((k) => Number(/\d+$/.exec(k)?.[0] ?? 0) + 1), 1);
   st.nextId.seq = seq;
-  st.nextId.unavail = Math.max(uid, 1);
-  st.nextId.standing = Math.max(tid, 1);
+  const above = (ids: string[]) => Math.max(1, ...ids.map((k) => Number(/\d+$/.exec(k)?.[0] ?? 0) + 1));
+  st.nextId.unavail = Math.max(uid, above(Object.keys(st.unavailability)));
+  st.nextId.standing = Math.max(tid, above(Object.keys(st.standing)));
+  st.nextId.store = above(Object.keys(st.stores));
+  st.nextId.pharmacist = above(Object.keys(st.pharmacists));
   // Agreed implies told: an agreed assignment is already known to its pharmacist.
   const told: Record<string, string> = {};
   for (const a of Object.values(st.assignments)) if (a.agreed) told[`${a.pharmacistId}|${a.date}`] = a.storeId;

@@ -1,4 +1,4 @@
-import { cmp } from "./dates.ts";
+import { cmp, dateOk } from "./dates.ts";
 import { evaluate } from "./coverage.ts";
 import { searchGaps, type Gap, type Scope } from "./search.ts";
 import type { RepairOpts, RepairResult, World } from "./api-types.ts";
@@ -11,11 +11,12 @@ export const MAX_GAPS = 5;
 export function repair(world: World, gaps: Gap[], opts: RepairOpts, asOf: ISODate): RepairResult {
   const state = world.state;
   const uniq = new Map<string, Gap>();
-  for (const g of gaps) uniq.set(`${g.date}|${g.storeId}`, g);
+  if (!dateOk(asOf)) return { status: "none", message: "Nothing to repair.", options: [], excludedUnknownTravel: [], gapsUsed: [], gapsDropped: [] };
+  for (const g of gaps) if (dateOk(g.date)) uniq.set(`${g.date}|${g.storeId}`, g);
   const sorted = [...uniq.values()].sort((a, b) => cmp(a.date, b.date) || cmp(a.storeId, b.storeId));
   const dates = sorted.map((g) => g.date);
   const ev = sorted.length ? evaluate(state, asOf, { range: { from: dates[0]!, to: dates[dates.length - 1]! } }) : null;
-  const open = sorted.filter((g) => g.date >= asOf && (ev!.cells[`${g.storeId}|${g.date}`]?.open ?? 0) > 0);
+  const open = sorted.filter((g) => g.date >= asOf && (ev?.cells[`${g.storeId}|${g.date}`]?.open ?? 0) > 0);
   const used = open.slice(0, MAX_GAPS);
   const dropped = open.slice(MAX_GAPS);
   const base: RepairResult = { status: "options", message: "", options: [], excludedUnknownTravel: [], gapsUsed: used, gapsDropped: dropped };

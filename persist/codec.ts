@@ -132,7 +132,7 @@ export function readMeta(db: SqlDatabase): FileMeta {
   };
 }
 
-/** Rebuilds the World. Throws CodecError when a table is missing or a row cannot be parsed. Does not judge consistency. */
+/** Rebuilds the World. Throws CodecError when a table is missing or a row cannot be parsed. Does not judge consistency (loadBytes does). */
 export function dbToWorld(db: SqlDatabase): { world: World; meta: FileMeta } {
   const have = new Set(rows(db, "SELECT name FROM sqlite_master WHERE type = 'table'").map((r) => String(r[0])));
   const missing = REQUIRED_TABLES.filter((t) => !have.has(t));
@@ -141,7 +141,8 @@ export function dbToWorld(db: SqlDatabase): { world: World; meta: FileMeta } {
   const keyed = {} as Record<KeyedTable, Record<string, unknown>>;
   for (const t of KEYED_TABLES) {
     const o: Record<string, unknown> = {};
-    for (const [k, j] of rows(db, `SELECT key, json FROM ${t} ORDER BY rowid`)) o[String(k)] = parse(j, `${t} ${String(k)}`);
+    // defineProperty: a hostile key such as "__proto__" must become a plain entry, not change the prototype.
+    for (const [k, j] of rows(db, `SELECT key, json FROM ${t} ORDER BY rowid`)) Object.defineProperty(o, String(k), { value: parse(j, `${t} ${String(k)}`), enumerable: true, writable: true, configurable: true });
     keyed[t] = o;
   }
   const one = (t: string) => {
@@ -157,7 +158,7 @@ export function dbToWorld(db: SqlDatabase): { world: World; meta: FileMeta } {
   const changeSets = rows(db, "SELECT json FROM change_sets ORDER BY seq").map((r) => parse<ChangeSet>(r[0], "change_sets"));
   const snapshots = rows(db, "SELECT json FROM snapshots ORDER BY revision").map((r) => parse<PostingSnapshot>(r[0], "snapshots"));
   const told: Record<string, string> = {};
-  for (const [k, v] of rows(db, "SELECT key, value FROM told ORDER BY rowid")) told[String(k)] = String(v);
+  for (const [k, v] of rows(db, "SELECT key, value FROM told ORDER BY rowid")) Object.defineProperty(told, String(k), { value: String(v), enumerable: true, writable: true, configurable: true });
   const checkpoints = rows(db, "SELECT name, after_change_set, state_hash FROM checkpoints ORDER BY rowid").map((r) => ({
     name: String(r[0]), afterChangeSet: String(r[1]), stateHash: String(r[2]),
   }));
@@ -201,6 +202,12 @@ export function openChecked(SQL: SqlJs, bytes: Uint8Array): DbOk | CheckFail {
   }
 }
 
+/** Plain-words refusal naming the first few unusable entries. */
+export function damagedMessage(fatal: { table: string; key: string; problem: string }[]): string {
+  const first = fatal.slice(0, 5).map((p) => `${p.table}${p.key ? ` ${p.key.slice(0, 40)}` : ""}: ${p.problem.slice(0, 80)}`).join("; ");
+  return `This file has ${fatal.length} damaged ${fatal.length === 1 ? "entry" : "entries"} the scheduler cannot safely use (${first}${fatal.length > 5 ? "; ..." : ""}).`;
+}
+
 /** Full open of file bytes: checks, rebuild, hash check, consistency problems (reported, never repaired). */
 export function loadBytes(SQL: SqlJs, bytes: Uint8Array): LoadOk | CheckFail {
   const c = openChecked(SQL, bytes);
@@ -212,8 +219,10 @@ export function loadBytes(SQL: SqlJs, bytes: Uint8Array): LoadOk | CheckFail {
     if (h !== meta.stateHash) {
       return { ok: false, reason: "hash-mismatch", error: "The data in this file does not match the fingerprint saved with it, so it may have been changed outside the scheduler." };
     }
-    const problems = checkIntegrity(world.state).map((p) => `${p.table} ${p.key}: ${p.problem}`);
-    return { ok: true, world, meta, problems };
+    const issues = checkIntegrity(world.state, world.journal);
+    const fatal = issues.filter((p) => p.fatal);
+    if (fatal.length) throw new CodecError("unreadable", damagedMessage(fatal));
+    return { ok: true, world, meta, problems: issues.map((p) => `${p.table} ${p.key}: ${p.problem}`) };
   } catch (e) {
     if (e instanceof CodecError) return { ok: false, reason: e.code, error: e.message };
     return { ok: false, reason: "unreadable", error: `The file could not be read: ${String((e as Error)?.message ?? e)}` };
@@ -227,7 +236,9 @@ export function salvageBytes(SQL: SqlJs, bytes: Uint8Array): { world: World; met
   let db: SqlDatabase | null = null;
   try {
     db = new SQL.Database(bytes);
-    return dbToWorld(db);
+    const r = dbToWorld(db);
+    // A world that cannot be shown safely is not salvaged.
+    return checkIntegrity(r.world.state, r.world.journal).some((p) => p.fatal) ? null : r;
   } catch {
     return null;
   } finally {

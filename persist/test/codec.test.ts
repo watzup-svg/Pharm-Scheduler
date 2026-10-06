@@ -87,17 +87,34 @@ test("hash mismatch is refused with a clear reason", () => {
   }
 });
 
-test("inconsistent data opens with problems listed (no repair)", () => {
+test("repairable inconsistency opens with problems listed (no repair)", () => {
+  const w = practice();
+  const bad = structuredClone(w);
+  bad.state.nextId.assignment = 1;
+  const r = roundTrip(bad);
+  assert.ok(r.ok);
+  if (r.ok) {
+    assert.ok(r.problems.length > 0);
+    assert.equal(r.world.state.nextId.assignment, 1);
+  }
+});
+
+test("unusable data (dangling reference, bad date) is refused with the first problems named", () => {
   const w = practice();
   const bad = structuredClone(w);
   const a = Object.values(bad.state.assignments)[0]!;
   a.storeId = "S999";
   const r = roundTrip(bad);
-  assert.ok(r.ok);
-  if (r.ok) {
-    assert.ok(r.problems.length > 0);
-    assert.equal(r.world.state.assignments[a.id]!.storeId, "S999");
+  assert.ok(!r.ok);
+  if (!r.ok) {
+    assert.equal(r.reason, "unreadable");
+    assert.match(r.error, /damaged/);
+    assert.match(r.error, /unknown store S999/);
   }
+  const bad2 = structuredClone(w);
+  Object.values(bad2.state.assignments)[1]!.date = "2026-02-30";
+  const r2 = roundTrip(bad2);
+  assert.ok(!r2.ok && /bad date/.test(r2.error));
 });
 
 test("dbToWorld alone rebuilds the world", () => {

@@ -36,7 +36,7 @@ export function post(world: World, range: Range, asOf: ISODate): PostResult {
   let violations = 0;
   for (const a of Object.values(world.state.assignments)) {
     if (a.date < range.from || a.date > range.to) continue;
-    if (!ev.assignments[a.id]!.counts) violations++;
+    if (!ev.assignments[a.id]?.counts) violations++;
   }
   let overrides = 0;
   for (const o of Object.values(world.state.overrides)) {

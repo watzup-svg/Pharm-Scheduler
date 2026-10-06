@@ -199,11 +199,21 @@ test("a file with inconsistent data opens read-only with the problems", async ()
   const fs = mkFs();
   const p = mk(fs);
   const bad = structuredClone(practice());
-  Object.values(bad.state.assignments)[0]!.pharmacistId = "P999";
+  bad.state.nextId.assignment = 1;
   fs.next = new FakeHandle("odd.sqlite", exportWorld(SQL, bad, { dbUuid: "u", rev: 1, savedAt: "t" }));
   const r = await p.open();
   assert.equal(r.state, "world");
   if (r.state === "world") assert.ok(r.readOnly && r.readOnly.problems.length > 0);
+});
+
+test("a file with a dangling reference is refused, not opened", async () => {
+  const fs = mkFs();
+  const p = mk(fs);
+  const bad = structuredClone(practice());
+  Object.values(bad.state.assignments)[0]!.pharmacistId = "P999";
+  fs.next = new FakeHandle("odd.sqlite", exportWorld(SQL, bad, { dbUuid: "u", rev: 1, savedAt: "t" }));
+  const r = await p.open();
+  assert.equal(r.state, "refused");
 });
 
 test("restart: needs-permission until reconnect, then the file loads", async () => {
