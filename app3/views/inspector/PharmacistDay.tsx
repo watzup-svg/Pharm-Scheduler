@@ -4,10 +4,12 @@ import { api, requiredFor, indexRequirements, type ISODate, type UnavailStatus }
 import { useEvaluation, useViewState } from "../../derive.ts";
 import { useApp } from "../../store.ts";
 import { Chip, Section } from "../../ui/primitives.tsx";
-import { codeOf, choiceFor, commitEdits, describeChoice, longDate, nameOf, numWord, plural, shortDate, useLock } from "./lib.ts";
-import { Act } from "./ui.tsx";
+import { codeOf, choiceFor, commitEdits, describeChoice, nameOf, shortDate, useLock } from "./lib.ts";
+import { fmtDate } from "../../copy.ts";
+import { shortName } from "../../names.ts";
+import { Act, Disclosure } from "./ui.tsx";
 
-const FIRST = 8;
+const FIRST = 3;
 
 export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; date: ISODate }) {
   const vs = useViewState();
@@ -48,21 +50,21 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
   const list = all ? rows : rows.slice(0, FIRST);
   const setStatus = (id: string, status: UnavailStatus) => commitEdits([{ t: "unavail.update", id, patch: { status } }], `${status === "Denied" ? "Denied" : "Approved"} time off for ${ph.name}`);
 
-  const where = mine.length === 0 ? "Not working this day" : mine.length === 1 ? `At ${codeOf(state, mine[0]!.storeId)}` : `Booked at ${mine.map((m) => codeOf(state, m.storeId)).join(" and ")}`;
+  const where = mine.length === 0 ? "Not scheduled this day" : mine.length === 1 ? `At ${codeOf(state, mine[0]!.storeId)}` : `Booked at ${mine.map((m) => codeOf(state, m.storeId)).join(" and ")}`;
 
   return (
     <div>
       <header className="border-b border-line px-3 py-2.5">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="min-w-0 truncate text-base font-semibold" title={ph.name}>{ph.name}</h2>
+          <h2 className="min-w-0 truncate text-base font-semibold" title={ph.name}>{shortName(ph.name, 28)}</h2>
           <button type="button" onClick={() => useApp.getState().select(null)} className="shrink-0 rounded-md px-1.5 text-xs text-muted underline focus-visible:outline-2 focus-visible:outline-ink" aria-label="Clear the selection">Clear</button>
         </div>
-        <p className="mt-0.5 text-sm">{longDate(date)}{date < asOf ? <span className="text-muted"> (already past)</span> : null}</p>
-        <p className="mt-1 text-sm font-semibold" data-testid="pharmacist-where">{where}</p>
+        <p className="mt-0.5 text-sm text-muted">{fmtDate(date)}{date < asOf ? " (past)" : ""}</p>
+        <p className="text-sm font-semibold" data-testid="pharmacist-where">{where}</p>
       </header>
 
       <Section title="Where they are">
-        {mine.length === 0 ? <p className="text-sm text-muted">Not placed anywhere this day.</p> : (
+        {mine.length === 0 ? <p className="text-sm text-muted">Not scheduled anywhere this day.</p> : (
           <ul className="flex flex-col gap-1.5">
             {mine.map((a) => {
               const res = dayEv.assignments[a.id];
@@ -83,7 +85,11 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
             })}
           </ul>
         )}
-        <p className="mt-2 text-xs text-muted">
+      </Section>
+
+      <div className="px-3 py-2">
+        <Disclosure label="More for this day">
+        <p className="text-xs text-muted">
           {base ? `Based at ${base.code} (${base.name}${base.state ? `, ${base.state}` : ""}).` : "No base store recorded, so drive times are not checked."}
           {licensed !== null ? ` Licensed in ${licensed || "no state"}.` : " Licensing not recorded."}
         </p>
@@ -92,9 +98,8 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
           const pair = state.travel[`${base.id}|${a.storeId}`];
           return <p key={a.id} className="text-xs text-muted">Drive from {base.code} to {codeOf(state, a.storeId)}: {pair ? `${pair.minutes} min` : "not known"}.</p>;
         })}
-      </Section>
 
-      <Section title="Time off covering this day">
+      <div className="mb-3"><h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Time off covering this day</h3>
         {records.length === 0 ? <p className="text-sm text-muted">Nothing recorded for this day.</p> : (
           <ul className="flex flex-col gap-2">
             {records.map((u) => (
@@ -121,9 +126,10 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
             ))}
           </ul>
         )}
-      </Section>
+      </div>
 
-      <Section title="Place at a store">
+
+      <div><h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Schedule at a store</h3>
         <ul className="flex flex-col divide-y divide-line" aria-label="Stores where they could work">
           {list.map(({ store, choice, open }) => {
             const p = describeChoice(state, choice, store.id, date);
@@ -141,7 +147,7 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
                   {hard
                     ? <Act disabled title={p.text} aria-label={`${verb} at ${store.code}: not allowed. ${p.text}`}>{verb}</Act>
                     : <Act tone={blocked ? "quiet" : "ink"} disabled={!!lock} title={lock ?? (blocked ? "They would not count until you accept the problem" : undefined)} className="shrink-0" aria-label={`${blocked ? `${verb} anyway` : verb} at ${store.code}`}
-                        onClick={() => commitEdits(choice.action === "move" && choice.assignmentId ? [{ t: "move", assignmentId: choice.assignmentId, toStoreId: store.id }] : [{ t: "place", storeId: store.id, pharmacistId, date }], `${choice.action === "move" ? "Moved" : "Placed"} ${nameOf(state, pharmacistId)} at ${store.code}`)}>
+                        onClick={() => commitEdits(choice.action === "move" && choice.assignmentId ? [{ t: "move", assignmentId: choice.assignmentId, toStoreId: store.id }] : [{ t: "place", storeId: store.id, pharmacistId, date }], `${choice.action === "move" ? "Moved" : "Scheduled"} ${nameOf(state, pharmacistId)} at ${store.code}`)}>
                         {blocked ? `${verb} anyway` : verb}
                       </Act>}
                 </div>
@@ -149,9 +155,11 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
             );
           })}
         </ul>
-        {rows.length > FIRST && <div className="mt-1.5"><Act onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all ${numWord(rows.length)} ${plural(rows.length, "store", "stores")}`}</Act></div>}
+        {rows.length > FIRST && <div className="mt-1.5"><Act onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all ${rows.length}`}</Act></div>}
         {rows.length === 0 && <p className="text-sm text-muted">No other store is open this day.</p>}
-      </Section>
+      </div>
+        </Disclosure>
+      </div>
     </div>
   );
 }

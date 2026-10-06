@@ -1,5 +1,6 @@
 // Small controls for the Inspector. Plain, labelled, keyboard friendly; no popups.
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { cx } from "../../ui/primitives.tsx";
 
 /** A compact button for row actions. Stays hoverable when disabled so its title (the reason) can show. */
@@ -48,6 +49,31 @@ export function Stepper({ label, value, onChange, min = 0, max, disabled, title,
         <span className="w-6 text-center text-sm font-semibold" aria-live="polite">{value}</span>
         <Act aria-label={`More: ${label}`} disabled={disabled || (max !== undefined && value >= max)} title={title} onClick={() => onChange(value + 1)} className="w-8 justify-center text-sm">+</Act>
       </div>
+    </div>
+  );
+}
+
+/** The quiet toggle used by every disclosure. */
+export function DisclosureButton({ label, open, controls, onClick }: { label: string; open: boolean; controls: string; onClick: () => void }) {
+  const Chev = open ? ChevronDown : ChevronRight;
+  return (
+    <button
+      type="button" aria-expanded={open} aria-controls={controls} onClick={onClick}
+      className="inline-flex min-h-7 items-center gap-1 rounded-md px-1 text-xs font-medium text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink"
+    >
+      <Chev aria-hidden className="size-3.5" />{label}
+    </button>
+  );
+}
+
+/** A quiet "Label" link that opens its content below. Content is not rendered while closed, so it adds no controls. */
+export function Disclosure({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <div className={className}>
+      <DisclosureButton label={label} open={open} controls={id} onClick={() => setOpen(!open)} />
+      {open && <div id={id} className="mt-1.5">{children}</div>}
     </div>
   );
 }
