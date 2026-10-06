@@ -10,8 +10,11 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 export const CHROME = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 export async function launch() {
-  const { chromium } = require("playwright-core");
-  return chromium.launch({ executablePath: CHROME, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+  // BROWSER=firefox|webkit runs the same checks in that engine when Playwright has it installed. Chromium is the default.
+  const pw = require("playwright-core");
+  const which = process.env.BROWSER;
+  if (which === "firefox" || which === "webkit") return pw[which].launch();
+  return pw.chromium.launch({ executablePath: CHROME, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
 }
 
 export async function serveV3() {

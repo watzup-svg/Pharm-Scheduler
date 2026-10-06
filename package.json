@@ -29,6 +29,8 @@
     "build:v3": "vite build -c vite.v3.config.ts",
     "typecheck:v3": "tsc --noEmit -p app3",
     "e2e:v3": "node scripts/v3-e2e.mjs",
+    "check:all": "node scripts/v3-all.mjs",
+    "check:all:quick": "node scripts/v3-all.mjs --quick",
     "stress:v3": "node --experimental-strip-types --no-warnings stress/v3-monkey.mjs",
     "pressure:v3": "node scripts/v3-pressure/run.mjs",
     "pressure:v3:low": "node scripts/v3-pressure/run.mjs --level low"
