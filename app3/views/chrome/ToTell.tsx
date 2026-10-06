@@ -49,8 +49,7 @@ export function ToTell() {
   const all = groups.flatMap((g) => g.entries);
   return (
     <div className="px-3 py-2.5">
-      <p className="text-xs text-muted">Changes since you last told each person, from {fmtDate(asOf)} on.</p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
         <Btn onClick={() => copy("everyone", groups.map(message).join("\n"))}>Copy all messages</Btn>
         <Btn onClick={() => mark(all)}>Mark all told</Btn>
       </div>

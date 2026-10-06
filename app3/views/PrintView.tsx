@@ -8,6 +8,7 @@ import { Btn, Chip, cx, GLYPH } from "../ui/primitives.tsx";
 import { DEFAULT_PRINT_OPTIONS, paginate, pdfFileName, periodLabel, snapshotToPrintModel, type PrintModel, type PrintOptions } from "../print/model.ts";
 import { buildPacketBytes, packetBlob } from "../print/pdf.ts";
 import { PAPER_IN, SheetView } from "./print/Sheets.tsx";
+import { Title } from "./chrome/Title.tsx";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -134,12 +135,11 @@ export function PrintView() {
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-4 p-4" data-print-view>
       <style>{printCss(opts)}</style>
-      <h2 className="text-lg font-semibold">Post and print</h2>
+      <Title tip="Posting saves a copy of the schedule as it is now. | The printed packet always comes from that copy, so a reprint is the same sheet. | Posting never blocks: open shifts and problems are listed first.">Post and print</Title>
 
       {/* 1. Post */}
       <section className="surface p-4" aria-labelledby="post-h">
         <h2 id="post-h" className="text-base font-semibold">Post this schedule</h2>
-        <p className="mt-0.5 text-xs text-muted">Posting saves a copy of the schedule as it is now. The printed packet always comes from that copy.</p>
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-xs font-medium">From
             <input type="date" value={range.from} onChange={(e) => setRange({ from: e.target.value })} className="h-8 rounded-md border border-edge bg-cream px-2 text-sm" />
@@ -208,12 +208,11 @@ export function PrintView() {
       {latest && (
         <section className="surface p-4" aria-labelledby="chg-h" data-changes>
           <h2 id="chg-h" className="text-base font-semibold">Changed since posting</h2>
-          <p className="mt-0.5 text-xs text-muted">Compared with revision {latest.revision} ({periodLabel(latest.from, latest.to)}), the latest one posted.</p>
           {changes.length === 0 ? (
-            <p className="mt-2 text-sm text-ok">{GLYPH.ok} Nothing has changed. The posted copies on the walls are right.</p>
+            <p className="mt-2 text-sm text-ok">{GLYPH.ok} Nothing has changed since revision {latest.revision}.</p>
           ) : (
             <>
-              <p className="mt-2 text-sm font-medium">{plural(changes.length, "day differs", "days differ")} from what is posted. These people need to hear about it.</p>
+              <p className="mt-2 text-sm font-medium">{plural(changes.length, "day differs", "days differ")} from revision {latest.revision}. Tell these people.</p>
               <ul className="mt-1.5 flex flex-col gap-0.5 text-sm" data-change-list>
                 {changes.map((c) => {
                   const p = world.state.pharmacists[c.pharmacistId];
@@ -272,7 +271,7 @@ export function PrintView() {
             <Preview opts={opts}>
               {sheets[page] && <SheetView sheet={sheets[page]} o={opts} index={page} total={sheets.length} />}
             </Preview>
-            <p className="mt-2 text-xs text-muted">Ctrl+P prints the whole packet in these options, as shown. The PDF is the same packet.</p>
+            <p className="mt-2 text-xs text-muted">Ctrl+P prints the whole packet.</p>
           </>
         )}
       </section>

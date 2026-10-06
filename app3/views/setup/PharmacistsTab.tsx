@@ -3,6 +3,7 @@ import { Fragment, useMemo, useState } from "react";
 import { isValidDate, type Edit, type ISODate, type Pharmacist, type StateCode } from "@domain";
 import { useApp } from "../../store.ts";
 import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
+import { Hint } from "../chrome/Title.tsx";
 import { DateField, SelectField, TableShell, TextField, inputCls, nextIdFor, niceDate, pharmacistsSorted, storesSorted, td, th, useLocked } from "./shared.tsx";
 
 const STATES: { code: StateCode; label: string }[] = [{ code: "OR", label: "Oregon" }, { code: "WA", label: "Washington" }];
@@ -28,9 +29,7 @@ export function PharmacistsTab() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-4">
-        <p className="max-w-2xl text-sm text-muted">
-          Pharmacists are never deleted, because the schedule's history refers to them. When someone leaves, mark the first day they are no longer available.
-        </p>
+        <Hint title="Pharmacists" line="Pharmacists are kept, not deleted." tip="The schedule's history refers to them. | When someone leaves, mark the first day they are no longer available." />
         <Btn tone="ink" className="shrink-0 whitespace-nowrap" disabled={!!locked || editing === "new"} onClick={() => setEditing("new")}>Add a pharmacist</Btn>
       </div>
       {editing === "new" && <PharmacistEditor key="new" onDone={() => setEditing(null)} />}

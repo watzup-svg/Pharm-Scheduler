@@ -5,6 +5,7 @@ import { useApp } from "../store.ts";
 import { viewState } from "../derive.ts";
 import { Btn, cx, GLYPH } from "../ui/primitives.tsx";
 import { describeEdit, fmtShort } from "./chrome/shared.tsx";
+import { Title } from "./chrome/Title.tsx";
 
 const WEEKS = 8;
 
@@ -82,8 +83,11 @@ export function Plan() {
     <div className="px-5 py-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold">Plan</h2>
-          <p className="text-sm text-muted">Open shifts by week for the next {WEEKS} weeks, counted as if every time-off request were approved. {GLYPH.open} open, {GLYPH.short} accepted short. Click a week to see it on the wall.</p>
+          <div className="flex items-center gap-3">
+            <Title className="text-base font-bold" tip={`Open shifts by week for the next ${WEEKS} weeks, counted as if every time-off request were approved. | ${GLYPH.open} open, ${GLYPH.short} accepted short. | Click a week to see it on the wall.`}>Plan</Title>
+            <button type="button" onClick={() => useApp.getState().setView("wall")} className="rounded-md px-2 py-0.5 text-sm font-medium text-muted underline underline-offset-2 hover:bg-fill hover:text-ink focus-visible:outline-2 focus-visible:outline-ink">← Back to the wall</button>
+          </div>
+          <p className="text-sm text-muted">Open shifts by week, next {WEEKS} weeks. {GLYPH.open} open, {GLYPH.short} accepted short.</p>
         </div>
         {!sc && (
           <form
@@ -111,7 +115,7 @@ export function Plan() {
             <p className="mt-0.5">{sc.stale ? "The live schedule changed since you parked it, so it can only be discarded." : "It is parked while you work on the live schedule."} Use Someone's out to discard it.</p>
           ) : (
             <>
-              <p className="mt-0.5">Each cell shows live → what-if. Edits you try are listed here and are not saved to the schedule.</p>
+              <p className="mt-0.5">Cells show live → what-if. Nothing here is saved.</p>
               {sc.edits.length === 0 ? <p className="mt-1">No edits yet.</p> : (
                 <ol className="mt-1 list-decimal pl-5">
                   {sc.edits.map((e, i) => <li key={i}>{describeEdit(state, e)}</li>)}

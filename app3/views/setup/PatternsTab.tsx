@@ -3,6 +3,7 @@ import { Fragment, useMemo, useState } from "react";
 import { addDays, cmp, deepEqual, expectedOn, isValidDate, standingMatches, type DomainState, type ISODate, type Recurrence, type Standing } from "@domain";
 import { useApp } from "../../store.ts";
 import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
+import { Hint } from "../chrome/Title.tsx";
 import { DateField, ORDINAL, SelectField, TableShell, WEEKDAY_SHORT, WEEK_ORDER, niceDate, shortDate, pharmacistsSorted, storesSorted, td, th, useLocked } from "./shared.tsx";
 
 const WINDOW_DAYS = 56; // the next 8 weeks
@@ -69,9 +70,7 @@ export function PatternsTab() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="max-w-2xl text-sm text-muted">
-        A pattern says who usually works where. Build places these first; you can still change any day. Patterns never place anyone on their own.
-      </p>
+      <Hint title="Patterns" line="Who usually works where." tip="Build places these first; you can still change any day. | Patterns never place anyone on their own." />
       {conflicts.length > 0 && (
         <div role="alert" aria-label="Pattern conflicts" className="rounded-md bg-warn-bg p-3 text-sm text-warn ring-1 ring-warn/35">
           <p className="font-semibold">{GLYPH.warning} Build will skip both: pattern conflict</p>

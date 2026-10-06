@@ -2,6 +2,7 @@
 import { useMemo } from "react";
 import { useApp } from "../store.ts";
 import { Btn, Chip } from "../ui/primitives.tsx";
+import { Title } from "./chrome/Title.tsx";
 import { buildChecks, LOOKAHEAD_DAYS, type CheckItem } from "./checks/buildChecks.ts";
 import { LEGEND } from "./checks/legend.ts";
 
@@ -26,10 +27,7 @@ export function Checks() {
 
   return (
     <div className="px-4 py-3">
-      <h2 className="text-lg font-semibold">Setup Check</h2>
-      <p className="mt-0.5 text-xs text-muted">
-        Gaps in the data that make the schedule less trustworthy, looking {LOOKAHEAD_DAYS / 7} weeks ahead from {asOf}. This only lists things; it never blocks you from working.
-      </p>
+      <Title tip={`Gaps in the data that make the schedule less trustworthy, looking ${LOOKAHEAD_DAYS / 7} weeks ahead from ${asOf}. | This only lists things; it never blocks you from working.`}>Setup check</Title>
 
       {items.length === 0 ? (
         <p className="mt-4 text-sm font-semibold text-ok" role="status">✓ Setup looks complete.</p>
@@ -49,8 +47,7 @@ export function Checks() {
       )}
 
       <section aria-labelledby="legend-h" className="mt-8">
-        <h2 id="legend-h" className="text-base font-semibold">What the marks on the wall mean</h2>
-        <p className="text-xs text-muted">Every mark comes with a word, so colour is never the only cue.</p>
+        <Title id="legend-h" className="text-base font-semibold" tip="Every mark comes with a word, so colour is never the only cue.">What the marks on the wall mean</Title>
         <table className="mt-2 w-full max-w-3xl border-collapse text-sm" aria-label="Wall marks">
           <thead>
             <tr className="border-b border-line text-left text-xs text-muted">

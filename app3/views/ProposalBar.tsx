@@ -21,9 +21,8 @@ export function ProposalBar() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Chip tone="info">{LABEL[p.kind]}</Chip>
-            <h2 className="text-sm font-semibold">{p.label}: a proposal for you to look at</h2>
-            <span className="text-sm">Changes {plural(changes, "assignment")}.</span>
-            <span className="text-sm font-semibold">Nothing is saved until you accept.</span>
+            <h2 className="text-sm font-semibold">{p.label}: a proposal</h2>
+            <span className="text-sm">Changes {plural(changes, "assignment")}. Nothing is saved until you accept.</span>
           </div>
           {p.explanation.length > 0 && (
             <ul className="mt-1 list-disc pl-5 text-sm" aria-label="What it does">
@@ -33,11 +32,10 @@ export function ProposalBar() {
           {p.explanation.length > SHOWN && (
             <button type="button" className="mt-0.5 text-xs underline" onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all ${p.explanation.length} lines`}</button>
           )}
-          <p className="mt-1 text-xs text-muted">Ghost marks on the wall show what would change. Press Esc to discard.</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Btn tone="ink" onClick={() => accept()}>Accept</Btn>
-          <Btn onClick={() => discard()}>Discard</Btn>
+          <Btn onClick={() => discard()} title="Esc discards. Ghost marks on the wall show what would change.">Discard</Btn>
         </div>
       </div>
     </section>
