@@ -24,7 +24,8 @@
     "audit": "node scripts/audit.mjs",
     "coverage": "node scripts/coverage.mjs",
     "pressure": "node scripts/pressure.mjs",
-    "check:v3": "tsc --noEmit -p domain && tsc --noEmit -p app3 && node --experimental-strip-types --test domain/test/*.test.ts scripts/v3-compare.test.ts",
+    "check:v3": "tsc --noEmit -p domain && tsc --noEmit -p app3 && node --experimental-strip-types --test domain/test/*.test.ts scripts/v3-compare.test.ts && npm run test:persist",
+    "test:persist": "node --experimental-strip-types --test persist/test/*.test.ts",
     "build:v3": "vite build -c vite.v3.config.ts",
     "typecheck:v3": "tsc --noEmit -p app3"
   },

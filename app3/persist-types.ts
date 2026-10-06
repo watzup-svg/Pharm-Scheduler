@@ -13,19 +13,23 @@ export type SaveStatus = {
   mirrorOk: boolean;
   needsPermission: boolean;
   error: string | null;
+  /** Added by persist/: not linked to a file, never saved or downloaded, and there is something to lose. */
+  neverSaved?: boolean;
+  /** Added by persist/: a recovery choice (file or browser copy) is waiting. */
+  recoveryPending?: boolean;
 };
 
 export type Offer = { source: "mirror" | "idb-ckpt" | "file-ckpt"; id?: number | string; name?: string; at?: string };
 
 export type BootResult =
   | { state: "empty" }
-  | { state: "world"; world: World; note?: string }
+  | { state: "world"; world: World; note?: string; fileName?: string; readOnly?: { problems: string[] } }
   | { state: "needs-permission"; fileName: string }
   | { state: "recovery"; fileRev: number; mirrorRev: number; world: World; mirrorWorld: World }
   | { state: "refused"; reason: string; error: string; offers: Offer[] };
 
 export type OpenResult =
-  | { state: "world"; world: World; readOnly?: { problems: string[] } }
+  | { state: "world"; world: World; fileName?: string; readOnly?: { problems: string[] } }
   | { state: "cancelled" }
   | { state: "unsaved-changes" }
   | { state: "refused"; reason: string; error: string; offers: Offer[] };
@@ -38,13 +42,18 @@ export interface PersistApi {
   recordCommit(world: World, cs: ChangeSet): Promise<void>;
   /** Replace the browser copy with this world (after open, import, revert, new). */
   adopt(world: World, fileName?: string): Promise<void>;
-  open(): Promise<OpenResult>;
+  /** `force` skips the unsaved-changes guard (the user already agreed to discard). */
+  open(opts?: { force?: boolean }): Promise<OpenResult>;
   save(world: World): Promise<SaveResult>;
   saveAs(world: World): Promise<SaveResult>;
   /** Fallback: hand the user a copy as a download. */
   download(world: World): Promise<SaveResult>;
   reconnect(): Promise<BootResult>;
   restore(offer: Offer): Promise<OpenResult>;
+  /** Added by persist/: answer a "recovery" boot result. "file" keeps the saved file (the browser copy is set aside, not deleted). */
+  resolveRecovery?(choice: "file" | "mirror"): Promise<OpenResult>;
+  /** Added by persist/: the latest boot/reconnect result, so any screen can show recovery, refusal or reconnect. Cleared once resolved. */
+  lastBoot?(): BootResult | null;
   status(): SaveStatus;
   subscribe(fn: () => void): () => void;
 }
