@@ -28,7 +28,8 @@
     "test:persist": "node --experimental-strip-types --test persist/test/*.test.ts",
     "build:v3": "vite build -c vite.v3.config.ts",
     "typecheck:v3": "tsc --noEmit -p app3",
-    "e2e:v3": "node scripts/v3-e2e.mjs"
+    "e2e:v3": "node scripts/v3-e2e.mjs",
+    "stress:v3": "node --experimental-strip-types --no-warnings stress/v3-monkey.mjs"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",
