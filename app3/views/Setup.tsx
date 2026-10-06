@@ -1,5 +1,5 @@
 // Setup: stores, pharmacists, patterns and one-off dates. Every change is a change set (undoable); each row has an explicit Save.
-import { useState, type KeyboardEvent } from "react";
+import { type KeyboardEvent } from "react";
 import { useApp } from "../store.ts";
 import { cx } from "../ui/primitives.tsx";
 import { StoresTab } from "./setup/StoresTab.tsx";
@@ -7,23 +7,26 @@ import { PharmacistsTab } from "./setup/PharmacistsTab.tsx";
 import { PatternsTab } from "./setup/PatternsTab.tsx";
 import { DatesTab } from "./setup/DatesTab.tsx";
 import { useLocked } from "./setup/shared.tsx";
+import { TravelView } from "./TravelView.tsx";
+import { RulesView } from "./RulesView.tsx";
+import { Checks } from "./Checks.tsx";
 
 const TABS = [
   { id: "stores", label: "Stores" },
   { id: "pharmacists", label: "Pharmacists" },
   { id: "patterns", label: "Patterns" },
   { id: "dates", label: "Dates" },
+  { id: "travel", label: "Travel" },
+  { id: "rules", label: "Rules" },
+  { id: "checks", label: "Check" },
 ] as const;
-type TabId = (typeof TABS)[number]["id"];
-
-let lastTab: TabId = "stores";
 
 export function Setup() {
   const world = useApp((s) => s.world);
-  const [tab, setTabState] = useState<TabId>(lastTab);
+  const tab = useApp((a) => a.setupTab);
+  const setTab = useApp((a) => a.setSetupTab);
   const locked = useLocked();
   if (!world) return null;
-  const setTab = (t: TabId) => { lastTab = t; setTabState(t); };
 
   const onKey = (e: KeyboardEvent<HTMLElement>, i: number) => {
     const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
@@ -36,10 +39,7 @@ export function Setup() {
 
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-3 p-3">
-      <header>
-        <h2 className="font-display text-xl font-semibold">Setup</h2>
-        <p className="text-sm text-muted">The stores, people and routines the schedule is built from. Changes here are recorded in History and can be undone.</p>
-      </header>
+      <h2 className="sr-only">Setup</h2>
       {locked && <p role="status" className="rounded-md bg-warn-bg px-3 py-2 text-sm text-warn ring-1 ring-warn/35">▲ {locked}</p>}
       <div role="tablist" aria-label="Setup sections" className="flex gap-1 border-b border-line">
         {TABS.map((t, i) => (
@@ -54,6 +54,9 @@ export function Setup() {
         {tab === "pharmacists" && <PharmacistsTab />}
         {tab === "patterns" && <PatternsTab />}
         {tab === "dates" && <DatesTab />}
+        {tab === "travel" && <TravelView />}
+        {tab === "rules" && <RulesView />}
+        {tab === "checks" && <Checks />}
       </div>
     </div>
   );

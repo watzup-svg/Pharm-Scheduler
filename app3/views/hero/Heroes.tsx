@@ -29,19 +29,19 @@ function useScheduleHero() {
 }
 
 function openOut() {
-  window.dispatchEvent(new Event("hs-open-out"));
+  const a = useApp.getState();
+  a.setView("wall");
+  a.setOutForm(true);
 }
 
 export function ScheduleHero() {
   const { issues, vs, win, counts, awayCount, unverified } = useScheduleHero();
-  const goQueue = () => useApp.getState().setLeftTab("queue");
+  const goQueue = () => useApp.getState().setDrawer(true, "queue");
   const fix = () => { if (!vs) return; const next = stepIssue(issues, vs.state, 1); if (next) goTo(next.storeId, next.date); };
   const tiles: Tile[] = [
     { kind: "open", n: counts.open, word: "need cover", onClick: goQueue, tip: "Needs cover | Stores with fewer pharmacists than they need | Open the list" },
-    { kind: "double", n: counts.problems, word: counts.problems === 1 ? "problem" : "problems", onClick: goQueue, tip: "Problems | A person who does not count: not licensed, two places, time off, closed | Open the list" },
-    { kind: "drive", n: counts.warnings, word: counts.warnings === 1 ? "warning" : "warnings", onClick: goQueue, tip: "Warnings | Long drives and many days in a row. These people still count" },
-    { kind: "away", n: awayCount, word: "out", onClick: openOut, tip: "Time off | Records that touch this period | Open Someone’s out" },
-    ...(unverified ? [{ kind: "unverified" as const, n: unverified, word: "cannot fully check", onClick: () => useApp.getState().setView("checks"), tip: "Cannot fully check | A licence or drive time is not recorded | Open Setup Check" }] : []),
+    { kind: "double", n: counts.problems + counts.warnings, word: counts.problems + counts.warnings === 1 ? "problem" : "problems", onClick: goQueue, tip: `Problems | ${counts.problems} that stop someone counting, ${counts.warnings} warnings (long drives, many days in a row)${unverified ? `, ${unverified} cannot be fully checked` : ""} | Open the list` },
+    { kind: "away", n: awayCount, word: "out", onClick: openOut, tip: "Time off | Records that touch this period | Someone’s out" },
   ];
   const label = monthLabel(win.from);
   return (
@@ -123,4 +123,15 @@ export function PrintHero() {
   const days = dateRange(win.from, win.to).length;
   const tiles: Tile[] = [{ kind: "open", n: open, word: "open shifts print as boxes" }, { kind: "pinned", n: snaps.length, word: plural(snaps.length, "posting").replace(/^\d+ /, "") }];
   return <Hero label="Post and print" lead={stores} leadWord={`store pages · ${days} days`} tiles={tiles} graphic={<PaperStack pages={stores} />} />;
+}
+
+export function TimeOffHero() {
+  const vs = useViewState();
+  const asOf = useApp((s) => s.asOf);
+  if (!vs) return null;
+  const rec = Object.values(vs.state.unavailability).filter((u) => u.last >= asOf);
+  const waiting = rec.filter((u) => u.status === "Requested").length;
+  const approved = rec.filter((u) => u.status === "Approved" || u.status === "Actual").length;
+  const tiles: Tile[] = [{ kind: "waiting", n: waiting, word: "waiting" }, { kind: "away", n: approved, word: "approved" }];
+  return <Hero label="Time off" lead={rec.length} leadWord="upcoming" tiles={tiles} actions={<HeroBtn tone="away" onClick={openOut}>Someone’s out</HeroBtn>} />;
 }

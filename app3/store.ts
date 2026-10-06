@@ -9,7 +9,10 @@ import { todayISO } from "./clock.ts";
 import { callEngine } from "./engine.ts";
 import { describeEdits } from "./copy.ts";
 
-export type View = "wall" | "plan" | "setup" | "rules" | "travel" | "checks" | "print";
+/** The screens. Travel, Rules and Checks are tabs inside Setup; setView still accepts their old names and routes there. */
+export type Screen = "wall" | "plan" | "timeoff" | "setup" | "print";
+export type SetupTab = "stores" | "pharmacists" | "patterns" | "dates" | "travel" | "rules" | "checks";
+export type View = Screen | "travel" | "rules" | "checks";
 export type Axis = "store" | "pharmacist";
 export type LeftTab = "queue" | "tell" | "history";
 export type Selection = { storeId?: string; pharmacistId?: string; date: ISODate } | null;
@@ -24,7 +27,12 @@ export type AppState = {
   asOf: ISODate;
   window: { from: ISODate; to: ISODate };
   axis: Axis;
-  view: View;
+  view: Screen;
+  setupTab: SetupTab;
+  /** The queue / to tell / history drawer on the left. Closed by default. */
+  drawer: boolean;
+  /** The Someone's out form in the right column. */
+  outForm: boolean;
   leftTab: LeftTab;
   selection: Selection;
   notice: Notice | null;
@@ -36,6 +44,9 @@ export type AppState = {
 
   // view state
   setView(v: View): void;
+  setSetupTab(t: SetupTab): void;
+  setDrawer(open: boolean, tab?: LeftTab): void;
+  setOutForm(open: boolean): void;
   setAxis(a: Axis): void;
   setLeftTab(t: LeftTab): void;
   select(s: Selection): void;
@@ -107,6 +118,9 @@ export const useApp = create<AppState>((set, get) => {
     window: monthWindow(todayISO()),
     axis: "store",
     view: "wall",
+    setupTab: "stores",
+    drawer: false,
+    outForm: false,
     leftTab: "queue",
     selection: null,
     notice: null,
@@ -114,7 +128,10 @@ export const useApp = create<AppState>((set, get) => {
     readOnlyProblems: null,
     busy: null,
 
-    setView: (view) => set({ view }),
+    setView: (v) => (v === "travel" || v === "rules" || v === "checks" ? set({ view: "setup", setupTab: v }) : set({ view: v })),
+    setSetupTab: (setupTab) => set({ setupTab }),
+    setDrawer: (drawer, tab) => set(tab ? { drawer, leftTab: tab } : { drawer }),
+    setOutForm: (outForm) => set({ outForm }),
     setAxis: (axis) => set({ axis }),
     setLeftTab: (leftTab) => set({ leftTab }),
     select: (selection) => set({ selection }),

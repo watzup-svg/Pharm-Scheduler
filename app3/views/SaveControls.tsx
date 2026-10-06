@@ -1,6 +1,7 @@
 // Save controls for the top bar, plus the dialogs the save layer needs: recovery choice, refused file, unsaved-changes guard.
 // SaveDialogs is also exported so the Start screen can show boot-time recovery / refusal / reconnect before any schedule is open.
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import * as Menu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { BootResult, OpenResult, Offer, SaveStatus } from "../persist-types.ts";
 import { getPersist } from "../persist-bridge.ts";
@@ -70,7 +71,7 @@ export async function saveNow(): Promise<void> {
   else app.say("error", `Could not download a copy. ${r.error ?? ""}`);
 }
 
-export function SaveControls() {
+export function SaveControls({ extra }: { extra?: React.ReactNode } = {}) {
   const s = useSaveStatus();
   const world = useApp((a) => a.world);
   const storeName = useApp((a) => a.fileName);
@@ -118,17 +119,27 @@ export function SaveControls() {
   }, []);
 
   const tone = line.tone === "ok" ? "text-ok" : line.tone === "warn" ? "text-warn" : line.tone === "bad" ? "text-illegal" : "text-muted";
+  const item = "cursor-pointer rounded px-3 py-1.5 text-sm outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-fill";
   return (
     <div className="flex items-center gap-2" role="group" aria-label="Save">
       <div className="min-w-0 leading-tight">
-        <div className="max-w-[220px] truncate text-sm font-semibold" title={name} data-testid="save-filename">{name}</div>
-        <div className={`max-w-[320px] truncate text-xs ${tone}`} role="status" data-testid="save-status" title={line.text}>{line.text}</div>
+        <div className="max-w-[200px] truncate text-sm font-semibold" title={name} data-testid="save-filename">{name}</div>
+        <div className={`max-w-[260px] truncate text-xs ${tone}`} role="status" data-testid="save-status" title={line.text}>{line.text}</div>
       </div>
-      <Btn data-save-open onClick={() => void open()} disabled={busy}>Open</Btn>
-      <Btn tone="ink" onClick={() => void save()} disabled={busy || !world} title="Ctrl+S">{fsa || s.linked ? "Save" : "Download a copy"}</Btn>
-      {fsa && <Btn onClick={() => void saveAs()} disabled={busy || !world}>Save As</Btn>}
-      {s.needsPermission && <Btn tone="ink" onClick={() => void reconnect()} disabled={busy}>Reconnect</Btn>}
-      {!fsa && s.backend === "download" && <span className="text-xs text-muted" title="This browser cannot save over a file. Chrome or Edge can.">Download only</span>}
+      <Btn tone="ink" onClick={() => void save()} disabled={busy || !world} title="Ctrl+S">{fsa || s.linked ? "Save" : "Download"}</Btn>
+      <Menu.Root>
+        <Menu.Trigger asChild><Btn aria-label="File menu">File ▾</Btn></Menu.Trigger>
+        <Menu.Portal>
+          <Menu.Content align="start" sideOffset={4} className="z-50 min-w-[230px] rounded-lg bg-white p-1 shadow-xl ring-1 ring-black/10">
+            <Menu.Item data-save-open className={item} disabled={busy} onSelect={() => void open()}>Open…</Menu.Item>
+            {fsa && <Menu.Item className={item} disabled={busy || !world} onSelect={() => void saveAs()}>Save as…</Menu.Item>}
+            {fsa && !s.linked ? null : null}
+            <Menu.Item className={item} disabled={busy || !world} onSelect={() => void (async () => { const w = useApp.getState().world; if (w) { const r = await getPersist().download(w); useApp.getState().say(r.ok ? "info" : "error", r.ok ? "A copy was downloaded." : `Could not download a copy. ${r.ok ? "" : r.error ?? ""}`); } })()}>Download a copy</Menu.Item>
+            {s.needsPermission && <Menu.Item className={item} disabled={busy} onSelect={() => void reconnect()}>Reconnect to the file</Menu.Item>}
+            {extra}
+          </Menu.Content>
+        </Menu.Portal>
+      </Menu.Root>
       {readOnly && <Btn data-save-readonly onClick={() => setDlg({ kind: "readonly" })} className="text-warn">{GLYPH.warning} Read-only</Btn>}
       <SaveDialogs external={dlg} onClose={() => setDlg(null)} onOpenForce={() => open(true)} onSave={() => save()} />
     </div>

@@ -40,7 +40,7 @@ function openIfApproved(state: DomainState, u: Unavailability, asOf: ISODate): n
 
 type Added = { id: string; pharmacistId: string };
 
-export function SomeonesOut() {
+export function SomeonesOut({ compact = false, onClose }: { compact?: boolean; onClose?: () => void } = {}) {
   const world = useApp((s) => s.world);
   const asOf = useApp((s) => s.asOf);
   const [pid, setPid] = useState("");
@@ -52,7 +52,7 @@ export function SomeonesOut() {
   const [added, setAdded] = useState<Added | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(compact);
   const state = world?.state;
   const sc = world?.session.scenario ?? null;
   const proposal = world?.session.proposal ?? null;
@@ -109,7 +109,7 @@ export function SomeonesOut() {
     );
     if (ok) {
       setAdded({ id, pharmacistId: chosenPid });
-      setFormOpen(false);
+      if (compact) onClose?.(); else setFormOpen(false);
       setFirst("");
       setLast("");
     }
@@ -150,7 +150,7 @@ export function SomeonesOut() {
         </div>
       )}
 
-      <Btn aria-expanded={formOpen} onClick={() => setFormOpen((o) => !o)} className="mb-2">{formOpen ? "Close" : "+ Someone's out…"}</Btn>
+      {compact ? <Btn tone="ghost" onClick={() => onClose?.()} className="mb-2">Cancel</Btn> : <Btn aria-expanded={formOpen} onClick={() => setFormOpen((o) => !o)} className="mb-2">{formOpen ? "Close" : "+ Someone's out…"}</Btn>}
       {formOpen && (
       <form onSubmit={add} aria-label="Add time off" className="space-y-1.5">
         <div>
@@ -227,9 +227,9 @@ export function SomeonesOut() {
       )}
       <RepairOptions where="out" />
 
-      <h4 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-muted">Upcoming</h4>
-      {records.length === 0 && <p className="text-sm">No time off recorded from {fmtShort(asOf)} on.</p>}
-      <ul tabIndex={0} className="max-h-[200px] space-y-1.5 overflow-y-auto focus-visible:outline-2 focus-visible:outline-ink" aria-label="Upcoming time off">
+      {!compact && <h4 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-muted">Upcoming</h4>}
+      {!compact && records.length === 0 && <p className="text-sm">No time off recorded from {fmtShort(asOf)} on.</p>}
+      {!compact && <ul tabIndex={0} className="max-h-[200px] space-y-1.5 overflow-y-auto focus-visible:outline-2 focus-visible:outline-ink" aria-label="Upcoming time off">
         {records.map((u) => {
           const p = state.pharmacists[u.pharmacistId];
           const prev = previews.get(u.id);
@@ -253,7 +253,7 @@ export function SomeonesOut() {
             </li>
           );
         })}
-      </ul>
+      </ul>}
     </Section>
   );
 }

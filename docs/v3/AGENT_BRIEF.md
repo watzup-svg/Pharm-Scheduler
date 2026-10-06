@@ -33,3 +33,13 @@ Hi-School Pharmacy scheduler, v3. One district manager (DM) schedules pharmacist
 
 ## Finish
 Commit on your worktree branch (message prefix `v3 ui:`). Do not push. Final reply under 200 words: files written, what works, what you could not do or verify, and any store/derive additions you wanted.
+
+## Streamlined shell (current; read `docs/v3/STREAMLINE_PLAN.md` for the why)
+The shell was reworked to be calmer. Facts you must respect:
+- Screens (store.view): `wall` (the Schedule), `plan`, `timeoff`, `print`, `setup`. Travel, Rules and Checks are tabs inside Setup (`store.setupTab`); `setView("travel"|"rules"|"checks")` still works and routes there.
+- One top row (`views/TopBar.tsx`): brand, tabs Schedule / Time off / Print / Setup, then Save + a File menu (Open, Save as, Download a copy, Save a checkpoint, History and revert, As-of date, Larger text, High contrast, Keyboard shortcuts), Search (`/` or Ctrl+K), Undo. Build, Improve and Cover all open are in `ui/ToolsMenu.tsx` (to be mounted in the wall's control line).
+- One header band per screen (`views/hero/`): three tiles on the schedule (need cover, problems, out), Fix →, and the yellow Someone's out. Counts live only there.
+- The left panel (Queue / To tell / History) is a **drawer, closed by default** (`store.drawer`, `store.setDrawer(open, tab?)`); the right column is the Inspector; "Someone's out" opens a compact form at the top of the right column (`store.outForm`, `store.setOutForm`). The full time-off list lives on the Time off screen.
+- Words follow `docs`/COPY_GUIDE (old build): `app3/copy.ts` (`fmtDate`, `plural`, `describeEdits`), `app3/names.ts` (`shortName`), picture chips in `app3/ui/icons.tsx` (`StateMark`, `MARKS`, `RULE_MARK`), store badge `ui/HexBadge.tsx`, `ui/HoldButton.tsx`, hover notes `ui/notes.tsx` (`data-tip="Title | line | line"`).
+- Goal: fewer controls per screen. A page shows its main job; rare things go behind a menu, a drawer or a "More" disclosure. No explanatory paragraphs under titles (a single short line at most, or a hover note).
+- Tests: `node scripts/v3-e2e.mjs` runs everything; update the tests for your area when you move or rename things. Do not weaken a check to make it pass: if a control moved, change how the test finds it.
