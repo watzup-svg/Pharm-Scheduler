@@ -33,14 +33,17 @@ function splitKey(key: string): [string, string] {
 export function readKey(state: DomainState, key: string): unknown {
   const [t, k] = splitKey(key);
   if (t === "config") return state.config;
-  const tbl = state[TABLE[t]!] as Record<string, unknown>;
-  return tbl[k] ?? null;
+  const f = TABLE[t];
+  if (!f) return null;
+  return (state[f] as Record<string, unknown>)[k] ?? null;
 }
 
 export function writeKey(state: DomainState, key: string, value: unknown): void {
   const [t, k] = splitKey(key);
   if (t === "config") { state.config = clone(value) as DomainState["config"]; return; }
-  const tbl = state[TABLE[t]!] as Record<string, unknown>;
+  const f = TABLE[t];
+  if (!f) return; // an event naming an unknown table (a damaged journal) changes nothing
+  const tbl = state[f] as Record<string, unknown>;
   if (value === null || value === undefined) delete tbl[k];
   else tbl[k] = clone(value);
 }

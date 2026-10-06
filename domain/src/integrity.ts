@@ -4,6 +4,9 @@
 import { cmp, isValidDate } from "./dates.ts";
 import type { DomainState, Journal } from "./types.ts";
 
+/** The row kinds a change-set event key can name (the part before the colon). Keep in step with TABLE in changeset.ts. */
+const JOURNAL_TABLES = new Set(["config", "store", "pharmacist", "requirement", "dateOverride", "unavailability", "assignment", "override", "cell", "standing", "travel", "built"]);
+
 export type IntegrityIssue = { table: string; key: string; problem: string; fatal?: true };
 
 type Rec = Record<string, unknown>;
@@ -206,7 +209,7 @@ function checkJournal(j: unknown, n: unknown, bad: (t: string, k: string, p: str
       if (c.seq <= prev) soft("journal", c.id, "change sets are not in increasing order");
       prev = c.seq;
       maxCs = Math.max(maxCs, c.seq);
-      for (const e of c.events) if (!isRec(e) || !isStr(e.type) || !isStr(e.key) || !e.key.includes(":")) { bad("journal", c.id, "an event has a bad type or key"); break; }
+      for (const e of c.events) if (!isRec(e) || !isStr(e.type) || !isStr(e.key) || !JOURNAL_TABLES.has(e.key.slice(0, e.key.indexOf(":")))) { bad("journal", c.id, "an event has a bad type or key"); break; }
       if (c.told !== undefined && (!Array.isArray(c.told) || !c.told.every((t) => isRec(t) && isStr(t.key)))) bad("journal", c.id, "bad told entries");
     });
   }

@@ -13,7 +13,7 @@ let seq = 0;
 const pending = new Map<number, Pending>();
 
 /** Generous: a worst-case Build is seconds; this only catches a runaway. */
-export const ENGINE_TIMEOUT_MS = 120_000;
+export const ENGINE_TIMEOUT_MS = 45_000;
 /** Test knobs (window.__v3): a delay before each call starts, and a timeout override. */
 export const engineKnobs: { delayMs: number; timeoutMs: number } = { delayMs: 0, timeoutMs: ENGINE_TIMEOUT_MS };
 

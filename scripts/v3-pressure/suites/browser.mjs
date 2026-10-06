@@ -30,7 +30,8 @@ const B = {
   frameGap: 700, // longest main-thread stall while the engine works
   inputWhileBusy: 600, // a UI click answered while a search runs
 };
-const SCALE = pick3(L, { stores: 120, people: 500 }, { stores: 120, people: 500 }, { stores: 120, people: 500 });
+// Real use is 16-18 stores; low and medium go well past that, high is the 120-store extreme (known slow: Time off ~5 s, see docs/v3/PRESSURE.md).
+const SCALE = pick3(L, { stores: 40, people: 150 }, { stores: 60, people: 250 }, { stores: 120, people: 500 });
 
 // ---------------- build freshness ----------------
 function newestSource() {
@@ -283,8 +284,16 @@ add("fault-worker-killed", 120_000, async (ctx) => {
     const killed = await E.page.evaluate(() => { const w = window.__workers[0]; if (!w) return false; w.terminate(); return true; });
     E.step(`Build running; engine worker terminated: ${killed}`);
     if (!killed) throw new Invariant("setup", "no engine worker was started by Build");
-    try { await E.page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 15000, polling: 200 }); }
-    catch { throw new Invariant("stuck-busy", "the engine worker died during Build and the app stayed busy for 15 s: no error, no way out except reloading (the pending search is never rejected)"); }
+    // A terminated worker raises no event, so the way out is the Cancel button (and the engine timeout as a last resort).
+    try { await E.page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 8000, polling: 200 }); }
+    catch {
+      const cancel = E.page.locator('[data-testid="cancel-engine"]').first();
+      if (!(await cancel.count())) throw new Invariant("stuck-busy", "the engine worker died during Build, the app stayed busy and there is no Cancel button");
+      await cancel.click();
+      try { await E.page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 8000, polling: 200 }); }
+      catch { throw new Invariant("stuck-busy", "Cancel did not clear busy after the engine worker died"); }
+      E.step("worker death: Cancel cleared busy");
+    }
     const notice = await E.page.evaluate(() => window.__v3.app.getState().notice);
     E.step(`busy cleared; notice: ${JSON.stringify(notice)?.slice(0, 200)}`);
     // the next search must work
