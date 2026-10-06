@@ -1,0 +1,185 @@
+// Browser check for the schedule wall. Build first: npm run build:v3
+//   SHOTS=dir  where screenshots go (default: the OS temp dir)
+import os from "node:os";
+import path from "node:path";
+import { launch, serveV3, openApp, check, failed } from "./v3-lib.mjs";
+
+const shots = process.env.SHOTS ?? os.tmpdir();
+const srv = await serveV3();
+const browser = await launch();
+try {
+  const { page, errors } = await openApp(browser, srv.base);
+  const st = (fn, arg) => page.evaluate(fn, arg);
+  // Fixed "as of" so the check does not depend on the real date.
+  await st(() => { const a = window.__v3.app.getState(); a.setAsOf("2026-10-06"); a.setWindow("2026-10-01", "2026-10-31"); });
+  await page.waitForSelector('[role="grid"] [role="gridcell"]');
+
+  const grid = page.locator('[role="grid"]');
+  const cells = page.locator('[role="gridcell"]');
+  check("practice month loads: 16 stores x 31 days", (await cells.count()) === 16 * 31, `got ${await cells.count()}`);
+  const text = await grid.innerText();
+  check("open requirement glyph appears", text.includes("□"));
+  check("initials appear", (await page.locator(".w-chip").count()) > 20);
+  check("closed hatched cell appears", (await page.locator('.w-cell.hatch[data-kind="closed"]').count()) > 0);
+  check("as-of column is marked with the word Today", (await page.locator(".w-asof-head .w-today").innerText()) === "Today");
+  check("month label in the header", (await page.locator(".w-month").first().innerText()).includes("October 2026"));
+  check("legend is present", (await page.locator("#wall-legend").count()) === 1);
+
+  // Accessible name
+  const name = await page.locator('[role="gridcell"][data-store][data-date="2026-10-06"]').first().getAttribute("aria-label");
+  check("cell has an accessible name with store, date and state", /^[A-Z]+, Tue Oct 6: /.test(name ?? ""), name ?? "");
+
+  // Clicking a cell sets the store selection
+  const target = page.locator('[role="gridcell"][data-r="3"][data-c="8"]');
+  const wantStore = await target.getAttribute("data-store");
+  await target.click();
+  const sel = await st(() => window.__v3.app.getState().selection);
+  check("clicking a cell selects store + date", sel?.storeId === wantStore && sel?.date === "2026-10-09", JSON.stringify(sel));
+  check("selected cell has strong outline class", (await target.getAttribute("class")).includes("w-sel"));
+
+  // Keyboard
+  await target.focus();
+  await page.keyboard.press("ArrowRight");
+  let f = await page.evaluate(() => { const e = document.activeElement; return `${e?.dataset?.r},${e?.dataset?.c}`; });
+  check("ArrowRight moves focus", f === "3,9", f);
+  await page.keyboard.press("ArrowDown");
+  f = await page.evaluate(() => { const e = document.activeElement; return `${e?.dataset?.r},${e?.dataset?.c}`; });
+  check("ArrowDown moves focus", f === "4,9", f);
+  await page.keyboard.press("Home");
+  f = await page.evaluate(() => { const e = document.activeElement; return `${e?.dataset?.r},${e?.dataset?.c}`; });
+  check("Home goes to row start", f === "4,0", f);
+  await page.keyboard.press("End");
+  f = await page.evaluate(() => { const e = document.activeElement; return `${e?.dataset?.r},${e?.dataset?.c}`; });
+  check("End goes to row end", f === "4,30", f);
+  await page.keyboard.press("Enter");
+  const sel2 = await st(() => window.__v3.app.getState().selection);
+  check("Enter selects the focused cell", sel2?.date === "2026-10-31" && !!sel2?.storeId, JSON.stringify(sel2));
+  check("only one cell is in the tab order", (await page.locator('[role="gridcell"][tabindex="0"]').count()) === 1);
+
+  // Window controls
+  await page.getByRole("button", { name: "2 weeks" }).click();
+  let w = await st(() => window.__v3.app.getState().window);
+  check("2 weeks starts the Sunday of the as-of week", w.from === "2026-10-04" && w.to === "2026-10-17", JSON.stringify(w));
+  check("2 weeks shows 14 columns", (await page.locator('[role="gridcell"][data-r="0"]').count()) === 14);
+  await page.getByRole("button", { name: /Next/ }).click();
+  w = await st(() => window.__v3.app.getState().window);
+  check("Next shifts by 7", w.from === "2026-10-11", JSON.stringify(w));
+  await page.getByRole("button", { name: /Prev/ }).click();
+  await page.getByRole("button", { name: /Prev/ }).click();
+  w = await st(() => window.__v3.app.getState().window);
+  check("Prev shifts back by 7", w.from === "2026-09-27", JSON.stringify(w));
+  await page.getByRole("button", { name: "Today" }).click();
+  w = await st(() => window.__v3.app.getState().window);
+  check("Today brings the as-of date back into view", w.from <= "2026-10-06" && w.to >= "2026-10-06", JSON.stringify(w));
+  await page.getByRole("button", { name: "4 weeks" }).click();
+  w = await st(() => window.__v3.app.getState().window);
+  check("4 weeks is 28 days", w.from === "2026-10-04" && w.to === "2026-10-31", JSON.stringify(w));
+  await page.getByRole("button", { name: "Month" }).click();
+  w = await st(() => window.__v3.app.getState().window);
+  check("Month is the calendar month", w.from === "2026-10-01" && w.to === "2026-10-31", JSON.stringify(w));
+  await page.locator('[role="gridcell"][data-r="0"][data-c="0"]').focus();
+  await page.keyboard.press("PageDown");
+  w = await st(() => window.__v3.app.getState().window);
+  check("PageDown shifts the window by 7", w.from === "2026-10-08", JSON.stringify(w));
+  await page.keyboard.press("PageUp");
+  await page.getByRole("button", { name: "Today" }).click();
+
+  // Horizontal scroll with a sticky label column
+  await page.evaluate(() => { document.querySelector(".w-scroll").scrollLeft = 400; });
+  const lab = await page.evaluate(() => { const l = document.querySelector(".w-label").getBoundingClientRect(), s = document.querySelector(".w-scroll").getBoundingClientRect(); return Math.abs(l.left - s.left); });
+  check("label column stays put while scrolling sideways", lab < 2, `offset ${lab}`);
+  await page.evaluate(() => { document.querySelector(".w-scroll").scrollLeft = 0; });
+
+  // Screenshot of the store axis
+  await page.screenshot({ path: path.join(shots, "wall-store.png") });
+  const pad = (n) => n;
+  void pad;
+
+  // Pharmacist axis
+  await page.getByRole("button", { name: "Pharmacists" }).click();
+  check("axis toggle: pharmacist rows", (await page.locator('[role="rowheader"]').count()) === 20 + 0 || (await page.locator('[role="row"]').count()) > 20, `${await page.locator('[role="row"]').count()} rows`);
+  const ptext = await grid.innerText();
+  check("pharmacist axis shows OFF for approved absence", ptext.includes("OFF"));
+  check("pharmacist axis shows store codes", /\bEST\b|\bCAT\b|\bSIL\b/.test(ptext));
+  await page.locator('[role="gridcell"][data-r="2"][data-c="9"]').click();
+  const psel = await st(() => window.__v3.app.getState().selection);
+  check("pharmacist cell select sets pharmacistId + date", !!psel?.pharmacistId && psel.date === "2026-10-10" && !psel.storeId, JSON.stringify(psel));
+  await page.screenshot({ path: path.join(shots, "wall-pharm.png") });
+  await page.getByRole("button", { name: "Stores" }).click();
+  check("axis toggles back to stores", (await page.locator('[role="gridcell"][data-store]').count()) === 16 * 31);
+
+  // Legend collapses
+  await page.getByRole("button", { name: "Hide legend" }).click();
+  check("legend collapses", (await page.locator("#wall-legend").count()) === 0);
+  await page.getByRole("button", { name: "Legend" }).click();
+
+  // Drag a chip to another store on the same day: one commit
+  await st(() => window.__v3.app.getState().select(null));
+  const pick = await st(() => {
+    const a = window.__v3.app.getState();
+    const s = a.world.state;
+    const x = Object.values(s.assignments).find((y) => y.date === "2026-10-08" && y.storeId === "S1");
+    return x ? { aid: x.id, pid: x.pharmacistId, from: "S1", to: "S2", date: x.date, cs: a.world.journal.changeSets.length } : null;
+  });
+  if (pick) {
+    const src = page.locator(`[role="gridcell"][data-store="${pick.from}"][data-date="${pick.date}"] [data-aid="${pick.aid}"]`);
+    const dst = page.locator(`[role="gridcell"][data-store="${pick.to}"][data-date="${pick.date}"]`);
+    await src.dragTo(dst);
+    const after = await st((id) => { const a = window.__v3.app.getState(); return { asg: a.world.state.assignments[id], cs: a.world.journal.changeSets.length }; }, pick.aid);
+    check("dragging a chip to another store commits one move", after.asg?.storeId === pick.to && after.cs === pick.cs + 1, JSON.stringify({ at: after.asg?.storeId, want: pick.to, cs: after.cs, was: pick.cs }));
+    // Refusal: that pharmacist is also placed at S3 the same day; dropping the S2 chip onto S3 is refused by the domain and says why.
+    await st(({ pid, date }) => { window.__v3.app.getState().commit([{ t: "place", storeId: "S3", pharmacistId: pid, date }]); }, pick);
+    const before = await st(() => window.__v3.app.getState().world.journal.changeSets.length);
+    await page.locator(`[role="gridcell"][data-store="S2"][data-date="${pick.date}"] [data-aid="${pick.aid}"]`).dragTo(page.locator(`[role="gridcell"][data-store="S3"][data-date="${pick.date}"]`));
+    const r2 = await st((id) => { const a = window.__v3.app.getState(); return { at: a.world.state.assignments[id]?.storeId, cs: a.world.journal.changeSets.length, n: a.notice }; }, pick.aid);
+    check("drop onto a store that already has them is refused with a notice", r2.cs === before && r2.at === "S2" && r2.n?.kind === "error", JSON.stringify(r2));
+  } else check("drag: found a chip at CAT on Oct 8", false, "none");
+  check("wall still renders after the moves", (await cells.count()) === 16 * 31);
+
+  // Ghosts: remove an assignment ahead, open a preview proposal, the wall previews it
+  const rm = await st(() => {
+    const a = window.__v3.app.getState();
+    const s = a.world.state;
+    const x = Object.values(s.assignments).filter((y) => y.date >= "2026-10-12").sort((p, q) => (p.date < q.date ? -1 : 1))[0];
+    if (!x) return null;
+    a.commit([{ t: "remove", assignmentId: x.id }]);
+    // Build/Improve take many seconds on this month, so open the preview through the repair path (same proposal, same ghosts).
+    a.previewRepair({ edits: [{ t: "place", storeId: x.storeId, pharmacistId: x.pharmacistId, date: x.date }, { t: "remove", assignmentId: Object.values(s.assignments).find((y) => y.date === "2026-10-13" && y.storeId === "S2").id }], explanation: ["test"] });
+    const w = window.__v3.app.getState().world;
+    return { has: !!w.session.proposal, store: x.storeId, date: x.date };
+  });
+  if (rm?.has) {
+    await page.waitForTimeout(150);
+    check("proposal shows 'nothing is saved' strip", (await page.getByText("nothing is saved until you accept").count()) === 1);
+    check("ghosts: added initials drawn with a dashed outline and +", (await page.locator(".w-chip.w-add").count()) > 0);
+    const addText = await page.locator(".w-chip.w-add").first().innerText();
+    check("ghost add text starts with +", addText.startsWith("+"), addText);
+    await page.screenshot({ path: path.join(shots, "wall-ghosts.png") });
+    // Read-only while the proposal is open: no draggable chips
+    check("chips are not draggable while previewing", (await page.locator('.w-chip[draggable="true"]').count()) === 0);
+    await st(() => window.__v3.app.getState().discardProposal());
+    await page.waitForTimeout(100);
+    check("preview strip goes away after discard", (await page.getByText("nothing is saved until you accept").count()) === 0);
+  } else check("opened a Build proposal", false, JSON.stringify(rm));
+
+  // What-if strip
+  await st(() => window.__v3.app.getState().openScenario("Try"));
+  await page.waitForTimeout(100);
+  check("what-if strip shows while a scenario is open", (await page.getByText("What-if").count()) >= 1);
+  await st(() => window.__v3.app.getState().discardScenario());
+
+  // Performance: 16 x 31 re-render on selection change
+  const ms = await page.evaluate(async () => {
+    const t = performance.now();
+    for (let i = 0; i < 20; i++) { window.__v3.app.getState().select({ storeId: Object.keys(window.__v3.app.getState().world.state.stores)[i % 5], date: `2026-10-${String(1 + (i % 28)).padStart(2, "0")}` }); await new Promise((r) => requestAnimationFrame(r)); }
+    return (performance.now() - t) / 20;
+  });
+  check("selection change re-renders quickly", ms < 60, `${ms.toFixed(1)} ms/frame`);
+
+  check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | "));
+} finally {
+  await browser.close();
+  srv.close();
+}
+console.log(failed() ? `${failed()} check(s) failed` : "all wall checks passed");
+process.exit(failed() ? 1 : 0);
