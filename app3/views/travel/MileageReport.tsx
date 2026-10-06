@@ -1,4 +1,5 @@
 // Mileage report for one month: per pharmacist, the days worked away from base and what the miles pay. The sums live in app3/mileage.ts.
+import { record } from "../../diagnostics.ts";
 import { useMemo, useRef, useState } from "react";
 import { isValidDate, type DomainState, type ISODate } from "@domain";
 import { useApp } from "../../store.ts";
@@ -23,7 +24,8 @@ export function MileageReport({ state, initialMonth, onAddPair }: { state: Domai
       await navigator.clipboard.writeText(text);
       say("ok", "Copied the mileage report as CSV.");
       setCsv(null);
-    } catch {
+    } catch (e) {
+      record("ui", `clipboard blocked (mileage): ${String((e as Error)?.message ?? e)}`);
       // No clipboard access here: show the text so it can be selected and copied by hand.
       setCsv(text);
       setTimeout(() => { area.current?.focus(); area.current?.select(); }, 0);

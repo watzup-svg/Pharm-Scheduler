@@ -6,6 +6,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import type { BootResult, OpenResult, Offer, SaveStatus } from "../persist-types.ts";
 import { getPersist } from "../persist-bridge.ts";
 import { useApp } from "../store.ts";
+import { record } from "../diagnostics.ts";
 import { Btn, GLYPH } from "../ui/primitives.tsx";
 
 const NONE_STATUS: SaveStatus = { backend: "none", fileName: null, linked: false, unsavedChanges: 0, lastSavedAt: null, mirrorOk: false, needsPermission: false, error: null };
@@ -53,8 +54,10 @@ export async function saveNow(): Promise<void> {
   if (!w) return;
   const p = getPersist();
   const s = p.status();
+  record("persist", `save (${s.linked ? "file" : s.backend === "fsa" ? "save as" : "download"})`);
   if (s.linked) {
     const r = await p.save(w);
+    record("persist", r.ok ? "saved" : `save failed: ${r.reason}`);
     if (r.ok) app.say("ok", `Saved to ${p.status().fileName}.`);
     else if (r.reason === "needs-permission") app.say("info", "Choose Reconnect to allow saving to the file again.");
     else if (r.reason !== "cancelled") app.say("error", `Not saved. ${r.error ?? ""} Your previous file is unchanged.`);
@@ -85,6 +88,7 @@ export function SaveControls({ extra }: { extra?: React.ReactNode } = {}) {
   const run = async (f: () => Promise<void>) => { setBusy(true); try { await f(); } finally { setBusy(false); } };
   const open = (force = false) => run(async () => {
     const r = await getPersist().open(force ? { force: true } : undefined);
+    record("persist", `open: ${r.state}`);
     if (r.state === "world") applyWorld(r);
     else if (r.state === "unsaved-changes") setDlg({ kind: "unsaved" });
     else if (r.state === "refused") setDlg({ kind: "refused", r });
