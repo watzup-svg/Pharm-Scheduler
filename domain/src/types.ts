@@ -17,7 +17,8 @@ export type Store = {
   id: StoreId;
   code: string; // display letters, editable label
   name: string;
-  state: StateCode;
+  /** null = the store's state is not known; licensing is then NotApplicable (prototype behavior). */
+  state: StateCode | null;
   /** First inactive day is the effective date. Missing = still active. */
   inactiveFrom?: ISODate;
   activeFrom?: ISODate;
@@ -144,6 +145,8 @@ export type Config = {
   /** Repair/Build search budget in evaluated candidates. A count, never a clock. */
   searchNodeLimit: number; // 200000
   mileageRates: MileageRate[];
+  /** One-way miles from the base store that are not paid. */
+  mileageFreeMiles: number; // 20
 };
 
 export type NextIds = { store: number; pharmacist: number; assignment: number; override: number; unavail: number; standing: number; seq: number; changeSet: number };

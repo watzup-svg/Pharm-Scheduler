@@ -119,6 +119,7 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
 
     // licensing
     if (!ph || !store) results.push(result("licensing", "Unknown", "unrecorded", "Missing pharmacist or store"));
+    else if (store.state === null) results.push(result("licensing", "NotApplicable", "", "Store state not recorded"));
     else if (!ph.licenses) results.push(result("licensing", "Unknown", `${ph.id}|${store.state}|unrecorded`, "Licensing not recorded"));
     else if (!(store.state in ph.licenses)) results.push(result("licensing", "Fail", `${ph.id}|${store.state}|none`, `Not licensed in ${store.state}`));
     else {

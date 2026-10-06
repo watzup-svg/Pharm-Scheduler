@@ -24,7 +24,7 @@
     "audit": "node scripts/audit.mjs",
     "coverage": "node scripts/coverage.mjs",
     "pressure": "node scripts/pressure.mjs",
-    "check:v3": "tsc --noEmit -p domain && node --experimental-strip-types --test domain/test/*.test.ts"
+    "check:v3": "tsc --noEmit -p domain && node --experimental-strip-types --test domain/test/*.test.ts scripts/v3-compare.test.ts"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",

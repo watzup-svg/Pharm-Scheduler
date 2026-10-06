@@ -3,7 +3,7 @@ import type { AssignmentSource, Config, DomainState, ISODate, Recurrence, StateC
 import type { Session, World } from "./api-types.ts";
 
 export type SeedStore = {
-  id: string; code?: string; name?: string; state?: StateCode;
+  id: string; code?: string; name?: string; state?: StateCode | null;
   /** Pharmacists required every open weekday. Default 1. */
   req?: number;
   /** Weekdays (0 = Sunday) with requirement 0. Default [0] (Sunday). */
@@ -48,6 +48,7 @@ export const DEFAULT_CONFIG: Config = {
   improve: { minRestoredStanding: 3, minTravelSavedMinutes: 60, maxChanged: 10, excludeNextDays: 14 },
   searchNodeLimit: 200000,
   mileageRates: [],
+  mileageFreeMiles: 20,
 };
 
 const EPOCH = "0001-01-01";
@@ -65,7 +66,7 @@ export function seedWorld(seed: Seed): World {
   };
   for (const s of seed.stores) {
     st.stores[s.id] = {
-      id: s.id, code: s.code ?? s.id, name: s.name ?? s.id, state: s.state ?? "OR",
+      id: s.id, code: s.code ?? s.id, name: s.name ?? s.id, state: s.state === undefined ? "OR" : s.state,
       ...(s.inactiveFrom ? { inactiveFrom: s.inactiveFrom } : {}),
       ...(s.activeFrom ? { activeFrom: s.activeFrom } : {}),
     };
