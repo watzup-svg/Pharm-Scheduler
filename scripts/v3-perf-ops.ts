@@ -1,8 +1,8 @@
 // Timing for the domain on a realistic size: 18 stores, 45 pharmacists, 31 days.
 //   node --experimental-strip-types scripts/v3-perf.ts
-import { api } from "/home/user/pharm-scheduler/domain/src/api.ts";
-import { seedWorld, type Seed } from "/home/user/pharm-scheduler/domain/src/seed.ts";
-import { addDays } from "/home/user/pharm-scheduler/domain/src/dates.ts";
+import { api } from "../domain/src/api.ts";
+import { seedWorld, type Seed } from "../domain/src/seed.ts";
+import { addDays } from "../domain/src/dates.ts";
 
 const stores = Array.from({ length: 18 }, (_, i) => ({ id: `S${i + 1}`, state: i % 5 === 0 ? ("WA" as const) : ("OR" as const), closedWeekdays: [0], twoDays: i % 4 === 0 ? [2, 4] : [] }));
 const pharmacists = Array.from({ length: 45 }, (_, i) => ({ id: `P${i + 1}`, base: `S${(i % 18) + 1}`, lic: ["OR", "WA"] as ("OR" | "WA")[] }));

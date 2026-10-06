@@ -1,0 +1,27 @@
+{
+  "note": "best of runs, ms; regenerate with UPDATE=1 node scripts/v3-perf-baseline.mjs",
+  "cores": 4,
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+  "node": "v22.22.2",
+  "runs": 2,
+  "metrics": {
+    "v3-perf-build.ts:build": 114,
+    "v3-perf-build.ts:improve": 63,
+    "v3-perf-buildonly.ts:build": 2812,
+    "v3-perf-buildonly.ts:evaluate (month, range)": 13,
+    "v3-perf-buildonly.ts:evaluate x10": 60,
+    "v3-perf-eval.ts:evaluate": 14,
+    "v3-perf-eval.ts:repair 1 gap": 261,
+    "v3-perf-ops.ts(build):build": 1055,
+    "v3-perf-ops.ts(improve):improve": 116,
+    "v3-perf-ops.ts(repair5):repair5": 287,
+    "v3-perf-ops.ts(repair5w):repair5w": 86,
+    "v3-perf.ts:build month": 2646,
+    "v3-perf.ts:evaluate (month, range)": 15,
+    "v3-perf.ts:evaluate x10": 67,
+    "v3-perf.ts:improve month": 84,
+    "v3-perf.ts:repair 1 gap": 271,
+    "v3-perf.ts:repair 5 gaps": 534,
+    "v3-perf.ts:repair 5 gaps wider": 62
+  }
+}
