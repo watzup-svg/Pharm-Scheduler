@@ -11,7 +11,7 @@ const browser = await launch();
 const { page, errors } = await openApp(browser, srv.base);
 const insp = page.locator('aside[aria-label="Inspector"]');
 const get = (fn, arg) => page.evaluate(fn, arg);
-const settle = () => page.waitForTimeout(150);
+const settle = async () => { await page.waitForTimeout(100); await page.waitForFunction(() => !window.__v3.app.getState().busy); await page.waitForTimeout(100); };
 const status = async () => (await insp.getByTestId("cell-status").innerText()).trim();
 const select = async (sel) => { await get((s) => window.__v3.app.getState().select(s), sel); await settle(); };
 const commit = (edits) => get((e) => window.__v3.app.getState().commit(e), edits);

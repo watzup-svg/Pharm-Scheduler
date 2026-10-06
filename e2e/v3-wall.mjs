@@ -61,14 +61,14 @@ try {
   let w = await st(() => window.__v3.app.getState().window);
   check("2 weeks starts the Sunday of the as-of week", w.from === "2026-10-04" && w.to === "2026-10-17", JSON.stringify(w));
   check("2 weeks shows 14 columns", (await page.locator('[role="gridcell"][data-r="0"]').count()) === 14);
-  await page.getByRole("button", { name: /Next/ }).click();
+  await page.getByRole("button", { name: "Next week" }).click();
   w = await st(() => window.__v3.app.getState().window);
   check("Next shifts by 7", w.from === "2026-10-11", JSON.stringify(w));
   await page.getByRole("button", { name: /Prev/ }).click();
   await page.getByRole("button", { name: /Prev/ }).click();
   w = await st(() => window.__v3.app.getState().window);
   check("Prev shifts back by 7", w.from === "2026-09-27", JSON.stringify(w));
-  await page.getByRole("button", { name: "Today" }).click();
+  await page.getByRole("group", { name: "Move the window" }).getByRole("button", { name: "Today" }).click();
   w = await st(() => window.__v3.app.getState().window);
   check("Today brings the as-of date back into view", w.from <= "2026-10-06" && w.to >= "2026-10-06", JSON.stringify(w));
   await page.getByRole("button", { name: "4 weeks" }).click();
@@ -82,7 +82,7 @@ try {
   w = await st(() => window.__v3.app.getState().window);
   check("PageDown shifts the window by 7", w.from === "2026-10-08", JSON.stringify(w));
   await page.keyboard.press("PageUp");
-  await page.getByRole("button", { name: "Today" }).click();
+  await page.getByRole("group", { name: "Move the window" }).getByRole("button", { name: "Today" }).click();
 
   // Horizontal scroll with a sticky label column
   await page.evaluate(() => { document.querySelector(".w-scroll").scrollLeft = 400; });
@@ -96,7 +96,7 @@ try {
   void pad;
 
   // Pharmacist axis
-  await page.getByRole("button", { name: "Pharmacists" }).click();
+  await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "Pharmacists" }).click();
   check("axis toggle: pharmacist rows", (await page.locator('[role="rowheader"]').count()) === 20 + 0 || (await page.locator('[role="row"]').count()) > 20, `${await page.locator('[role="row"]').count()} rows`);
   const ptext = await grid.innerText();
   check("pharmacist axis shows OFF for approved absence", ptext.includes("OFF"));
@@ -105,7 +105,7 @@ try {
   const psel = await st(() => window.__v3.app.getState().selection);
   check("pharmacist cell select sets pharmacistId + date", !!psel?.pharmacistId && psel.date === "2026-10-10" && !psel.storeId, JSON.stringify(psel));
   await page.screenshot({ path: path.join(shots, "wall-pharm.png") });
-  await page.getByRole("button", { name: "Stores" }).click();
+  await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "Stores" }).click();
   check("axis toggles back to stores", (await page.locator('[role="gridcell"][data-store]').count()) === 16 * 31);
 
   // Legend collapses
@@ -150,7 +150,7 @@ try {
   });
   if (rm?.has) {
     await page.waitForTimeout(150);
-    check("proposal shows 'nothing is saved' strip", (await page.getByText("nothing is saved until you accept").count()) === 1);
+    check("proposal shows 'nothing is saved' strip", (await page.locator("main").getByText("nothing is saved until you accept").count()) === 1);
     check("ghosts: added initials drawn with a dashed outline and +", (await page.locator(".w-chip.w-add").count()) > 0);
     const addText = await page.locator(".w-chip.w-add").first().innerText();
     check("ghost add text starts with +", addText.startsWith("+"), addText);
@@ -159,7 +159,7 @@ try {
     check("chips are not draggable while previewing", (await page.locator('.w-chip[draggable="true"]').count()) === 0);
     await st(() => window.__v3.app.getState().discardProposal());
     await page.waitForTimeout(100);
-    check("preview strip goes away after discard", (await page.getByText("nothing is saved until you accept").count()) === 0);
+    check("preview strip goes away after discard", (await page.locator("main").getByText("nothing is saved until you accept").count()) === 0);
   } else check("opened a Build proposal", false, JSON.stringify(rm));
 
   // What-if strip
