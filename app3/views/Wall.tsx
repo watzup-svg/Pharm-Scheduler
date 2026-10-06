@@ -52,9 +52,17 @@ export function Wall() {
       });
     }
     const people = activePharmacists(state, win);
-    const models = buildPharmacistModels(state, ev, people, dates, asOf, indexByPharmacist(state), ghosts, vs.scenario);
+    const byPD = indexByPharmacist(state);
+    const models = buildPharmacistModels(state, ev, people, dates, asOf, byPD, ghosts, vs.scenario);
+    // Days in view per person, counted once for everyone from the one index.
+    const daysIn = new Map<string, number>();
+    for (const p of people) {
+      let n = 0;
+      for (const d of dates) if (byPD.has(`${p.id}|${d}`)) n++;
+      daysIn.set(p.id, n);
+    }
     return people.map((p, i) => {
-      const days = new Set(Object.values(state.assignments).filter((a) => a.pharmacistId === p.id && a.date >= win.from && a.date <= win.to).map((a) => a.date)).size;
+      const days = daysIn.get(p.id) ?? 0;
       return {
         key: p.id,
         label: `${p.name}, ${days} days in view`,

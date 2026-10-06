@@ -6,13 +6,36 @@ import {
 import { useApp } from "./store.ts";
 
 /** The state the screen shows: the scenario's what-if while one is open and not parked, otherwise the live schedule. */
-export function viewState(world: NonNullable<ReturnType<typeof useApp.getState>["world"]>): { state: DomainState; scenario: boolean } {
+type WorldT = NonNullable<ReturnType<typeof useApp.getState>["world"]>;
+type ViewStateT = { state: DomainState; scenario: boolean };
+// A world is replaced, never edited, so what it shows is worked out once and shared by every component that asks.
+const viewCache = new WeakMap<WorldT, ViewStateT>();
+export function viewState(world: WorldT): ViewStateT {
+  const hit = viewCache.get(world);
+  if (hit) return hit;
+  let out: ViewStateT = { state: world.state, scenario: false };
   const sc = world.session.scenario;
   if (sc && !sc.parked) {
     const s = applyScratch(world.state, sc.edits);
-    if (!("refused" in s)) return { state: s, scenario: true };
+    if (!("refused" in s)) out = { state: s, scenario: true };
   }
-  return { state: world.state, scenario: false };
+  viewCache.set(world, out);
+  return out;
+}
+
+// One evaluation per (state, as-of, range, window, requested) however many screens ask for it. A state is replaced on every change (commit
+// clones it), so its identity is a safe key; callers must treat the result as read-only.
+const evalCache = new WeakMap<DomainState, Map<string, Evaluation>>();
+export function evaluateCached(state: DomainState, asOf: ISODate, opts: { range?: { from: ISODate; to: ISODate }; window?: { from: ISODate; to: ISODate }; includeRequested?: boolean } = {}): Evaluation {
+  const key = `${asOf}|${opts.range ? `${opts.range.from}~${opts.range.to}` : ""}|${opts.window ? `${opts.window.from}~${opts.window.to}` : ""}|${opts.includeRequested === true ? 1 : 0}`;
+  let m = evalCache.get(state);
+  if (!m) evalCache.set(state, (m = new Map()));
+  let ev = m.get(key);
+  if (!ev) {
+    if (m.size >= 12) m.delete(m.keys().next().value!);
+    m.set(key, (ev = api.evaluate(state, asOf, { ...(opts.range ? { range: opts.range } : {}), ...(opts.window ? { window: opts.window } : {}), ...(opts.includeRequested === true ? { includeRequested: true } : {}) })));
+  }
+  return ev;
 }
 
 export function useViewState(): { state: DomainState; scenario: boolean } | null {
@@ -24,7 +47,7 @@ export function useEvaluation(): Evaluation | null {
   const vs = useViewState();
   const win = useApp((s) => s.window);
   const asOf = useApp((s) => s.asOf);
-  return useMemo(() => (vs ? api.evaluate(vs.state, asOf, { range: win, includeRequested: vs.scenario }) : null), [vs, win, asOf]);
+  return useMemo(() => (vs ? evaluateCached(vs.state, asOf, { range: win, includeRequested: vs.scenario }) : null), [vs, win, asOf]);
 }
 
 export type CellAssignment = {

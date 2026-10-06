@@ -1,7 +1,7 @@
 // Inspector for one store on one day: who is working, the next step (find cover), and everything else behind one disclosure.
 import { useMemo, useState } from "react";
-import { api, type DomainState, type Evaluation, type ISODate } from "@domain";
-import { buildCellView, useEvaluation, useViewState, type CellView } from "../../derive.ts";
+import { type DomainState, type Evaluation, type ISODate } from "@domain";
+import { buildCellView, evaluateCached, useEvaluation, useViewState, type CellView } from "../../derive.ts";
 import { fmtDate } from "../../copy.ts";
 import { useApp } from "../../store.ts";
 import { HexBadge, type HexStatus } from "../../ui/HexBadge.tsx";
@@ -24,7 +24,7 @@ export function StoreCell({ storeId, date }: { storeId: string; date: ISODate })
   const ev: Evaluation | null = useMemo(() => {
     if (!vs) return null;
     if (winEv?.cells[`${storeId}|${date}`]) return winEv;
-    return api.evaluate(vs.state, asOf, { range: { from: date, to: date }, includeRequested: vs.scenario });
+    return evaluateCached(vs.state, asOf, { range: { from: date, to: date }, includeRequested: vs.scenario });
   }, [vs, winEv, storeId, date, asOf]);
   const cv = useMemo(() => (vs && ev ? buildCellView(vs.state, ev, storeId, date) : null), [vs, ev, storeId, date]);
 

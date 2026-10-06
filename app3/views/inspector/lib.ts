@@ -1,6 +1,6 @@
 // Shared helpers for the Inspector: plain-words text, the read-only lock, and consequence lines for placing someone.
 import {
-  addDays, api, applyScratch, RULE_BY_ID, weekday, type AssignmentSource, type Choice, type DomainState, type Edit, type Evaluation, type ISODate, type RuleResult,
+  addDays, judgeChoice, prepareChoices, RULE_BY_ID, weekday, type AssignmentSource, type Choice, type ChoiceBase, type DomainState, type Edit, type Evaluation, type ISODate, type RuleResult,
 } from "@domain";
 import { useApp } from "../../store.ts";
 import type { CellView } from "../../derive.ts";
@@ -109,39 +109,9 @@ export function describeChoice(state: DomainState, c: Choice, storeId: string, d
   return { text: parts.join(" · ") || "Free", tone, glyph, hard };
 }
 
-/** The Choice for one pharmacist at one store (choicesFor does this for everyone at one store). Null if the edit cannot be applied. */
-export function choiceFor(state: DomainState, asOf: ISODate, pharmacistId: string, storeId: string, date: ISODate, baseEv?: Evaluation): Choice | null {
-  const range = { from: date, to: date };
-  const base = baseEv ?? api.evaluate(state, asOf, { range });
-  const mine = Object.values(state.assignments).filter((a) => a.pharmacistId === pharmacistId && a.date === date);
-  if (mine.some((a) => a.storeId === storeId)) return null;
-  const move = mine.length === 1 ? mine[0]! : null;
-  const edit: Edit = move ? { t: "move", assignmentId: move.id, toStoreId: storeId } : { t: "place", storeId, pharmacistId, date };
-  const next = applyScratch(state, [edit]);
-  if ("refused" in next) return null;
-  const ev = api.evaluate(next, asOf, { range });
-  const a = move ? next.assignments[move.id] : Object.values(next.assignments).find((x) => x.pharmacistId === pharmacistId && x.storeId === storeId && x.date === date);
-  const res = a ? ev.assignments[a.id] : undefined;
-  if (!a || !res) return null;
-  const fails = res.results.filter((r) => r.verdict === "Fail" && !r.overridden);
-  const kind = (id: string) => RULE_BY_ID[id]?.kind;
-  const baseOf = state.pharmacists[pharmacistId]?.baseStoreId ?? null;
-  const pair = baseOf && baseOf !== storeId ? state.travel[`${baseOf}|${storeId}`] : null;
-  let leavesShort: Choice["leavesShort"] = null;
-  if (move) {
-    const was = base.cells[`${move.storeId}|${date}`]?.open ?? 0;
-    const now = ev.cells[`${move.storeId}|${date}`]?.open ?? 0;
-    if (now > was) leavesShort = { storeId: move.storeId, open: now };
-  }
-  return {
-    pharmacistId, currently: mine.length ? mine.map((m) => m.storeId).sort().join(",") : "off",
-    blocks: fails.filter((r) => kind(r.ruleId) === "presence").map((r) => r.ruleId),
-    warns: fails.filter((r) => kind(r.ruleId) === "policy").map((r) => r.ruleId),
-    unknown: res.results.filter((r) => r.verdict === "Unknown").map((r) => r.ruleId),
-    travelMinutes: baseOf === storeId ? 0 : pair ? pair.minutes : null,
-    counts: res.counts, leavesShort, action: move ? "move" : "place", ...(move ? { assignmentId: move.id } : {}),
-    unavailable: res.results.some((r) => r.ruleId === "availability" && r.verdict === "Fail"),
-  };
+/** The Choice for one pharmacist at one store (choicesFor does this for everyone at one store). Null if the edit cannot be applied. Pass `prepared` to judge many stores for one day. */
+export function choiceFor(state: DomainState, asOf: ISODate, pharmacistId: string, storeId: string, date: ISODate, baseEv?: Evaluation, prepared?: ChoiceBase): Choice | null {
+  return judgeChoice(prepared ?? prepareChoices(state, date, asOf, baseEv), pharmacistId, storeId);
 }
 
 /** A rule failure in plain words (without the fix). */

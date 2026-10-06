@@ -1,8 +1,8 @@
 // Plan: future gaps. Stores by weeks, counting what is still open. Click a week to look at it on the wall.
 import { useMemo, useState } from "react";
-import { addDays, api, weekday, type Evaluation, type ISODate } from "@domain";
+import { addDays, weekday, type Evaluation, type ISODate } from "@domain";
 import { useApp } from "../store.ts";
-import { viewState } from "../derive.ts";
+import { evaluateCached, viewState } from "../derive.ts";
 import { Btn, cx, GLYPH } from "../ui/primitives.tsx";
 import { describeEdit, fmtShort } from "./chrome/shared.tsx";
 import { Title } from "./chrome/Title.tsx";
@@ -44,11 +44,11 @@ export function Plan() {
     () => (state ? Object.values(state.stores).filter((s) => (s.inactiveFrom === undefined || s.inactiveFrom > asOf) && (s.activeFrom === undefined || s.activeFrom <= range.to)).sort((a, b) => a.code.localeCompare(b.code, "en")) : []),
     [state, asOf, range],
   );
-  const live = useMemo(() => (state ? tally(api.evaluate(state, asOf, { range, includeRequested: true }), stores.map((s) => s.id), weekStarts, asOf) : null), [state, asOf, range, stores, weekStarts]);
+  const live = useMemo(() => (state ? tally(evaluateCached(state, asOf, { range, includeRequested: true }), stores.map((s) => s.id), weekStarts, asOf) : null), [state, asOf, range, stores, weekStarts]);
   const what = useMemo(() => {
     if (!world || !showWhatIf) return null;
     const vs = viewState(world);
-    return vs.scenario ? tally(api.evaluate(vs.state, asOf, { range, includeRequested: true }), stores.map((s) => s.id), weekStarts, asOf) : null;
+    return vs.scenario ? tally(evaluateCached(vs.state, asOf, { range, includeRequested: true }), stores.map((s) => s.id), weekStarts, asOf) : null;
   }, [world, showWhatIf, asOf, range, stores, weekStarts]);
 
   if (!world || !state || !live) return null;

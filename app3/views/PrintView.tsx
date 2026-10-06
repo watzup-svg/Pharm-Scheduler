@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { api, cmp, isValidDate, RULE_BY_ID, weekday, type ISODate, type PostingSnapshot, type World } from "@domain";
+import { evaluateCached } from "../derive.ts";
 import { useApp } from "../store.ts";
 import { Btn, Chip, cx, GLYPH } from "../ui/primitives.tsx";
 import { DEFAULT_PRINT_OPTIONS, paginate, pdfFileName, periodLabel, snapshotToPrintModel, type PrintModel, type PrintOptions } from "../print/model.ts";
@@ -21,7 +22,7 @@ type PreWarnings = { open: string[]; problems: string[]; overrides: number };
 /** What posting this range would put on the snapshot, in words. Mirrors how the domain counts them. */
 function preWarnings(world: World, asOf: ISODate, range: Range): PreWarnings {
   const st = world.state;
-  const ev = api.evaluate(st, asOf, { range });
+  const ev = evaluateCached(st, asOf, { range });
   const code = (id: string) => st.stores[id]?.code ?? id;
   const open: string[] = [];
   for (const c of Object.values(ev.cells).sort((a, b) => cmp(a.date, b.date) || cmp(code(a.storeId), code(b.storeId)))) {

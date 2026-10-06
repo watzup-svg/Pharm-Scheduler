@@ -64,9 +64,24 @@ const Cell = memo(function Cell({ m, selected, tab }: { m: CellModel; selected: 
   );
 });
 
+
+/** One row of the wall. Memoized: a selection or tab-stop change re-renders only the rows it touches. */
+const RowView = memo(function RowView({ row, r, dates, tpl, selCol, tabCol }: { row: RowDef; r: number; dates: ISODate[]; tpl: string; selCol: number; tabCol: number }) {
+  return (
+    <div role="row" aria-rowindex={r + 2} data-ri={r} className="w-row" style={{ gridTemplateColumns: tpl }}>
+      <div role="rowheader" className="w-label" aria-label={row.label} data-tip={row.tip}>{row.head}</div>
+      {row.cells.map((m, c) => <Cell key={dates[c]} m={m} selected={selCol === c} tab={tabCol === c} />)}
+    </div>
+  );
+});
+
 const LAB_STORE = 92;
 const LAB_PERSON = 128;
 const COL = 49;
+/** Past this many rows only the rows near the viewport are drawn (rows are measured, so wrapped rows stay exact). */
+const VIRT_MIN_ROWS = 60;
+const OVERSCAN_PX = 500;
+const EST_ROW = 38;
 
 function monthBands(dates: ISODate[]): { key: string; from: number; span: number; text: string }[] {
   const out: { key: string; from: number; span: number; text: string }[] = [];
@@ -97,24 +112,95 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { ro
   }, [selection, dates, rows, axis]);
 
   const [active, setActive] = useState<{ r: number; c: number }>(() => selPos ?? { r: 0, c: Math.max(0, dates.indexOf(asOf)) });
-  const focusWanted = useRef(false);
   const cur = { r: Math.min(active.r, Math.max(0, nRows - 1)), c: Math.min(active.c, Math.max(0, nCols - 1)) };
+
+  // Rows near the viewport only, once there are many rows. Heights are measured after paint and remembered per row.
+  const virt = nRows >= VIRT_MIN_ROWS;
+  const [view, setView] = useState({ top: 0, height: 900, head: 74, v: 0 });
+  const heights = useRef(new Map<string, number>());
+  const rowKey = (r: number) => `${axis}|${rows[r]!.key}`;
+  const hOf = (r: number) => heights.current.get(rowKey(r)) ?? EST_ROW;
+  let first = 0;
+  let last = nRows - 1;
+  let padTop = 0;
+  let padBottom = 0;
+  if (virt) {
+    const lo = view.top - OVERSCAN_PX - view.head;
+    const hi = view.top + view.height + OVERSCAN_PX - view.head;
+    let y = 0;
+    let f = -1;
+    let l = nRows - 1;
+    for (let r = 0; r < nRows; r++) {
+      const h = hOf(r);
+      if (f < 0 && y + h > lo) { f = r; padTop = y; }
+      if (y > hi) { l = r - 1; break; }
+      y += h;
+    }
+    first = Math.max(0, f);
+    last = Math.max(first, l);
+    let after = 0;
+    for (let r = last + 1; r < nRows; r++) after += hOf(r);
+    padBottom = after;
+  }
+  const rowTop = (r: number) => { let y = view.head; for (let i = 0; i < r; i++) y += hOf(i); return y; };
+
+  // What still has to be brought on screen after a render: a row that was not drawn yet, a cell to focus.
+  const want = useRef<{ focus: boolean; reveal: boolean } | null>(null);
+  const scroller = () => ref.current?.closest<HTMLElement>(".w-scroll") ?? null;
 
   // Selection changed elsewhere (Inspector, queue): follow it, and keep it in view.
   useEffect(() => {
     if (!selPos) return;
     setActive(selPos);
-    const el = ref.current?.querySelector<HTMLElement>(`[data-r="${selPos.r}"][data-c="${selPos.c}"]`);
-    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    want.current = { focus: false, reveal: true };
   }, [selPos]);
 
   useLayoutEffect(() => {
-    if (!focusWanted.current) return;
-    focusWanted.current = false;
-    const el = ref.current?.querySelector<HTMLElement>(`[data-r="${cur.r}"][data-c="${cur.c}"]`);
-    el?.focus();
-    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const sc = scroller();
+    const w = want.current;
+    if (w) {
+      const el = ref.current?.querySelector<HTMLElement>(`[data-r="${cur.r}"][data-c="${cur.c}"]`);
+      if (el) {
+        want.current = null;
+        if (w.focus) el.focus();
+        if (w.focus || w.reveal) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      } else if (virt && sc) {
+        // The row is not drawn: scroll to it; the scroll event redraws the window and this runs again.
+        const top = rowTop(cur.r);
+        const h = hOf(cur.r);
+        if (top < sc.scrollTop + view.head + 8) sc.scrollTop = Math.max(0, top - view.head - 8);
+        else if (top + h > sc.scrollTop + sc.clientHeight) sc.scrollTop = top + h - sc.clientHeight + 8;
+        setView((v) => ({ ...v, top: sc.scrollTop, height: sc.clientHeight }));
+      }
+    }
+    if (!virt || !ref.current) return;
+    // Measure what is drawn; redraw once if an estimate was off.
+    let changed = false;
+    const head = ref.current.querySelector<HTMLElement>(".w-head")?.getBoundingClientRect().height ?? view.head;
+    ref.current.querySelectorAll<HTMLElement>(":scope > .w-row").forEach((el) => {
+      const r = Number(el.dataset.ri);
+      const row = rows[r];
+      if (!row) return;
+      const h = el.getBoundingClientRect().height;
+      const k = `${axis}|${row.key}`;
+      if (Math.abs((heights.current.get(k) ?? EST_ROW) - h) > 0.4) { heights.current.set(k, h); changed = true; }
+    });
+    if (changed || Math.abs(head - view.head) > 0.4) setView((v) => ({ ...v, head, v: v.v + 1 }));
   });
+
+  // Follow the scroller (the wall's scroll box around the grid): its position and size decide which rows are drawn.
+  useLayoutEffect(() => {
+    const sc = scroller();
+    if (!sc || !virt) return;
+    let raf = 0;
+    const read = () => { raf = 0; setView((v) => (Math.abs(v.top - sc.scrollTop) < 40 && v.height === sc.clientHeight ? v : { ...v, top: sc.scrollTop, height: sc.clientHeight })); };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(read); };
+    read();
+    sc.addEventListener("scroll", onScroll, { passive: true });
+    const ro = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(onScroll);
+    ro?.observe(sc);
+    return () => { sc.removeEventListener("scroll", onScroll); ro?.disconnect(); if (raf) cancelAnimationFrame(raf); };
+  }, [virt]);
 
   const cellOf = (t: EventTarget | null): HTMLElement | null => (t instanceof Element ? t.closest<HTMLElement>('[role="gridcell"]') : null);
   const selectCell = useCallback((el: HTMLElement) => {
@@ -149,7 +235,7 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { ro
       case "PageUp": case "PageDown":
         e.preventDefault();
         useApp.getState().shiftWindow(e.key === "PageUp" ? -7 : 7);
-        focusWanted.current = true;
+        want.current = { focus: true, reveal: true };
         setActive({ r, c });
         return;
       case "Enter": case " ":
@@ -159,7 +245,7 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { ro
       default: return;
     }
     e.preventDefault();
-    focusWanted.current = true;
+    want.current = { focus: true, reveal: true };
     setActive({ r: nr, c: nc });
   };
 
@@ -206,6 +292,9 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { ro
       aria-rowcount={nRows + 1}
       aria-colcount={nCols + 1}
       className="w-grid"
+      // When the tab-stop cell is not drawn (its row is scrolled away), the grid itself takes the tab stop and brings the cell back.
+      tabIndex={virt && (cur.r < first || cur.r > last) ? 0 : undefined}
+      onFocus={(e) => { if (e.target === e.currentTarget) { want.current = { focus: true, reveal: true }; setActive({ ...cur }); } }}
       style={{ minWidth: LAB + nCols * COL, ["--w-lab" as string]: `${LAB}px` }}
       onClick={onClick}
       onKeyDown={onKeyDown}
@@ -256,15 +345,12 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { ro
           })}
         </div>
       </div>
-      {rows.map((row, r) => (
-        <div key={row.key} role="row" aria-rowindex={r + 2} className="w-row" style={{ gridTemplateColumns: tpl }}>
-          <div role="rowheader" className="w-label" aria-label={row.label} data-tip={row.tip}>{row.head}</div>
-          {row.cells.map((m, c) => {
-            const selected = !!selPos && selPos.r === r && selPos.c === c;
-            return <Cell key={dates[c]} m={m} selected={selected} tab={cur.r === r && cur.c === c} />;
-          })}
-        </div>
-      ))}
+      {padTop > 0 && <div role="presentation" style={{ height: padTop }} />}
+      {rows.slice(first, last + 1).map((row, i) => {
+        const r = first + i;
+        return <RowView key={row.key} row={row} r={r} dates={dates} tpl={tpl} selCol={selPos && selPos.r === r ? selPos.c : -1} tabCol={cur.r === r ? cur.c : -1} />;
+      })}
+      {padBottom > 0 && <div role="presentation" style={{ height: padBottom }} />}
     </div>
   );
 }

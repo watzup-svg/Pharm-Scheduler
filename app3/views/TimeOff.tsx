@@ -5,7 +5,7 @@ import { useApp } from "../store.ts";
 import { Btn, Chip, cx, type ChipTone } from "../ui/primitives.tsx";
 import { codeOf, plural } from "./chrome/shared.tsx";
 import { OutForm } from "./timeoff/OutForm.tsx";
-import { openIfApproved, span } from "./timeoff/lib.ts";
+import { openIfApprovedAll, span } from "./timeoff/lib.ts";
 
 const TONE: Record<UnavailStatus, ChipTone> = { Requested: "warning", Approved: "info", Actual: "info", Denied: "neutral" };
 const MARK: Record<UnavailStatus, string> = { Requested: "? ", Approved: "✓ ", Actual: "✓ ", Denied: "– " };
@@ -28,23 +28,27 @@ export function TimeOff() {
   const busy = !!world && (!!world.session.proposal || (!!world.session.scenario && !world.session.scenario.parked));
 
   const all = useMemo(() => (state ? Object.values(state.unavailability).sort(byDate) : []), [state]);
-  const waiting = all.filter((u) => u.status === "Requested" && u.last >= asOf);
-  const upcoming = all.filter((u) => u.status !== "Requested" && u.last >= asOf);
-  const earlier = all.filter((u) => u.last < asOf).reverse();
-  const previews = useMemo(() => {
-    const m = new Map<string, number>();
-    if (state) for (const u of waiting) m.set(u.id, openIfApproved(state, u, asOf));
+  const { waiting, upcoming, earlier } = useMemo(() => ({
+    waiting: all.filter((u) => u.status === "Requested" && u.last >= asOf),
+    upcoming: all.filter((u) => u.status !== "Requested" && u.last >= asOf),
+    earlier: all.filter((u) => u.last < asOf).reverse(),
+  }), [all, asOf]);
+  const previews = useMemo(() => (state ? openIfApprovedAll(state, waiting, asOf) : new Map<string, number>()), [state, waiting, asOf]);
+  // Names are looked up once per list, not once per row.
+  const names = useMemo(() => {
+    const m = new Map<string, string>();
+    if (state) for (const p of Object.values(state.pharmacists)) m.set(p.id, p.name);
     return m;
-  }, [state, waiting, asOf]);
+  }, [state]);
   if (!world || !state) return null;
 
-  const nameOf = (u: Unavailability) => state.pharmacists[u.pharmacistId]?.name ?? u.pharmacistId;
+  const nameOf = (u: Unavailability) => names.get(u.pharmacistId) ?? u.pharmacistId;
   const update = (u: Unavailability, st: UnavailStatus) => useApp.getState().commit([{ t: "unavail.update", id: u.id, patch: { status: st } }], `Time off ${st.toLowerCase()} for ${nameOf(u)}.`);
   const remove = (u: Unavailability) => useApp.getState().commit([{ t: "unavail.remove", id: u.id }], `Time off removed for ${nameOf(u)}.`);
 
   const kind = (u: Unavailability) => `${u.type}${u.scopeStoreId ? ` at ${codeOf(state, u.scopeStoreId)}` : ""}`;
-  const Row = ({ u, actions, note }: { u: Unavailability; actions: React.ReactNode; note?: string }) => (
-    <li className="flex items-center gap-3 rounded-md bg-white px-3 py-1.5 text-sm ring-1 ring-line" data-unavail={u.id}>
+  const row = (u: Unavailability, actions: React.ReactNode, note?: string) => (
+    <li key={u.id} className="flex items-center gap-3 rounded-md bg-white px-3 py-1.5 text-sm ring-1 ring-line" data-unavail={u.id}>
       <span className="w-44 shrink-0 truncate font-semibold" title={nameOf(u)}>{nameOf(u)}</span>
       <span className="min-w-0 flex-1 text-muted"><span className="block truncate">{span(u)} · {kind(u)}</span>{note && <span className="block text-ink">{note}</span>}</span>
       <Chip tone={TONE[u.status]}>{MARK[u.status]}{u.status}</Chip>
@@ -56,12 +60,12 @@ export function TimeOff() {
   const groups = useMemo(() => {
     const m = new Map<string, Unavailability[]>();
     for (const u of upcoming) {
-      const k = group === "person" ? state.pharmacists[u.pharmacistId]?.name ?? u.pharmacistId : u.first;
-      m.set(k, [...(m.get(k) ?? []), u]);
+      const k = group === "person" ? names.get(u.pharmacistId) ?? u.pharmacistId : u.first;
+      (m.get(k) ?? m.set(k, []).get(k)!).push(u);
     }
     const keys = [...m.keys()].sort((a, b) => a.localeCompare(b, "en"));
     return keys.map((k) => ({ key: k, rows: m.get(k)! }));
-  }, [upcoming, group, state]);
+  }, [upcoming, group, names]);
   const groupTitle = (k: string) => (group === "person" ? k : span({ first: k as ISODate, last: k as ISODate }));
 
   return (
@@ -77,18 +81,15 @@ export function TimeOff() {
           {waiting.map((u) => {
             const n = previews.get(u.id) ?? 0;
             return (
-              <Row
-                key={u.id}
-                u={u}
-                note={n === 0 ? "If approved: no cells open" : `If approved: ${plural(n, "cell")} open`}
-                actions={
-                  <>
-                    <Btn aria-label={`Approve: ${nameOf(u)} ${span(u)}`} disabled={busy} onClick={() => update(u, "Approved")}>Approve</Btn>
-                    <Btn aria-label={`Deny: ${nameOf(u)} ${span(u)}`} disabled={busy} onClick={() => update(u, "Denied")}>Deny</Btn>
-                    {removeBtn(u)}
-                  </>
-                }
-              />
+              row(
+                u,
+                <>
+                  <Btn aria-label={`Approve: ${nameOf(u)} ${span(u)}`} disabled={busy} onClick={() => update(u, "Approved")}>Approve</Btn>
+                  <Btn aria-label={`Deny: ${nameOf(u)} ${span(u)}`} disabled={busy} onClick={() => update(u, "Denied")}>Deny</Btn>
+                  {removeBtn(u)}
+                </>,
+                n === 0 ? "If approved: no cells open" : `If approved: ${plural(n, "cell")} open`,
+              )
             );
           })}
         </ul>
@@ -115,17 +116,12 @@ export function TimeOff() {
             <section key={g.key} aria-label={groupTitle(g.key)}>
               <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{groupTitle(g.key)}</h4>
               <ul className="space-y-1">
-                {g.rows.map((u) => (
-                  <Row
-                    key={u.id}
-                    u={u}
-                    actions={
-                      <>
-                        {u.status === "Denied" && <Btn aria-label={`Approve: ${nameOf(u)} ${span(u)}`} disabled={busy} onClick={() => update(u, "Approved")}>Approve</Btn>}
-                        {removeBtn(u)}
-                      </>
-                    }
-                  />
+                {g.rows.map((u) => row(
+                  u,
+                  <>
+                    {u.status === "Denied" && <Btn aria-label={`Approve: ${nameOf(u)} ${span(u)}`} disabled={busy} onClick={() => update(u, "Approved")}>Approve</Btn>}
+                    {removeBtn(u)}
+                  </>,
                 ))}
               </ul>
             </section>
@@ -137,7 +133,7 @@ export function TimeOff() {
         <details className="mt-4">
           <summary className="cursor-pointer text-sm font-medium text-muted focus-visible:outline-2 focus-visible:outline-ink">Earlier ({earlier.length})</summary>
           <ul className="mt-1.5 space-y-1">
-            {earlier.map((u) => <Row key={u.id} u={u} actions={removeBtn(u)} />)}
+            {earlier.map((u) => row(u, removeBtn(u)))}
           </ul>
         </details>
       )}
