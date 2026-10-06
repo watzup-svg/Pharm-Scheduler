@@ -118,7 +118,9 @@ function soakCase(kind: WorldKind, stores: number, m: number): Case {
             if (checkIntegrity(c.world.state).length) fail("integrity-after-repair", `option ${oi} breaks integrity`);
             const afterF = failKeys(c.world, asOf, range);
             const fresh = [...afterF].filter((k) => !beforeF.has(k)).length;
-            if (fresh > o.metrics.violationsIntroduced) fail("repair-undeclared-violation", `option ${oi} introduces ${fresh} new rule Fail(s) but declares violationsIntroduced=${o.metrics.violationsIntroduced}`);
+            // Policy Fails (drive time, days in a row) are declared as overridesNeeded, presence Fails as violationsIntroduced.
+            const declared = o.metrics.violationsIntroduced + o.metrics.overridesNeeded;
+            if (fresh > declared) fail("repair-undeclared-violation", `option ${oi} introduces ${fresh} new rule Fail(s) but declares violationsIntroduced=${o.metrics.violationsIntroduced} + overridesNeeded=${o.metrics.overridesNeeded}`);
             const ev = api.evaluate(c.world.state, asOf, { range });
             const stillOpen = rr.gapsUsed.filter((g) => (ev.cells[`${g.storeId}|${g.date}`]?.open ?? 0) > 0).length;
             if (stillOpen > o.metrics.openRemaining) fail("repair-gap-not-closed", `option ${oi} leaves ${stillOpen} gap(s) open but declares openRemaining=${o.metrics.openRemaining}`);
