@@ -86,6 +86,8 @@ console.log("\n-- phase 1: correctness, in parallel --");
 await Promise.all([
   run("types + unit tests (check:v3)", "npm", ["run", "check:v3"]),
   run("print PDF check", "node", ["scripts/v3-pdf-check.mjs"]),
+  run("size budget + licences", "node", ["scripts/v3-size-budget.mjs"]),
+  run("reproducible build", "node", ["scripts/v3-repro-build.mjs"]),
   run("old prototype tests", "npm", ["run", "check"], { skipIf: () => (flag("--no-prototype") ? "--no-prototype" : null) }),
   run("dependency audit", "npm", ["audit", "--omit=dev", "--audit-level=high"], { offlineOk: true }),
   (async () => { const r = offlineScan(); const file = path.join(dir, "offline-scan.log"); fs.writeFileSync(file, r.out); results.push({ name: "built file makes no network requests", status: r.status, secs: 0, log: path.relative(root, file), detail: r.detail, out: r.out }); console.log(`${r.status === "ok" ? "ok  " : "FAIL"} built file makes no network requests  ${r.detail}`); })(),
@@ -98,6 +100,7 @@ if (build.status === "ok") {
   for (const b of ["firefox", "webkit"]) {
     await run(`browser suites (${b})`, "node", ["scripts/v3-e2e.mjs"], { env: { BROWSER: b }, timeoutMs: 20 * 60_000, skipIf: () => (browserInstalled(b) ? null : `${b} is not installed for Playwright`) });
   }
+  await run("perf baseline", "node", ["scripts/v3-perf-baseline.mjs"], { timeoutMs: 10 * 60_000 });
   if (!quick) {
     await run("random-click stress", "node", ["--experimental-strip-types", "--no-warnings", "stress/v3-monkey.mjs"], { env: { SEEDS: level === "low" ? "6" : "12", ACTIONS: "150" }, timeoutMs: 30 * 60_000 });
     await run(`pressure test (${level})`, "npm", ["run", "pressure:v3", "--", "--level", level], { timeoutMs: 60 * 60_000 });
