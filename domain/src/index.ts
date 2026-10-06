@@ -9,6 +9,7 @@ export { choicesFor, prepareChoices, judgeChoice, type Choice, type ChoiceBase }
 export { checkIntegrity, type IntegrityIssue } from "./integrity.ts";
 export { applyScratch, stateHash, journalHash, ENGINE_VERSION } from "./changeset.ts";
 export { seedWorld, emptySession, DEFAULT_CONFIG, type Seed } from "./seed.ts";
+export { problemsWorld } from "./demo-problems.ts";
 export { importV2, type ImportReport, type DriveTable } from "./import-v2.ts";
 export { expectedOn, standingMatches, patternConflicts } from "./patterns.ts";
 export { sha256 } from "./hash.ts";

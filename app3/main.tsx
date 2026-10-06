@@ -3,7 +3,7 @@ import "./styles.css";
 import { App } from "./App.tsx";
 import { boot } from "./boot.ts";
 import { useApp } from "./store.ts";
-import { practiceWorld } from "./demo.ts";
+import { practiceWorld, practiceWorldWithProblems } from "./demo.ts";
 import { ErrorBoundary, installGlobalHandlers, crashNext } from "./ui/ErrorBoundary.tsx";
 import { record, snapshot } from "./diagnostics.ts";
 import { engineKnobs, killWorkerForTest } from "./engine.ts";
@@ -22,5 +22,6 @@ createRoot(document.getElementById("root")!).render(<ErrorBoundary name="the app
   diagnostics: snapshot,
   engine: engineKnobs,
   killWorker: killWorkerForTest,
+  loadProblems: () => { const { world } = practiceWorldWithProblems(); useApp.getState().setWorld(world, { fileName: "Practice with problems.sqlite" }); },
   loadPractice: () => { const { world } = practiceWorld(); useApp.getState().setWorld(world, { fileName: "Practice.sqlite" }); },
 };

@@ -22,6 +22,8 @@ Every test is a plain Node or Playwright script: deterministic, no network, no m
 | `domain/test/import-fuzz.test.ts`, `export-injection.test.ts` | Importer never throws on mutated old files; CSV and file names cannot run as spreadsheet formulas | 15 s / 0.2 s (part of check:v3) |
 | `persist/test/compat.test.ts` | Every saved-file fixture from every schema version still opens, hashes and re-exports identically; a newer file is refused | 1 s (part of check:v3) |
 | `node e2e/v3-month-in-the-life.mjs` | The district manager's whole workflow through the real UI (22 steps) with integrity, journal replay and on-screen counts checked after each step | 21 s |
+| `node e2e/v3-problems-demo.mjs` | The "practice month with problems" opens from the Start screen (16 stores, waiting requests, a notice) and Build and Improve run on it | 20 s |
+| `domain/test/demo-problems.test.ts` | That schedule is valid, the same on a given day, and really contains every kind of problem (open shifts, availability, closure, days in a row, double booking, licensing, long drive, surplus, waiting requests, someone to tell) for any start date | 3 s (part of check:v3) |
 | `node e2e/v3-races.mjs` | 21 re-entrancy scenarios (double Build, edit during search, Save during Build, worker killed, ...): never busy forever, one proposal, journal replays | 60 s |
 | `node e2e/v3-visual.mjs` | 27 screenshots vs `e2e/baselines/` (`UPDATE_BASELINES=1` to accept a change on purpose) | 13 s |
 | `node e2e/v3-print-browser.mjs` | The browser print path: sheet size, clipping, page counts, text, stable second print | 17 s |

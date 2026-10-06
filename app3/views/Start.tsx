@@ -4,7 +4,7 @@ import type { ImportReport, StateCode, World } from "@domain";
 import { useApp } from "../store.ts";
 import { getPersist } from "../persist-bridge.ts";
 import type { BootResult, OpenResult, Offer } from "../persist-types.ts";
-import { importPrototypeFiles, practiceWorld } from "../demo.ts";
+import { importPrototypeFiles, practiceWorld, practiceWorldWithProblems } from "../demo.ts";
 import { hischoolStarter, newWorld, setupDefaults } from "../newWorld.ts";
 import { Btn } from "../ui/primitives.tsx";
 import { BrandMark } from "../ui/brand.tsx";
@@ -117,6 +117,11 @@ export function Start() {
               <button type="button" className="underline underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
                 onClick={() => { const { world } = practiceWorld(); openWorld(world, { fileName: "Practice.sqlite" }); }}>
                 Try the practice month
+              </button>
+              {" or "}
+              <button type="button" data-practice-problems className="underline underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                onClick={() => { const { world, summary } = practiceWorldWithProblems(); openWorld(world, { fileName: "Practice with problems.sqlite" }); useApp.getState().say("info", `Practice month with problems: ${summary.join("; ")}.`); }}>
+                one that already has problems to fix
               </button>
               . Everything in it is invented.
             </p>
