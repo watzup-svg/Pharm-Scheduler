@@ -49,6 +49,8 @@ function useShortcuts(issues: ReturnType<typeof useIssues>) {
       }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === "Escape") {
+        // Esc closes an open menu or dialog first; it only discards a preview when nothing else is open.
+        if (e.defaultPrevented || document.querySelector('[role="menu"][data-state="open"], [role="dialog"][data-state="open"], [role="dialog"][aria-label="Search"], [role="dialog"][aria-label="Improve"]')) return;
         if (w.session.proposal) { e.preventDefault(); s.discardProposal(); }
         else if (s.drawer) { e.preventDefault(); s.setDrawer(false); }
         return;
@@ -96,6 +98,7 @@ export function TopBar() {
   return (
     <header className="shrink-0 border-b border-line bg-cream">
       <div className="flex h-14 items-center gap-4 whitespace-nowrap px-3">
+        <h1 className="sr-only">Hi-School Pharmacy Scheduler</h1>
         <BrandMark className="h-8" />
         <nav aria-label="Screens" className="flex items-center gap-0.5">
           {TABS.map((t) => {

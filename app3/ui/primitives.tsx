@@ -13,7 +13,7 @@ export function Section({ title, right, children, className }: { title: string; 
   return (
     <section className={cx("border-b border-line px-3 py-2.5", className)}>
       <div className="mb-1.5 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">{title}</h3>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">{title}</h2>
         {right}
       </div>
       {children}

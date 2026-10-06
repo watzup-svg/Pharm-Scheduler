@@ -133,5 +133,5 @@ export function TimeOffHero() {
   const waiting = rec.filter((u) => u.status === "Requested").length;
   const approved = rec.filter((u) => u.status === "Approved" || u.status === "Actual").length;
   const tiles: Tile[] = [{ kind: "waiting", n: waiting, word: "waiting" }, { kind: "away", n: approved, word: "approved" }];
-  return <Hero label="Time off" lead={rec.length} leadWord="upcoming" tiles={tiles} actions={<HeroBtn tone="away" onClick={openOut}>Someone’s out</HeroBtn>} />;
+  return <Hero label="Time off" lead={rec.length} leadWord="upcoming" tiles={tiles} />;
 }

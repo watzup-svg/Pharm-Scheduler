@@ -212,7 +212,7 @@ export function SaveDialogs({ external = null, onClose, onOpenForce, onSave }: {
   if (!dlg) return null;
   if (dlg.kind === "unsaved") {
     return (
-      <Shell title="This schedule has changes that are not in a file" label="Unsaved changes" onClose={close} returnTo="[data-save-open]">
+      <Shell title="This schedule has changes that are not in a file" label="Unsaved changes" onClose={close} returnTo="[aria-label='File menu']">
         <p>Opening another file will replace what is on screen. Save first, or open anyway and the browser keeps a set-aside copy of this one.</p>
         <div className="flex justify-end gap-2">
           <Btn onClick={close}>Cancel</Btn>
@@ -233,7 +233,7 @@ export function SaveDialogs({ external = null, onClose, onOpenForce, onSave }: {
   }
   const r = dlg.r;
   return (
-    <Shell title="This file could not be opened" label="File refused" onClose={close} returnTo="[data-save-open]">
+    <Shell title="This file could not be opened" label="File refused" onClose={close} returnTo="[aria-label='File menu']">
       <p>{r.error}</p>
       <p className="text-muted">The schedule on screen has not been touched. {r.offers.length ? "You can start from one of these instead:" : "There is no other copy to offer."}</p>
       {r.offers.length > 0 && (

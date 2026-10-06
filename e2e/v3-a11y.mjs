@@ -51,7 +51,7 @@ async function tour(page, size, after) {
   await go(page, "Wall"); await step("wall (stores)");
   const rows = page.getByRole("group", { name: "Rows" });
   const hasRows = (await rows.count()) > 0;
-  if (hasRows) { await rows.getByRole("button", { name: "Pharmacists" }).click(); await step("wall (pharmacists)"); }
+  if (hasRows) { await rows.getByRole("button", { name: "People" }).click(); await step("wall (pharmacists)"); }
   else console.log("skip wall (pharmacists): the Rows switch is the wall's to describe");
   // a selected cell, so the Inspector shows its controls
   await page.locator('[role="gridcell"]').nth(40).click(); await step("wall (pharmacist cell selected)");

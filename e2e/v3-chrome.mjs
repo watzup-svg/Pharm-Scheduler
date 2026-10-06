@@ -154,7 +154,10 @@ if (await find.count()) {
     await shot("4-proposal");
     await page.keyboard.press("Enter");
     check("Enter does not accept", (await get()).proposal === "repair");
+    // Esc closes an open menu first (the Enter above may have reopened Tools); a second Esc discards the preview.
     await page.keyboard.press("Escape");
+    if ((await get()).proposal !== null) await page.keyboard.press("Escape");
+    await page.waitForTimeout(100);
     check("Esc discards the proposal and saves nothing", (await get()).proposal === null && (await get()).cs.length === after.cs.length);
     // options come back after discarding; preview again and accept with a click
     await right.getByRole("region", { name: "Cover options" }).getByRole("button", { name: /Preview option 1/ }).click();

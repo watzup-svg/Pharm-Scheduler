@@ -18,7 +18,7 @@ export function PaperStack({ pages }: { pages: number }) {
   return (
     <div className="relative h-[84px] w-[70px]" role="img" aria-label={`${pages} pages`}>
       {[3, 2, 1].map((i) => <span key={i} aria-hidden className="absolute rounded-md bg-white/80 ring-1 ring-black/10" style={{ inset: 0, transform: `translate(${i * 3}px, ${i * 3}px)` }} />)}
-      <span className="absolute inset-0 grid place-items-center rounded-md bg-white text-ink ring-1 ring-black/10"><span className="text-center leading-none"><b className="block text-2xl">{pages}</b><span className="text-[11px] tracking-wide">PAGES</span></span></span>
+      <span className="absolute inset-0 grid place-items-center rounded-md bg-white text-ink ring-1 ring-black/10"><span className="text-center leading-none"><b className="block text-2xl">{pages}</b><span className="text-[13px] tracking-wide">PAGES</span></span></span>
     </div>
   );
 }
