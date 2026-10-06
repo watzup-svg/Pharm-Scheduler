@@ -2,6 +2,7 @@
 import { ENGINE_VERSION, RULES } from "@domain";
 import { useApp } from "../store.ts";
 import { Chip } from "../ui/primitives.tsx";
+import { Title } from "./chrome/Title.tsx";
 import { ConfigForm } from "./rules/ConfigForm.tsx";
 
 const yn = (b: boolean) => (b ? "Yes" : "No");
@@ -12,13 +13,8 @@ export function RulesView() {
   const cfg = world.state.config;
   return (
     <div className="px-4 py-3">
-      <h2 className="text-lg font-semibold">Rules</h2>
-      <p className="mt-0.5 text-sm">
-        Licensing can never be overridden. The engine never proposes an override, except on rules marked &ldquo;Engine may suggest&rdquo; below, and then only as a suggestion you accept.
-      </p>
-      <p className="mt-0.5 text-xs text-muted">
-        <b>Presence</b> rules decide whether someone counts toward covering a store. <b>Policy</b> rules only warn; they never change the count.
-      </p>
+      <Title tip="Licensing can never be overridden. | The engine never proposes an override, except on rules marked “Engine may suggest”, and then only as a suggestion you accept. | Presence rules decide whether someone counts toward covering a store. Policy rules only warn; they never change the count.">Rules</Title>
+      <p className="mt-0.5 text-sm text-muted">Licensing can never be overridden.</p>
 
       <div className="mt-3 overflow-x-auto rounded-md border border-line bg-cream">
         <table className="w-full border-collapse text-sm" aria-label="Rules">
@@ -55,8 +51,7 @@ export function RulesView() {
       </div>
 
       <section aria-labelledby="cfg-h" className="mt-6">
-        <h2 id="cfg-h" className="text-base font-semibold">Limits and settings</h2>
-        <p className="text-xs text-muted">Changing a limit applies to the whole schedule at once and can be undone from History.</p>
+        <Title id="cfg-h" className="text-base font-semibold" tip="A limit applies to the whole schedule at once. | Undo it from History.">Limits and settings</Title>
         <ConfigForm key={JSON.stringify(cfg)} config={cfg} />
       </section>
 

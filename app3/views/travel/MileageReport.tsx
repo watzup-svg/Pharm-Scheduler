@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { isValidDate, type DomainState, type ISODate } from "@domain";
 import { useApp } from "../../store.ts";
 import { Btn, Chip } from "../../ui/primitives.tsx";
+import { Title } from "../chrome/Title.tsx";
 import { dollars, mileageCsv, mileageReport, type UnknownTrip } from "../../mileage.ts";
 import { monthLabel, shiftMonth, shortDate } from "./travel-util.ts";
 
@@ -35,10 +36,7 @@ export function MileageReport({ state, initialMonth, onAddPair }: { state: Domai
 
   return (
     <section aria-labelledby="mileage-h" className="mt-8">
-      <h2 id="mileage-h" className="text-base font-semibold">Mileage report</h2>
-      <p className="mt-0.5 text-xs text-muted">
-        Days a pharmacist worked away from their base store. Pay is 2 x (one-way miles over the free miles) x the rate, only when one-way miles are over the free miles. Drive times that are not known are listed apart and are not counted as zero.
-      </p>
+      <Title id="mileage-h" as="h2" className="text-base font-semibold" tip="Days a pharmacist worked away from their base store. | Pay is 2 x (one-way miles over the free miles) x the rate, only when one-way miles are over the free miles. | Drive times that are not known are listed apart and are not counted as zero.">Mileage report</Title>
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Btn onClick={() => setMonth(shiftMonth(month, -1))} aria-label="Previous month">◀ Previous</Btn>

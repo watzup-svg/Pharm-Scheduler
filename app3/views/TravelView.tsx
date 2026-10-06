@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { monthOf } from "@domain";
 import { useApp } from "../store.ts";
 import { Btn } from "../ui/primitives.tsx";
+import { Title } from "./chrome/Title.tsx";
 import { TravelMatrix, type Mode, type PairRef } from "./travel/TravelMatrix.tsx";
 import { PairEditor } from "./travel/PairEditor.tsx";
 import { MileageReport } from "./travel/MileageReport.tsx";
@@ -39,10 +40,7 @@ export function TravelView() {
 
   return (
     <div className="px-4 py-3">
-      <h2 className="text-lg font-semibold">Travel &amp; mileage</h2>
-      <p className="mt-0.5 text-xs text-muted">
-        One-way drive from the row store to the column store. Drive times feed the long-drive rules and mileage pay. A pair that is not known stays unknown: it is never treated as zero and the engine never proposes it.
-      </p>
+      <Title tip="One-way drive from the row store to the column store. | Drive times feed the long-drive rules and mileage pay. | A pair that is not known stays unknown: it is never treated as zero and the engine never proposes it.">Travel &amp; mileage</Title>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <div role="group" aria-label="Show" className="inline-flex overflow-hidden rounded-md ring-1 ring-edge">
@@ -71,13 +69,13 @@ export function TravelView() {
         {sel ? (
           <PairEditor key={pairKey(sel.from, sel.to)} state={state} pair={sel} onClose={() => setSel(null)} />
         ) : (
-          <p className="text-xs text-muted">Roads are the same both ways in practice, so changing one cell saves both directions together.</p>
+          <p className="text-xs text-muted">Changing one cell saves both directions.</p>
         )}
       </div>
 
       <section aria-labelledby="unk-h" className="mt-4">
         <h2 id="unk-h" className="text-sm font-semibold">Unknown drive times that matter</h2>
-        <p className="text-xs text-muted">From a pharmacist&apos;s base store to any active store. Until these are known, those shifts cannot be fully checked and are never proposed.</p>
+        <p className="text-xs text-muted">Until these are known, those shifts cannot be fully checked.</p>
         {unknown.length === 0 ? (
           <p className="mt-1 text-sm text-ok">✓ Every pair that matters is known.</p>
         ) : (

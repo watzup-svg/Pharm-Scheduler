@@ -90,7 +90,7 @@ const PICKER_SHIM = `
     },
     snap() {
       const s = window.__v3.app.getState();
-      return { world: s.world, busy: s.busy, view: s.view, asOf: s.asOf, window: s.window, selection: s.selection, readOnly: s.readOnlyProblems, axis: s.axis, notice: s.notice, errs: window.__mkErr.splice(0) };
+      return { world: s.world, busy: s.busy, view: s.view, asOf: s.asOf, window: s.window, selection: s.selection, readOnly: s.readOnlyProblems, axis: s.axis, setupTab: s.setupTab, drawer: s.drawer, outForm: s.outForm, notice: s.notice, errs: window.__mkErr.splice(0) };
     },
     dom() {
       const q = (s) => document.querySelector(s);
@@ -109,7 +109,7 @@ const PICKER_SHIM = `
 `;
 
 // ---------- action vocabulary ----------
-const SKIP_BTN = new RegExp("^(" + (process.env.COVER_ALL ? "" : "Cover all|") + "Open|Save|Save As|Download a copy|Reconnect|Allow access|Open anyway|Save first|Use the file as saved|Use the newer browser copy|Use this|Use the saved file|Use this browser|Choose old files|Open a schedule file|Print|Download|Save as PDF|Make PDF|Copy all messages|Copy message)", "i");
+const SKIP_BTN = new RegExp("^(" + (process.env.COVER_ALL ? "" : "Cover all|") + "File menu|Tools|Open|Save|Save As|Download a copy|Reconnect|Allow access|Open anyway|Save first|Use the file as saved|Use the newer browser copy|Use this|Use the saved file|Use this browser|Choose old files|Open a schedule file|Print|Download|Save as PDF|Make PDF|Copy all messages|Copy message)", "i");
 const WRITE_NAME = /./;
 
 const TEXT_POOL = ["", "0", "1", "7", "-3", "12", "99999", "abc", "x y", "Test note", "Ünï 🙂", "a".repeat(90), "1.5", "480", "  ", "<b>x</b>", "Before build", "Close EST on Fridays"];
@@ -209,6 +209,31 @@ class Runner {
         return "ok";
       }
       case "dialogEsc": await p.keyboard.press("Escape"); return "ok";
+      case "store": {
+        // Screens the shell does not offer a control for in this tree (Plan) are reached through the store.
+        await p.evaluate((v) => window.__v3.app.getState().setView(v), a.view);
+        return "ok";
+      }
+      case "drawer": {
+        const b = p.locator(a.open ? 'button[aria-label="Open the list"]' : 'button[aria-label="Close the list"]');
+        if (!(await b.count())) return "gone";
+        try { await b.first().click({ timeout: 2000 }); } catch { return "noclick"; }
+        return "ok";
+      }
+      case "tools": {
+        // Build / Improve through the Tools menu when it is mounted, otherwise through the same store actions it calls.
+        const tb = p.getByRole("button", { name: "Tools" });
+        if (await tb.count()) {
+          try {
+            await tb.first().click({ timeout: 2000 });
+            await p.getByRole("menuitem", { name: new RegExp("^" + a.item) }).click({ timeout: 2000 });
+            if (a.item === "Improve") await p.getByRole("button", { name: "Look for improvements" }).click({ timeout: 2000 });
+          } catch { await p.keyboard.press("Escape"); return "noclick"; }
+          return "ok";
+        }
+        await p.evaluate((i) => { const s = window.__v3.app.getState(); if (s.busy || s.world?.session.proposal || (s.world?.session.scenario && !s.world.session.scenario.parked)) return; if (i === "Build") void s.runBuild(); else void s.runImprove(false); }, a.item);
+        return "ok";
+      }
       case "saveReopen": return this.saveReopen(a);
       case "reload": return this.reload(a);
       default: throw new Error("unknown action " + JSON.stringify(a));
@@ -238,17 +263,21 @@ class Runner {
     const before = await p.evaluate(() => window.__mk.snap());
     if (!before.world) return "gone";
     if (before.readOnly) return "readonly";
-    const saveAs = await this.markNth("top", "btn", "Save As", 0);
-    if (!saveAs || saveAs.disabled) return "gone";
-    await this.clickMarked();
+    const fm = p.locator('header button[aria-label="File menu"]');
+    if (!(await fm.count())) return "gone";
+    await fm.click({ timeout: 2500 }).catch(() => {});
+    const saveAs = p.getByRole("menuitem", { name: "Save as…" });
+    if (!(await saveAs.count()) || (await saveAs.getAttribute("data-disabled")) !== null) { await p.keyboard.press("Escape"); return "gone"; }
+    await saveAs.click({ timeout: 2500 });
     try { await p.waitForFunction(() => { const s = window.__persist.status(); return s.linked && s.unsavedChanges === 0; }, null, { timeout: 8000 }); }
     catch { const st = await p.evaluate(() => window.__mk.status()); throw new Error("inv:save-as: Save As did not link and clear the unsaved count: " + JSON.stringify(st)); }
     const st = await p.evaluate(() => window.__mk.status());
     const hash0 = stateHash(before.world.state);
     await p.evaluate((n) => { window.__nextOpen = n; }, st.fileName);
-    const open = await this.markNth("top", "btn", "Open", 0);
-    if (!open) throw new Error("inv:reopen: no Open button");
-    await this.clickMarked();
+    await fm.click({ timeout: 2500 });
+    const open = p.getByRole("menuitem", { name: "Open…" });
+    if (!(await open.count())) throw new Error("inv:reopen: no Open item in the File menu");
+    await open.click({ timeout: 2500 });
     await p.waitForTimeout(400);
     // an unsaved-changes dialog should not appear right after Save As
     if (await p.evaluate(() => window.__mk.dialogOpen())) {
@@ -312,7 +341,7 @@ class Runner {
     const open = proposal || (sc && !sc.parked);
     const kinds = [
       ["cell", 14], ["key", 8], ["insp", 18], ["out", 9], ["engine", 11], ["undo", 4], ["history", 5], ["view", 5], ["leftTab", 3],
-      ["wallctl", 5], ["form", 9], ["travel", 2], ["print", 2], ["drag", 3], ["press", 3], ["any", 5], ["setup", 9], ["outform", 4], ["saveReopen", 1.2], ["reload", 1.5],
+      ["wallctl", 5], ["form", 9], ["travel", 2], ["print", 2], ["drag", 3], ["press", 3], ["any", 5], ["setup", 9], ["outform", 4], ["drawer", 3], ["saveReopen", 1.2], ["reload", 1.5],
     ];
     if (proposal) kinds.push(["resolve", 22]);
     if (sc) kinds.push(["scenario", 6]);
@@ -339,6 +368,13 @@ class Runner {
     return { t: "btn", region, name: b.name, nth: Math.max(0, nth) };
   }
 
+  // A screen tab in the top bar; its listed name can carry a count ("Time off 2"), so the name comes from the list.
+  async tabBtn(label) {
+    const items = await this.list("top", "btn");
+    const b = items.find((x) => x.name === label || x.name.startsWith(label));
+    return b ? { t: "btn", region: "top", name: b.name, nth: 0 } : null;
+  }
+
   async make(k, snap, open) {
     const rng = this.rng;
     switch (k) {
@@ -355,10 +391,16 @@ class Runner {
       }
       case "press": return { t: "press", key: rng.pick(["n", "p", "Escape", "Control+z", "Control+z"]) };
       case "insp": return this.btnIn("insp", (b) => !/^(\+ Someone|Approve|Deny|Remove: )/.test(b.name));
-      case "out": return this.btnIn("insp", (b) => /^(\+ Someone|Approve|Deny|Remove: |Add |Cover|Find)/.test(b.name));
+      case "out": {
+        if (snap.view === "timeoff") return this.btnIn("main", (b) => /^(Approve|Deny|Remove: |Add )/.test(b.name));
+        if (rng.chance(0.3)) return this.btnIn("main", (b) => /Someone.s out/.test(b.name));
+        return this.btnIn("insp", (b) => /^(Add |Cover|Find|Close)/.test(b.name));
+      }
+      case "drawer": return { t: "drawer", open: !snap.drawer };
       case "engine": {
-        const which = rng.pick(["Build this period", "Build this period", "Improve…", "Run Improve", "Run Improve", "Find cover", "Find cover…", "Next problem"]);
-        const regs = which.startsWith("Cover") || which === "Next problem" ? ["left"] : which.startsWith("Find") ? ["insp", "left"] : ["top"];
+        const which = rng.pick(["Build", "Build", "Improve", "Improve", "Find cover", "Find cover…"]);
+        if (which === "Build" || which === "Improve") return { t: "tools", item: which };
+        const regs = ["insp", "left"];
         for (const r of regs) {
           const items = await this.list(r, "btn");
           const b = items.find((x) => !x.disabled && (x.name === which || x.name.startsWith(which)));
@@ -379,10 +421,11 @@ class Runner {
         return this.btnIn("left", (b) => /^(Undo|Redo|Revert|Keep as it|Show why|Hide why|Checkpoint now)/.test(b.name));
       }
       case "view": {
-        const v = rng.pick(["Wall", "Plan", "Setup", "Travel", "Rules", "Checks", "Print", "Wall", "Wall", "Setup"]);
-        return { t: "btn", region: "top", name: v, nth: 0 };
+        const v = rng.pick(["Schedule", "Plan", "Time off", "Setup", "Print", "Schedule", "Schedule", "Setup"]);
+        if (v === "Plan") return { t: "store", view: "plan" };
+        return this.tabBtn(v);
       }
-      case "wallBack": return { t: "btn", region: "top", name: "Wall", nth: 0 };
+      case "wallBack": return this.tabBtn("Schedule");
       case "leftTab": {
         const items = await this.list("left", "btn");
         const t = items.filter((x) => /^(Queue|To tell|History)/.test(x.name));
@@ -394,21 +437,22 @@ class Runner {
       }
       case "form": return this.makeForm(snap);
       case "setup": {
-        if (snap.view !== "setup") return rng.chance(0.35) ? { t: "btn", region: "top", name: "Setup", nth: 0 } : null;
+        if (snap.view !== "setup") return rng.chance(0.35) ? this.tabBtn("Setup") : null;
         return rng.chance(0.45) ? this.btnIn("main", (b) => !/^(Remove|Delete)/i.test(b.name) || rng.chance(0.2)) : this.makeForm(snap, "main");
       }
       case "outform": {
         const items = (await this.list("insp", "inp")).filter((x) => !x.disabled);
-        if (!items.length) return this.btnIn("insp", (b) => /^\+ Someone/.test(b.name));
+        if (!items.length) return this.btnIn("main", (b) => /Someone.s out/.test(b.name));
         return this.makeForm(snap, "insp");
       }
       case "travel": {
-        if (snap.view !== "travel") return { t: "btn", region: "top", name: "Travel", nth: 0 };
+        if (snap.view !== "setup") return this.tabBtn("Setup");
+        if (snap.setupTab !== "travel") return { t: "btn", region: "main", name: "Travel", nth: 0 };
         if (rng.chance(0.6)) return this.btnIn("main", (b) => / to [A-Z]+: \d+ minutes|^Minutes$|^Miles$/.test(b.name));
         return this.makeForm(snap, "main");
       }
       case "print": {
-        if (snap.view !== "print") return { t: "btn", region: "top", name: "Print", nth: 0 };
+        if (snap.view !== "print") return this.tabBtn("Print");
         return this.btnIn("main", (b) => /^(Post|Mark|Post this)/i.test(b.name) || /post/i.test(b.name));
       }
       case "drag": {
@@ -427,7 +471,7 @@ class Runner {
         if (r === "esc") return { t: "press", key: "Escape" };
         return { t: "btn", region: "bar", name: r === "accept" ? "Accept" : "Discard", nth: 0 };
       }
-      case "scenario": return this.btnIn("main", (b) => /what-if|Park|Discard|Export|Open|Resume|Start/i.test(b.name));
+      case "scenario": return this.btnIn(rng.chance(0.5) ? "main" : "insp", (b) => /what-if|Park|Discard|Export|Open|Resume|Start/i.test(b.name));
       case "saveReopen": return { t: "saveReopen" };
       case "reload": return { t: "reload" };
       case "any": {
@@ -444,7 +488,7 @@ class Runner {
     const items = (await this.list(region, "inp")).filter((x) => !x.disabled && x.type !== "file" && x.type !== "hidden");
     if (!items.length) {
       // open something that has a form
-      if (snap.view === "wall" && rng.chance(0.5)) return this.btnIn("insp", (b) => /^\+ Someone/.test(b.name));
+      if (snap.view === "wall" && rng.chance(0.5)) return this.btnIn("main", (b) => /Someone.s out/.test(b.name));
       return this.btnIn("main", () => true);
     }
     const n = 1 + rng.int(Math.min(3, items.length));

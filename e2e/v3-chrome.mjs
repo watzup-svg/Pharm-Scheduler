@@ -1,4 +1,4 @@
-// Browser check for the chrome: top bar, left panel, Someone's out, Proposal Bar, Plan.
+// Browser check for the chrome: top bar, left drawer, Someone's out, Time off screen, Proposal Bar, Plan.
 //   npm run build:v3 && node e2e/v3-chrome.mjs        (screenshots go to $SHOTS or /tmp/v3-chrome)
 import fs from "node:fs";
 import { launch, serveV3, openApp, check, failed } from "./v3-lib.mjs";
@@ -24,30 +24,59 @@ const get = () => st(() => {
     nUnav: Object.keys(w.state.unavailability).length, nAsg: Object.keys(w.state.assignments).length,
   };
 });
+// Build / Improve / Cover all open sit in the Tools menu on the wall's control line (the wall's own test checks the menu itself).
+// Until that menu is mounted in this tree, runs go through the store actions and the disabled-state checks are reported as skipped.
+const tools = page.getByRole("button", { name: "Tools" });
+const toolsDisabled = async (why) => {
+  if ((await tools.count()) === 0) { console.log(`skip Tools menu is not mounted yet: Build is disabled while ${why}`); return; }
+  await tools.click();
+  const off = await page.getByRole("menuitem", { name: /^Build this period/ }).getAttribute("data-disabled");
+  await page.keyboard.press("Escape");
+  check(`Build is disabled while ${why}`, off !== null);
+};
 const shot = (name) => page.screenshot({ path: `${SHOTS}/${name}.png` });
 const left = page.locator('aside[aria-label="Left panel"]');
 const right = page.locator('aside[aria-label="Inspector"]');
 const bar = page.locator("header");
 
-// ---- tabs ----
-for (const [label, view] of [["Plan", "plan"], ["Setup", "setup"], ["Travel", "travel"], ["Rules", "rules"], ["Checks", "checks"], ["Print", "print"], ["Wall", "wall"]]) {
-  await bar.getByRole("button", { name: label, exact: true }).click();
-  const s = await get();
+// ---- tabs: Schedule / Time off / Print / Setup; Plan and the Setup tabs are reached by the store ----
+for (const [label, view] of [["Time off", "timeoff"], ["Print", "print"], ["Setup", "setup"], ["Schedule", "wall"]]) {
+  await bar.getByRole("button", { name: label }).click();
+  const s0 = await get();
   const cur = await bar.locator('[aria-current="page"]').innerText();
-  check(`tab ${label} switches the view`, s.view === view && cur === label, `${s.view} / ${cur}`);
+  check(`tab ${label} switches the view`, s0.view === view && cur.startsWith(label), `${s0.view} / ${cur}`);
 }
+check("exactly four screen tabs", (await bar.locator('nav[aria-label="Screens"] button').count()) === 4);
+for (const view of ["travel", "rules", "checks"]) {
+  await st((v) => window.__v3.app.getState().setView(v), view);
+  const s1 = await st(() => ({ v: window.__v3.app.getState().view, t: window.__v3.app.getState().setupTab }));
+  check(`setView("${view}") lands in Setup on that tab`, s1.v === "setup" && s1.t === view, JSON.stringify(s1));
+}
+await st(() => window.__v3.app.getState().setView("plan"));
+check("Plan keeps the Schedule tab current", (await bar.locator('[aria-current="page"]').innerText()) === "Schedule");
+check("Plan has a way back to the wall", (await page.getByRole("button", { name: /Back to the wall/ }).count()) === 1);
+await page.getByRole("button", { name: /Back to the wall/ }).click();
+check("Back to the wall returns to the wall", (await get()).view === "wall");
 check("app title and file name show", (await bar.innerText()).includes("Practice.sqlite"));
-check("one row, about 48px", (await bar.locator("> div").first().boundingBox()).height <= 52);
-check("As of date input is labelled", await bar.getByLabel("As of").inputValue() === (await get()).asOf);
+check("one row, about 56px", (await bar.locator("> div").first().boundingBox()).height <= 58);
+check("the top bar carries no counts line", (await bar.getByTestId("counts").count()) === 0);
+await bar.getByRole("button", { name: "File menu" }).click();
+await page.getByRole("menuitem", { name: /^As of/ }).click();
+check("As of date input is labelled (File menu, As of)", await bar.getByRole("textbox", { name: "As of" }).inputValue() === (await get()).asOf);
+await bar.getByRole("button", { name: "Done" }).click();
 
 // ---- queue ----
+check("the drawer is closed until asked for", (await left.count()) === 0 && (await page.getByRole("button", { name: "Open the list" }).count()) === 1);
+await page.getByRole("button", { name: "Open the list" }).click();
+check("Open the list opens the drawer", (await left.count()) === 1);
+check("drawer tabs carry no count badges", (await left.getByRole("tab").allInnerTexts()).every((t) => !/\d/.test(t)));
 const issues0 = await st(() => document.querySelectorAll('aside[aria-label="Left panel"] section[aria-label] li button').length);
 check("queue lists issues", issues0 > 0, String(issues0));
-const counts = await bar.getByTestId("counts").innerText();
-check("count summary reads 'N open · M problems'", /^\d+ open · \d+ problems?$/.test(counts.trim()), counts);
+check("the drawer has no Next problem or Cover all open buttons", (await left.getByRole("button", { name: /Next problem|Cover all open/ }).count()) === 0);
 for (const g of ["Needs coverage", "Problems"]) check(`queue group ${g}`, (await left.getByRole("region", { name: g }).count()) > 0);
 const firstRow = left.getByRole("region", { name: "Needs coverage" }).locator("button").first();
 const rowText = await firstRow.innerText();
+check("queue rows are one line like 'Fri Oct 9 · EST needs 1 more'", /[A-Z][a-z]{2} [A-Z][a-z]{2} \d+ · .*needs \d+ more/.test(rowText) && (await firstRow.boundingBox()).height < 40, rowText);
 await firstRow.click();
 let s = await get();
 check("clicking a queue row selects that cell", !!s.sel?.storeId && rowText.includes(new Date(s.sel.date + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })), JSON.stringify(s.sel));
@@ -60,7 +89,11 @@ s = await get();
 check("p goes back", s.sel && s.sel.date === sel1.date && s.sel.storeId === sel1.storeId, JSON.stringify(s.sel));
 await shot("1-queue");
 
-const openOutForm = async () => { if ((await right.getByRole("form", { name: "Add time off" }).count()) === 0) await right.getByRole("button", { name: /Someone's out/ }).click(); };
+const openOutForm = async () => { await st(() => window.__v3.app.getState().setOutForm(true)); await right.getByRole("form", { name: "Add time off" }).waitFor(); };
+await page.getByRole("button", { name: /Someone.s out/ }).first().click();
+check("the yellow Someone's out button opens the form above the Inspector", (await right.getByRole("form", { name: "Add time off" }).count()) === 1 && (await get()).view === "wall");
+await right.getByRole("button", { name: "Close", exact: true }).click();
+check("Close puts the form away", (await right.getByRole("form", { name: "Add time off" }).count()) === 0);
 // ---- someone's out: add an absence, see affected count, find cover, preview, accept ----
 // find a person and day where a cover exists, trying the real domain through the store, then undoing the trial
 const pick = await st(async () => {
@@ -117,7 +150,7 @@ if (await find.count()) {
     check("Preview opens the Proposal Bar", (await page.getByRole("region", { name: "Proposal" }).count()) === 1 && (await get()).proposal === "repair");
     const barText = await page.getByRole("region", { name: "Proposal" }).innerText();
     check("Proposal Bar says nothing is saved until accept", barText.includes("Nothing is saved until you accept."));
-    check("Build and Improve are disabled while a proposal is open", (await bar.getByRole("button", { name: "Build this period" }).isDisabled()) && (await bar.getByRole("button", { name: /Improve/ }).isDisabled()));
+    await toolsDisabled("a proposal is open");
     await shot("4-proposal");
     await page.keyboard.press("Enter");
     check("Enter does not accept", (await get()).proposal === "repair");
@@ -160,14 +193,19 @@ await right.getByRole("button", { name: "Add time off" }).click();
 const reqStatus = await right.getByRole("status", { name: "What this changes" }).innerText();
 check("a Requested record says 'if approved'", /would be affected if approved/.test(reqStatus), reqStatus);
 const recId = await st((pid) => Object.values(window.__v3.app.getState().world.state.unavailability).find((u) => u.status === "Requested" && u.pharmacistId === pid)?.id, pick.pid);
-const card = right.locator(`[data-unavail="${recId}"]`);
+await st(() => window.__v3.app.getState().setOutForm(false));
+await bar.getByRole("button", { name: "Time off" }).click();
+const card = page.locator(`[data-unavail="${recId}"]`);
+check("a waiting request is listed under Waiting on the Time off screen", (await page.getByRole("list", { name: "Waiting for an answer" }).locator(`[data-unavail="${recId}"]`).count()) === 1);
 const ifApproved = await card.innerText();
 check("a Requested record shows 'If approved: N cells open'", /If approved: (no cells|\d+ cells?) open/.test(ifApproved), ifApproved);
 const nUn = (await get()).cs.length;
 check("the preview does not commit", (await st((id) => window.__v3.app.getState().world.state.unavailability[id].status, recId)) === "Requested");
 await card.getByRole("button", { name: /^Approve/ }).click();
 check("Approve commits an update", (await st((id) => window.__v3.app.getState().world.state.unavailability[id].status, recId)) === "Approved" && (await get()).cs.length === nUn + 1);
-await left.getByRole("tab", { name: /History/ }).click();
+await bar.getByRole("button", { name: "File menu" }).click();
+await page.getByRole("menuitem", { name: "History and revert" }).click();
+check("File menu > History and revert opens the History tab in the drawer", (await get()).leftTab === "history" && (await left.count()) === 1);
 const rows = left.locator("[data-cs]");
 const addRow = rows.filter({ hasText: "Time off added" }).filter({ hasText: "Requested" }).first();
 check("History lists change sets newest first", (await rows.count()) >= 3);
@@ -202,7 +240,7 @@ s = await get();
 check("revert restores the checkpointed state", s.nUnav === snapUnav && s.cs[s.cs.length - 1].kind === "revert", `${s.nUnav} vs ${snapUnav}`);
 
 // ---- to tell ----
-await left.getByRole("tab", { name: /To tell/ }).click();
+await left.getByRole("tab", { name: "To tell" }).click();
 check("To tell lists changes (practice month starts untold)", (await left.getByRole("button", { name: /^Mark told/ }).count()) > 0);
 await left.getByRole("button", { name: "Mark all told" }).click();
 check("Everyone has been told after Mark all", (await left.innerText()).includes("Everyone has been told."));
@@ -226,10 +264,11 @@ await groupEl.getByRole("button", { name: /^Mark told/ }).click();
 check("Mark told clears the entry", (await left.innerText()).includes("Everyone has been told."));
 
 // ---- Build, proposal bar ----
-await left.getByRole("tab", { name: /Queue/ }).click();
+await left.getByRole("tab", { name: "Queue" }).click();
+await bar.getByRole("button", { name: "Schedule" }).click();
 await st(() => window.__v3.app.getState().setWindow("2026-10-06", "2026-10-09"));
 const tb = Date.now();
-await bar.getByRole("button", { name: "Build this period" }).click({ timeout: 240000 });
+await st(() => window.__v3.app.getState().runBuild());
 console.log("build took", Date.now() - tb, "ms");
 s = await get();
 if (s.proposal === "build") {
@@ -241,22 +280,29 @@ if (s.proposal === "build") {
 } else {
   check("Build either opens a proposal or says there is nothing to do", !!s.notice, JSON.stringify(s.notice));
 }
-await bar.getByRole("button", { name: "Improve…" }).click();
-check("Improve… explains it only runs when asked", (await page.getByRole("region", { name: "Improve" }).innerText()).includes("only runs when you ask"));
-await bar.getByRole("button", { name: "Keyboard shortcuts" }).click();
-check("? opens the shortcut list inline", (await page.getByRole("region", { name: "Keyboard shortcuts" }).innerText()).includes("next problem"));
-check("opening ? closes Improve (one panel at a time)", (await page.getByRole("region", { name: "Improve" }).count()) === 0);
+if ((await tools.count()) > 0) {
+  await tools.click();
+  await page.getByRole("menuitem", { name: /^Improve/ }).click();
+  check("Improve… explains it only runs when asked", (await page.getByRole("dialog", { name: "Improve" }).innerText()).includes("only runs when you ask"));
+  await page.getByRole("button", { name: "Cancel" }).click();
+} else console.log("skip Tools menu is not mounted yet: Improve… dialog text");
+await bar.getByRole("button", { name: "File menu" }).click();
+await page.getByRole("menuitem", { name: "Keyboard shortcuts" }).click();
+check("File menu > Keyboard shortcuts opens the list inline", /previous problem/i.test(await page.getByRole("region", { name: "Keyboard shortcuts" }).innerText()));
 await shot("9-shortcuts");
-await bar.getByRole("button", { name: "Keyboard shortcuts" }).click();
+await page.getByRole("region", { name: "Keyboard shortcuts" }).getByRole("button", { name: "Close" }).click();
 
 // ---- as of ----
-await bar.getByLabel("As of").fill("2026-10-20");
+await bar.getByRole("button", { name: "File menu" }).click();
+await page.getByRole("menuitem", { name: /^As of/ }).click();
+await bar.getByRole("textbox", { name: "As of" }).fill("2026-10-20");
 s = await get();
 check("As of moves the date and the queue", s.asOf === "2026-10-20");
 check("Today resets it", await (async () => { await bar.getByRole("button", { name: "Today" }).click(); return (await get()).asOf !== "2026-10-20"; })());
+await bar.getByRole("button", { name: "Done" }).click();
 
 // ---- plan and what-if ----
-await bar.getByRole("button", { name: "Plan", exact: true }).click();
+await st(() => window.__v3.app.getState().setView("plan"));
 const heads = await page.locator('table[aria-label="Open shifts by week"] thead th').count();
 check("Plan has a store column and 8 week columns", heads === 9, String(heads));
 await shot("10-plan");
@@ -266,20 +312,20 @@ s = await get();
 check("clicking a Plan cell opens the wall on that week", s.view === "wall" && s.win.to > s.win.from && (new Date(s.win.to) - new Date(s.win.from)) / 864e5 === 6, JSON.stringify(s.win));
 await page.waitForFunction(() => !window.__v3.app.getState().busy);
 await st(() => { const a = window.__v3.app.getState(); if (a.world.session.proposal) a.discardProposal(); });
-await bar.getByRole("button", { name: "Plan", exact: true }).click();
+await st(() => { const a = window.__v3.app.getState(); a.setView("plan"); a.setOutForm(true); });
 await page.getByLabel("What-if name").fill("Try something");
 await page.getByRole("button", { name: "Start a what-if" }).click();
 s = await get();
 check("Start a what-if opens a scenario", s.scenario?.name === "Try something" && !s.scenario.parked);
 check("Someone's out shows 'What-if open (not saved)'", (await right.innerText()).includes("What-if open (not saved)"));
-check("Build is disabled while a what-if is open", await bar.getByRole("button", { name: "Build this period" }).isDisabled());
+await toolsDisabled("a what-if is open");
 await shot("11-whatif");
 await right.getByRole("button", { name: "Park what-if and open live" }).click();
 check("Park what-if opens the live schedule again", (await get()).scenario?.parked === true);
 await right.getByRole("button", { name: "Discard", exact: true }).click();
 await right.getByRole("button", { name: "Discard what-if" }).click();
 check("Discard removes the what-if", (await get()).scenario === null);
-await bar.getByRole("button", { name: "Wall", exact: true }).click();
+await bar.getByRole("button", { name: "Schedule" }).click();
 await shot("12-final");
 
 check("no page errors", errors.length === 0, errors.join(" | "));

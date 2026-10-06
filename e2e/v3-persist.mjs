@@ -51,6 +51,17 @@ try {
     const st2 = await second.page.evaluate(() => window.__persist.status());
     check("unsaved count survives reload", st2.unsavedChanges === 2, JSON.stringify(st2));
 
+    // ---- 1b. the real controls: Save is a button, Open / Save as / Download a copy are in the File menu ----
+    {
+      const p3 = second.page;
+      check("a Save button is in the top bar (file picker available)", (await p3.locator("header").getByRole("button", { name: "Save", exact: true }).isEnabled()));
+      await p3.locator("header").getByRole("button", { name: "File menu" }).click();
+      const names = await p3.getByRole("menuitem").allInnerTexts();
+      check("File menu offers Open, Save as and Download a copy", ["Open…", "Save as…", "Download a copy"].every((n) => names.includes(n)), names.join(" | "));
+      check("Open has the data-save-open hook", (await p3.locator("[data-save-open]").count()) === 1);
+      await p3.keyboard.press("Escape");
+    }
+
     // ---- 2. Save As to a file, change, reload -> recovery offers file vs browser copy ----
     const r = await second.page.evaluate(async () => window.__persist.saveAs(window.__v3.app.getState().world));
     check("Save As writes and verifies the file", r.ok === true && r.bytes > 10000, JSON.stringify(r));
@@ -90,6 +101,11 @@ try {
     errorsAll.push(...errors);
     const be = await page.evaluate(() => window.__persist.status().backend);
     check("no pickers -> download backend", be === "download", be);
+    check("without pickers the main button says Download", (await page.locator("header").getByRole("button", { name: "Download", exact: true }).count()) === 1);
+    await page.locator("header").getByRole("button", { name: "File menu" }).click();
+    const dn = await page.getByRole("menuitem").allInnerTexts();
+    check("without pickers the File menu has no Save as", dn.includes("Download a copy") && !dn.includes("Save as…"), dn.join(" | "));
+    await page.keyboard.press("Escape");
     const [dl] = await Promise.all([
       page.waitForEvent("download"),
       page.evaluate(() => window.__persist.download(window.__v3.app.getState().world)),

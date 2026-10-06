@@ -7,6 +7,7 @@ import type { BootResult, OpenResult, Offer } from "../persist-types.ts";
 import { importPrototypeFiles, practiceWorld } from "../demo.ts";
 import { hischoolStarter, newWorld, setupDefaults } from "../newWorld.ts";
 import { Btn } from "../ui/primitives.tsx";
+import { BrandMark } from "../ui/brand.tsx";
 
 type Problem =
   | { kind: "refused"; reason: string; error: string; offers: Offer[] }
@@ -88,9 +89,12 @@ export function Start() {
   return (
     <div className="flex min-h-screen justify-center bg-paper px-4 py-12 text-ink">
       <main className="flex w-full max-w-[580px] flex-col gap-5">
-        <header className="flex flex-col gap-1">
-          <h1 className="font-display text-3xl font-semibold">Hi-School Scheduler</h1>
-          <p className="text-sm text-muted">Pharmacist schedules for your stores. Nothing is placed until you decide it.</p>
+        <header className="flex items-center gap-4">
+          <BrandMark className="h-14" />
+          <div className="flex flex-col gap-0.5">
+            <h1 className="font-display text-3xl font-semibold">Hi-School Scheduler</h1>
+            <p className="text-sm text-muted">Nothing is placed until you decide it.</p>
+          </div>
         </header>
 
         {startupTrouble && <StartupNote boot={boot} fileName={status.fileName} needsPermission={status.needsPermission || boot === "needs-permission"} busy={busy} onReconnect={reconnect} />}
@@ -100,11 +104,11 @@ export function Start() {
         {screen.name === "home" && (
           <>
             <ol className="flex flex-col gap-3">
-              <PathCard n={1} title="Open a schedule file" text="Open a schedule you saved before, from this computer.">
+              <PathCard n={1} title="Open a schedule file" text="One you saved before.">
                 <Btn tone="ink" disabled={busy} onClick={open}>Open a schedule file</Btn>
               </PathCard>
               <ImportCard busy={busy} setBusy={setBusy} onProblem={(t) => setProblem(t ? { kind: "message", text: t } : null)} onReady={(world, report, fileName, unused) => { setProblem(null); setScreen({ name: "import", world, report, fileName, unused }); }} />
-              <PathCard n={3} title="Start a new schedule" text="Begin with the Hi-School pharmacies, or with an empty schedule you fill in yourself.">
+              <PathCard n={3} title="Start a new schedule" text="With the Hi-School pharmacies, or empty.">
                 <Btn disabled={busy} onClick={() => { setProblem(null); setScreen({ name: "new" }); }}>Start a new schedule</Btn>
               </PathCard>
             </ol>
@@ -114,7 +118,7 @@ export function Start() {
                 onClick={() => { const { world } = practiceWorld(); openWorld(world, { fileName: "Practice.sqlite" }); }}>
                 Try the practice month
               </button>
-              . The people, stores and shifts in it are invented. Nothing in it is real.
+              . Everything in it is invented.
             </p>
           </>
         )}
@@ -197,7 +201,7 @@ function ImportCard({ busy, setBusy, onProblem, onReady }: { busy: boolean; setB
   };
 
   return (
-    <PathCard n={2} title="Bring in a file from the old scheduler" text="Choose one or several months saved by the old scheduler (files ending in .hisp.json).">
+    <PathCard n={2} title="Bring in a file from the old scheduler" text="Months saved by the old scheduler (.hisp.json).">
       <input ref={input} type="file" multiple accept=".json,application/json" data-testid="import-input" aria-label="Choose files from the old scheduler" className="sr-only" tabIndex={-1} onChange={(e) => onFiles(e.target.files)} />
       <Btn disabled={busy} onClick={() => input.current?.click()}>Choose old files</Btn>
     </PathCard>

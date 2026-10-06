@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { cmp, isValidDate, weekday, type DateOverride, type Edit } from "@domain";
 import { useApp } from "../../store.ts";
 import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
+import { Hint } from "../chrome/Title.tsx";
 import { DateField, SelectField, TableShell, TextField, WEEKDAY_SHORT, inputCls, niceDate, storesSorted, td, th, useLocked, weeklyNeedOn } from "./shared.tsx";
 
 type Kind = "closed" | "extra" | "exact";
@@ -69,7 +70,7 @@ export function DatesTab() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="max-w-2xl text-sm text-muted">One-off changes to how many pharmacists a store needs on a date: a holiday or closure (0), a clinic day (some extra), or an exact number. They replace the weekly need on that date only.</p>
+      <Hint title="Dates" line="One-off changes to a store's need on a date." tip="A holiday or closure (0), a clinic day (some extra), or an exact number. | They replace the weekly need on that date only." />
 
       <div role="group" aria-label="Add a date change" className="flex flex-col gap-3 rounded-md bg-white p-3 ring-1 ring-line">
         <h3 className="text-sm font-semibold">Add or change a date</h3>

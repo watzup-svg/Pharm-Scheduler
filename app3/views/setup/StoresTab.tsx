@@ -4,6 +4,7 @@ import { isValidDate, type Edit, type ISODate, type StateCode, type Store } from
 import { useApp } from "../../store.ts";
 import { setupDefaults } from "../../newWorld.ts";
 import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
+import { Hint } from "../chrome/Title.tsx";
 import {
   DateField, EPOCH, SelectField, TableShell, TextField, WEEK_ORDER, WEEKDAY_LONG, WEEKDAY_SHORT, inputCls, nextIdFor, niceDate, storesSorted, td, th, useLocked, weeklyNeedOn,
 } from "./shared.tsx";
@@ -31,9 +32,7 @@ export function StoresTab() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-4">
-        <p className="max-w-2xl text-sm text-muted">
-          Stores are never deleted, because the schedule's history refers to them. To close one for good, mark the first day it stays closed. The weekly need is how many pharmacists a store needs each weekday (0 means closed that day).
-        </p>
+        <Hint title="Stores" line="Weekly need is pharmacists per weekday." tip="0 means closed that day. | Stores are kept, not deleted, because the schedule's history refers to them. | To close one for good, mark the first day it stays closed." />
         <Btn tone="ink" className="shrink-0 whitespace-nowrap" disabled={!!locked || editing === "new"} onClick={() => setEditing("new")}>Add a store</Btn>
       </div>
       {editing === "new" && <StoreEditor key="new" onDone={() => setEditing(null)} />}

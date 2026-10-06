@@ -1,7 +1,5 @@
 // Contextual left panel: Queue, To tell, History.
-import { api } from "@domain";
 import { useApp, type LeftTab } from "../store.ts";
-import { useIssues } from "../derive.ts";
 import { cx } from "../ui/primitives.tsx";
 import { Queue } from "./chrome/Queue.tsx";
 import { ToTell } from "./chrome/ToTell.tsx";
@@ -11,14 +9,11 @@ export function LeftPanel() {
   const world = useApp((s) => s.world);
   const tab = useApp((s) => s.leftTab);
   const setTab = useApp((s) => s.setLeftTab);
-  const asOf = useApp((s) => s.asOf);
-  const issues = useIssues();
   if (!world) return null;
-  const toTell = api.toTell(world, asOf).length;
-  const tabs: { id: LeftTab; label: string; badge: number }[] = [
-    { id: "queue", label: "Queue", badge: issues.length },
-    { id: "tell", label: "To tell", badge: toTell },
-    { id: "history", label: "History", badge: 0 },
+  const tabs: { id: LeftTab; label: string }[] = [
+    { id: "queue", label: "Queue" },
+    { id: "tell", label: "To tell" },
+    { id: "history", label: "History" },
   ];
   return (
     <div className="flex min-h-full flex-col">
@@ -35,7 +30,6 @@ export function LeftPanel() {
             className={cx("flex h-9 items-center gap-1.5 border-b-2 px-2.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ink", tab === t.id ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink")}
           >
             {t.label}
-            {t.badge > 0 && <span className="rounded-md bg-fill px-1.5 text-xs font-semibold text-ink ring-1 ring-inset ring-edge">{t.badge}</span>}
           </button>
         ))}
       </div>

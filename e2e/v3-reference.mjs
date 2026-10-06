@@ -184,7 +184,7 @@ await view("checks");
 const trItem = page.locator(`li[data-check="travel|${A}|${B}"]`);
 check("unknown drive time for a coming placement is listed", await trItem.isVisible());
 await trItem.getByRole("button").click();
-check("its button navigates to Travel", (await get(() => window.__v3.app.getState().view)) === "travel");
+check("its button navigates to Travel (Setup, Travel tab)", (await get(() => { const a = window.__v3.app.getState(); return `${a.view}/${a.setupTab}`; })) === "setup/travel");
 
 check("no page errors", errors.length === 0, errors.join(" | "));
 await browser.close();

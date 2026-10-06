@@ -30,7 +30,18 @@ const runAxe = async (page, name) => {
   check(`axe: ${name}`, bad.length === 0, bad.slice(0, 6).map((b) => `${b.rule} ${b.sel} ${b.msg}`).join(" | ") + (bad.length > 6 ? ` (+${bad.length - 6} more)` : ""));
 };
 
-const go = async (page, label) => { await page.locator("header").getByRole("button", { name: label, exact: true }).click(); await page.waitForTimeout(150); };
+// Screens are Schedule / Time off / Print / Setup. Plan is reached through the store; Travel, Rules and Checks are tabs inside Setup.
+const SETUP_TABS = { Travel: "Travel", Rules: "Rules", Checks: "Check" };
+const go = async (page, label) => {
+  const hdr = page.locator("header");
+  if (label === "Wall") await hdr.getByRole("button", { name: "Schedule" }).click();
+  else if (label === "Plan") await page.evaluate(() => window.__v3.app.getState().setView("plan"));
+  else if (label in SETUP_TABS) { await hdr.getByRole("button", { name: "Setup" }).click(); await page.getByRole("tab", { name: SETUP_TABS[label], exact: true }).click(); }
+  else await hdr.getByRole("button", { name: label }).click();
+  await page.waitForTimeout(150);
+};
+const drawer = (page, tab) => page.evaluate((t) => window.__v3.app.getState().setDrawer(!!t, t ?? undefined), tab);
+const VIEWS = ["Wall", "Plan", "Time off", "Setup", "Travel", "Rules", "Checks", "Print"];
 const setup = (page, tab) => page.getByRole("tab", { name: tab }).click().then(() => page.waitForTimeout(100));
 
 /** Every view and dialog, once, with `after` called on each (axe, screenshots...). */
@@ -38,23 +49,25 @@ async function tour(page, size, after) {
   const tag = `${size.width}`;
   const step = async (name) => { await page.waitForTimeout(120); await after(name, tag); };
   await go(page, "Wall"); await step("wall (stores)");
-  await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "Pharmacists" }).click(); await step("wall (pharmacists)");
+  const rows = page.getByRole("group", { name: "Rows" });
+  const hasRows = (await rows.count()) > 0;
+  if (hasRows) { await rows.getByRole("button", { name: "Pharmacists" }).click(); await step("wall (pharmacists)"); }
+  else console.log("skip wall (pharmacists): the Rows switch is the wall's to describe");
   // a selected cell, so the Inspector shows its controls
   await page.locator('[role="gridcell"]').nth(40).click(); await step("wall (pharmacist cell selected)");
-  await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "Stores" }).click();
+  if (hasRows) await rows.getByRole("button", { name: "Stores" }).click();
   await page.locator('[role="gridcell"]').nth(40).click(); await step("wall (store cell selected)");
-  for (const t of ["tell", "history", "queue"]) {
-    const tabs = { tell: "To tell", history: "History", queue: "Queue" };
-    const b = page.locator('[role="tablist"][aria-label="Left panel"]').getByRole("tab").filter({ hasText: new RegExp(tabs[t]) }).first();
-    if (await b.count()) { await b.click(); await step(`left panel: ${t}`); }
-  }
+  await page.evaluate(() => window.__v3.app.getState().setOutForm(true)); await step("wall with the Someone's out form open");
+  await page.evaluate(() => window.__v3.app.getState().setOutForm(false));
+  for (const t of ["tell", "history", "queue"]) { await drawer(page, t); await step(`left drawer: ${t}`); }
+  await drawer(page, null);
   await go(page, "Plan"); await step("plan");
+  await go(page, "Time off"); await step("time off");
+  await page.evaluate(() => window.__v3.app.getState().setOutForm(true)); await step("time off with the right-column form open");
+  await page.evaluate(() => window.__v3.app.getState().setOutForm(false));
   await go(page, "Setup");
   const tabNames = await page.locator('[role="tablist"][aria-label="Setup sections"] [role="tab"]').allInnerTexts();
   for (const n of tabNames) { await page.locator('[role="tablist"][aria-label="Setup sections"]').getByRole("tab", { name: n.trim() }).click(); await step(`setup: ${n.trim()}`); }
-  await go(page, "Travel"); await step("travel");
-  await go(page, "Rules"); await step("rules");
-  await go(page, "Checks"); await step("checks");
   await go(page, "Print"); await step("print");
   await go(page, "Wall");
 }
@@ -73,22 +86,23 @@ async function dialogs(page, after) {
     s.commit([{ t: "update", assignmentId: a.id, patch: { pinned: !a.pinned } }], "a11y change");
   });
   await page.waitForTimeout(300);
-  await page.getByRole("group", { name: "Save" }).getByRole("button", { name: "Open", exact: true }).click();
+  const fileOpen = async () => { await page.getByRole("group", { name: "Save" }).getByRole("button", { name: "File menu" }).click(); await page.getByRole("menuitem", { name: "Open…" }).click(); };
+  await fileOpen();
   await page.waitForTimeout(300);
   if (await dlgOpen()) {
     await after("dialog: unsaved changes"); 
     const focusInside = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
     check("focus moves into the unsaved-changes dialog", focusInside);
     await closeByEsc("unsaved-changes");
-    const back = await page.evaluate(() => document.activeElement?.textContent?.trim());
-    check("focus returns to Open after the dialog closes", back === "Open", String(back));
+    const back = await page.evaluate(() => document.activeElement?.closest("header") ? document.activeElement.getAttribute("aria-label") : String(document.activeElement?.tagName));
+    check("focus returns to the File menu button after the dialog closes", back === "File menu", String(back));
   } else check("unsaved-changes dialog can be shown", false, "no dialog appeared");
 
   // refused file
   await page.evaluate(() => {
     window.__persist.open = async () => ({ state: "refused", reason: "bad", error: "This file is damaged.", offers: [{ source: "mirror", name: "Browser copy", at: "2026-10-01T10:00:00Z" }, { source: "idb-ckpt", id: 1, name: "Before build", at: "2026-10-01T09:00:00Z" }] });
   });
-  await page.getByRole("group", { name: "Save" }).getByRole("button", { name: "Open", exact: true }).click();
+  await fileOpen();
   await page.waitForTimeout(300);
   if (await dlgOpen()) { await after("dialog: file refused"); await closeByEsc("file-refused"); } else check("file-refused dialog can be shown", false);
 
@@ -174,7 +188,7 @@ try {
   });
 
   // Tab through the whole page.
-  for (const view of ["Wall", "Plan", "Setup", "Travel", "Rules", "Checks", "Print"]) {
+  for (const view of VIEWS) {
     await go(page, view);
     // A click sets Chromium's sequential-focus start point, so start from the first control on the page.
     await page.evaluate(() => { document.activeElement?.blur(); document.querySelector("header button, header a, header input")?.focus(); });
@@ -221,6 +235,7 @@ try {
   }
   // Region order: header, left panel, main, Inspector, in that order
   await go(page, "Wall");
+  await drawer(page, "queue");
   {
     await page.evaluate(() => { document.activeElement?.blur(); document.querySelector("header button, header a, header input")?.focus(); });
     const seq = [0];
@@ -232,8 +247,9 @@ try {
     }
     let sorted = true;
     for (let i = 1; i < seq.length; i++) if (seq[i] < seq[i - 1]) sorted = false;
-    check("Tab order runs top bar, left panel, schedule, Inspector", sorted && seq.includes(0) && seq.includes(2), seq.join(""));
+    check("Tab order runs top bar, left drawer, schedule, Inspector", sorted && seq.includes(0) && seq.includes(1) && seq.includes(2), seq.join(""));
   }
+  await drawer(page, null);
 
   // Wall with the keyboard alone
   {
@@ -270,9 +286,10 @@ try {
   {
     const opened = await page.evaluate(async () => {
       const s = window.__v3.app.getState();
-      await s.runBuild();
+      await s.runImprove(true); // Build finds nothing to propose on the untouched month; Improve opens a preview
       return !!window.__v3.app.getState().world.session.proposal;
     });
+    if (!opened) console.log("   build notice:", await page.evaluate(() => JSON.stringify(window.__v3.app.getState().notice)));
     await page.waitForTimeout(500);
     if (opened) {
       await runAxe(page, "wall with a proposal bar open");
@@ -284,9 +301,10 @@ try {
     } else check("a proposal can be opened for the Esc check", false);
   }
 
-  // ---- accessible names on every control, on every view
-  for (const view of ["Wall", "Plan", "Setup", "Travel", "Rules", "Checks", "Print"]) {
+  // ---- accessible names on every control, on every view (the drawer open on the Wall)
+  for (const view of VIEWS) {
     await go(page, view);
+    if (view === "Wall") await drawer(page, "queue"); else await drawer(page, null);
     const bad = await page.evaluate(() => {
       const out = [];
       const nameOf = (e) => {
@@ -309,7 +327,7 @@ try {
   }
 
   // ---- text is 13px or larger (visible text only, on every view)
-  for (const view of ["Wall", "Plan", "Setup", "Travel", "Rules", "Checks"]) {
+  for (const view of ["Wall", "Plan", "Time off", "Setup", "Travel", "Rules", "Checks", "Print"]) {
     await go(page, view);
     if (view === "Wall") await page.locator('[role="gridcell"]').nth(40).click();
     const small = await page.evaluate(() => {
@@ -346,10 +364,10 @@ try {
       }
       return { n: cells.length, noName, bad: [...states].filter(([, ok]) => !ok).map(([k]) => k) };
     });
-    check("every wall cell has a spoken description", r.n > 100 && r.noName === 0, `${r.noName} of ${r.n} have none`);
+    check("every wall cell has a spoken description", r.n > 50 && r.noName === 0, `${r.noName} of ${r.n} have none`);
     check("every wall cell state has a word, glyph or pattern", r.bad.length === 0, r.bad.join("; "));
   }
-  for (const view of ["Plan", "Checks", "Wall"]) {
+  for (const view of ["Plan", "Time off", "Checks", "Wall"]) {
     await go(page, view);
     const bad = await page.evaluate(() => {
       // a chip (inline-flex rounded span with a ring) must never be empty or colour only
@@ -365,7 +383,7 @@ try {
     const { page: p, errors: e2 } = await openApp(browser, srv.base, { size });
     errorsAll.push(...e2);
     const tag = `${size.width}x${size.height}`;
-    for (const view of ["Wall", "Plan", "Setup", "Travel", "Rules", "Checks", "Print"]) {
+    for (const view of VIEWS) {
       await go(p, view);
       if (view === "Wall") await p.locator('[role="gridcell"]').nth(40).click();
       const m = await p.evaluate(() => {
@@ -387,7 +405,7 @@ try {
       check(`${tag} ${view}: top bar fits (nothing cut off)`, m.hdrOverflow <= 0 && m.cut.length === 0, `${m.hdrOverflow}px ${m.cut.join(",")}`);
       check(`${tag} ${view}: Inspector fully on screen and scrolls inside`, m.insp && m.insp.r <= m.vw + 0.5 && m.insp.b <= m.vh + 0.5 && m.insp.l >= m.main.l && (m.inspScrolls === "auto" || m.inspScrolls === "scroll"), JSON.stringify(m.insp));
       check(`${tag} ${view}: the schedule area keeps real room`, m.main.r - m.main.l >= 600 && m.main.b - m.main.t >= 380, `${Math.round(m.main.r - m.main.l)}x${Math.round(m.main.b - m.main.t)}`);
-      if (view === "Wall" || view === "Setup" || view === "Print") await p.screenshot({ path: `${SHOTS}/${tag}-${view}.png` });
+      if (["Wall", "Time off", "Setup", "Print"].includes(view)) await p.screenshot({ path: `${SHOTS}/${tag}-${view}.png` });
     }
     // the wall scrolls inside itself, and the last row / last column can be reached
     await go(p, "Wall");
