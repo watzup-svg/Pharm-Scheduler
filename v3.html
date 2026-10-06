@@ -6,5 +6,29 @@
     <link rel="icon" href="data:," />
     <title>Hi-School Pharmacy Scheduler</title>
   </head>
-  <body class="antialiased"><div id="root"></div><script type="module" src="/app3/main.tsx"></script></body>
+  <body class="antialiased">
+    <!-- Shown only until the app draws over it. If it never goes away, the browser or viewer blocked the app, and the text says what to do. -->
+    <div id="root"><div id="boot-fallback" style="font:16px/1.5 system-ui,sans-serif;max-width:34rem;margin:12vh auto;padding:0 1rem;color:#222">
+      <h1 style="font-size:1.25rem;margin:0 0 .5rem">Hi-School Scheduler is starting&hellip;</h1>
+      <p style="margin:0 0 .75rem">If this message does not go away, the app was blocked or this browser is too old.</p>
+      <ul style="margin:0 0 .75rem;padding-left:1.25rem">
+        <li>Open the saved file by double-clicking it, so it opens in <b>Chrome</b> or <b>Edge</b> (not a preview pane, email viewer or chat app).</li>
+        <li>If you downloaded it, check it is not still ending in &ldquo;.html.txt&rdquo; and that the whole file saved (about 3 MB).</li>
+        <li>A work computer may block saved web pages from running scripts. Ask whoever manages it to allow this file.</li>
+      </ul>
+      <p id="boot-detail" style="margin:0;color:#555;font-size:.875rem"></p>
+    </div></div>
+    <script>
+      // Classic script (runs even where module scripts do not): report the first early error on the page itself.
+      (function () {
+        var shown = false;
+        function show(msg) { if (shown) return; var d = document.getElementById("boot-detail"); if (d) { shown = true; d.textContent = "Technical detail: " + String(msg).slice(0, 300); } }
+        window.addEventListener("error", function (e) { show(e && (e.message || (e.error && e.error.message)) || "script error"); });
+        window.addEventListener("unhandledrejection", function (e) { show(e && e.reason && (e.reason.message || e.reason) || "unhandled rejection"); });
+        var need = [typeof Promise, typeof Map, typeof WeakMap, typeof WebAssembly, typeof indexedDB];
+        if (need.indexOf("undefined") >= 0) show("this browser is missing a required feature (WebAssembly or IndexedDB)");
+      })();
+    </script>
+    <script type="module" src="/app3/main.tsx"></script>
+  </body>
 </html>
