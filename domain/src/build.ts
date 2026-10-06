@@ -10,7 +10,8 @@ import type { BuildReport, BuildResult, Edit, Proposal, World } from "./api-type
 import type { DomainState, Evaluation, RuleResult } from "./types.ts";
 
 const BUILD_SCOPE: Scope = { chain: 3, changed: 4, offDuty: false };
-const MAX_GROUP = 5;
+/** Build solves at most this many same-date gaps together (Repair allows 5): it runs over a whole month and the DM reviews the result. */
+const MAX_GROUP = 2;
 
 const emptyReport = (): BuildReport => ({
   edits: 0, instantiated: 0, patternCannotApply: [], exceptionsCreatedGaps: [], patternConflicts: [],
@@ -95,21 +96,25 @@ export function build(world: World, range: { from: ISODate; to: ISODate }, asOf:
 
   // 4. Fill gaps jointly until a full pass makes no progress.
   const asBuild = (es: Edit[]): Edit[] => es.map((e) => (e.t === "place" ? { ...e, source: "build" as const } : e));
-  for (;;) {
-    const gaps = openCells();
-    let progressed = false;
-    for (let i = 0; i < gaps.length && !progressed; i += MAX_GROUP) {
-      const grp = gaps.slice(i, i + MAX_GROUP);
-      const out = searchGaps(W, grp, BUILD_SCOPE, asOf, W.config.searchNodeLimit);
-      if (out.clean.length) { apply(asBuild(out.clean[0]!.edits)); progressed = true; }
-    }
-    if (!progressed) {
-      for (const g of gaps) {
-        const out = searchGaps(W, [g], BUILD_SCOPE, asOf, W.config.searchNodeLimit);
-        if (out.clean.length) { apply(asBuild(out.clean[0]!.edits)); progressed = true; break; }
+  // Moves never leave a gap's date, so each date is solved on its own (jointly across that date's gaps) and a date that has no
+  // clean answer never gets one later: nothing else changes it.
+  const datesWithGaps = [...new Set(openCells().map((g) => g.date))].sort(cmp);
+  for (const date of datesWithGaps) {
+    for (let guard = 0; guard < 20; guard++) {
+      const ev = evaluate(W, asOf, { range: { from: date, to: date } });
+      const gs: Gap[] = Object.values(ev.cells).filter((c) => c.open > 0).map((c) => ({ storeId: c.storeId, date })).sort((a, b) => cmp(a.storeId, b.storeId));
+      if (!gs.length) break;
+      let done = false;
+      const joint = searchGaps(W, gs.slice(0, MAX_GROUP), BUILD_SCOPE, asOf, W.config.searchNodeLimit);
+      if (joint.clean.length) { apply(asBuild(joint.clean[0]!.edits)); done = true; }
+      else if (gs.length > 1) {
+        for (const g of gs) {
+          const one = searchGaps(W, [g], BUILD_SCOPE, asOf, W.config.searchNodeLimit);
+          if (one.clean.length) { apply(asBuild(one.clean[0]!.edits)); done = true; break; }
+        }
       }
+      if (!done) break;
     }
-    if (!progressed) break;
   }
   report.unresolvedGaps = openCells();
 

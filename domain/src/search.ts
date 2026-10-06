@@ -17,6 +17,8 @@ export type SearchOut = {
   missing: string[];
   limitHit: boolean;
   legalCandidates: number;
+  /** True when the people-changed budget cut off some candidate, so a bigger budget could find more. */
+  prunedByChanged?: boolean;
 };
 
 const ck = (s: string, d: string) => `${s}|${d}`;
@@ -56,7 +58,7 @@ function travelTotal(state: DomainState, dates: Set<ISODate>): number {
 
 type Leaf = { option: RepairOption; clean: boolean; key: string; sortKey: string[]; tuple: [string, string, string][] };
 
-export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate, nodeLimit: number, wantNearMiss = false): SearchOut {
+function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate, nodeLimit: number, wantNearMiss = false): SearchOut {
   const dates = new Set(gaps.map((g) => g.date));
   const sortedDates = [...dates].sort(cmp);
   const range = { from: sortedDates[0]!, to: sortedDates[sortedDates.length - 1]! };
@@ -72,6 +74,7 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
   let limitHit = false;
   let legalCandidates = 0;
   let allowSkip = false;
+  let prunedByChanged = false;
 
   type Pending = { storeId: string; date: ISODate; depth: number };
   type Move = { edit: Edit; ph: string; store: string; date: ISODate; from: string | null };
@@ -130,7 +133,7 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
           const vc = evc.cells[ck(c.from, head.date)];
           if (vc) {
             const newCovered = vc.covered - (evc.assignments[c.fromAsg]?.counts ? 1 : 0);
-            if (Math.max(0, vc.required - newCovered - vc.acceptedShort) > vc.open) continue;
+            if (Math.max(0, vc.required - newCovered - vc.acceptedShort) > vc.open) { if (moves.length + 1 >= scope.changed) prunedByChanged = true; continue; }
           }
         }
         if (++nodes > nodeLimit) { limitHit = true; return; }
@@ -158,7 +161,7 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
           w2.add(vk);
           if ((ev2.cells[vk]?.open ?? 0) > (evc.cells[vk]?.open ?? 0)) {
             // The chain must continue to be clean. If it cannot (out of chain length or people), only the nearest-miss pass wants it.
-            if (!allowSkip && (head.depth + 1 >= scope.chain || moves.length + 1 >= scope.changed)) continue;
+            if (!allowSkip && (head.depth + 1 >= scope.chain || moves.length + 1 >= scope.changed)) { if (moves.length + 1 >= scope.changed) prunedByChanged = true; continue; }
             np = [{ storeId: c.from, date: head.date, depth: head.depth + 1 }, ...rest];
           }
         }
@@ -166,12 +169,26 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
         if (limitHit) return;
       }
     }
+    if (cands.length && moves.length >= scope.changed) prunedByChanged = true;
     // leave this one open and carry on with the rest
     if (allowSkip) dfs(state, evc, moves, rest, watch);
     else if (!cands.length || moves.length >= scope.changed || head.depth >= scope.chain) dfs(state, evc, moves, rest, watch);
   };
 
   const watch = new Set(gaps.map((g) => ck(g.storeId, g.date)));
+  // A chain of moves can only end where someone can leave without opening a hole (a surplus, accepted-short slack, or a person who
+  // does not count anyway) or by bringing in someone off duty. With none of those on the gap dates there is no clean answer at all.
+  if (!scope.offDuty && !wantNearMiss) {
+    const gapDates = new Set(gaps.map((g) => g.date));
+    let closer = false;
+    for (const a of Object.values(base.assignments)) {
+      if (!gapDates.has(a.date) || a.pinned || a.partialNote || a.date < asOf) continue;
+      const cell = baseEv.cells[ck(a.storeId, a.date)];
+      const counts = baseEv.assignments[a.id]?.counts ?? false;
+      if (!counts || !cell || cell.covered - 1 >= cell.required - cell.acceptedShort) { closer = true; break; }
+    }
+    if (!closer) return { clean: [], nearMiss: null, excludedUnknownTravel: [], missing: [], limitHit: false, legalCandidates: 0, prunedByChanged: false };
+  }
   const startPending = gaps.map((g) => ({ ...g, depth: 0 }));
   dfs(base, baseEv, [], startPending, watch);
   if (wantNearMiss && ![...leaves.values()].some((l) => l.clean && l.option.edits.length) && !limitHit) {
@@ -197,6 +214,86 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
   return {
     clean, nearMiss: near,
     excludedUnknownTravel: [...excluded.values()].sort((a, b) => cmp(a.pharmacistId, b.pharmacistId) || cmp(a.storeId, b.storeId) || cmp(a.date, b.date)),
-    missing: [...missing].sort(cmp), limitHit, legalCandidates,
+    missing: [...missing].sort(cmp), limitHit, legalCandidates, prunedByChanged,
   };
+}
+
+/**
+ * Iterative deepening on the number of people changed. The ordering puts fewer changes ahead of everything after violations,
+ * open requirements and overrides, so the best three clean options are all found at the smallest budgets; a larger budget only
+ * runs when fewer than three clean options exist. Each level is exhaustive, so the answer is the same as one big search.
+ */
+function searchGroup(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate, nodeLimit: number, wantNearMiss = false): SearchOut {
+  let last: SearchOut | null = null;
+  for (let k = 1; k <= scope.changed; k++) {
+    const out = searchCore(base, gaps, { ...scope, changed: k }, asOf, nodeLimit, false);
+    last = out;
+    if (out.clean.length >= 3 || out.limitHit || !out.prunedByChanged) break;
+  }
+  if (last && !last.clean.length && wantNearMiss && !last.limitHit) return searchCore(base, gaps, scope, asOf, nodeLimit, true);
+  return last ?? searchCore(base, gaps, scope, asOf, nodeLimit, wantNearMiss);
+}
+
+function tupleOf(base: DomainState, e: Edit): [string, string, string] {
+  if (e.t === "move") { const a = base.assignments[e.assignmentId]!; return [a.pharmacistId, e.toStoreId, a.date]; }
+  if (e.t === "place") return [e.pharmacistId, e.storeId, e.date];
+  return ["", "", ""];
+}
+
+const pad = (n: number, w = 6) => String(n).padStart(w, "0");
+function metricKey(m: RepairMetrics): string[] {
+  return [pad(m.violationsIntroduced), pad(m.openRemaining), pad(m.overridesNeeded), pad(m.changedPharmacistDates), pad(m.patternNet + 100000, 8), pad(m.travelMinutes, 8)];
+}
+
+/**
+ * Joint search over the gaps. Moves never leave the gap dates, so gaps on different dates only meet through the shared
+ * "people changed" budget and the ordering, which are sums. Each date is searched jointly with its own gaps, then the best few of
+ * each date are combined and re-ranked with the same ordering. Same answer as one big search, without the product of branching.
+ */
+export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate, nodeLimit: number, wantNearMiss = false): SearchOut {
+  const byDate = new Map<ISODate, Gap[]>();
+  for (const g of gaps) (byDate.get(g.date) ?? byDate.set(g.date, []).get(g.date)!).push(g);
+  if (byDate.size <= 1) return searchGroup(base, gaps, scope, asOf, nodeLimit, wantNearMiss);
+  const dates = [...byDate.keys()].sort(cmp);
+  const parts = dates.map((d) => searchGroup(base, byDate.get(d)!, scope, asOf, nodeLimit, wantNearMiss));
+  const excluded = new Map<string, SearchOut["excludedUnknownTravel"][number]>();
+  const missing = new Set<string>();
+  let legal = 0, limitHit = false;
+  for (const p of parts) {
+    legal += p.legalCandidates; limitHit ||= p.limitHit;
+    for (const x of p.excludedUnknownTravel) excluded.set(`${x.pharmacistId}|${x.storeId}|${x.date}`, x);
+    for (const m of p.missing) missing.add(m);
+  }
+  const common = {
+    excludedUnknownTravel: [...excluded.values()].sort((a, b) => cmp(a.pharmacistId, b.pharmacistId) || cmp(a.storeId, b.storeId) || cmp(a.date, b.date)),
+    missing: [...missing].sort(cmp), limitHit, legalCandidates: legal,
+  };
+  const combine = (lists: RepairOption[][]): RepairOption[] => {
+    let acc: RepairOption[] = [{ edits: [], metrics: { violationsIntroduced: 0, openRemaining: 0, overridesNeeded: 0, changedPharmacistDates: 0, patternNet: 0, travelMinutes: 0 }, explanation: [] }];
+    for (const list of lists) {
+      const next: RepairOption[] = [];
+      for (const a of acc) for (const b of list) {
+        const m = { violationsIntroduced: a.metrics.violationsIntroduced + b.metrics.violationsIntroduced, openRemaining: a.metrics.openRemaining + b.metrics.openRemaining, overridesNeeded: a.metrics.overridesNeeded + b.metrics.overridesNeeded, changedPharmacistDates: a.metrics.changedPharmacistDates + b.metrics.changedPharmacistDates, patternNet: a.metrics.patternNet + b.metrics.patternNet, travelMinutes: a.metrics.travelMinutes + b.metrics.travelMinutes };
+        if (m.changedPharmacistDates > scope.changed) continue;
+        next.push({ edits: [...a.edits, ...b.edits], metrics: m, explanation: [...a.explanation, ...b.explanation] });
+      }
+      acc = next;
+    }
+    const keyed = acc.map((o) => ({ o, mk: metricKey(o.metrics), tuples: o.edits.map((e) => tupleOf(base, e)).sort((x, y) => cmp(x[0], y[0]) || cmp(x[1], y[1]) || cmp(x[2], y[2])) }));
+    keyed.sort((a, b) => {
+      for (let i = 0; i < a.mk.length; i++) { const c = cmp(a.mk[i]!, b.mk[i]!); if (c) return c; }
+      for (let i = 0; i < Math.min(a.tuples.length, b.tuples.length); i++) { const x = a.tuples[i]!, y = b.tuples[i]!; const c = cmp(x[0], y[0]) || cmp(x[1], y[1]) || cmp(x[2], y[2]); if (c) return c; }
+      return a.tuples.length - b.tuples.length;
+    });
+    // edits in (pharmacist, store, date) order, like a single search
+    return keyed.map((k) => ({ ...k.o, edits: k.o.edits.map((e, i) => ({ e, t: tupleOf(base, e), i })).sort((x, y) => cmp(x.t[0], y.t[0]) || cmp(x.t[1], y.t[1]) || cmp(x.t[2], y.t[2])).map((x) => x.e) }));
+  };
+  // Clean: every date needs a clean answer. Keep the best three of each date (the global best three cannot need more).
+  const clean = parts.every((p) => p.clean.length) ? combine(parts.map((p) => p.clean.slice(0, 3))) : [];
+  let near: RepairOption | null = null;
+  if (!clean.length && wantNearMiss) {
+    const per = parts.map((p) => (p.clean[0] ? [p.clean[0]] : p.nearMiss ? [p.nearMiss] : [{ edits: [], metrics: { violationsIntroduced: 0, openRemaining: 0, overridesNeeded: 0, changedPharmacistDates: 0, patternNet: 0, travelMinutes: 0 }, explanation: [] }]));
+    near = combine(per).find((o) => o.edits.length > 0) ?? null;
+  }
+  return { clean, nearMiss: near, ...common };
 }

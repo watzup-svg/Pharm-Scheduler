@@ -176,8 +176,14 @@ export const useApp = create<AppState>((set, get) => {
       const w0 = world();
       set({ busy: "Find cover" });
       try {
-        const result = await callEngine<RepairResult>({ op: "repair", world: w0, gaps, opts: { wider, showNearMiss: true }, asOf: s.asOf });
+        const result = await callEngine<RepairResult>({ op: "repair", world: w0, gaps, opts: { wider }, asOf: s.asOf });
         if (get().world === w0) set({ repairResult: { gaps, wider, result } });
+        // The closest option costs a full-depth search, so it is fetched after the answer is on screen, only when there is no clean option.
+        if (result.status === "none" && get().world === w0) {
+          const full = await callEngine<RepairResult>({ op: "repair", world: w0, gaps, opts: { wider, showNearMiss: true }, asOf: s.asOf });
+          const cur = get().repairResult;
+          if (get().world === w0 && cur && cur.gaps === gaps) set({ repairResult: { gaps, wider, result: full } });
+        }
       } catch (e) { get().say("error", String((e as Error).message)); } finally { set({ busy: null }); }
     },
     previewRepair: (option) => {
