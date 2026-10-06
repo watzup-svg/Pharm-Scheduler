@@ -10,6 +10,6 @@ export { checkIntegrity, type IntegrityIssue } from "./integrity.ts";
 export { applyScratch, stateHash, ENGINE_VERSION } from "./changeset.ts";
 export { seedWorld, emptySession, DEFAULT_CONFIG, type Seed } from "./seed.ts";
 export { importV2, type ImportReport, type DriveTable } from "./import-v2.ts";
-export { expectedOn, standingMatches } from "./patterns.ts";
+export { expectedOn, standingMatches, patternConflicts } from "./patterns.ts";
 export { sha256 } from "./hash.ts";
 export { canonical, clone, deepEqual } from "./canonical.ts";

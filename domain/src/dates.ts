@@ -30,6 +30,7 @@ function parts(s: ISODate): [number, number, number] {
   const mt = RE.exec(s);
   if (!mt) throw new Error(`bad date: ${s}`);
   const out: [number, number, number] = [Number(mt[1]), Number(mt[2]), Number(mt[3])];
+  if (out[1] < 1 || out[1] > 12 || out[2] < 1 || out[2] > daysInMonth(out[0], out[1])) throw new Error(`bad date: ${s}`);
   if (PARTS.size < 50000) PARTS.set(s, out);
   return out;
 }

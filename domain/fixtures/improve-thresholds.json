@@ -1680,7 +1680,7 @@
       },
       "expect": {
         "status": "nothing",
-        "message": "Nothing to improve.",
+        "message": "Nothing to improve: the next 14 days are left alone. Include them to look there.",
         "proposal": {
           "$absent": true
         }

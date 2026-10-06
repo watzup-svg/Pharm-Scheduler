@@ -46,7 +46,7 @@ export const DEFAULT_CONFIG: Config = {
   travelHardMinutes: 150,
   maxConsecutiveDays: 6,
   improve: { minRestoredStanding: 3, minTravelSavedMinutes: 60, maxChanged: 10, excludeNextDays: 14 },
-  searchNodeLimit: 200000,
+  searchNodeLimit: 4000,
   mileageRates: [],
   mileageFreeMiles: 20,
 };

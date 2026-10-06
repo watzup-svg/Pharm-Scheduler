@@ -116,6 +116,7 @@ export function importV2(docsIn: unknown[], opts: { driveTable?: DriveTable } = 
   const cells: NonNullable<Seed["cells"]> = [];
   const built: ISODate[] = [];
   const travel = new Map<string, [string, string, number, number]>();
+  const monthPatterns: { ym: string; first: ISODate; byPair: Map<string, Set<number>> }[] = [];
   const accepted: { kind: string; a: string; b: string; day: number; date: ISODate }[] = [];
   let seq = 1;
   const seenAsg = new Set<string>();
@@ -189,10 +190,7 @@ export function importV2(docsIn: unknown[], opts: { driveTable?: DriveTable } = 
         }
       }
     }
-    for (const [k, wds] of [...byPair].sort((a, b) => cmp(a[0], b[0]))) {
-      const [store, ph] = k.split("|") as [string, string];
-      standing.push({ store, ph, recurrence: { weekdays: [...wds].sort((a, b) => a - b), cycleWeeks: 1, anchor: first }, from: first });
-    }
+    monthPatterns.push({ ym, first, byPair });
     // drive times set by hand
     for (const [key, minutes] of Object.entries(d.driveMinutes ?? {})) {
       const [a, b] = key.split("|");
@@ -208,6 +206,22 @@ export function importV2(docsIn: unknown[], opts: { driveTable?: DriveTable } = 
     }
     for (const f of ["printPrefs", "storeLabels"]) if (f in (d as object)) report.dropped.push(`${ym}: ${f} (screen and print preferences are not domain data)`);
     if (d.mileage?.rate) report.assumptions.push(`${ym}: mileage rate ${d.mileage.rate} $/mile imported as ${Math.round(d.mileage.rate * 100)} cents effective ${ym}-01`);
+  }
+  // Stamp patterns -> one standing row per run of identical months; a pair that disappears or changes ends its row the day before the next month.
+  {
+    const open = new Map<string, { weekdays: string; from: ISODate; ym: string }>();
+    const close = (k: string, to: ISODate | undefined) => {
+      const o = open.get(k)!;
+      const [store, ph] = k.split("|") as [string, string];
+      standing.push({ store, ph, recurrence: { weekdays: o.weekdays.split(",").map(Number), cycleWeeks: 1, anchor: o.from }, from: o.from, ...(to ? { to } : {}) });
+      open.delete(k);
+    };
+    for (const m of monthPatterns) {
+      const now = new Map([...m.byPair].map(([k, wds]) => [k, [...wds].sort((a, b) => a - b).join(",")]));
+      for (const k of [...open.keys()].sort(cmp)) if (now.get(k) !== open.get(k)!.weekdays) close(k, addDays(m.first, -1));
+      for (const k of [...now.keys()].sort(cmp)) if (!open.has(k)) open.set(k, { weekdays: now.get(k)!, from: m.first, ym: m.ym });
+    }
+    for (const k of [...open.keys()].sort(cmp)) close(k, undefined);
   }
   // measured drive table beats nothing; hand-set numbers win
   for (const [key, v] of Object.entries(opts.driveTable ?? {})) {

@@ -1,6 +1,7 @@
 // Improve: explicit trigger only. Re-deals pharmacists among existing slots on one date. Never adds shifts.
 import { addDays, cmp, dateRange, type ISODate } from "./dates.ts";
-import { evaluate } from "./coverage.ts";
+import { evalDelta, evaluate, makeCtx } from "./coverage.ts";
+import type { Evaluation } from "./types.ts";
 import { applyScratch, ENGINE_VERSION, stateHash } from "./changeset.ts";
 import { expectedOn, patternConflicts } from "./patterns.ts";
 import type { Edit, ImproveOpts, ImproveResult, World } from "./api-types.ts";
@@ -8,18 +9,16 @@ import type { Assignment, DomainState } from "./types.ts";
 
 type Metrics = { fails: Record<string, number>; failTotal: number; overrides: number; open: number; unverified: number; exceptions: number; travel: number };
 
-function metrics(state: DomainState, asOf: ISODate, dates: ISODate[]): Metrics {
-  const range = { from: dates[0]!, to: dates[dates.length - 1]! };
-  const ev = evaluate(state, asOf, { range, window: range });
+function metrics(state: DomainState, ev: Evaluation, dates: ISODate[]): Metrics {
   const fails: Record<string, number> = {};
   let failTotal = 0;
   const inRange = new Set(dates);
   for (const a of Object.values(state.assignments)) {
     if (!inRange.has(a.date)) continue;
-    for (const r of ev.assignments[a.id]!.results) if (r.verdict === "Fail" && !r.overridden) { fails[r.ruleId] = (fails[r.ruleId] ?? 0) + 1; failTotal++; }
+    for (const r of ev.assignments[a.id]?.results ?? []) if (r.verdict === "Fail" && !r.overridden) { fails[r.ruleId] = (fails[r.ruleId] ?? 0) + 1; failTotal++; }
   }
   let open = 0, unverified = 0;
-  for (const c of Object.values(ev.cells)) { open += c.open; unverified += c.unverified; }
+  for (const c of Object.values(ev.cells)) { if (!inRange.has(c.date)) continue; open += c.open; unverified += c.unverified; }
   const have = new Set(Object.values(state.assignments).map((a) => `${a.pharmacistId}|${a.storeId}|${a.date}`));
   let exceptions = 0;
   for (const d of dates) for (const e of expectedOn(state, d)) if (!have.has(`${e.pharmacistId}|${e.storeId}|${d}`)) exceptions++;
@@ -29,7 +28,11 @@ function metrics(state: DomainState, asOf: ISODate, dates: ISODate[]): Metrics {
     const base = state.pharmacists[a.pharmacistId]?.baseStoreId;
     if (base && base !== a.storeId) travel += state.travel[`${base}|${a.storeId}`]?.minutes ?? 0;
   }
-  const overrides = Object.values(state.overrides).filter((o) => { const a = state.assignments[o.assignmentId]; return a && inRange.has(a.date); }).length;
+  // An override counts only while its rule still fails (a moot one would be dropped on commit).
+  const overrides = Object.values(state.overrides).filter((o) => {
+    const a = state.assignments[o.assignmentId];
+    return a && inRange.has(a.date) && ev.assignments[a.id]?.results.some((r) => r.ruleId === o.ruleId && r.verdict === "Fail");
+  }).length;
   return { fails, failTotal, overrides, open, unverified, exceptions, travel };
 }
 
@@ -47,36 +50,54 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
   const cfg = world.state.config.improve;
   const earliest = opts.includeNext14 ? asOf : addDays(asOf, cfg.excludeNextDays);
   const dates = dateRange(opts.from, opts.to).filter((d) => d >= earliest);
-  if (!dates.length) return nothing;
+  if (!dates.length) return { status: "nothing", message: !opts.includeNext14 && dateRange(opts.from, opts.to).some((d) => d >= asOf && d < earliest) ? "Nothing to improve: the next 14 days are left alone. Include them to look there." : "Nothing to improve.", proposal: null };
 
   const original = world.state;
   let cur = original;
-  const base = metrics(original, asOf, dates);
+  const range = { from: dates[0]!, to: dates[dates.length - 1]! };
+  const ctx = makeCtx(original);
+  let curEv = evaluate(original, asOf, { range }, ctx);
+  const base = metrics(original, curEv, dates);
   let curM = base;
+  const origPh = new Map(Object.values(original.assignments).map((a) => [a.id, a.pharmacistId]));
+  let changed = new Set<string>();
   const movable = (a: Assignment) => a.agreed && a.source !== "emergency" && !a.pinned && !a.partialNote && a.date >= earliest;
-  const changedNet = (s: DomainState) => Object.values(original.assignments).filter((a) => s.assignments[a.id]?.pharmacistId !== a.pharmacistId).length;
 
   let day: ISODate[] = [dates[0]!];
   let dayM = curM;
   const tryApply = (edits: Edit[]): boolean => {
-    const next = applyScratch(cur, edits);
+    const next = applyScratch(cur, edits, undefined, { skipMoot: true });
     if ("refused" in next) return false;
-    if (changedNet(next) > cfg.maxChanged) return false;
-    const ev = evaluate(next, asOf);
+    const nextChanged = new Set(changed);
+    const phs = new Set<string>();
+    const cells = new Set<string>();
     for (const e of edits) {
       if (e.t !== "swap") continue;
-      if (ev.assignments[e.assignmentId]!.results.some((r) => r.verdict === "Unknown")) return false;
+      const was = cur.assignments[e.assignmentId]!;
+      phs.add(was.pharmacistId); phs.add(e.toPharmacistId);
+      cells.add(`${was.storeId}|${was.date}`);
+      if (origPh.get(e.assignmentId) === e.toPharmacistId) nextChanged.delete(e.assignmentId); else nextChanged.add(e.assignmentId);
     }
-    const m = metrics(next, asOf, day);
+    if (nextChanged.size > cfg.maxChanged) return false;
+    const ev = evalDelta(next, ctx, curEv, [...phs], [...cells]);
+    for (const e of edits) {
+      if (e.t !== "swap") continue;
+      const r = ev.assignments[e.assignmentId];
+      // Every slot we touched must end up legal and fully checkable.
+      if (!r || !r.counts || r.results.some((x) => x.verdict === "Unknown")) return false;
+    }
+    const m = metrics(next, ev, day);
     if (!notWorse(dayM, m) || !better(dayM, m)) return false;
     cur = next;
+    curEv = ev;
+    changed = nextChanged;
     dayM = m;
     return true;
   };
 
   for (const date of dates) {
     day = [date];
-    dayM = metrics(cur, asOf, day);
+    dayM = metrics(cur, curEv, day);
     const slots = () => Object.values(cur.assignments).filter((a) => a.date === date && movable(a)).sort((a, b) => cmp(a.id, b.id));
     // 1. restore standing assignments: follow desired slots until the chain closes
     const exp = expectedOn(cur, date);
@@ -112,8 +133,7 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
     }
     // 2. pair swaps for travel and violations
     const S = slots();
-    const evDay = evaluate(cur, asOf, { range: { from: date, to: date }, window: { from: date, to: date } });
-    const bad = (id: string) => evDay.assignments[id]?.results.some((r) => r.verdict === "Fail" || r.overridden) ?? false;
+    const bad = (id: string) => curEv.assignments[id]?.results.some((r) => r.verdict === "Fail" || r.overridden) ?? false;
     const drive = (ph: string, store: string): number | null => {
       const b = cur.pharmacists[ph]?.baseStoreId;
       if (!b) return 0;
@@ -136,7 +156,7 @@ export function improve(world: World, opts: ImproveOpts, asOf: ISODate): Improve
     }
   }
 
-  curM = metrics(cur, asOf, dates);
+  curM = metrics(cur, curEv, dates);
   const removed = base.failTotal + base.overrides - (curM.failTotal + curM.overrides);
   const restored = base.exceptions - curM.exceptions;
   const saved = base.travel - curM.travel;

@@ -9,7 +9,7 @@ export type Edit =
   | { t: "place"; storeId: StoreId; pharmacistId: PharmacistId; date: ISODate; source?: AssignmentSource; agreed?: boolean; pinned?: boolean; partialNote?: string }
   | { t: "remove"; assignmentId: AssignmentId }
   /** Change the store of an existing assignment (same pharmacist, same date). */
-  | { t: "move"; assignmentId: AssignmentId; toStoreId: StoreId }
+  | { t: "move"; assignmentId: AssignmentId; toStoreId: StoreId; /** Restoring a pattern assignment says so: source pattern, agreed. */ source?: AssignmentSource; agreed?: boolean }
   /** Swap who works it (same store, same date). */
   | { t: "swap"; assignmentId: AssignmentId; toPharmacistId: PharmacistId }
   | { t: "update"; assignmentId: AssignmentId; patch: { agreed?: boolean; pinned?: boolean; partialNote?: string | null; dontRestore?: boolean } }
@@ -22,6 +22,7 @@ export type Edit =
   | { t: "dateOverride.clear"; storeId: StoreId; date: ISODate }
   | { t: "cell.set"; storeId: StoreId; date: ISODate; locum?: number; acceptedShort?: number }
   | { t: "requirement.set"; storeId: StoreId; weekday: number; effectiveFrom: ISODate; count: number }
+  | { t: "requirement.clear"; storeId: StoreId; weekday: number; effectiveFrom: ISODate }
   | { t: "standing.add"; storeId: StoreId; pharmacistId: PharmacistId; recurrence: Recurrence; effectiveFrom: ISODate; effectiveTo?: ISODate }
   | { t: "standing.remove"; id: string }
   | { t: "store.set"; store: Store }
@@ -79,6 +80,8 @@ export type BuildReport = {
   /** Illegal assignments Build left alone (manual, emergency, pinned or partial-noted). */
   conflictsLeft: { storeId: StoreId; pharmacistId: PharmacistId; date: ISODate; why: string }[];
   unresolvedGaps: { storeId: StoreId; date: ISODate }[];
+  /** The search budget ran out somewhere: some gaps may have a solution that was not found. */
+  searchLimitHit: boolean;
 };
 
 export type BuildResult = { proposal: Proposal | null; report: BuildReport };
@@ -102,6 +105,8 @@ export type RepairResult = {
   excludedUnknownTravel: { pharmacistId: PharmacistId; storeId: StoreId; date: ISODate }[];
   /** Only when requested via opts.showNearMiss. */
   nearMiss?: RepairOption;
+  /** The node limit was reached: the options shown may not be the best three. */
+  limitHit?: boolean;
   gapsUsed: { storeId: StoreId; date: ISODate }[];
   gapsDropped: { storeId: StoreId; date: ISODate }[];
   missing?: string[];

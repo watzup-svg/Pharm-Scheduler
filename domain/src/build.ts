@@ -9,13 +9,14 @@ import { PRESENCE_RULES } from "./rules.ts";
 import type { BuildReport, BuildResult, Edit, Proposal, World } from "./api-types.ts";
 import type { DomainState, Evaluation, RuleResult } from "./types.ts";
 
-const BUILD_SCOPE: Scope = { chain: 3, changed: 4, offDuty: false };
+// Build keeps what the DM placed: it only re-deals assignments that came from a pattern or an earlier engine run.
+const BUILD_SCOPE: Scope = { chain: 3, changed: 4, offDuty: false, movable: (a) => a.source !== "manual" && a.source !== "emergency" };
 /** Build solves at most this many same-date gaps together (Repair allows 5): it runs over a whole month and the DM reviews the result. */
 const MAX_GROUP = 2;
 
 const emptyReport = (): BuildReport => ({
   edits: 0, instantiated: 0, patternCannotApply: [], exceptionsCreatedGaps: [], patternConflicts: [],
-  conflictsRemoved: [], conflictsLeft: [], unresolvedGaps: [],
+  conflictsRemoved: [], conflictsLeft: [], unresolvedGaps: [], searchLimitHit: false,
 });
 
 function firstFail(ev: Evaluation, id: string): RuleResult | undefined {
@@ -98,6 +99,8 @@ export function build(world: World, range: { from: ISODate; to: ISODate }, asOf:
   const asBuild = (es: Edit[]): Edit[] => es.map((e) => (e.t === "place" ? { ...e, source: "build" as const } : e));
   // Moves never leave a gap's date, so each date is solved on its own (jointly across that date's gaps) and a date that has no
   // clean answer never gets one later: nothing else changes it.
+  // One shared budget (a count of candidates tried) so a whole month cannot run away; when it is spent the rest stay open and are flagged.
+  let budget = W.config.searchNodeLimit * 10;
   const datesWithGaps = [...new Set(openCells().map((g) => g.date))].sort(cmp);
   for (const date of datesWithGaps) {
     for (let guard = 0; guard < 20; guard++) {
@@ -105,11 +108,17 @@ export function build(world: World, range: { from: ISODate; to: ISODate }, asOf:
       const gs: Gap[] = Object.values(ev.cells).filter((c) => c.open > 0).map((c) => ({ storeId: c.storeId, date })).sort((a, b) => cmp(a.storeId, b.storeId));
       if (!gs.length) break;
       let done = false;
-      const joint = searchGaps(W, gs.slice(0, MAX_GROUP), BUILD_SCOPE, asOf, W.config.searchNodeLimit);
+      if (budget <= 0) { report.searchLimitHit = true; break; }
+      const joint = searchGaps(W, gs.slice(0, MAX_GROUP), BUILD_SCOPE, asOf, Math.min(W.config.searchNodeLimit, budget));
+      budget -= joint.nodes;
+      if (joint.limitHit) report.searchLimitHit = true;
       if (joint.clean.length) { apply(asBuild(joint.clean[0]!.edits)); done = true; }
       else if (gs.length > 1) {
         for (const g of gs) {
-          const one = searchGaps(W, [g], BUILD_SCOPE, asOf, W.config.searchNodeLimit);
+          if (budget <= 0) { report.searchLimitHit = true; break; }
+          const one = searchGaps(W, [g], BUILD_SCOPE, asOf, Math.min(W.config.searchNodeLimit, budget));
+          budget -= one.nodes;
+          if (one.limitHit) report.searchLimitHit = true;
           if (one.clean.length) { apply(asBuild(one.clean[0]!.edits)); done = true; break; }
         }
       }
@@ -140,7 +149,7 @@ export function resetToPattern(world: World, range: { from: ISODate; to: ISODate
   const viol = (s: DomainState) => {
     const ev = evaluate(s, asOf);
     const set = new Set<string>();
-    for (const a of Object.values(s.assignments)) for (const r of ev.assignments[a.id]!.results) if (r.verdict === "Fail" && !r.overridden && PRESENCE_RULES.includes(r.ruleId)) set.add(`${a.pharmacistId}|${a.storeId}|${a.date}|${r.ruleId}`);
+    for (const a of Object.values(s.assignments)) for (const r of ev.assignments[a.id]!.results) if (r.verdict === "Fail" && !r.overridden) set.add(`${a.pharmacistId}|${a.storeId}|${a.date}|${r.ruleId}`);
     return set;
   };
   for (const date of dateRange(range.from, range.to)) {
@@ -153,7 +162,7 @@ export function resetToPattern(world: World, range: { from: ISODate; to: ISODate
       const mine = Object.values(W.assignments).filter((a) => a.date === date && a.pharmacistId === e.pharmacistId);
       if (mine.some((a) => a.storeId === e.storeId)) continue;
       if (mine.some((a) => a.pinned || a.partialNote || a.dontRestore)) continue;
-      const edit: Edit = mine.length === 1 ? { t: "move", assignmentId: mine[0]!.id, toStoreId: e.storeId } : mine.length === 0 ? { t: "place", storeId: e.storeId, pharmacistId: e.pharmacistId, date, source: "pattern", agreed: true } : null as never;
+      const edit: Edit = mine.length === 1 ? { t: "move", assignmentId: mine[0]!.id, toStoreId: e.storeId, source: "pattern", agreed: true } : mine.length === 0 ? { t: "place", storeId: e.storeId, pharmacistId: e.pharmacistId, date, source: "pattern", agreed: true } : null as never;
       if (mine.length > 1) continue;
       const before = viol(W);
       const next = applyScratch(W, [edit], "build");

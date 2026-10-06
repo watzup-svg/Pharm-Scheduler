@@ -5,7 +5,7 @@ import { sha256 } from "./hash.ts";
 import { evaluate } from "./coverage.ts";
 import { RULES, RULE_BY_ID } from "./rules.ts";
 import type { CommitResult, Edit, Meta, Refusal, World } from "./api-types.ts";
-import type { AssignmentSource, ChangeSet, DomainEvent, DomainState, EventType, Journal } from "./types.ts";
+import type { AssignmentSource, ChangeSet, DomainEvent, DomainState, EventType } from "./types.ts";
 
 export const ENGINE_VERSION = "v3.0";
 
@@ -85,6 +85,10 @@ class Builder {
   }
 }
 
+const int0 = (n: unknown): n is number => typeof n === "number" && Number.isInteger(n) && n >= 0;
+const okDate = (d: unknown): d is string => typeof d === "string" && isValidDate(d);
+const normList = (a: number[]) => [...new Set(a)].sort((x, y) => x - y);
+
 type Fail = Refusal;
 const bad = (r: string): Fail => refuse(r);
 
@@ -118,7 +122,7 @@ function applyEdit(b: Builder, e: Edit, src?: AssignmentSource): Fail | null {
       if (!a) return bad(`No assignment ${e.assignmentId}`);
       if (!s.stores[e.toStoreId]) return bad(`Unknown store ${e.toStoreId}`);
       if (Object.values(s.assignments).some((x) => x.id !== a.id && x.date === a.date && x.storeId === e.toStoreId && x.pharmacistId === a.pharmacistId)) return bad("Already placed there");
-      const n = { ...a, storeId: e.toStoreId, agreed: false, ...(src ? { source: src } : {}) };
+      const n = { ...a, storeId: e.toStoreId, agreed: e.agreed ?? false, ...(e.source ? { source: e.source } : src ? { source: src } : {}) };
       delete (n as { partialNote?: string }).partialNote;
       b.set("assignment.update", `assignment:${a.id}`, n);
       return null;
@@ -206,6 +210,8 @@ function applyEdit(b: Builder, e: Edit, src?: AssignmentSource): Fail | null {
     }
     case "cell.set": {
       if (!s.stores[e.storeId]) return bad(`Unknown store ${e.storeId}`);
+      if (!okDate(e.date)) return bad("Bad date");
+      if ((e.locum !== undefined && !int0(e.locum)) || (e.acceptedShort !== undefined && !int0(e.acceptedShort))) return bad("Counts must be whole numbers, zero or more");
       const cur = s.cellCounts[`${e.storeId}|${e.date}`] ?? { storeId: e.storeId, date: e.date, locum: 0, acceptedShort: 0 };
       const n = { ...cur, locum: e.locum ?? cur.locum, acceptedShort: e.acceptedShort ?? cur.acceptedShort };
       if (n.locum < 0 || n.acceptedShort < 0) return bad("Counts cannot be negative");
@@ -214,14 +220,23 @@ function applyEdit(b: Builder, e: Edit, src?: AssignmentSource): Fail | null {
     }
     case "requirement.set": {
       if (!s.stores[e.storeId]) return bad(`Unknown store ${e.storeId}`);
+      if (!int0(e.count) || !Number.isInteger(e.weekday) || e.weekday < 0 || e.weekday > 6 || !okDate(e.effectiveFrom)) return bad("A weekly need needs a weekday 0-6, a whole number, and a date");
       b.set("requirement.set", `requirement:${e.storeId}|${e.weekday}|${e.effectiveFrom}`, { storeId: e.storeId, weekday: e.weekday, effectiveFrom: e.effectiveFrom, count: e.count });
       return null;
     }
+    case "requirement.clear": {
+      b.set("requirement.clear", `requirement:${e.storeId}|${e.weekday}|${e.effectiveFrom}`, null);
+      return null;
+    }
     case "standing.add": {
-      const dup = Object.values(s.standing).find((t) => t.storeId === e.storeId && t.pharmacistId === e.pharmacistId && t.effectiveFrom === e.effectiveFrom && t.effectiveTo === e.effectiveTo && deepEqual(t.recurrence, e.recurrence));
+      if (!s.stores[e.storeId] || !s.pharmacists[e.pharmacistId]) return bad("Unknown store or pharmacist");
+      const r0 = e.recurrence;
+      if (![1, 2, 3, 4].includes(r0.cycleWeeks) || !r0.weekdays.length || r0.weekdays.some((w) => !Number.isInteger(w) || w < 0 || w > 6) || (r0.nth && r0.nth.some((n) => !Number.isInteger(n) || n < 1 || n > 5)) || !okDate(r0.anchor) || !okDate(e.effectiveFrom) || (e.effectiveTo !== undefined && (!okDate(e.effectiveTo) || e.effectiveTo < e.effectiveFrom))) return bad("That routine is not valid");
+      const rec = { ...r0, weekdays: normList(r0.weekdays), ...(r0.nth ? { nth: normList(r0.nth) } : {}) };
+      const dup = Object.values(s.standing).find((t) => t.storeId === e.storeId && t.pharmacistId === e.pharmacistId && t.effectiveFrom === e.effectiveFrom && t.effectiveTo === e.effectiveTo && deepEqual(t.recurrence, rec));
       if (dup) return null; // identical duplicates merge
       const id = `T${s.nextId.standing++}`;
-      b.set("standing.add", `standing:${id}`, { id, storeId: e.storeId, pharmacistId: e.pharmacistId, recurrence: e.recurrence, effectiveFrom: e.effectiveFrom, ...(e.effectiveTo ? { effectiveTo: e.effectiveTo } : {}) });
+      b.set("standing.add", `standing:${id}`, { id, storeId: e.storeId, pharmacistId: e.pharmacistId, recurrence: rec, effectiveFrom: e.effectiveFrom, ...(e.effectiveTo ? { effectiveTo: e.effectiveTo } : {}) });
       return null;
     }
     case "standing.remove": {
@@ -230,11 +245,28 @@ function applyEdit(b: Builder, e: Edit, src?: AssignmentSource): Fail | null {
       return null;
     }
     case "built.set": b.set("built.set", `built:${e.date}`, true); return null;
-    case "store.set": b.set("store.set", `store:${e.store.id}`, e.store); return null;
-    case "pharmacist.set": b.set("pharmacist.set", `pharmacist:${e.pharmacist.id}`, e.pharmacist); return null;
-    case "travel.set": b.set("travel.set", `travel:${e.pair.fromStoreId}|${e.pair.toStoreId}`, e.pair); return null;
+    case "store.set": {
+      const st = e.store;
+      if (!st.id.trim() || (st.activeFrom !== undefined && !okDate(st.activeFrom)) || (st.inactiveFrom !== undefined && !okDate(st.inactiveFrom))) return bad("That store is not valid");
+      b.set("store.set", `store:${st.id}`, st);
+      return null;
+    }
+    case "pharmacist.set": {
+      const ph = e.pharmacist;
+      if (!ph.id.trim() || (ph.activeFrom !== undefined && !okDate(ph.activeFrom)) || (ph.inactiveFrom !== undefined && !okDate(ph.inactiveFrom)) || (ph.baseStoreId !== null && !s.stores[ph.baseStoreId])) return bad("That pharmacist is not valid");
+      b.set("pharmacist.set", `pharmacist:${ph.id}`, ph);
+      return null;
+    }
+    case "travel.set": {
+      const p0 = e.pair;
+      if (!s.stores[p0.fromStoreId] || !s.stores[p0.toStoreId] || p0.fromStoreId === p0.toStoreId) return bad("A drive time needs two different stores");
+      if (!int0(p0.minutes) || typeof p0.miles !== "number" || !Number.isFinite(p0.miles) || p0.miles < 0) return bad("Minutes must be a whole number and miles zero or more");
+      b.set("travel.set", `travel:${p0.fromStoreId}|${p0.toStoreId}`, p0);
+      return null;
+    }
     case "config.set": {
       const n = { ...s.config, ...e.patch, improve: { ...s.config.improve, ...(e.patch.improve ?? {}) } };
+      if (!int0(n.travelSoftMinutes) || !int0(n.travelHardMinutes) || n.travelSoftMinutes > n.travelHardMinutes || !int0(n.maxConsecutiveDays) || n.maxConsecutiveDays < 1 || !int0(n.searchNodeLimit) || n.searchNodeLimit < 1 || !int0(n.mileageFreeMiles) || !Object.values(n.improve).every(int0)) return bad("Those settings are not valid");
       b.set("config.set", "config:main", n);
       return null;
     }
@@ -272,15 +304,34 @@ function nextCsId(state: DomainState): { id: string; seq: number } {
   return { id: `C${n}`, seq: n };
 }
 
-function withTold(journal: Journal, state: DomainState, events: DomainEvent[]): Journal {
-  const told = { ...journal.told };
+type ToldDelta = { key: string; before: string | null; after: string | null };
+
+/** Agreed implies told: what this change set writes to the ledger, as deltas so Undo and Revert can put it back. */
+function toldDeltas(told: Record<string, string>, events: DomainEvent[]): ToldDelta[] {
+  const out = new Map<string, ToldDelta>();
   for (const e of events) {
     if (!e.key.startsWith("assignment:")) continue;
     const a = e.after as { agreed: boolean; pharmacistId: string; date: string; storeId: string } | null;
-    if (a?.agreed) told[`${a.pharmacistId}|${a.date}`] = a.storeId;
+    if (!a?.agreed) continue;
+    const key = `${a.pharmacistId}|${a.date}`;
+    const prev = out.get(key)?.before ?? told[key] ?? null;
+    if (prev !== a.storeId) out.set(key, { key, before: prev, after: a.storeId });
   }
-  void state;
-  return { ...journal, told };
+  return [...out.values()].sort((x, y) => cmp(x.key, y.key));
+}
+
+/** Apply deltas (forward), or their inverse where the ledger still holds the value they wrote. */
+function applyTold(told: Record<string, string>, deltas: ToldDelta[], inverse: boolean): { told: Record<string, string>; applied: ToldDelta[] } {
+  const next = { ...told };
+  const applied: ToldDelta[] = [];
+  for (const d of deltas) {
+    const from = inverse ? d.after : d.before;
+    const to = inverse ? d.before : d.after;
+    if (inverse && (next[d.key] ?? null) !== from) continue;
+    if (to === null) delete next[d.key]; else next[d.key] = to;
+    applied.push({ key: d.key, before: from, after: to });
+  }
+  return { told: next, applied };
 }
 
 /** Internal commit that skips the read-only gate (used by accept). */
@@ -294,19 +345,22 @@ export function commitRaw(world: World, edits: Edit[], meta: Meta, extra: Partia
   }
   dropMoot(b);
   const events = b.events.filter((e) => !deepEqual(e.before, e.after));
+  if (!events.length) return refuse("Nothing changed.");
+  const toldD = toldDeltas(world.journal.told, events);
   const { id, seq } = nextCsId(state);
   const engine = meta.kind === "build" || meta.kind === "repair" || meta.kind === "improve" || meta.kind === "reset";
   const cs: ChangeSet = {
     id, seq, kind: meta.kind,
     label: meta.label ?? (meta.kind === "manual" ? "Placed by you." : meta.kind),
     events,
+    ...(toldD.length ? { told: toldD } : {}),
     ...(meta.explanation ? { explanation: meta.explanation } : {}),
     ...(engine ? { engineVersion: ENGINE_VERSION, ruleHashes: ruleHashes(world.state), stateHash: stateHash(world.state) } : {}),
     ...extra,
   };
   const session = { ...world.session };
   if (session.scenario?.parked && events.length) session.scenario = { ...session.scenario, stale: true };
-  const journal = withTold({ ...world.journal, changeSets: [...world.journal.changeSets, cs] }, state, events);
+  const journal = { ...world.journal, changeSets: [...world.journal.changeSets, cs], told: applyTold(world.journal.told, toldD, false).told };
   return { world: { state, journal, session }, changeSet: cs };
 }
 
@@ -332,10 +386,11 @@ export function undo(world: World, changeSetId: string): CommitResult {
   const inv = invert(cs.events);
   applyEvents(state, inv);
   const { id, seq } = nextCsId(state);
-  const undoCs: ChangeSet = { id, seq, kind: "undo", label: `Undid ${cs.id}: ${cs.label}`, events: inv, reverses: cs.id };
+  const t = applyTold(world.journal.told, cs.told ?? [], true);
+  const undoCs: ChangeSet = { id, seq, kind: "undo", label: `Undid ${cs.id}: ${cs.label}`, events: inv, reverses: cs.id, ...(t.applied.length ? { told: t.applied } : {}) };
   const session = { ...world.session };
   if (session.scenario?.parked && inv.length) session.scenario = { ...session.scenario, stale: true };
-  return { world: { state, journal: { ...world.journal, changeSets: [...world.journal.changeSets, undoCs] }, session }, changeSet: undoCs };
+  return { world: { state, journal: { ...world.journal, changeSets: [...world.journal.changeSets, undoCs], told: t.told }, session }, changeSet: undoCs };
 }
 
 export function checkpoint(world: World, name: string): World {
@@ -366,11 +421,16 @@ export function revertToCheckpoint(world: World, name: string): CommitResult {
   }
   const state = clone(world.state);
   applyEvents(state, events);
+  if (!events.length) return refuse("Nothing changed since that checkpoint.");
   const { id, seq } = nextCsId(state);
-  const cs: ChangeSet = { id, seq, kind: "revert", label: `Reverted to checkpoint "${name}"`, events };
+  // The ledger goes back too, for the entries these change sets wrote and nobody has changed since.
+  let told = world.journal.told;
+  const toldApplied: ToldDelta[] = [];
+  for (const c of later.slice().reverse()) { const t = applyTold(told, c.told ?? [], true); told = t.told; toldApplied.push(...t.applied); }
+  const cs: ChangeSet = { id, seq, kind: "revert", label: `Reverted to checkpoint "${name}"`, events, ...(toldApplied.length ? { told: toldApplied } : {}) };
   const session = { ...world.session };
   if (session.scenario?.parked && events.length) session.scenario = { ...session.scenario, stale: true };
-  return { world: { state, journal: { ...world.journal, changeSets: [...world.journal.changeSets, cs] }, session }, changeSet: cs };
+  return { world: { state, journal: { ...world.journal, changeSets: [...world.journal.changeSets, cs], told }, session }, changeSet: cs };
 }
 
 function eventTypeFor(key: string, before: unknown, after: unknown): EventType {

@@ -7,7 +7,7 @@ import { RULE_BY_ID } from "./rules.ts";
 import type { Edit, RepairMetrics, RepairOption } from "./api-types.ts";
 import type { DomainState, Evaluation } from "./types.ts";
 
-export type Scope = { chain: number; changed: number; offDuty: boolean };
+export type Scope = { chain: number; changed: number; offDuty: boolean; /** Which existing assignments the search may move. Default: any unpinned, un-noted one. */ movable?: (a: import("./types.ts").Assignment) => boolean };
 export type Gap = { storeId: string; date: ISODate };
 
 export type SearchOut = {
@@ -16,6 +16,8 @@ export type SearchOut = {
   excludedUnknownTravel: { pharmacistId: string; storeId: string; date: ISODate }[];
   missing: string[];
   limitHit: boolean;
+  /** Candidates evaluated (a count, never a clock). */
+  nodes: number;
   legalCandidates: number;
   /** True when the people-changed budget cut off some candidate, so a bigger budget could find more. */
   prunedByChanged?: boolean;
@@ -116,7 +118,7 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
     const onDate = Object.values(state.assignments).filter((a) => a.date === head.date);
     const cands: { ph: string; edit: Edit; from: string | null; fromAsg?: string }[] = [];
     for (const a of onDate.slice().sort((x, y) => cmp(x.pharmacistId, y.pharmacistId) || cmp(x.storeId, y.storeId))) {
-      if (a.storeId === head.storeId || a.pinned || a.partialNote || a.date < asOf || touched.has(`${a.pharmacistId}|${a.date}`)) continue;
+      if (a.storeId === head.storeId || a.pinned || a.partialNote || a.date < asOf || touched.has(`${a.pharmacistId}|${a.date}`) || (scope.movable && !scope.movable(a))) continue;
       cands.push({ ph: a.pharmacistId, edit: { t: "move", assignmentId: a.id, toStoreId: head.storeId }, from: a.storeId, fromAsg: a.id });
     }
     if (scope.offDuty) {
@@ -187,7 +189,7 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
       const counts = baseEv.assignments[a.id]?.counts ?? false;
       if (!counts || !cell || cell.covered - 1 >= cell.required - cell.acceptedShort) { closer = true; break; }
     }
-    if (!closer) return { clean: [], nearMiss: null, excludedUnknownTravel: [], missing: [], limitHit: false, legalCandidates: 0, prunedByChanged: false };
+    if (!closer) return { clean: [], nearMiss: null, excludedUnknownTravel: [], missing: [], limitHit: false, legalCandidates: 0, nodes: 0, prunedByChanged: false };
   }
   const startPending = gaps.map((g) => ({ ...g, depth: 0 }));
   dfs(base, baseEv, [], startPending, watch);
@@ -214,7 +216,7 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
   return {
     clean, nearMiss: near,
     excludedUnknownTravel: [...excluded.values()].sort((a, b) => cmp(a.pharmacistId, b.pharmacistId) || cmp(a.storeId, b.storeId) || cmp(a.date, b.date)),
-    missing: [...missing].sort(cmp), limitHit, legalCandidates, prunedByChanged,
+    missing: [...missing].sort(cmp), limitHit, nodes, legalCandidates, prunedByChanged,
   };
 }
 
@@ -225,12 +227,17 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
  */
 function searchGroup(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate, nodeLimit: number, wantNearMiss = false): SearchOut {
   let last: SearchOut | null = null;
+  let spent = 0;
   for (let k = 1; k <= scope.changed; k++) {
-    const out = searchCore(base, gaps, { ...scope, changed: k }, asOf, nodeLimit, false);
-    last = out;
-    if (out.clean.length >= 3 || out.limitHit || !out.prunedByChanged) break;
+    const out = searchCore(base, gaps, { ...scope, changed: k }, asOf, Math.max(1, nodeLimit - spent), false);
+    spent += out.nodes;
+    last = { ...out, nodes: spent, limitHit: out.limitHit || spent >= nodeLimit };
+    if (out.clean.length >= 3 || last.limitHit || !out.prunedByChanged) break;
   }
-  if (last && !last.clean.length && wantNearMiss && !last.limitHit) return searchCore(base, gaps, scope, asOf, nodeLimit, true);
+  if (last && !last.clean.length && wantNearMiss && !last.limitHit) {
+    const near = searchCore(base, gaps, scope, asOf, Math.max(1, nodeLimit - spent), true);
+    return { ...near, nodes: spent + near.nodes };
+  }
   return last ?? searchCore(base, gaps, scope, asOf, nodeLimit, wantNearMiss);
 }
 
@@ -258,15 +265,15 @@ export function searchGaps(base: DomainState, gaps: Gap[], scope: Scope, asOf: I
   const parts = dates.map((d) => searchGroup(base, byDate.get(d)!, scope, asOf, nodeLimit, wantNearMiss));
   const excluded = new Map<string, SearchOut["excludedUnknownTravel"][number]>();
   const missing = new Set<string>();
-  let legal = 0, limitHit = false;
+  let legal = 0, limitHit = false, nodesSum = 0;
   for (const p of parts) {
-    legal += p.legalCandidates; limitHit ||= p.limitHit;
+    legal += p.legalCandidates; limitHit ||= p.limitHit; nodesSum += p.nodes;
     for (const x of p.excludedUnknownTravel) excluded.set(`${x.pharmacistId}|${x.storeId}|${x.date}`, x);
     for (const m of p.missing) missing.add(m);
   }
   const common = {
     excludedUnknownTravel: [...excluded.values()].sort((a, b) => cmp(a.pharmacistId, b.pharmacistId) || cmp(a.storeId, b.storeId) || cmp(a.date, b.date)),
-    missing: [...missing].sort(cmp), limitHit, legalCandidates: legal,
+    missing: [...missing].sort(cmp), limitHit, legalCandidates: legal, nodes: nodesSum,
   };
   const combine = (lists: RepairOption[][]): RepairOption[] => {
     let acc: RepairOption[] = [{ edits: [], metrics: { violationsIntroduced: 0, openRemaining: 0, overridesNeeded: 0, changedPharmacistDates: 0, patternNet: 0, travelMinutes: 0 }, explanation: [] }];

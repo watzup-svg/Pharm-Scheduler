@@ -22,10 +22,10 @@ export function repair(world: World, gaps: Gap[], opts: RepairOpts, asOf: ISODat
   if (!used.length) return { ...base, message: "Nothing to repair." };
 
   const out = searchGaps(state, used, opts.wider ? SCOPE_WIDER : SCOPE_DEFAULT, asOf, state.config.searchNodeLimit, opts.showNearMiss === true);
-  const r: RepairResult = { ...base, excludedUnknownTravel: out.excludedUnknownTravel };
+  const r: RepairResult = { ...base, excludedUnknownTravel: out.excludedUnknownTravel, ...(out.limitHit ? { limitHit: true } : {}) };
   if (out.clean.length) {
     r.options = out.clean.slice(0, 3);
-    r.message = dropped.length ? `Repaired the first ${MAX_GAPS} gaps in date order; ${dropped.length} more not included.` : "";
+    r.message = out.limitHit ? "Search limit reached; these may not be the best options" : "";
   } else if (out.limitHit) {
     r.status = "limit";
     r.message = "Search limit reached; a solution may exist";
@@ -38,6 +38,7 @@ export function repair(world: World, gaps: Gap[], opts: RepairOpts, asOf: ISODat
     r.status = "none";
     r.message = "No solution within scope; search complete";
   }
+  if (dropped.length) r.message = `${r.message}${r.message ? ". " : ""}Looked at the first ${MAX_GAPS} gaps in date order; ${dropped.length} more not included.`;
   if (opts.showNearMiss && !out.clean.length && out.nearMiss) r.nearMiss = out.nearMiss;
   return r;
 }

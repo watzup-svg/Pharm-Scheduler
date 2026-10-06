@@ -143,7 +143,7 @@ export type Config = {
     excludeNextDays: number; // 14
   };
   /** Repair/Build search budget in evaluated candidates. A count, never a clock. */
-  searchNodeLimit: number; // 200000
+  searchNodeLimit: number; // 4000 per search; Build spends at most ten times this in total
   mileageRates: MileageRate[];
   /** One-way miles from the base store that are not paid. */
   mileageFreeMiles: number; // 20
@@ -242,6 +242,8 @@ export type ChangeSet = {
   stateHash?: string; // hash of the state the engine saw
   /** For undo/revert: the change set it reverses. */
   reverses?: string;
+  /** To-tell ledger entries this change set wrote (told value before and after, null = none), so Undo and Revert can put them back. */
+  told?: { key: string; before: string | null; after: string | null }[];
 };
 
 export type Journal = {
