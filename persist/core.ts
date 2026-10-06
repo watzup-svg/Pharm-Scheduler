@@ -312,11 +312,17 @@ export function createPersist(deps: PersistDeps): Persist {
       return { state: "recovery", fileRev: r.meta.rev, mirrorRev: mir.rev, world: r.world, mirrorWorld: mir.world };
     }
     if (mir && mir.uuid !== r.meta.dbUuid && mir.rev > mir.savedRev) await setAside(mir.world, "from another schedule", mir.uuid, mir.rev, mir.fileName);
+    // The same file moved on (another window saved it) while this browser copy still held edits that were never saved: keep them.
+    let note: string | undefined;
+    if (mir && mir.uuid === r.meta.dbUuid && mir.rev > mir.savedRev) {
+      await setAside(mir.world, "unsaved edits made before the file changed elsewhere", mir.uuid, mir.rev, mir.fileName);
+      note = "This file was saved from another window after your last save here. Your unsaved edits from this window were kept as a safety copy (File menu, Open, safety copies).";
+    }
     adoptLoaded(fileL, h);
     await keepSavedCopy(bytes, r.meta.savedAt);
     await resetMirror();
     notify();
-    return worldResult(r.world, h.name, r.problems);
+    return worldResult(r.world, h.name, r.problems, note ? { note } : {});
   }
 
   async function writeVerified(h: HandleLike, bytes: Uint8Array): Promise<void> {

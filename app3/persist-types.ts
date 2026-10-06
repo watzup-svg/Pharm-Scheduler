@@ -56,4 +56,6 @@ export interface PersistApi {
   lastBoot?(): BootResult | null;
   status(): SaveStatus;
   subscribe(fn: () => void): () => void;
+  /** Write the browser copy now (the browser persist has it; the in-memory stand-in does not). */
+  flush?(): Promise<void>;
 }

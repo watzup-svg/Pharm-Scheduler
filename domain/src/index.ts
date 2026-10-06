@@ -7,7 +7,7 @@ export { evaluate, requiredFor, indexRequirements } from "./coverage.ts";
 export { RULES, RULE_BY_ID, PRESENCE_RULES, type RuleDef } from "./rules.ts";
 export { choicesFor, type Choice } from "./choices.ts";
 export { checkIntegrity, type IntegrityIssue } from "./integrity.ts";
-export { applyScratch, stateHash, ENGINE_VERSION } from "./changeset.ts";
+export { applyScratch, stateHash, journalHash, ENGINE_VERSION } from "./changeset.ts";
 export { seedWorld, emptySession, DEFAULT_CONFIG, type Seed } from "./seed.ts";
 export { importV2, type ImportReport, type DriveTable } from "./import-v2.ts";
 export { expectedOn, standingMatches, patternConflicts } from "./patterns.ts";

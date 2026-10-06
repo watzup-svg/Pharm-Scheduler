@@ -5,6 +5,7 @@ import initSqlJs from "sql.js/dist/sql-wasm-browser.js";
 import wasmDataUrl from "sql.js/dist/sql-wasm-browser.wasm?url";
 import { createPersist, detectBackend, idbReal } from "@persist";
 import { record } from "./diagnostics.ts";
+import { isPrimaryWindow } from "./windowLock.ts";
 import type { PersistApi, SaveStatus } from "./persist-types.ts";
 
 export function createMemoryPersist(): PersistApi {
@@ -47,7 +48,7 @@ function createBrowserPersist(): PersistApi {
     onError: (what, e) => { console.warn(`[save] ${what}`, e); record("persist", `${what}: ${String((e as Error)?.message ?? e)}`); },
   });
   // Get the latest snapshot into the browser copy when the tab is hidden or closed.
-  const flush = () => { p.flush().catch((e) => record("persist", `flush failed: ${String(e?.message ?? e)}`)); };
+  const flush = () => { if (!isPrimaryWindow()) return; p.flush().catch((e) => record("persist", `flush failed: ${String(e?.message ?? e)}`)); };
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(); });
   window.addEventListener("pagehide", flush);
   (window as unknown as { __persist: unknown }).__persist = p; // test hook, harmless in real use

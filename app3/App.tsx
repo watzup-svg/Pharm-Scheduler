@@ -7,6 +7,8 @@ import { LeftPanel } from "./views/LeftPanel.tsx";
 import { ProposalBar } from "./views/ProposalBar.tsx";
 import { TopBar } from "./views/TopBar.tsx";
 import { Start } from "./views/Start.tsx";
+import { OtherWindow } from "./views/OtherWindow.tsx";
+import { useWindowState } from "./windowLock.ts";
 import { Plan } from "./views/Plan.tsx";
 import { Setup } from "./views/Setup.tsx";
 import { TimeOff } from "./views/TimeOff.tsx";
@@ -27,6 +29,8 @@ export function App() {
   const drawer = useApp((s) => s.drawer);
   const outForm = useApp((s) => s.outForm);
   const issues = useIssues();
+  const side = useWindowState();
+  if (side !== "primary") return <OtherWindow />;
   if (!world) return (<><Start /><SaveDialogs /><Notice /><HoverNotes /></>);
   const proposal = world.session.proposal;
   const serious = issues.filter((i) => i.severity === "serious").length;

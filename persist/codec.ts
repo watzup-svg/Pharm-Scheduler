@@ -1,6 +1,6 @@
 // World <-> SQLite file. SQLite is the SAVE FORMAT only: the app works on the typed domain World in memory.
 // One table per domain table as (key, json), the change log append-only, the session (proposal/scenario) never saved.
-import { canonical, checkIntegrity, emptySession, stateHash } from "../domain/src/index.ts";
+import { canonical, checkIntegrity, emptySession, journalHash, stateHash } from "../domain/src/index.ts";
 import type { World } from "../domain/src/index.ts";
 import type { ChangeSet, DomainState, Journal, NextIds, PostingSnapshot } from "../domain/src/types.ts";
 import type { SqlDatabase, SqlJs } from "./sql-types.ts";
@@ -37,6 +37,8 @@ export type FileMeta = {
   rev: number;
   savedAt: string;
   stateHash: string;
+  /** Fingerprint of the history; absent in files saved before it existed. */
+  journalHash?: string;
 };
 
 export class CodecError extends Error {
@@ -85,6 +87,7 @@ export function worldToDb(SQL: SqlJs, world: World, meta: { dbUuid: string; rev:
     m.run(["rev", meta.rev]);
     m.run(["saved_at", meta.savedAt]);
     m.run(["state_hash", stateHash(s)]);
+    m.run(["journal_hash", journalHash(world.journal)]);
     m.free();
     db.run("COMMIT");
     return db;
@@ -129,6 +132,7 @@ export function readMeta(db: SqlDatabase): FileMeta {
     rev: Number(need("rev")),
     savedAt: String(need("saved_at")),
     stateHash: String(need("state_hash")),
+    ...(m.journal_hash !== undefined && m.journal_hash !== null ? { journalHash: String(m.journal_hash) } : {}),
   };
 }
 
@@ -218,6 +222,10 @@ export function loadBytes(SQL: SqlJs, bytes: Uint8Array): LoadOk | CheckFail {
     const h = stateHash(world.state);
     if (h !== meta.stateHash) {
       return { ok: false, reason: "hash-mismatch", error: "The data in this file does not match the fingerprint saved with it, so it may have been changed outside the scheduler." };
+    }
+    // Files saved before the history fingerprint existed carry none and are accepted; the next save adds it.
+    if (meta.journalHash !== undefined && journalHash(world.journal) !== meta.journalHash) {
+      return { ok: false, reason: "hash-mismatch", error: "The change history in this file does not match the fingerprint saved with it, so it may have been damaged or edited outside the scheduler. What can still be read may be offered for recovery." };
     }
     const issues = checkIntegrity(world.state, world.journal);
     const fatal = issues.filter((p) => p.fatal);

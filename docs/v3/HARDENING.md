@@ -22,10 +22,14 @@
 - Tests: `domain/test/corruption.test.ts` (2,500 seeded one-field corruptions on small worlds and 150 on the practice world: either a fatal problem is reported or evaluate, Build, Improve, Repair, Reset, post, to-tell and choices do not throw), `domain/test/import-integrity.test.ts` (importer output passes the check), `persist/test/hostile.test.ts` (truncation at many lengths, bit flips, wrong version/app, missing and empty tables, junk rows, recomputed hash over damaged data, 5 MB strings, 20,000 junk rows, hostile keys).
 - Left open: `persist/core.ts` still opens a world with non-fatal problems read-only and treats `unreadable` as a refusal; it should show `CodecError` text to the user as is.
 
-## Session growth (looked at, not changed)
+## Session growth (looked at; measured flat, see below)
 - Every commit and undo appends a change set to `journal.changeSets` by copying the array (O(n) per commit, O(n^2) over a session) and the saved `change_sets` table is append-only (triggers). Each change set keeps full before/after events.
 - Undo here is by change set id (any earlier change set, refused if later ones touch the same keys), not a stack, and checkpoints name a change set id and a state hash. Dropping old change sets would break Undo of those, checkpoint Revert, the replay test (every change set rebuilds the tables) and the append-only file rule; a checkpoint-and-truncate scheme needs a new table and a format version. That changes the save format and the fixtures' meaning, so it is left alone.
 - Cheap safe follow-ups when it matters: push into a mutable array owned by the world instead of spreading; measure at 5,000 change sets first. Today a heavy month is a few hundred.
+
+## Resolved from the first pressure run
+- **History fingerprint:** the file now carries `journal_hash` (change sets, snapshots, told ledger, checkpoints) beside `state_hash`; a mismatch refuses the file as `hash-mismatch` with salvage offered. Files without it (older saves) open and gain it on the next save. Event keys naming unknown tables are rejected by `checkIntegrity` and ignored by `readKey`/`writeKey`.
+- **Session growth, measured:** 5,000 sequential commits cost a flat ~3 ms each (no quadratic growth), so no compaction is needed; the file grows linearly because change sets are append-only by design.
 
 ## Findings worth knowing
 - Search cost is dominated by how many people could move on the gap dates, not by the size of the month. Chains are capped (3, or 5 when wider) and the node limit is a count, so a worst case ends with "Search limit reached", never a hang.
@@ -36,6 +40,6 @@
 1. Browser stress run (random clicks and edits through the real UI, then save/reopen and compare) and an accessibility sweep over every view.
 2. Real-file trial: run `scripts/v3-compare.ts` on a real month and read the differences.
 3. Real native file pickers, Firefox, Safari, Edge, Windows, OneDrive: untested.
-4. Two windows open at once: last writer wins (Web Locks would fix).
+4. ~~Two windows open at once~~ Fixed: a Web Lock lets one window edit; a second shows "open in another window" with Take over here (the other flushes its browser copy first), and a boot that finds unsaved edits older than the file keeps them as a safety copy and says so (`persist/core.ts` finishLink, `app3/windowLock.ts`, `e2e/v3-windows.mjs`). Browsers without Web Locks behave as before.
 5. Memoize evaluation across window shifts; measure at 5 years of history.
 6. Print: hidden gaps (above), logo, real printer check.

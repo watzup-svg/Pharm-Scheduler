@@ -25,6 +25,11 @@ export function stateHash(state: DomainState): string {
   return sha256(canonical(rest));
 }
 
+/** Fingerprint of the history (change sets, posted snapshots, told ledger, checkpoints), saved beside the state hash so a damaged or edited history is noticed on load. */
+export function journalHash(journal: unknown): string {
+  return sha256(canonical(journal));
+}
+
 function splitKey(key: string): [string, string] {
   const i = key.indexOf(":");
   return [key.slice(0, i), key.slice(i + 1)];
