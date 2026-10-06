@@ -19,7 +19,7 @@ Hi-School Pharmacy scheduler, v3. One district manager (DM) schedules pharmacist
 - All writes go through store actions (`commit`, `runRepair`, `acceptProposal`, ...). Never mutate the world. Never import the prototype (`src/`). Domain only through `@domain`.
 - Clock: only `app3/clock.ts`. No `new Date()` elsewhere; use `asOf` from the store.
 - Desktop only (1366x768 and up; the shell is min 1280 wide): no touch handlers, no long-press, no mobile layout.
-- No popups or tooltips as the only way to learn something. No hover-only information (a `title` attribute is fine as a supplement). Dialogs only where a decision needs one, with plain buttons.
+- Hover notes are back (owner decision): format "Title | line | line" in a `data-tip` (or `title`) attribute; the old scheduler's behavior is in `app3/ui/notes.tsx` (tiny marker on hover, note opens on right click / Shift+F10). A note is never the only place a fact appears: the same text must also be in the Inspector, queue or legend. Dialogs only where a decision needs one, with plain buttons.
 - Colour is state only and never alone: pair it with a glyph or word (`GLYPH` in primitives). Dense, calm, readable at 13px minimum.
 - Keyboard operable, labelled controls, visible focus. Plain warm copy ("Needs 1 more", "Not licensed in WA"), neutral labels, no jargon, no exclamation marks.
 - Names: full name when it fits, otherwise first initial + last name ("M. Quenby"), ellipsis last.

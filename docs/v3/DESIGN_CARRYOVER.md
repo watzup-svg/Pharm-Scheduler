@@ -1,6 +1,6 @@
 # Bringing the old scheduler's look into v3
 
-Goal: v3 should feel like the same product the DM liked (brand, picture language, dark header band with big numbers, month dial, mark chips, palm tree for time off), while keeping the section 27 rules: the wall is dominant, dense and calm, colour is state only and never alone, no popups or hover-only information, no extra dashboards, desktop only.
+Goal: v3 should feel like the same product the DM liked (brand, picture language, dark header band with big numbers, month dial, mark chips, palm tree for time off), while keeping the section 27 rules: the wall is dominant, dense and calm, colour is state only and never alone, no popups as the only route to a fact (hover notes are allowed and the Inspector repeats them), no extra dashboards, desktop only.
 
 ## What the old build had, and what happens to each
 | Old element | Where it lived | In v3 | How (adapted) |
@@ -18,7 +18,7 @@ Goal: v3 should feel like the same product the DM liked (brand, picture language
 | Empty-state art, hex pattern | empty screens, hero | **Keep** | Start screen and empty queues |
 | Drive-time tag chip (amber over 90) | stores, people | **Keep** | Travel matrix and Inspector choices |
 | Store numbers instead of letters (the "storeLabels" option) | File menu | **Restore** | `Store.number` + a display setting in Setup (data and preference live in the schedule); wall labels, queue and print follow it. The importer currently drops both: fix |
-| Hover notes with "Title | line | line" | everywhere | **Replace** | Not allowed by section 27. The Inspector and legend carry the same text |
+| Hover notes with "Title | line | line" | everywhere | **Keep (owner decision overrides section 27)** | `app3/ui/notes.tsx`: marker on hover, note on right click / Shift+F10, desktop only. Wall cells, chips, header tiles, dial days, travel cells get `data-tip`. The Inspector and legend still carry the same facts |
 | Copy standard and name rule | everywhere | **Keep** | Full name when it fits, else first initial + last name, ellipsis last; neutral labels, warm guidance |
 | Touch, long-press, mobile layouts, phone dial sheet | many | **Drop** | Desktop only |
 

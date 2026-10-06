@@ -14,13 +14,14 @@ import { Checks } from "./views/Checks.tsx";
 import { PrintView } from "./views/PrintView.tsx";
 import { Notice } from "./ui/Notice.tsx";
 import { SaveDialogs } from "./views/SaveControls.tsx";
+import { HoverNotes } from "./ui/notes.tsx";
 
 // Shell: schedule dominant in the middle, contextual left panel, docked Inspector on the right with Someone's Out above it,
 // Proposal Bar along the bottom while a proposal is open. Desktop only.
 export function App() {
   const world = useApp((s) => s.world);
   const view = useApp((s) => s.view);
-  if (!world) return (<><Start /><SaveDialogs /><Notice /></>);
+  if (!world) return (<><Start /><SaveDialogs /><Notice /><HoverNotes /></>);
   const proposal = world.session.proposal;
   return (
     <div className="flex h-screen min-w-[1280px] flex-col bg-paper text-ink">
@@ -43,6 +44,7 @@ export function App() {
       </div>
       {proposal && <ProposalBar />}
       <Notice />
+      <HoverNotes />
     </div>
   );
 }
