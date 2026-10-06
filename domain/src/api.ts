@@ -1,8 +1,9 @@
-// Facade. Phase 3 replaces each stub with the real implementation, one function per commit.
+// Public facade of the domain package.
 import type { Api } from "./api-types.ts";
 import { evaluate } from "./coverage.ts";
 import { acceptProposal, discardProposal, discardScenario, openProposal, openScenario, parkScenario, scenarioEdit } from "./session.ts";
 import { build, resetToPattern } from "./build.ts";
+import { improve } from "./improve.ts";
 import { repair } from "./repair.ts";
 import { changedSincePosting, markTold, post, toTell } from "./posting.ts";
 import { checkpoint, commit, revertToCheckpoint, stateHash, undo } from "./changeset.ts";
@@ -14,10 +15,6 @@ export class NotImplementedError extends Error {
   }
 }
 
-const ni = (fn: string) => () => {
-  throw new NotImplementedError(fn);
-};
-
 export const api: Api = {
   evaluate,
   commit,
@@ -27,7 +24,7 @@ export const api: Api = {
   build,
   resetToPattern,
   repair,
-  improve: ni("improve"),
+  improve,
   openProposal,
   acceptProposal,
   discardProposal,

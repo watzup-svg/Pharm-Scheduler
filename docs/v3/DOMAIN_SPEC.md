@@ -85,9 +85,12 @@ Assignments with a partial-day note are whole days to the engine. The engine nev
 
 `build(world, {from,to}, asOf)` returns a proposal (or none) and a report. It never changes dates before asOf.
 
+Build marks dates `built` through `Proposal.builtDates`, applied on accept; they are bookkeeping, not edits.
+
 1. For each date in range not in `built`: instantiate pattern assignments (source `pattern`, `agreed` true) where legal. A pattern assignment that would fail a presence rule is **not** created (counts under `patternCannotApply`; if it leaves the cell short, under `exceptionsCreatedGaps` once the cell is short). Pattern conflicts are skipped and listed. Mark the date `built`.
 2. Keep every legal existing assignment. Differences from the pattern are exceptions, not errors.
-3. Resolve conflicts and gaps with the same joint search as Repair (default scope), source `build`.
+3. Remove illegal assignments of source pattern/build/repair/improve that are not pinned or partial-noted (listed as `conflictsRemoved`); manual, emergency, pinned and noted ones are left and listed as `conflictsLeft`.
+3b. Fill gaps with the same joint search as Repair, **default scope, no off-duty pharmacists** (Build never adds extra shifts; Repair with Search Wider does), source `build`, repeated until a full pass makes no progress.
 4. **Idempotence**: with unchanged inputs a second Build returns `proposal: null` and `edits: 0`. Unresolvable gaps stay in `unresolvedGaps`; they are not retried into a different answer.
 5. `resetToPattern(range, storeIds|null)` is separate and explicit. It skips pinned, past, `dontRestore`, partial-noted assignments, and any restore that would violate a rule.
 
@@ -100,7 +103,7 @@ Assignments with a partial-day note are whole days to the engine. The engine nev
 - Default scope: chains up to 3 moves, up to 4 pharmacist-dates changed. **Search Wider**: chains up to 5, up to 8 changed, and off-duty pharmacists (no assignment that date, available, legal) marked "will take extra shifts".
 - Candidates that would carry an Unknown verdict are never proposed; those caused by an unknown travel pair go to `excludedUnknownTravel`.
 - Max 3 options, ordered lexicographically by: violations introduced, open requirements remaining, overrides needed, distinct pharmacist-dates changed, pattern exceptions created minus restored, total travel minutes, then `(pharmacistId, storeId, date)` code-point order of the edits. Fairness is not a term (I-6).
-- **Clean** = 0 violations introduced, 0 open remaining in the used gaps, 0 overrides needed. Statuses and exact messages:
+- **Clean** = 0 violations introduced and 0 open requirements remaining in the used gaps and in any cell the option vacates. A new Fail on a suggestible policy rule (travel, consecutive days) is not a violation; it is counted as an override needed, shown on the option, and never created by the engine. `options` holds clean options only; the best non-clean candidate is `nearMiss`. Statuses and exact messages:
   - `options`: one or more clean options.
   - `none`: "No solution within scope; search complete" (the best non-clean candidate is returned as `nearMiss` only when `opts.showNearMiss`).
   - `limit`: "Search limit reached; a solution may exist" when `searchNodeLimit` evaluated candidates is hit first.
@@ -157,6 +160,11 @@ Pair data is minutes and miles from the pharmacist's **base** store to the assig
 - **I-6** Fairness is not part of Repair ordering; it may appear later as a last tiebreak only.
 - **I-7** The 90 and 150 minute travel limits are two policy rules (`travel-soft`, `travel-hard`), both configurable, both suggestible.
 - **I-8** Build keeps a `built` date table so a gap the DM leaves on a built date is a gap, not a pattern re-instantiation.
+- **I-10** Rule hashes in v1 have a single effective-date segment: config is not effective-dated, only mileage rates are.
+- **I-11** Reset to Pattern restores a pattern assignment by moving the pharmacist's other assignment that date (or placing one if none); it never removes anyone else, so a cover person left behind shows as surplus for Improve.
+- **I-12** Improve re-deals pharmacists among existing slots on one date (swap cycles up to the max); it never places off-duty pharmacists. A cycle too long to finish may close early with the last pharmacist taking the first slot; the result must still be meaningful and legal.
+- **I-13** State hash excludes `nextId` counters so Undo and Revert reproduce it.
+- **I-14** Edits `move` and `swap` clear `agreed` (new placement is Unconfirmed) and drop the partial-day note; `place` is Unconfirmed unless source is pattern.
 - **I-9** Same-id ordering is code-point on the id string ("S10" sorts before "S2"); IDs are opaque.
 
 ## 16. Fixture format

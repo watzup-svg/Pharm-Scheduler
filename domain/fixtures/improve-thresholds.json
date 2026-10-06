@@ -1,1780 +1,1782 @@
 {
- "name": "improve: meaningful thresholds, max 10 changed, exclusions, legality",
- "covers": [
-  "improve",
-  "spec-11",
-  "thresholds",
-  "exclusions"
- ],
- "asOf": "2026-05-01",
- "seed": {
-  "stores": [
-   {
-    "id": "S1"
-   },
-   {
-    "id": "S2"
-   },
-   {
-    "id": "S3"
-   },
-   {
-    "id": "S4"
-   },
-   {
-    "id": "S5"
-   },
-   {
-    "id": "S6"
-   },
-   {
-    "id": "S7"
-   },
-   {
-    "id": "S8"
-   },
-   {
-    "id": "S9"
-   },
-   {
-    "id": "S10"
-   },
-   {
-    "id": "S11"
-   }
+  "name": "improve: meaningful thresholds, max 10 changed, exclusions, legality",
+  "covers": [
+    "improve",
+    "spec-11",
+    "thresholds",
+    "exclusions"
   ],
-  "pharmacists": [
-   {
-    "id": "A1",
-    "base": null
-   },
-   {
-    "id": "A2",
-    "base": null
-   },
-   {
-    "id": "B1",
-    "base": null
-   },
-   {
-    "id": "B2",
-    "base": null
-   },
-   {
-    "id": "B3",
-    "base": null
-   },
-   {
-    "id": "C1",
-    "base": "S1"
-   },
-   {
-    "id": "C2",
-    "base": "S2"
-   },
-   {
-    "id": "D1",
-    "base": "S3"
-   },
-   {
-    "id": "D2",
-    "base": "S4"
-   },
-   {
-    "id": "E1",
-    "base": null
-   },
-   {
-    "id": "E2",
-    "base": null
-   },
-   {
-    "id": "E3",
-    "base": null
-   },
-   {
-    "id": "E4",
-    "base": null
-   },
-   {
-    "id": "E5",
-    "base": null
-   },
-   {
-    "id": "E6",
-    "base": null
-   },
-   {
-    "id": "E7",
-    "base": null
-   },
-   {
-    "id": "E8",
-    "base": null
-   },
-   {
-    "id": "E9",
-    "base": null
-   },
-   {
-    "id": "E10",
-    "base": null
-   },
-   {
-    "id": "F1",
-    "base": null
-   },
-   {
-    "id": "F2",
-    "base": null
-   },
-   {
-    "id": "F3",
-    "base": null
-   },
-   {
-    "id": "F4",
-    "base": null
-   },
-   {
-    "id": "F5",
-    "base": null
-   },
-   {
-    "id": "F6",
-    "base": null
-   },
-   {
-    "id": "F7",
-    "base": null
-   },
-   {
-    "id": "F8",
-    "base": null
-   },
-   {
-    "id": "F9",
-    "base": null
-   },
-   {
-    "id": "F10",
-    "base": null
-   },
-   {
-    "id": "F11",
-    "base": null
-   },
-   {
-    "id": "G1",
-    "base": null
-   },
-   {
-    "id": "G2",
-    "base": null
-   },
-   {
-    "id": "G3",
-    "base": null
-   },
-   {
-    "id": "H1",
-    "base": null
-   },
-   {
-    "id": "H2",
-    "base": null
-   },
-   {
-    "id": "H3",
-    "base": null
-   },
-   {
-    "id": "I1",
-    "base": null
-   },
-   {
-    "id": "I2",
-    "base": null
-   },
-   {
-    "id": "I3",
-    "base": null
-   },
-   {
-    "id": "J1",
-    "base": null
-   },
-   {
-    "id": "J2",
-    "base": null
-   },
-   {
-    "id": "J3",
-    "base": null
-   },
-   {
-    "id": "L1",
-    "base": null
-   },
-   {
-    "id": "L2",
-    "base": null
-   },
-   {
-    "id": "L3",
-    "base": null
-   },
-   {
-    "id": "K1",
-    "base": null
-   },
-   {
-    "id": "K2",
-    "base": null
-   },
-   {
-    "id": "K3",
-    "base": null
-   },
-   {
-    "id": "N1",
-    "base": null
-   },
-   {
-    "id": "N2",
-    "base": null
-   },
-   {
-    "id": "N3",
-    "base": null
-   },
-   {
-    "id": "M1",
-    "base": null
-   },
-   {
-    "id": "M2",
-    "base": null
-   },
-   {
-    "id": "O1",
-    "base": null
-   },
-   {
-    "id": "O2",
-    "base": null
-   }
-  ],
-  "assignments": [
-   {
-    "id": "A1",
-    "store": "S2",
-    "ph": "A1",
-    "date": "2026-06-01",
-    "seq": 1,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A2",
-    "store": "S1",
-    "ph": "A2",
-    "date": "2026-06-01",
-    "seq": 2,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A3",
-    "store": "S2",
-    "ph": "B1",
-    "date": "2026-06-08",
-    "seq": 3,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A4",
-    "store": "S3",
-    "ph": "B2",
-    "date": "2026-06-08",
-    "seq": 4,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A5",
-    "store": "S1",
-    "ph": "B3",
-    "date": "2026-06-08",
-    "seq": 5,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A6",
-    "store": "S2",
-    "ph": "C1",
-    "date": "2026-06-15",
-    "seq": 6,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A7",
-    "store": "S1",
-    "ph": "C2",
-    "date": "2026-06-15",
-    "seq": 7,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A8",
-    "store": "S4",
-    "ph": "D1",
-    "date": "2026-06-22",
-    "seq": 8,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A9",
-    "store": "S3",
-    "ph": "D2",
-    "date": "2026-06-22",
-    "seq": 9,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A10",
-    "store": "S2",
-    "ph": "E1",
-    "date": "2026-06-29",
-    "seq": 10,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A11",
-    "store": "S3",
-    "ph": "E2",
-    "date": "2026-06-29",
-    "seq": 11,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A12",
-    "store": "S4",
-    "ph": "E3",
-    "date": "2026-06-29",
-    "seq": 12,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A13",
-    "store": "S5",
-    "ph": "E4",
-    "date": "2026-06-29",
-    "seq": 13,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A14",
-    "store": "S6",
-    "ph": "E5",
-    "date": "2026-06-29",
-    "seq": 14,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A15",
-    "store": "S7",
-    "ph": "E6",
-    "date": "2026-06-29",
-    "seq": 15,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A16",
-    "store": "S8",
-    "ph": "E7",
-    "date": "2026-06-29",
-    "seq": 16,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A17",
-    "store": "S9",
-    "ph": "E8",
-    "date": "2026-06-29",
-    "seq": 17,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A18",
-    "store": "S10",
-    "ph": "E9",
-    "date": "2026-06-29",
-    "seq": 18,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A19",
-    "store": "S1",
-    "ph": "E10",
-    "date": "2026-06-29",
-    "seq": 19,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A20",
-    "store": "S2",
-    "ph": "F1",
-    "date": "2026-07-06",
-    "seq": 20,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A21",
-    "store": "S3",
-    "ph": "F2",
-    "date": "2026-07-06",
-    "seq": 21,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A22",
-    "store": "S4",
-    "ph": "F3",
-    "date": "2026-07-06",
-    "seq": 22,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A23",
-    "store": "S5",
-    "ph": "F4",
-    "date": "2026-07-06",
-    "seq": 23,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A24",
-    "store": "S6",
-    "ph": "F5",
-    "date": "2026-07-06",
-    "seq": 24,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A25",
-    "store": "S7",
-    "ph": "F6",
-    "date": "2026-07-06",
-    "seq": 25,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A26",
-    "store": "S8",
-    "ph": "F7",
-    "date": "2026-07-06",
-    "seq": 26,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A27",
-    "store": "S9",
-    "ph": "F8",
-    "date": "2026-07-06",
-    "seq": 27,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A28",
-    "store": "S10",
-    "ph": "F9",
-    "date": "2026-07-06",
-    "seq": 28,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A29",
-    "store": "S11",
-    "ph": "F10",
-    "date": "2026-07-06",
-    "seq": 29,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A30",
-    "store": "S1",
-    "ph": "F11",
-    "date": "2026-07-06",
-    "seq": 30,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A31",
-    "store": "S2",
-    "ph": "G1",
-    "date": "2026-07-13",
-    "seq": 31,
-    "source": "manual",
-    "agreed": false
-   },
-   {
-    "id": "A32",
-    "store": "S3",
-    "ph": "G2",
-    "date": "2026-07-13",
-    "seq": 32,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A33",
-    "store": "S1",
-    "ph": "G3",
-    "date": "2026-07-13",
-    "seq": 33,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A34",
-    "store": "S2",
-    "ph": "H1",
-    "date": "2026-07-20",
-    "seq": 34,
-    "source": "emergency",
-    "agreed": true
-   },
-   {
-    "id": "A35",
-    "store": "S3",
-    "ph": "H2",
-    "date": "2026-07-20",
-    "seq": 35,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A36",
-    "store": "S1",
-    "ph": "H3",
-    "date": "2026-07-20",
-    "seq": 36,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A37",
-    "store": "S2",
-    "ph": "I1",
-    "date": "2026-07-27",
-    "seq": 37,
-    "source": "manual",
-    "agreed": true,
-    "pinned": true
-   },
-   {
-    "id": "A38",
-    "store": "S3",
-    "ph": "I2",
-    "date": "2026-07-27",
-    "seq": 38,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A39",
-    "store": "S1",
-    "ph": "I3",
-    "date": "2026-07-27",
-    "seq": 39,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A40",
-    "store": "S2",
-    "ph": "J1",
-    "date": "2026-08-03",
-    "seq": 40,
-    "source": "manual",
-    "agreed": true,
-    "partialNote": "leaves at noon"
-   },
-   {
-    "id": "A41",
-    "store": "S3",
-    "ph": "J2",
-    "date": "2026-08-03",
-    "seq": 41,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A42",
-    "store": "S1",
-    "ph": "J3",
-    "date": "2026-08-03",
-    "seq": 42,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A43",
-    "store": "S2",
-    "ph": "L1",
-    "date": "2026-08-10",
-    "seq": 43,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A44",
-    "store": "S3",
-    "ph": "L2",
-    "date": "2026-08-10",
-    "seq": 44,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A45",
-    "store": "S1",
-    "ph": "L3",
-    "date": "2026-08-10",
-    "seq": 45,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A46",
-    "store": "S2",
-    "ph": "K1",
-    "date": "2026-04-20",
-    "seq": 46,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A47",
-    "store": "S3",
-    "ph": "K2",
-    "date": "2026-04-20",
-    "seq": 47,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A48",
-    "store": "S1",
-    "ph": "K3",
-    "date": "2026-04-20",
-    "seq": 48,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A49",
-    "store": "S2",
-    "ph": "N1",
-    "date": "2026-05-11",
-    "seq": 49,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A50",
-    "store": "S3",
-    "ph": "N2",
-    "date": "2026-05-11",
-    "seq": 50,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A51",
-    "store": "S1",
-    "ph": "N3",
-    "date": "2026-05-11",
-    "seq": 51,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A52",
-    "store": "S1",
-    "ph": "M1",
-    "date": "2026-08-17",
-    "seq": 52,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A53",
-    "store": "S2",
-    "ph": "M2",
-    "date": "2026-08-17",
-    "seq": 53,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A54",
-    "store": "S1",
-    "ph": "O1",
-    "date": "2026-08-24",
-    "seq": 54,
-    "source": "manual",
-    "agreed": true
-   },
-   {
-    "id": "A55",
-    "store": "S2",
-    "ph": "O2",
-    "date": "2026-08-24",
-    "seq": 55,
-    "source": "manual",
-    "agreed": true
-   }
-  ],
-  "unavailability": [
-   {
-    "ph": "L1",
-    "first": "2026-08-10",
-    "last": "2026-08-10",
-    "status": "Approved",
-    "type": "Turned-down",
-    "scope": "S1"
-   },
-   {
-    "ph": "M1",
-    "first": "2026-08-17",
-    "last": "2026-08-17",
-    "status": "Approved",
-    "type": "Turned-down",
-    "scope": "S1"
-   },
-   {
-    "ph": "O1",
-    "first": "2026-08-24",
-    "last": "2026-08-24",
-    "status": "Approved",
-    "type": "Turned-down",
-    "scope": "S1"
-   }
-  ],
-  "standing": [
-   {
-    "store": "S1",
-    "ph": "A1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-01"
-    },
-    "from": "2026-06-01",
-    "to": "2026-06-01"
-   },
-   {
-    "store": "S2",
-    "ph": "A2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-01"
-    },
-    "from": "2026-06-01",
-    "to": "2026-06-01"
-   },
-   {
-    "store": "S1",
-    "ph": "B1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-08"
-    },
-    "from": "2026-06-08",
-    "to": "2026-06-08"
-   },
-   {
-    "store": "S2",
-    "ph": "B2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-08"
-    },
-    "from": "2026-06-08",
-    "to": "2026-06-08"
-   },
-   {
-    "store": "S3",
-    "ph": "B3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-08"
-    },
-    "from": "2026-06-08",
-    "to": "2026-06-08"
-   },
-   {
-    "store": "S1",
-    "ph": "E1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S2",
-    "ph": "E2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S3",
-    "ph": "E3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S4",
-    "ph": "E4",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S5",
-    "ph": "E5",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S6",
-    "ph": "E6",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S7",
-    "ph": "E7",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S8",
-    "ph": "E8",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S9",
-    "ph": "E9",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S10",
-    "ph": "E10",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-06-29"
-    },
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   {
-    "store": "S1",
-    "ph": "F1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S2",
-    "ph": "F2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S3",
-    "ph": "F3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S4",
-    "ph": "F4",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S5",
-    "ph": "F5",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S6",
-    "ph": "F6",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S7",
-    "ph": "F7",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S8",
-    "ph": "F8",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S9",
-    "ph": "F9",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S10",
-    "ph": "F10",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S11",
-    "ph": "F11",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-06"
-    },
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   {
-    "store": "S1",
-    "ph": "G1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-13"
-    },
-    "from": "2026-07-13",
-    "to": "2026-07-13"
-   },
-   {
-    "store": "S2",
-    "ph": "G2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-13"
-    },
-    "from": "2026-07-13",
-    "to": "2026-07-13"
-   },
-   {
-    "store": "S3",
-    "ph": "G3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-13"
-    },
-    "from": "2026-07-13",
-    "to": "2026-07-13"
-   },
-   {
-    "store": "S1",
-    "ph": "H1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-20"
-    },
-    "from": "2026-07-20",
-    "to": "2026-07-20"
-   },
-   {
-    "store": "S2",
-    "ph": "H2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-20"
-    },
-    "from": "2026-07-20",
-    "to": "2026-07-20"
-   },
-   {
-    "store": "S3",
-    "ph": "H3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-20"
-    },
-    "from": "2026-07-20",
-    "to": "2026-07-20"
-   },
-   {
-    "store": "S1",
-    "ph": "I1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-27"
-    },
-    "from": "2026-07-27",
-    "to": "2026-07-27"
-   },
-   {
-    "store": "S2",
-    "ph": "I2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-27"
-    },
-    "from": "2026-07-27",
-    "to": "2026-07-27"
-   },
-   {
-    "store": "S3",
-    "ph": "I3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-07-27"
-    },
-    "from": "2026-07-27",
-    "to": "2026-07-27"
-   },
-   {
-    "store": "S1",
-    "ph": "J1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-08-03"
-    },
-    "from": "2026-08-03",
-    "to": "2026-08-03"
-   },
-   {
-    "store": "S2",
-    "ph": "J2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-08-03"
-    },
-    "from": "2026-08-03",
-    "to": "2026-08-03"
-   },
-   {
-    "store": "S3",
-    "ph": "J3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-08-03"
-    },
-    "from": "2026-08-03",
-    "to": "2026-08-03"
-   },
-   {
-    "store": "S1",
-    "ph": "L1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-08-10"
-    },
-    "from": "2026-08-10",
-    "to": "2026-08-10"
-   },
-   {
-    "store": "S2",
-    "ph": "L2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-08-10"
-    },
-    "from": "2026-08-10",
-    "to": "2026-08-10"
-   },
-   {
-    "store": "S3",
-    "ph": "L3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-08-10"
-    },
-    "from": "2026-08-10",
-    "to": "2026-08-10"
-   },
-   {
-    "store": "S1",
-    "ph": "K1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-04-20"
-    },
-    "from": "2026-04-20",
-    "to": "2026-04-20"
-   },
-   {
-    "store": "S2",
-    "ph": "K2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-04-20"
-    },
-    "from": "2026-04-20",
-    "to": "2026-04-20"
-   },
-   {
-    "store": "S3",
-    "ph": "K3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-04-20"
-    },
-    "from": "2026-04-20",
-    "to": "2026-04-20"
-   },
-   {
-    "store": "S1",
-    "ph": "N1",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-05-11"
-    },
-    "from": "2026-05-11",
-    "to": "2026-05-11"
-   },
-   {
-    "store": "S2",
-    "ph": "N2",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-05-11"
-    },
-    "from": "2026-05-11",
-    "to": "2026-05-11"
-   },
-   {
-    "store": "S3",
-    "ph": "N3",
-    "recurrence": {
-     "weekdays": [
-      1
-     ],
-     "cycleWeeks": 1,
-     "anchor": "2026-05-11"
-    },
-    "from": "2026-05-11",
-    "to": "2026-05-11"
-   }
-  ],
-  "travel": [
-   [
-    "S1",
-    "S2",
-    30,
-    20
-   ],
-   [
-    "S2",
-    "S1",
-    29,
-    19
-   ],
-   [
-    "S3",
-    "S4",
-    30,
-    20
-   ],
-   [
-    "S4",
-    "S3",
-    30,
-    20
-   ]
-  ]
- },
- "steps": [
-  {
-   "op": "improve",
-   "id": "restore-2",
-   "why": "A1 stands at S1 but works S2; A2 stands at S2 but works S1. Swapping restores 2 standing assignments, no travel (no base stores), no violation: below the 3 threshold, so not meaningful.",
-   "opts": {
-    "from": "2026-06-01",
-    "to": "2026-06-01"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "restore-3",
-   "why": "A 3-cycle (Bi stands at Si, works S(i+1)). Restoring all three is exactly 3 standing assignments: meaningful. Three moves; each store keeps exactly one pharmacist so open/Fail counts do not rise.",
-   "opts": {
-    "from": "2026-06-08",
-    "to": "2026-06-08"
-   },
-   "accept": true,
-   "expect": {
-    "status": "changes",
-    "proposal": {
-     "kind": "improve",
-     "edits": {
-      "$count": 3
-     }
-    }
-   }
-  },
-  {
-   "op": "evaluate",
-   "range": {
-    "from": "2026-06-08",
-    "to": "2026-06-08"
-   },
-   "why": "After accepting, everyone is at the standing store.",
-   "expect": {
-    "cells": {
-     "S1|2026-06-08": {
-      "counted": 1,
-      "open": 0
-     },
-     "S2|2026-06-08": {
-      "counted": 1,
-      "open": 0
-     },
-     "S3|2026-06-08": {
-      "counted": 1,
-      "open": 0
-     }
-    },
-    "assignments": {
-     "S1|B1|2026-06-08": {
-      "counts": true
-     },
-     "S2|B2|2026-06-08": {
-      "counts": true
-     },
-     "S3|B3|2026-06-08": {
-      "counts": true
-     },
-     "S2|B1|2026-06-08": {
-      "$absent": true
-     }
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "travel-59",
-   "why": "C1 (base S1) works S2: 30 min. C2 (base S2) works S1: 29 min. Swapping them home saves 30+29 = 59 minutes, under 60: not meaningful. No standing rows, no violation (both under 90).",
-   "opts": {
-    "from": "2026-06-15",
-    "to": "2026-06-15"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "travel-60",
-   "why": "D1 (base S3) works S4: 30 min. D2 (base S4) works S3: 30 min. Swapping home saves 60 minutes, exactly the threshold: meaningful. Two edits.",
-   "opts": {
-    "from": "2026-06-22",
-    "to": "2026-06-22"
-   },
-   "expect": {
-    "status": "changes",
-    "proposal": {
-     "kind": "improve",
-     "edits": {
-      "$count": 2
-     }
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "changed-10",
-   "why": "A 10-cycle: restoring needs exactly 10 changed assignments (the maximum). Any partial rotation leaves a store empty and another doubled, raising open, so the only legal improvement is all 10.",
-   "opts": {
-    "from": "2026-06-29",
-    "to": "2026-06-29"
-   },
-   "expect": {
-    "status": "changes",
-    "proposal": {
-     "kind": "improve",
-     "edits": {
-      "$count": 10
-     }
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "changed-11",
-   "why": "An 11-cycle needs 11 changed assignments, above the maximum of 10, and no partial rotation is legal (it raises open). Nothing to improve.",
-   "opts": {
-    "from": "2026-07-06",
-    "to": "2026-07-06"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "excl-unconfirmed",
-   "why": "Same 3-cycle as restore-3, but G1's assignment is Unconfirmed (agreed false). Unconfirmed is excluded, so the rotation cannot complete and a partial rotation would raise open.",
-   "opts": {
-    "from": "2026-07-13",
-    "to": "2026-07-13"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "excl-emergency",
-   "why": "Same 3-cycle with H1's assignment emergency-sourced (agreed true set explicitly): excluded.",
-   "opts": {
-    "from": "2026-07-20",
-    "to": "2026-07-20"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "excl-pinned",
-   "why": "Same 3-cycle with I1 pinned: excluded.",
-   "opts": {
-    "from": "2026-07-27",
-    "to": "2026-07-27"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "excl-partial",
-   "why": "Same 3-cycle with J1 carrying a partial-day note: excluded.",
-   "opts": {
-    "from": "2026-08-03",
-    "to": "2026-08-03"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "final-state-legal",
-   "why": "Same 3-cycle, but L1 has a Turned-down scoped to S1 on that date. Restoring L1 to its standing store S1 would add an availability Fail (and it is the only way to complete the rotation), so the final state is not allowed. L1 at S2 is fine today.",
-   "opts": {
-    "from": "2026-08-10",
-    "to": "2026-08-10"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "excl-past",
-   "why": "Same 3-cycle but on Mon 2026-04-20, before asOf 2026-05-01: past assignments are never changed.",
-   "opts": {
-    "from": "2026-04-20",
-    "to": "2026-04-20"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "excl-next14",
-   "why": "Same 3-cycle on Mon 2026-05-11, ten days after asOf: inside the next-14-days window, excluded by default.",
-   "opts": {
-    "from": "2026-05-11",
-    "to": "2026-05-11"
-   },
-   "expect": {
-    "status": "nothing",
-    "message": "Nothing to improve.",
-    "proposal": {
-     "$absent": true
-    }
-   }
-  },
-  {
-   "op": "improve",
-   "id": "incl-next14",
-   "why": "Same world with includeNext14: the 3-cycle can be restored (3 standing, meaningful).",
-   "opts": {
-    "from": "2026-05-11",
-    "to": "2026-05-11",
-    "includeNext14": true
-   },
-   "expect": {
-    "status": "changes",
-    "proposal": {
-     "kind": "improve",
-     "edits": {
-      "$count": 3
-     }
-    }
-   }
-  },
-  {
-   "op": "evaluate",
-   "why": "Before: M1 at S1 fails availability (Turned-down scope S1): S1 open 1.",
-   "expect": {
-    "cells": {
-     "S1|2026-08-17": {
-      "counted": 0,
-      "open": 1
-     }
-    },
-    "assignments": {
-     "S1|M1|2026-08-17": {
-      "counts": false,
-      "fail": [
-       "availability"
+  "asOf": "2026-05-01",
+  "seed": {
+    "stores": [
+      {
+        "id": "S1"
+      },
+      {
+        "id": "S2"
+      },
+      {
+        "id": "S3"
+      },
+      {
+        "id": "S4"
+      },
+      {
+        "id": "S5"
+      },
+      {
+        "id": "S6"
+      },
+      {
+        "id": "S7"
+      },
+      {
+        "id": "S8"
+      },
+      {
+        "id": "S9"
+      },
+      {
+        "id": "S10"
+      },
+      {
+        "id": "S11"
+      }
+    ],
+    "pharmacists": [
+      {
+        "id": "A1",
+        "base": null
+      },
+      {
+        "id": "A2",
+        "base": null
+      },
+      {
+        "id": "B1",
+        "base": null
+      },
+      {
+        "id": "B2",
+        "base": null
+      },
+      {
+        "id": "B3",
+        "base": null
+      },
+      {
+        "id": "C1",
+        "base": "S1"
+      },
+      {
+        "id": "C2",
+        "base": "S2"
+      },
+      {
+        "id": "D1",
+        "base": "S3"
+      },
+      {
+        "id": "D2",
+        "base": "S4"
+      },
+      {
+        "id": "E1",
+        "base": null
+      },
+      {
+        "id": "E2",
+        "base": null
+      },
+      {
+        "id": "E3",
+        "base": null
+      },
+      {
+        "id": "E4",
+        "base": null
+      },
+      {
+        "id": "E5",
+        "base": null
+      },
+      {
+        "id": "E6",
+        "base": null
+      },
+      {
+        "id": "E7",
+        "base": null
+      },
+      {
+        "id": "E8",
+        "base": null
+      },
+      {
+        "id": "E9",
+        "base": null
+      },
+      {
+        "id": "E10",
+        "base": null
+      },
+      {
+        "id": "F1",
+        "base": null
+      },
+      {
+        "id": "F2",
+        "base": null
+      },
+      {
+        "id": "F3",
+        "base": null
+      },
+      {
+        "id": "F4",
+        "base": null
+      },
+      {
+        "id": "F5",
+        "base": null
+      },
+      {
+        "id": "F6",
+        "base": null
+      },
+      {
+        "id": "F7",
+        "base": null
+      },
+      {
+        "id": "F8",
+        "base": null
+      },
+      {
+        "id": "F9",
+        "base": null
+      },
+      {
+        "id": "F10",
+        "base": null
+      },
+      {
+        "id": "F11",
+        "base": null
+      },
+      {
+        "id": "G1",
+        "base": null
+      },
+      {
+        "id": "G2",
+        "base": null
+      },
+      {
+        "id": "G3",
+        "base": null
+      },
+      {
+        "id": "H1",
+        "base": null
+      },
+      {
+        "id": "H2",
+        "base": null
+      },
+      {
+        "id": "H3",
+        "base": null
+      },
+      {
+        "id": "I1",
+        "base": null
+      },
+      {
+        "id": "I2",
+        "base": null
+      },
+      {
+        "id": "I3",
+        "base": null
+      },
+      {
+        "id": "J1",
+        "base": null
+      },
+      {
+        "id": "J2",
+        "base": null
+      },
+      {
+        "id": "J3",
+        "base": null
+      },
+      {
+        "id": "L1",
+        "base": null
+      },
+      {
+        "id": "L2",
+        "base": null
+      },
+      {
+        "id": "L3",
+        "base": null
+      },
+      {
+        "id": "K1",
+        "base": null
+      },
+      {
+        "id": "K2",
+        "base": null
+      },
+      {
+        "id": "K3",
+        "base": null
+      },
+      {
+        "id": "N1",
+        "base": null
+      },
+      {
+        "id": "N2",
+        "base": null
+      },
+      {
+        "id": "N3",
+        "base": null
+      },
+      {
+        "id": "M1",
+        "base": null
+      },
+      {
+        "id": "M2",
+        "base": null
+      },
+      {
+        "id": "O1",
+        "base": null
+      },
+      {
+        "id": "O2",
+        "base": null
+      }
+    ],
+    "assignments": [
+      {
+        "id": "A1",
+        "store": "S2",
+        "ph": "A1",
+        "date": "2026-06-01",
+        "seq": 1,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A2",
+        "store": "S1",
+        "ph": "A2",
+        "date": "2026-06-01",
+        "seq": 2,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A3",
+        "store": "S2",
+        "ph": "B1",
+        "date": "2026-06-08",
+        "seq": 3,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A4",
+        "store": "S3",
+        "ph": "B2",
+        "date": "2026-06-08",
+        "seq": 4,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A5",
+        "store": "S1",
+        "ph": "B3",
+        "date": "2026-06-08",
+        "seq": 5,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A6",
+        "store": "S2",
+        "ph": "C1",
+        "date": "2026-06-15",
+        "seq": 6,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A7",
+        "store": "S1",
+        "ph": "C2",
+        "date": "2026-06-15",
+        "seq": 7,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A8",
+        "store": "S4",
+        "ph": "D1",
+        "date": "2026-06-22",
+        "seq": 8,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A9",
+        "store": "S3",
+        "ph": "D2",
+        "date": "2026-06-22",
+        "seq": 9,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A10",
+        "store": "S2",
+        "ph": "E1",
+        "date": "2026-06-29",
+        "seq": 10,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A11",
+        "store": "S3",
+        "ph": "E2",
+        "date": "2026-06-29",
+        "seq": 11,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A12",
+        "store": "S4",
+        "ph": "E3",
+        "date": "2026-06-29",
+        "seq": 12,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A13",
+        "store": "S5",
+        "ph": "E4",
+        "date": "2026-06-29",
+        "seq": 13,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A14",
+        "store": "S6",
+        "ph": "E5",
+        "date": "2026-06-29",
+        "seq": 14,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A15",
+        "store": "S7",
+        "ph": "E6",
+        "date": "2026-06-29",
+        "seq": 15,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A16",
+        "store": "S8",
+        "ph": "E7",
+        "date": "2026-06-29",
+        "seq": 16,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A17",
+        "store": "S9",
+        "ph": "E8",
+        "date": "2026-06-29",
+        "seq": 17,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A18",
+        "store": "S10",
+        "ph": "E9",
+        "date": "2026-06-29",
+        "seq": 18,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A19",
+        "store": "S1",
+        "ph": "E10",
+        "date": "2026-06-29",
+        "seq": 19,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A20",
+        "store": "S2",
+        "ph": "F1",
+        "date": "2026-07-06",
+        "seq": 20,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A21",
+        "store": "S3",
+        "ph": "F2",
+        "date": "2026-07-06",
+        "seq": 21,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A22",
+        "store": "S4",
+        "ph": "F3",
+        "date": "2026-07-06",
+        "seq": 22,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A23",
+        "store": "S5",
+        "ph": "F4",
+        "date": "2026-07-06",
+        "seq": 23,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A24",
+        "store": "S6",
+        "ph": "F5",
+        "date": "2026-07-06",
+        "seq": 24,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A25",
+        "store": "S7",
+        "ph": "F6",
+        "date": "2026-07-06",
+        "seq": 25,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A26",
+        "store": "S8",
+        "ph": "F7",
+        "date": "2026-07-06",
+        "seq": 26,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A27",
+        "store": "S9",
+        "ph": "F8",
+        "date": "2026-07-06",
+        "seq": 27,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A28",
+        "store": "S10",
+        "ph": "F9",
+        "date": "2026-07-06",
+        "seq": 28,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A29",
+        "store": "S11",
+        "ph": "F10",
+        "date": "2026-07-06",
+        "seq": 29,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A30",
+        "store": "S1",
+        "ph": "F11",
+        "date": "2026-07-06",
+        "seq": 30,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A31",
+        "store": "S2",
+        "ph": "G1",
+        "date": "2026-07-13",
+        "seq": 31,
+        "source": "manual",
+        "agreed": false
+      },
+      {
+        "id": "A32",
+        "store": "S3",
+        "ph": "G2",
+        "date": "2026-07-13",
+        "seq": 32,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A33",
+        "store": "S1",
+        "ph": "G3",
+        "date": "2026-07-13",
+        "seq": 33,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A34",
+        "store": "S2",
+        "ph": "H1",
+        "date": "2026-07-20",
+        "seq": 34,
+        "source": "emergency",
+        "agreed": true
+      },
+      {
+        "id": "A35",
+        "store": "S3",
+        "ph": "H2",
+        "date": "2026-07-20",
+        "seq": 35,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A36",
+        "store": "S1",
+        "ph": "H3",
+        "date": "2026-07-20",
+        "seq": 36,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A37",
+        "store": "S2",
+        "ph": "I1",
+        "date": "2026-07-27",
+        "seq": 37,
+        "source": "manual",
+        "agreed": true,
+        "pinned": true
+      },
+      {
+        "id": "A38",
+        "store": "S3",
+        "ph": "I2",
+        "date": "2026-07-27",
+        "seq": 38,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A39",
+        "store": "S1",
+        "ph": "I3",
+        "date": "2026-07-27",
+        "seq": 39,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A40",
+        "store": "S2",
+        "ph": "J1",
+        "date": "2026-08-03",
+        "seq": 40,
+        "source": "manual",
+        "agreed": true,
+        "partialNote": "leaves at noon"
+      },
+      {
+        "id": "A41",
+        "store": "S3",
+        "ph": "J2",
+        "date": "2026-08-03",
+        "seq": 41,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A42",
+        "store": "S1",
+        "ph": "J3",
+        "date": "2026-08-03",
+        "seq": 42,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A43",
+        "store": "S2",
+        "ph": "L1",
+        "date": "2026-08-10",
+        "seq": 43,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A44",
+        "store": "S3",
+        "ph": "L2",
+        "date": "2026-08-10",
+        "seq": 44,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A45",
+        "store": "S1",
+        "ph": "L3",
+        "date": "2026-08-10",
+        "seq": 45,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A46",
+        "store": "S2",
+        "ph": "K1",
+        "date": "2026-04-20",
+        "seq": 46,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A47",
+        "store": "S3",
+        "ph": "K2",
+        "date": "2026-04-20",
+        "seq": 47,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A48",
+        "store": "S1",
+        "ph": "K3",
+        "date": "2026-04-20",
+        "seq": 48,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A49",
+        "store": "S2",
+        "ph": "N1",
+        "date": "2026-05-11",
+        "seq": 49,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A50",
+        "store": "S3",
+        "ph": "N2",
+        "date": "2026-05-11",
+        "seq": 50,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A51",
+        "store": "S1",
+        "ph": "N3",
+        "date": "2026-05-11",
+        "seq": 51,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A52",
+        "store": "S1",
+        "ph": "M1",
+        "date": "2026-08-17",
+        "seq": 52,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A53",
+        "store": "S2",
+        "ph": "M2",
+        "date": "2026-08-17",
+        "seq": 53,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A54",
+        "store": "S1",
+        "ph": "O1",
+        "date": "2026-08-24",
+        "seq": 54,
+        "source": "manual",
+        "agreed": true
+      },
+      {
+        "id": "A55",
+        "store": "S2",
+        "ph": "O2",
+        "date": "2026-08-24",
+        "seq": 55,
+        "source": "manual",
+        "agreed": true
+      }
+    ],
+    "unavailability": [
+      {
+        "ph": "L1",
+        "first": "2026-08-10",
+        "last": "2026-08-10",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S1"
+      },
+      {
+        "ph": "M1",
+        "first": "2026-08-17",
+        "last": "2026-08-17",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S1"
+      },
+      {
+        "ph": "O1",
+        "first": "2026-08-24",
+        "last": "2026-08-24",
+        "status": "Approved",
+        "type": "Turned-down",
+        "scope": "S1"
+      }
+    ],
+    "standing": [
+      {
+        "store": "S1",
+        "ph": "A1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-01"
+        },
+        "from": "2026-06-01",
+        "to": "2026-06-01"
+      },
+      {
+        "store": "S2",
+        "ph": "A2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-01"
+        },
+        "from": "2026-06-01",
+        "to": "2026-06-01"
+      },
+      {
+        "store": "S1",
+        "ph": "B1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-08"
+        },
+        "from": "2026-06-08",
+        "to": "2026-06-08"
+      },
+      {
+        "store": "S2",
+        "ph": "B2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-08"
+        },
+        "from": "2026-06-08",
+        "to": "2026-06-08"
+      },
+      {
+        "store": "S3",
+        "ph": "B3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-08"
+        },
+        "from": "2026-06-08",
+        "to": "2026-06-08"
+      },
+      {
+        "store": "S1",
+        "ph": "E1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S2",
+        "ph": "E2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S3",
+        "ph": "E3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S4",
+        "ph": "E4",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S5",
+        "ph": "E5",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S6",
+        "ph": "E6",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S7",
+        "ph": "E7",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S8",
+        "ph": "E8",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S9",
+        "ph": "E9",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S10",
+        "ph": "E10",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-06-29"
+        },
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      {
+        "store": "S1",
+        "ph": "F1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S2",
+        "ph": "F2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S3",
+        "ph": "F3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S4",
+        "ph": "F4",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S5",
+        "ph": "F5",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S6",
+        "ph": "F6",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S7",
+        "ph": "F7",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S8",
+        "ph": "F8",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S9",
+        "ph": "F9",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S10",
+        "ph": "F10",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S11",
+        "ph": "F11",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-06"
+        },
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      {
+        "store": "S1",
+        "ph": "G1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-13"
+        },
+        "from": "2026-07-13",
+        "to": "2026-07-13"
+      },
+      {
+        "store": "S2",
+        "ph": "G2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-13"
+        },
+        "from": "2026-07-13",
+        "to": "2026-07-13"
+      },
+      {
+        "store": "S3",
+        "ph": "G3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-13"
+        },
+        "from": "2026-07-13",
+        "to": "2026-07-13"
+      },
+      {
+        "store": "S1",
+        "ph": "H1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-20"
+        },
+        "from": "2026-07-20",
+        "to": "2026-07-20"
+      },
+      {
+        "store": "S2",
+        "ph": "H2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-20"
+        },
+        "from": "2026-07-20",
+        "to": "2026-07-20"
+      },
+      {
+        "store": "S3",
+        "ph": "H3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-20"
+        },
+        "from": "2026-07-20",
+        "to": "2026-07-20"
+      },
+      {
+        "store": "S1",
+        "ph": "I1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-27"
+        },
+        "from": "2026-07-27",
+        "to": "2026-07-27"
+      },
+      {
+        "store": "S2",
+        "ph": "I2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-27"
+        },
+        "from": "2026-07-27",
+        "to": "2026-07-27"
+      },
+      {
+        "store": "S3",
+        "ph": "I3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-07-27"
+        },
+        "from": "2026-07-27",
+        "to": "2026-07-27"
+      },
+      {
+        "store": "S1",
+        "ph": "J1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-08-03"
+        },
+        "from": "2026-08-03",
+        "to": "2026-08-03"
+      },
+      {
+        "store": "S2",
+        "ph": "J2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-08-03"
+        },
+        "from": "2026-08-03",
+        "to": "2026-08-03"
+      },
+      {
+        "store": "S3",
+        "ph": "J3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-08-03"
+        },
+        "from": "2026-08-03",
+        "to": "2026-08-03"
+      },
+      {
+        "store": "S1",
+        "ph": "L1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-08-10"
+        },
+        "from": "2026-08-10",
+        "to": "2026-08-10"
+      },
+      {
+        "store": "S2",
+        "ph": "L2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-08-10"
+        },
+        "from": "2026-08-10",
+        "to": "2026-08-10"
+      },
+      {
+        "store": "S3",
+        "ph": "L3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-08-10"
+        },
+        "from": "2026-08-10",
+        "to": "2026-08-10"
+      },
+      {
+        "store": "S1",
+        "ph": "K1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-04-20"
+        },
+        "from": "2026-04-20",
+        "to": "2026-04-20"
+      },
+      {
+        "store": "S2",
+        "ph": "K2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-04-20"
+        },
+        "from": "2026-04-20",
+        "to": "2026-04-20"
+      },
+      {
+        "store": "S3",
+        "ph": "K3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-04-20"
+        },
+        "from": "2026-04-20",
+        "to": "2026-04-20"
+      },
+      {
+        "store": "S1",
+        "ph": "N1",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-05-11"
+        },
+        "from": "2026-05-11",
+        "to": "2026-05-11"
+      },
+      {
+        "store": "S2",
+        "ph": "N2",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-05-11"
+        },
+        "from": "2026-05-11",
+        "to": "2026-05-11"
+      },
+      {
+        "store": "S3",
+        "ph": "N3",
+        "recurrence": {
+          "weekdays": [
+            1
+          ],
+          "cycleWeeks": 1,
+          "anchor": "2026-05-11"
+        },
+        "from": "2026-05-11",
+        "to": "2026-05-11"
+      }
+    ],
+    "travel": [
+      [
+        "S1",
+        "S2",
+        30,
+        20
+      ],
+      [
+        "S2",
+        "S1",
+        29,
+        19
+      ],
+      [
+        "S3",
+        "S4",
+        30,
+        20
+      ],
+      [
+        "S4",
+        "S3",
+        30,
+        20
       ]
-     }
-    }
-   }
+    ]
   },
-  {
-   "op": "improve",
-   "id": "removes-violation",
-   "why": "Swapping M1 and M2 puts M1 at S2 (scope is S1 only: passes) and M2 at S1: removes the availability Fail with no standing and no travel. Removing a violation alone is meaningful.",
-   "opts": {
-    "from": "2026-08-17",
-    "to": "2026-08-17"
-   },
-   "expect": {
-    "status": "changes",
-    "proposal": {
-     "kind": "improve",
-     "edits": {
-      "$count": 2
-     }
-    }
-   }
-  },
-  {
-   "op": "commit",
-   "edits": [
+  "steps": [
     {
-     "t": "override",
-     "assignmentId": "S1|O1|2026-08-24",
-     "ruleId": "availability",
-     "reason": "Short-staffed, accepted by DM"
+      "op": "improve",
+      "id": "restore-2",
+      "why": "A1 stands at S1 but works S2; A2 stands at S2 but works S1. Swapping restores 2 standing assignments, no travel (no base stores), no violation: below the 3 threshold, so not meaningful.",
+      "opts": {
+        "from": "2026-06-01",
+        "to": "2026-06-01"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "restore-3",
+      "why": "A 3-cycle (Bi stands at Si, works S(i+1)). Restoring all three is exactly 3 standing assignments: meaningful. Three moves; each store keeps exactly one pharmacist so open/Fail counts do not rise.",
+      "opts": {
+        "from": "2026-06-08",
+        "to": "2026-06-08"
+      },
+      "accept": true,
+      "expect": {
+        "status": "changes",
+        "proposal": {
+          "kind": "improve",
+          "edits": {
+            "$count": 3
+          }
+        }
+      }
+    },
+    {
+      "op": "evaluate",
+      "range": {
+        "from": "2026-06-08",
+        "to": "2026-06-08"
+      },
+      "why": "After accepting, everyone is at the standing store.",
+      "expect": {
+        "cells": {
+          "S1|2026-06-08": {
+            "counted": 1,
+            "open": 0
+          },
+          "S2|2026-06-08": {
+            "counted": 1,
+            "open": 0
+          },
+          "S3|2026-06-08": {
+            "counted": 1,
+            "open": 0
+          }
+        },
+        "assignments": {
+          "S1|B1|2026-06-08": {
+            "counts": true
+          },
+          "S2|B2|2026-06-08": {
+            "counts": true
+          },
+          "S3|B3|2026-06-08": {
+            "counts": true
+          },
+          "S2|B1|2026-06-08": {
+            "$absent": true
+          }
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "travel-59",
+      "why": "C1 (base S1) works S2: 30 min. C2 (base S2) works S1: 29 min. Swapping them home saves 30+29 = 59 minutes, under 60: not meaningful. No standing rows, no violation (both under 90).",
+      "opts": {
+        "from": "2026-06-15",
+        "to": "2026-06-15"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "travel-60",
+      "why": "D1 (base S3) works S4: 30 min. D2 (base S4) works S3: 30 min. Swapping home saves 60 minutes, exactly the threshold: meaningful. Two edits.",
+      "opts": {
+        "from": "2026-06-22",
+        "to": "2026-06-22"
+      },
+      "expect": {
+        "status": "changes",
+        "proposal": {
+          "kind": "improve",
+          "edits": {
+            "$count": 2
+          }
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "changed-10",
+      "why": "A 10-cycle: restoring needs exactly 10 changed assignments (the maximum). Any partial rotation leaves a store empty and another doubled, raising open, so the only legal improvement is all 10.",
+      "opts": {
+        "from": "2026-06-29",
+        "to": "2026-06-29"
+      },
+      "expect": {
+        "status": "changes",
+        "proposal": {
+          "kind": "improve",
+          "edits": {
+            "$count": 10
+          }
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "changed-11",
+      "why": "An 11-cycle needs 11 changed assignments to restore everyone, above the maximum of 10. The engine may still close a 10-slot chain (the last pharmacist takes the first slot): 9 standing assignments restored with 10 changes, coverage unchanged. That is meaningful (>=3) and legal, so it is proposed; the 11th is not touched.",
+      "opts": {
+        "from": "2026-07-06",
+        "to": "2026-07-06"
+      },
+      "expect": {
+        "status": "changes",
+        "proposal": {
+          "kind": "improve",
+          "edits": {
+            "$count": 10
+          }
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "excl-unconfirmed",
+      "why": "Same 3-cycle as restore-3, but G1's assignment is Unconfirmed (agreed false). Unconfirmed is excluded, so the rotation cannot complete and a partial rotation would raise open.",
+      "opts": {
+        "from": "2026-07-13",
+        "to": "2026-07-13"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "excl-emergency",
+      "why": "Same 3-cycle with H1's assignment emergency-sourced (agreed true set explicitly): excluded.",
+      "opts": {
+        "from": "2026-07-20",
+        "to": "2026-07-20"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "excl-pinned",
+      "why": "Same 3-cycle with I1 pinned: excluded.",
+      "opts": {
+        "from": "2026-07-27",
+        "to": "2026-07-27"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "excl-partial",
+      "why": "Same 3-cycle with J1 carrying a partial-day note: excluded.",
+      "opts": {
+        "from": "2026-08-03",
+        "to": "2026-08-03"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "final-state-legal",
+      "why": "Same 3-cycle, but L1 has a Turned-down scoped to S1 on that date. Restoring L1 to its standing store S1 would add an availability Fail (and it is the only way to complete the rotation), so the final state is not allowed. L1 at S2 is fine today.",
+      "opts": {
+        "from": "2026-08-10",
+        "to": "2026-08-10"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "excl-past",
+      "why": "Same 3-cycle but on Mon 2026-04-20, before asOf 2026-05-01: past assignments are never changed.",
+      "opts": {
+        "from": "2026-04-20",
+        "to": "2026-04-20"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "excl-next14",
+      "why": "Same 3-cycle on Mon 2026-05-11, ten days after asOf: inside the next-14-days window, excluded by default.",
+      "opts": {
+        "from": "2026-05-11",
+        "to": "2026-05-11"
+      },
+      "expect": {
+        "status": "nothing",
+        "message": "Nothing to improve.",
+        "proposal": {
+          "$absent": true
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "incl-next14",
+      "why": "Same world with includeNext14: the 3-cycle can be restored (3 standing, meaningful).",
+      "opts": {
+        "from": "2026-05-11",
+        "to": "2026-05-11",
+        "includeNext14": true
+      },
+      "expect": {
+        "status": "changes",
+        "proposal": {
+          "kind": "improve",
+          "edits": {
+            "$count": 3
+          }
+        }
+      }
+    },
+    {
+      "op": "evaluate",
+      "why": "Before: M1 at S1 fails availability (Turned-down scope S1): S1 open 1.",
+      "expect": {
+        "cells": {
+          "S1|2026-08-17": {
+            "counted": 0,
+            "open": 1
+          }
+        },
+        "assignments": {
+          "S1|M1|2026-08-17": {
+            "counts": false,
+            "fail": [
+              "availability"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "op": "improve",
+      "id": "removes-violation",
+      "why": "Swapping M1 and M2 puts M1 at S2 (scope is S1 only: passes) and M2 at S1: removes the availability Fail with no standing and no travel. Removing a violation alone is meaningful.",
+      "opts": {
+        "from": "2026-08-17",
+        "to": "2026-08-17"
+      },
+      "expect": {
+        "status": "changes",
+        "proposal": {
+          "kind": "improve",
+          "edits": {
+            "$count": 2
+          }
+        }
+      }
+    },
+    {
+      "op": "commit",
+      "edits": [
+        {
+          "t": "override",
+          "assignmentId": "S1|O1|2026-08-24",
+          "ruleId": "availability",
+          "reason": "Short-staffed, accepted by DM"
+        }
+      ],
+      "meta": {
+        "kind": "manual"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "op": "improve",
+      "id": "removes-override",
+      "why": "O1 at S1 fails availability but is overridden (counts). Swapping with O2 removes the violation and the override (the override becomes moot): meaningful. Fail and override counts fall, open does not rise.",
+      "opts": {
+        "from": "2026-08-24",
+        "to": "2026-08-24"
+      },
+      "expect": {
+        "status": "changes",
+        "proposal": {
+          "kind": "improve",
+          "edits": {
+            "$count": 2
+          }
+        }
+      }
     }
-   ],
-   "meta": {
-    "kind": "manual"
-   },
-   "expect": {
-    "ok": true
-   }
-  },
-  {
-   "op": "improve",
-   "id": "removes-override",
-   "why": "O1 at S1 fails availability but is overridden (counts). Swapping with O2 removes the violation and the override (the override becomes moot): meaningful. Fail and override counts fall, open does not rise.",
-   "opts": {
-    "from": "2026-08-24",
-    "to": "2026-08-24"
-   },
-   "expect": {
-    "status": "changes",
-    "proposal": {
-     "kind": "improve",
-     "edits": {
-      "$count": 2
-     }
-    }
-   }
-  }
- ]
+  ]
 }

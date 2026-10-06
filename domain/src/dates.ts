@@ -95,7 +95,7 @@ export function compareDates(a: ISODate, b: ISODate): number {
   return cmp(a, b);
 }
 
-/** Code-point ordering. Never use localeCompare in the domain. */
+/** Code-point ordering. Locale-aware comparison is banned in the domain. */
 export function cmp(a: string, b: string): number {
   const x = Array.from(a);
   const y = Array.from(b);
