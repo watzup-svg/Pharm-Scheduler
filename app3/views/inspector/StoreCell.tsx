@@ -45,7 +45,7 @@ export function StoreCell({ storeId, date }: { storeId: string; date: ISODate })
         </div>
         <p className="mt-1 text-sm">{longDate(date)}{date < asOf ? <span className="text-muted"> (already past)</span> : null}</p>
         <div className="mt-1.5 flex items-start gap-1.5">
-          <Chip tone={st.tone} className="shrink-0">{st.glyph}</Chip>
+          {st.glyph ? <Chip tone={st.tone} className="shrink-0">{st.glyph}</Chip> : null}
           <div>
             <p className="text-sm font-semibold" data-testid="cell-status">{st.text}</p>
             <p className="text-xs text-muted" data-testid="cell-counts">{st.detail}</p>

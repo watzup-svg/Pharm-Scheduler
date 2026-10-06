@@ -99,9 +99,11 @@
 .w-wkend {
   background-color: rgb(28 25 23 / 0.035);
 }
+/* Past days are quieter by colour (muted ink is 4.9:1 or better on every cell tint), never by opacity, which dropped the marks below 4.5:1. */
 .w-day.w-past .w-dow,
 .w-day.w-past .w-num {
-  opacity: 0.6;
+  color: var(--color-muted);
+  font-weight: 500;
 }
 
 .w-label {
@@ -170,7 +172,7 @@
   background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--w-hatch) 5px 6px);
 }
 .w-cell.w-past .w-body {
-  opacity: 0.62;
+  color: var(--color-muted);
 }
 .w-cell:hover {
   background-color: var(--color-fill);
@@ -263,7 +265,7 @@
   font-weight: 500;
 }
 .w-sup {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
   vertical-align: super;
   margin-left: 1px;
@@ -306,7 +308,7 @@
   position: absolute;
   top: 0;
   right: 2px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 14px;
 }

@@ -124,23 +124,23 @@ export function SaveControls() {
         <div className="max-w-[220px] truncate text-sm font-semibold" title={name} data-testid="save-filename">{name}</div>
         <div className={`max-w-[320px] truncate text-xs ${tone}`} role="status" data-testid="save-status" title={line.text}>{line.text}</div>
       </div>
-      <Btn onClick={() => void open()} disabled={busy}>Open</Btn>
+      <Btn data-save-open onClick={() => void open()} disabled={busy}>Open</Btn>
       <Btn tone="ink" onClick={() => void save()} disabled={busy || !world} title="Ctrl+S">{fsa || s.linked ? "Save" : "Download a copy"}</Btn>
       {fsa && <Btn onClick={() => void saveAs()} disabled={busy || !world}>Save As</Btn>}
       {s.needsPermission && <Btn tone="ink" onClick={() => void reconnect()} disabled={busy}>Reconnect</Btn>}
       {!fsa && s.backend === "download" && <span className="text-xs text-muted" title="This browser cannot save over a file. Chrome or Edge can.">Download only</span>}
-      {readOnly && <Btn onClick={() => setDlg({ kind: "readonly" })} className="text-warn">{GLYPH.warning} Read-only</Btn>}
+      {readOnly && <Btn data-save-readonly onClick={() => setDlg({ kind: "readonly" })} className="text-warn">{GLYPH.warning} Read-only</Btn>}
       <SaveDialogs external={dlg} onClose={() => setDlg(null)} onOpenForce={() => open(true)} onSave={() => save()} />
     </div>
   );
 }
 
-function Shell({ title, children, onClose, label }: { title: string; children: React.ReactNode; onClose?: () => void; label: string }) {
+function Shell({ title, children, onClose, label, returnTo }: { title: string; children: React.ReactNode; onClose?: () => void; label: string; returnTo?: string }) {
   return (
     <Dialog.Root open onOpenChange={(o) => { if (!o) onClose?.(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
-        <Dialog.Content aria-label={label} aria-describedby={undefined} className="fixed left-1/2 top-1/3 z-50 w-[520px] max-w-[92vw] -translate-x-1/2 rounded-lg border border-line bg-cream p-4 shadow-xl">
+        <Dialog.Content aria-label={label} aria-describedby={undefined} onCloseAutoFocus={returnTo ? (e) => { const t = document.querySelector<HTMLElement>(returnTo); if (t) { e.preventDefault(); t.focus(); } } : undefined} className="fixed left-1/2 top-1/3 z-50 w-[520px] max-w-[92vw] -translate-x-1/2 rounded-lg border border-line bg-cream p-4 shadow-xl">
           <Dialog.Title className="mb-2 text-base font-semibold">{title}</Dialog.Title>
           <div className="space-y-3 text-sm">{children}</div>
         </Dialog.Content>
@@ -201,7 +201,7 @@ export function SaveDialogs({ external = null, onClose, onOpenForce, onSave }: {
   if (!dlg) return null;
   if (dlg.kind === "unsaved") {
     return (
-      <Shell title="This schedule has changes that are not in a file" label="Unsaved changes" onClose={close}>
+      <Shell title="This schedule has changes that are not in a file" label="Unsaved changes" onClose={close} returnTo="[data-save-open]">
         <p>Opening another file will replace what is on screen. Save first, or open anyway and the browser keeps a set-aside copy of this one.</p>
         <div className="flex justify-end gap-2">
           <Btn onClick={close}>Cancel</Btn>
@@ -213,7 +213,7 @@ export function SaveDialogs({ external = null, onClose, onOpenForce, onSave }: {
   }
   if (dlg.kind === "readonly") {
     return (
-      <Shell title="This file is open read-only" label="Read-only" onClose={close}>
+      <Shell title="This file is open read-only" label="Read-only" onClose={close} returnTo="[data-save-readonly]">
         <p>Some of its data does not add up, so changes are turned off until it is sorted out. Nothing was repaired or changed.</p>
         <ul className="max-h-48 list-disc space-y-0.5 overflow-auto pl-5 text-muted">{(readOnly ?? []).slice(0, 30).map((x) => <li key={x}>{x}</li>)}</ul>
         <div className="flex justify-end"><Btn tone="ink" onClick={close}>Close</Btn></div>
@@ -222,7 +222,7 @@ export function SaveDialogs({ external = null, onClose, onOpenForce, onSave }: {
   }
   const r = dlg.r;
   return (
-    <Shell title="This file could not be opened" label="File refused" onClose={close}>
+    <Shell title="This file could not be opened" label="File refused" onClose={close} returnTo="[data-save-open]">
       <p>{r.error}</p>
       <p className="text-muted">The schedule on screen has not been touched. {r.offers.length ? "You can start from one of these instead:" : "There is no other copy to offer."}</p>
       {r.offers.length > 0 && (

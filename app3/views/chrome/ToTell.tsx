@@ -64,7 +64,7 @@ export function ToTell() {
       <ul className="mt-3 space-y-3">
         {groups.map((g) => (
           <li key={g.pharmacistId} className="rounded-md bg-white p-2 ring-1 ring-line" aria-label={`To tell: ${g.name}`}>
-            <h3 className="text-sm font-semibold">{g.name}</h3>
+            <h2 className="text-sm font-semibold">{g.name}</h2>
             <ul className="mt-1 space-y-0.5 text-sm">
               {g.entries.map((e) => (
                 <li key={e.date}>{line(e)}</li>
