@@ -163,65 +163,71 @@ try {
     check("pharmacist: not recorded stores no license map", !!tom && tom.licenses === undefined);
     check("pharmacist: table says not recorded", (await page.locator('[data-pharmacist-row="Tom Tester"]').innerText()).includes("Not recorded"));
 
-    // --- patterns
+    // --- patterns: paint the days on a weekly grid
     await page.getByRole("tab", { name: "Patterns" }).click();
     const ag = page.getByRole("group", { name: "Add a pattern" });
+    const cell = (wk, day) => ag.locator(`[data-week="${wk}"][data-day="${day}"]`);
     await ag.getByRole("button", { name: "Add pattern" }).click();
-    check("pattern: missing parts explained", (await ag.getByText("Choose a store.").count()) === 1 && (await ag.getByText("Tick at least one weekday.").count()) === 1);
-    await ag.getByLabel("Store", { exact: true }).selectOption(store.id);
+    check("pattern: missing parts explained", (await ag.getByText("Choose a pharmacist.").count()) === 1 && (await ag.getByText(/Paint at least one day/).count()) === 1);
+    check("pattern: the grid is switched off until something is chosen to paint with", (await cell(0, 1).isDisabled()));
     await ag.getByLabel("Pharmacist", { exact: true }).selectOption(ph.id);
-    await ag.getByRole("checkbox", { name: "Mon" }).check();
-    await ag.getByRole("checkbox", { name: "Wed" }).check();
-    await ag.getByLabel("Repeats").selectOption("2");
+    await ag.getByLabel("Paint with").selectOption(store.id);
+    await ag.getByLabel("The pattern repeats every").selectOption("2");
+    check("pattern: two weeks show two rows", (await ag.locator('[role="row"]').filter({ hasText: /^Week/ }).count()) === 2);
+    await cell(0, 1).click(); await cell(0, 3).click(); await cell(1, 2).click();
+    check("pattern: painted days show the store", (await cell(0, 1).getAttribute("data-paint")) === store.id && (await cell(1, 2).innerText()) === "TST");
     const hits = await ag.getByTestId("pattern-preview").locator('[data-hit="yes"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-date")));
-    check("pattern: preview shows 4 weeks, every 2nd week Mon/Wed = 3 or 4 days (first week starts today)", hits.length >= 3 && hits.length <= 4, JSON.stringify(hits));
-    check("pattern: preview only Mon/Wed", hits.every((d) => [1, 3].includes(new Date(`${d}T12:00:00Z`).getUTCDay())), JSON.stringify(hits));
+    check("pattern: the preview shows the painted days (Mon/Wed one week, Tue the next)", hits.length >= 3 && hits.every((d) => [1, 2, 3].includes(new Date(`${d}T12:00:00Z`).getUTCDay())), JSON.stringify(hits));
     await shot(page, "pattern-builder");
     await ag.getByRole("button", { name: "Add pattern" }).click();
     await page.waitForTimeout(150);
     w = await worldOf(page);
-    const t = Object.values(w.standing).find((x) => x.storeId === store.id && x.pharmacistId === ph.id);
-    check("pattern: added", !!t && t.recurrence.weekdays.join() === "1,3" && t.recurrence.cycleWeeks === 2, JSON.stringify(t));
+    const mine = Object.values(w.standing).filter((x) => x.storeId === store.id && x.pharmacistId === ph.id);
+    check("pattern: added as one pattern per week of the cycle", mine.length === 2 && mine.every((t) => t.recurrence.cycleWeeks === 2) && mine.map((t) => t.recurrence.weekdays.join()).sort().join("|") === "1,3|2", JSON.stringify(mine));
+    const t = mine.find((x) => x.recurrence.weekdays.join() === "1,3");
     check("pattern: appears in the list", (await page.locator(`tr[data-pattern="${t.id}"]`).count()) === 1);
 
     // conflict: same pharmacist, another store, same days
     const other = Object.values(w.stores).find((s) => s.code !== "TST");
-    await ag.getByLabel("Store", { exact: true }).selectOption(other.id);
     await ag.getByLabel("Pharmacist", { exact: true }).selectOption(ph.id);
-    await ag.getByRole("checkbox", { name: "Mon" }).check();
-    await ag.getByRole("checkbox", { name: "Wed" }).check();
-    await ag.getByLabel("Repeats").selectOption("2");
+    await ag.getByLabel("Paint with").selectOption(other.id);
+    await ag.getByLabel("The pattern repeats every").selectOption("2");
+    await cell(0, 1).click(); await cell(0, 3).click(); await cell(1, 2).click();
     check("pattern: conflict warned before adding", (await ag.getByText("Build will skip both: pattern conflict").count()) >= 1);
     await ag.getByRole("button", { name: "Add pattern" }).click();
     await page.waitForTimeout(150);
     check("pattern: conflict banner after adding", (await page.getByRole("alert", { name: "Pattern conflicts" }).count()) === 1);
     await page.evaluate(() => document.querySelector("main").scrollTo(0, 0));
     await shot(page, "patterns-conflict");
-    const t2 = Object.values((await worldOf(page)).standing).find((x) => x.storeId === other.id && x.pharmacistId === ph.id);
-    await page.getByRole("button", { name: `Remove pattern ${t2.id}` }).click();
-    await page.waitForTimeout(150);
+    const others = Object.values((await worldOf(page)).standing).filter((x) => x.storeId === other.id && x.pharmacistId === ph.id);
+    for (const t2 of others) { await page.getByRole("button", { name: `Remove pattern ${t2.id}` }).click(); await page.waitForTimeout(100); }
     w = await worldOf(page);
-    check("pattern: removed", !w.standing[t2.id] && !!w.standing[t.id]);
+    check("pattern: removed", others.length >= 1 && others.every((x) => !w.standing[x.id]) && !!w.standing[t.id]);
     check("pattern: banner gone after removing", (await page.getByRole("alert", { name: "Pattern conflicts" }).count()) === 0);
 
-    // usual days off: split days, every second week, recorded as approved time off in one change set
-    await ag.getByRole("button", { name: "Usual days off" }).click();
-    check("days off: no store to choose", (await ag.getByLabel("Store", { exact: true }).count()) === 0);
+    // usual days off: painted on the same grid, recorded as approved time off in one change set
     await ag.getByLabel("Pharmacist", { exact: true }).selectOption(ph.id);
-    await ag.getByRole("checkbox", { name: "Tue" }).check();
-    await ag.getByRole("checkbox", { name: "Thu" }).check();
-    await ag.getByLabel("Repeats").selectOption("2");
-    check("days off: it says how many days it will mark", /days off through/.test(await ag.getByTestId("days-off-summary").innerText()));
-    const nCs = (await worldOf(page)) && (await page.evaluate(() => window.__v3.app.getState().world.journal.changeSets.length));
+    await ag.getByLabel("Paint with").selectOption("off");
+    await ag.getByLabel("The pattern repeats every").selectOption("2");
+    await cell(0, 2).click(); await cell(0, 4).click();
+    check("days off: it says how many days it will mark", /days through/.test(await ag.getByTestId("days-off-summary").innerText()));
+    const nCs = await page.evaluate(() => window.__v3.app.getState().world.journal.changeSets.length);
     await ag.getByRole("button", { name: "Mark days off" }).click();
     await page.waitForTimeout(150);
     const recs = await page.evaluate((id) => Object.values(window.__v3.app.getState().world.state.unavailability).filter((u) => u.pharmacistId === id && u.note === "Usual day off"), ph.id);
     const nCs2 = await page.evaluate(() => window.__v3.app.getState().world.journal.changeSets.length);
-    check("days off: approved time-off records, 'Usual day off', Tue/Thu only, in one change set", recs.length >= 6 && recs.every((u) => u.status === "Approved" && [2, 4].includes(new Date(`${u.first}T12:00:00Z`).getUTCDay()) && u.first === u.last) && nCs2 === nCs + 1, `${recs.length} records, ${nCs2 - nCs} change sets`);
+    check("days off: approved time-off records, 'Usual day off', Tue/Thu only, in one change set", recs.length >= 6 && recs.every((r) => r.status === "Approved" && [2, 4].includes(new Date(`${r.first}T12:00:00Z`).getUTCDay()) && r.first === r.last) && nCs2 === nCs + 1, `${recs.length} records, ${nCs2 - nCs} change sets`);
     await page.getByRole("button", { name: "Undo" }).first().click();
     await page.waitForTimeout(150);
     check("days off: Undo takes them all back", (await page.evaluate((id) => Object.values(window.__v3.app.getState().world.state.unavailability).filter((u) => u.pharmacistId === id && u.note === "Usual day off").length, ph.id)) === 0);
-    await ag.getByRole("button", { name: "Works at a store" }).click();
+    // dragging across days paints them all
+    await ag.getByLabel("Paint with").selectOption(store.id);
+    const b1 = await cell(0, 1).boundingBox(), b2 = await cell(0, 4).boundingBox();
+    await page.mouse.move(b1.x + b1.width / 2, b1.y + b1.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b2.x + b2.width / 2, b2.y + b2.height / 2, { steps: 12 });
+    await page.mouse.up();
+    check("pattern: dragging across days paints them all", (await Promise.all([1, 2, 3, 4].map((d) => cell(0, d).getAttribute("data-paint")))).every((v) => v === store.id));
 
     // --- dates
     await page.getByRole("tab", { name: "Dates" }).click();
