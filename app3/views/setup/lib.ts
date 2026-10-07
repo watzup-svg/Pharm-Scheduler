@@ -524,7 +524,7 @@ export function previewDaysOff(state: DomainState, draft: Standing, from: ISODat
 }
 
 /** The need for a store on a date, with date changes and the store's active dates applied. */
-function weeklyNeedWithDates(state: DomainState, storeId: string, date: ISODate): number {
+export function weeklyNeedWithDates(state: DomainState, storeId: string, date: ISODate): number {
   const o = state.dateOverrides[`${storeId}|${date}`];
   return o ? o.count : weeklyNeed(state, storeId, weekday(date), date);
 }

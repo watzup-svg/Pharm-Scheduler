@@ -112,7 +112,7 @@ function monthBands(dates: ISODate[]): { key: string; from: number; span: number
   return out;
 }
 
-export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = true, onRange }: { rows: RowDef[]; dates: ISODate[]; axis: "store" | "pharmacist"; asOf: ISODate; corner: string; ariaLabel: string; dayButtons?: boolean; onRange?: (pharmacistId: string, first: ISODate, last: ISODate) => void }) {
+export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = true, onRange, onPick }: { rows: RowDef[]; dates: ISODate[]; axis: "store" | "pharmacist"; asOf: ISODate; corner: string; ariaLabel: string; dayButtons?: boolean; onRange?: (pharmacistId: string, first: ISODate, last: ISODate) => void; /** When given, a click hands the cell back instead of selecting it. */ onPick?: (c: { pharmacistId?: string; storeId?: string; date: ISODate }) => void }) {
   const LAB = axis === "store" ? LAB_STORE : LAB_PERSON;
   const selection = useApp((s) => s.selection);
   const ref = useRef<HTMLDivElement>(null);
@@ -230,10 +230,11 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = 
   const selectCell = useCallback((el: HTMLElement) => {
     const date = el.dataset.date as ISODate | undefined;
     if (!date) return;
+    if (onPick) { onPick({ date, ...(el.dataset.pid ? { pharmacistId: el.dataset.pid } : {}), ...(el.dataset.store ? { storeId: el.dataset.store } : {}) }); return; }
     const st = useApp.getState();
     if (el.dataset.store) st.select({ storeId: el.dataset.store, date });
     else if (el.dataset.pid) st.select({ pharmacistId: el.dataset.pid, date });
-  }, []);
+  }, [onPick]);
 
   // Dragging across one person's days (the Time off sheet): the days light up as the pointer moves, and letting go hands the range back.
   const rangeDrag = useRef<{ pid: string; c0: number; r: number; c1: number; moved: boolean } | null>(null);

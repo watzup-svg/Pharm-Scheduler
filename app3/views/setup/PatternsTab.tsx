@@ -1,10 +1,16 @@
 // Setup > Patterns. Standing assignments: who usually works where. A recurrence builder with a live preview of the next matching dates.
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { addDays, cmp, dateRange, expectedOn, isValidDate, standingMatches, type DomainState, type Edit, type ISODate, type Recurrence, type Standing } from "@domain";
+import { addDays, cmp, dateRange, expectedOn, weekday, isValidDate, standingMatches, type DomainState, type Edit, type ISODate, type Recurrence, type Standing } from "@domain";
 import { useApp } from "../../store.ts";
 import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
 import { Hint } from "../chrome/Title.tsx";
-import { dayLabel, daysOffRuns, mondayOf, previewDaysOff, previewPattern } from "./lib.ts";
+import { dayLabel, daysOffRuns, mondayOf, previewDaysOff, previewPattern, weeklyNeed } from "./lib.ts";
+import { Grid, type RowDef } from "../wall/Grid.tsx";
+import { DOW_LONG, activePharmacists } from "../wall/model.ts";
+import { monthBounds, monthName, shiftYm } from "../ahead/lib.ts";
+import { paintFromPatterns, standardRows, weekIndexOf } from "./standard.ts";
+import { PersonDisc } from "../../ui/PersonDisc.tsx";
+import { shortName } from "../../names.ts";
 import { DateField, ORDINAL, SelectField, TableShell, WEEKDAY_SHORT, WEEK_ORDER, niceDate, shortDate, pharmacistsSorted, storesSorted, td, th, useLocked } from "./shared.tsx";
 
 const WINDOW_DAYS = 56; // the next 8 weeks
@@ -54,6 +60,7 @@ export function PatternsTab() {
   const commit = useApp((s) => s.commit);
   const [storeFilter, setStoreFilter] = useState("");
   const [phFilter, setPhFilter] = useState("");
+  const [load, setLoad] = useState<{ pid: string; date: ISODate; n: number } | null>(null);
   const st = world.state;
   const stores = useMemo(() => storesSorted(st), [st]);
   const phs = useMemo(() => pharmacistsSorted(st), [st]);
@@ -80,6 +87,8 @@ export function PatternsTab() {
           </ul>
         </div>
       )}
+
+      <StandardMonth onPick={(pid, date) => setLoad((l) => ({ pid, date, n: (l?.n ?? 0) + 1 }))} />
 
       <div className="flex flex-wrap items-end gap-3">
         <h3 className="text-sm font-semibold">Current patterns</h3>
@@ -109,8 +118,45 @@ export function PatternsTab() {
         </tbody>
       </TableShell>
 
-      <PatternBuilder />
+      <PatternBuilder load={load} />
     </div>
+  );
+}
+
+/** A typical month: pharmacists down the side, days across, each cell the store their patterns put them at (no time off, no sickness). Click a day to edit that person's pattern below. */
+function StandardMonth({ onPick }: { onPick: (pid: string, date: ISODate) => void }) {
+  const world = useApp((s) => s.world)!;
+  const asOf = useApp((s) => s.asOf);
+  const [ym, setYm] = useState(asOf.slice(0, 7));
+  const st = world.state;
+  const b = monthBounds(ym);
+  const dates = useMemo(() => dateRange(b.from, b.to), [b.from, b.to]);
+  const rows = useMemo<RowDef[]>(() => {
+    const people = activePharmacists(st, b).filter((p) => Object.values(st.standing).some((t) => t.pharmacistId === p.id));
+    const models = standardRows(st, people, dates, asOf);
+    return people.map((p, i) => ({
+      key: p.id, label: `${p.name}, typical month`, tip: `${p.name} | Click a day to edit their pattern`,
+      head: <span className="w-person"><PersonDisc id={p.id} size={24} /><span className="w-pname">{shortName(p.name, 12)}</span></span>,
+      cells: models[i]!,
+    }));
+  }, [st, dates, asOf]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <section aria-label="A typical month" data-standard-month className="rounded-md bg-white ring-1 ring-line">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line px-3 py-2">
+        <h3 className="text-sm font-semibold">A typical month</h3>
+        <div role="group" aria-label="Month" className="flex items-center gap-1">
+          <button type="button" className="w-btn" aria-label="Previous month" onClick={() => setYm(shiftYm(ym, -1))}>{"‹"}</button>
+          <b className="min-w-32 text-center text-sm" data-standard-title>{monthName(ym)}</b>
+          <button type="button" className="w-btn" aria-label="Next month" onClick={() => setYm(shiftYm(ym, 1))}>{"›"}</button>
+        </div>
+        <p className="text-xs text-muted">Only what the patterns say: no time off, no sickness. Click a day to edit that person's pattern below.</p>
+      </div>
+      {rows.length === 0 ? <p className="p-4 text-sm text-muted">No patterns yet. Add one below and it shows up here.</p> : (
+        <div className="w-scroll max-h-[420px]">
+          <Grid rows={rows} dates={dates} axis="pharmacist" asOf={asOf} corner="People" ariaLabel="Typical month by pharmacist" dayButtons={false} onPick={(c) => c.pharmacistId && onPick(c.pharmacistId, c.date)} />
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -158,7 +204,7 @@ function patternsFromGrid(paint: Paint, cycle: 1 | 2 | 3 | 4, from: ISODate, per
   return out;
 }
 
-function PatternBuilder() {
+function PatternBuilder({ load }: { load: { pid: string; date: ISODate; n: number } | null }) {
   const world = useApp((s) => s.world)!;
   const asOf = useApp((s) => s.asOf);
   const locked = useLocked();
@@ -178,6 +224,9 @@ function PatternBuilder() {
   const [nth, setNth] = useState<number[]>([]);
   const [touched, setTouched] = useState(false);
   const painting = useRef(false);
+  const top = useRef<HTMLDivElement>(null);
+  // Editing someone's existing pattern (loaded by clicking them in the typical month): saving replaces their patterns.
+  const [editing, setEditing] = useState<{ pid: string; replaced: string[]; simplified: boolean } | null>(null);
 
   const person = phId ? st.pharmacists[phId] : undefined;
   const effBrush: Brush = brush || person?.baseStoreId || "";
@@ -204,10 +253,28 @@ function PatternBuilder() {
   };
   useEffect(() => { const up = () => { painting.current = false; }; window.addEventListener("pointerup", up); return () => window.removeEventListener("pointerup", up); }, []);
 
+  useEffect(() => {
+    if (!load) return;
+    if (editing && editing.pid === load.pid) {
+      // Already editing this person: a click on a day in the typical month paints that weekday (of that week of the cycle) with the chosen brush.
+      if (!effBrush) return;
+      const w = weekIndexOf(load.date, from, cycle);
+      apply(w, weekday(load.date));
+      return;
+    }
+    const base = mondayOf(isValidDate(from) ? from : asOf);
+    const got = paintFromPatterns(st, load.pid, base);
+    setPhId(load.pid); setCycle(got.cycle); setPaint(got.paint); setBrush(""); setNth([]); setTo(""); setTouched(false);
+    setEditing({ pid: load.pid, replaced: Object.values(st.standing).filter((t) => t.pharmacistId === load.pid).map((t) => t.id), simplified: got.simplified });
+    top.current?.scrollIntoView({ block: "start" });
+  }, [load?.n]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (editing && editing.pid !== phId) setEditing(null); }, [phId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const cells = useMemo(() => Object.fromEntries(Object.entries(paint).filter(([k]) => Number(k.split("|")[0]) < cycle)), [paint, cycle]);
   const errors = {
     ph: !phId ? "Choose a pharmacist." : null,
-    cells: Object.keys(cells).length === 0 ? "Paint at least one day: choose a store, then click or drag across the days." : null,
+    cells: Object.keys(cells).length === 0 && !editing ? "Paint at least one day: choose a store, then click or drag across the days." : null,
     from: !isValidDate(from) ? "Pick the first date the pattern applies." : null,
     to: to && (!isValidDate(to) || to < from) ? "The end date cannot be before the start." : null,
   };
@@ -241,24 +308,63 @@ function PatternBuilder() {
   const offRuns = useMemo(() => pats.off.flatMap((t) => daysOffRuns(st, t, from, offEnd)), [pats, st, from, offEnd]);
   const offDays = offRuns.reduce((n, r) => n + dateRange(r.first, r.last).length, 0);
 
+  // Problems with what is painted, said up front: a store that is never open that weekday, a store in a state they are not licensed for, days the store is closed, a clash with another pattern.
+  const problems = useMemo(() => {
+    const out: string[] = [];
+    const first = person?.name.split(" ")[0] ?? "They";
+    const seen = new Set<string>();
+    for (const [k, who] of Object.entries(cells)) {
+      if (who === "off") continue;
+      const d = Number(k.split("|")[1]);
+      const store = st.stores[who];
+      if (!store) continue;
+      const key = `${who}|${d}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (isValidDate(from) && weeklyNeed(st, who, d, from) === 0) out.push(`${store.code} is never open on ${DOW_LONG[d]}s, so painting ${DOW_LONG[d]} there places nobody. Clear that day, or change the store's hours in Setup.`);
+    }
+    const stateCodes = [...new Set(Object.values(cells).filter((w) => w !== "off").map((w) => st.stores[w]).filter((x) => !!x))];
+    for (const store of stateCodes) {
+      if (store && person?.licenses && store.state && !(store.state in person.licenses)) out.push(`${first} is not licensed in ${store.state}, where ${store.code} is, so ${first} would not count there.`);
+    }
+    // Closed days that are not just "this store never opens that weekday" (holidays and other date changes).
+    const dateChanges = (cal ? cal.rows.flat() : []).filter((d) => {
+      if (d.kind !== "work" || d.issue !== "closed") return false;
+      const store = Object.values(st.stores).find((x) => x.code === d.code);
+      return !store || weeklyNeed(st, store.id, weekday(d.date), d.date) > 0;
+    }).map((d) => d.date);
+    if (dateChanges.length) out.push(`${dateChanges.length} painted ${dateChanges.length === 1 ? "day falls" : "days fall"} on days the store is closed (${dateChanges.slice(0, 4).map(dayLabel).join(", ")}${dateChanges.length > 4 ? "…" : ""}). Nobody would be placed those days.`);
+    for (const c of wouldConflict.slice(0, 1)) out.push(`Build will skip both: pattern conflict. ${conflictSummary(st, [c])[0]}`);
+    return out;
+  }, [cells, st, from, person, cal, wouldConflict]);
+  const closedKeys = useMemo(() => new Set(Object.entries(cells).filter(([k, who]) => who !== "off" && isValidDate(from) && weeklyNeed(st, who, Number(k.split("|")[1]), from) === 0).map(([k]) => k)), [cells, st, from]);
+
   const save = () => {
     setTouched(true);
     if (anyError || !person) return;
     const edits: Edit[] = [
+      ...(editing && editing.pid === phId ? editing.replaced.filter((id) => !!st.standing[id]).map((id): Edit => ({ t: "standing.remove", id })) : []),
       ...pats.work.map((t): Edit => ({ t: "standing.add", storeId: t.storeId, pharmacistId: phId, recurrence: t.recurrence, effectiveFrom: from, ...(to ? { effectiveTo: to } : {}) })),
       ...offRuns.map((r): Edit => ({ t: "unavail.add", pharmacistId: phId, first: r.first, last: r.last, status: "Approved", type: "Other", note: "Usual day off" })),
     ];
     if (!edits.length) { say("info", "Nothing to add: those days are already marked."); return; }
     const parts = [pats.work.length ? `${pats.work.length} work ${pats.work.length === 1 ? "pattern" : "patterns"}` : "", offDays ? `${offDays} usual ${offDays === 1 ? "day" : "days"} off (to ${niceDate(offEnd)})` : ""].filter(Boolean).join(" and ");
-    if (commit(edits, `Added for ${person.name}: ${parts}.`)) { setPaint({}); setNth([]); setTo(""); setTouched(false); }
+    const verb = editing && editing.pid === phId ? "Changed the pattern for" : "Added for";
+    if (commit(edits, `${verb} ${person.name}: ${parts || "no work days"}.`)) { setPaint({}); setNth([]); setTo(""); setTouched(false); setEditing(null); }
   };
 
   const brushLabel = (b: Brush) => (b === "off" ? "Day off" : b === "erase" ? "Erase" : st.stores[b]?.code ?? "");
   const chip = (v: string) => (v === "off" ? { text: "Off", cls: "bg-[#f0c4ba] text-illegal ring-[#d98b7b]" } : { text: st.stores[v]?.code ?? "?", cls: "bg-ink text-white ring-ink" });
 
   return (
-    <div role="group" aria-label="Add a pattern" className="flex flex-col gap-3 rounded-md bg-white p-3 ring-1 ring-line">
-      <h3 className="text-sm font-semibold">Add a pattern</h3>
+    <div ref={top} role="group" aria-label="Add a pattern" className="flex scroll-mt-4 flex-col gap-3 rounded-md bg-white p-3 ring-1 ring-line">
+      <h3 className="text-sm font-semibold">{editing ? "Edit a pattern" : "Add a pattern"}</h3>
+      {editing && person && (
+        <div role="status" data-editing className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-fill px-3 py-2 text-sm">
+          <p><b>Editing {person.name}'s pattern.</b> Saving replaces their {editing.replaced.length} current {editing.replaced.length === 1 ? "pattern" : "patterns"}; Undo puts them back.{editing.simplified ? " Date limits and weeks-of-the-month on the old patterns are dropped." : ""}</p>
+          <Btn tone="ghost" onClick={() => { setEditing(null); setPaint({}); }}>Cancel editing</Btn>
+        </div>
+      )}
       <p className="-mt-2 text-xs text-muted">Pick a person, pick what to paint, then click or drag across the days. Use more than one week to show a pattern that changes week to week.</p>
       <div className="flex flex-wrap items-start gap-3">
         <SelectField label="Pharmacist" value={phId} onChange={(v) => { setPhId(v); setBrush(""); }} options={[{ value: "", label: "Choose…" }, ...phs.map((p) => ({ value: p.id, label: p.name }))]} error={touched ? errors.ph : null} className="w-56" />
@@ -278,11 +384,11 @@ function PatternBuilder() {
               const v = cells[`${w}|${d}`];
               const c = v ? chip(v) : null;
               return (
-                <button key={d} type="button" role="gridcell" data-week={w} data-day={d} data-paint={v ?? ""} aria-label={`Week ${w + 1} ${WEEKDAY_SHORT[d]}: ${v ? (v === "off" ? "day off" : st.stores[v]?.code) : "nothing"}`}
+                <button key={d} type="button" role="gridcell" data-week={w} data-day={d} data-paint={v ?? ""} data-warn={closedKeys.has(`${w}|${d}`) ? "closed" : undefined} aria-label={`Week ${w + 1} ${WEEKDAY_SHORT[d]}: ${v ? (v === "off" ? "day off" : st.stores[v]?.code) : "nothing"}`}
                   disabled={!effBrush}
                   onPointerDown={(e) => { e.preventDefault(); down(w, d); }} onPointerEnter={() => over(w, d)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); apply(w, d); } }}
-                  className={`grid h-10 place-items-center rounded-md text-xs font-bold ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-ink ${c ? c.cls : "bg-white text-muted/50 ring-line hover:bg-fill"}`}>
+                  className={`grid h-10 place-items-center rounded-md text-xs font-bold ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-ink ${c ? c.cls : "bg-white text-muted/50 ring-line hover:bg-fill"} ${closedKeys.has(`${w}|${d}`) ? "outline outline-2 outline-offset-1 outline-warn" : ""}`}>
                   {c ? c.text : "·"}
                 </button>
               );
@@ -291,6 +397,12 @@ function PatternBuilder() {
         ))}
       </div>
       {touched && errors.cells && <p role="alert" className="text-xs text-illegal">▲ {errors.cells}</p>}
+      {problems.length > 0 && (
+        <div role="alert" aria-label="Problems with this pattern" data-pattern-alert className="rounded-md bg-warn-bg p-3 text-sm text-warn ring-1 ring-warn/35">
+          <p className="font-semibold">{GLYPH.warning} {problems.length === 1 ? "This pattern has a problem" : `This pattern has ${problems.length} problems`}</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5">{problems.map((t) => <li key={t}>{t}</li>)}</ul>
+        </div>
+      )}
       {effBrush && <p className="-mt-1 text-xs text-muted">Painting: <b className="text-ink">{brushLabel(effBrush)}</b>. Click a painted day again to clear it.</p>}
 
       <div className="flex flex-wrap items-start gap-3">
@@ -328,15 +440,8 @@ function PatternBuilder() {
                 <span key={d.date} aria-hidden data-hit="no" data-date={d.date} className="grid size-10 place-items-center rounded-md text-sm tabular-nums text-muted/60">{Number(d.date.slice(8))}</span>
               ))}
             </div>
-            {cal.flagged > 0 && (
-              <ul className="mt-2 list-disc pl-5 text-xs text-warn">
-                {cal.rows.flat().filter((d) => cal.worry(d)).slice(0, 4).map((d) => <li key={d.date}>{dayLabel(d.date)}: {d.text}</li>)}
-                {cal.flagged > 4 && <li>and {cal.flagged - 4} more</li>}
-              </ul>
-            )}
           </>
         )}
-        {wouldConflict.length > 0 && <p role="alert" className="mt-2 text-sm text-warn">{GLYPH.warning} Build will skip both: pattern conflict. {conflictSummary(st, wouldConflict)[0]}</p>}
         {pats.off.length > 0 && <p className="mt-2 text-xs text-muted" data-testid="days-off-summary">{offDays ? `Days off: ${offDays} days through ${niceDate(offEnd)} are saved as approved time off, which you can see on the Time off screen.` : "Every one of those days off is already marked."}</p>}
       </div>
       <div className="flex items-center gap-2">
