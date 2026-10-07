@@ -4,6 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { BlockMark, MARKS, MARK_TONE, TIMEOFF_MARKS, TONE_TITLE, type MarkKind, type MarkTone } from "../../ui/icons.tsx";
 import { COLOURS, Swatch, TIMEOFF_COLOURS } from "../wall/Key.tsx";
 import { useChrome } from "./shared.tsx";
+import { KindChip } from "../ahead/MonthRail.tsx";
 
 const TONES: MarkTone[] = ["bad", "warn", "quiet"];
 // Time-off requests are not drawn on the Schedule screen (the Time off page handles them), so the guide leaves them out.
@@ -61,6 +62,15 @@ export function IconGuide() {
                   </div>
                 ))}
               </dl>
+            </section>
+            <section aria-label="Plan ahead" className="mt-4">
+              <h3 className="mb-1.5 text-sm font-semibold">On Plan ahead</h3>
+              <ul className="flex flex-col gap-1.5 text-sm">
+                <li className="flex items-center gap-2.5"><span className="w-28 shrink-0"><KindChip kind="empty" /></span><span className="text-muted">Nothing is scheduled for that month yet.</span></li>
+                <li className="flex items-center gap-2.5"><span className="w-28 shrink-0"><KindChip kind="drafting" /></span><span className="text-muted">Being built: shifts are still open or a rule is broken. Nobody has been told.</span></li>
+                <li className="flex items-center gap-2.5"><span className="w-28 shrink-0"><KindChip kind="ready" /></span><span className="text-muted">Every shift is covered and no rule is broken. Post it when you are happy.</span></li>
+                <li className="flex items-center gap-2.5"><span className="w-28 shrink-0"><KindChip kind="posted" rev={1} /></span><span className="text-muted">Posted. You can keep editing; the month then says how many days changed since posting.</span></li>
+              </ul>
             </section>
             <p className="mt-4 text-sm text-muted">A problem you accepted keeps its colour and picture, faded, so you can see it is handled but still true. The details are in the hover note and in the Inspector. Pointing at a block (or right click) lists the names and the reasons.</p>
           </div>

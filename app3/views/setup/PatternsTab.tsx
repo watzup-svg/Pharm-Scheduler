@@ -225,8 +225,10 @@ function PatternBuilder() {
     for (const t of pats.off) for (const r of previewDaysOff(st, t, start, 4).rows.flat()) if (r.hit) byDate.set(r.date, { date: r.date, kind: "off", ...(r.issue ? { issue: r.issue } : {}), ...(r.text ? { text: r.text } : {}) });
     const monday = mondayOf(start);
     const rows: Day[][] = Array.from({ length: 4 }, (_, w) => Array.from({ length: 7 }, (_, i) => { const date = addDays(monday, w * 7 + i); return byDate.get(date) ?? { date }; }));
+    // "Already placed there" and "already off" just confirm what is there; only real problems are flagged.
+    const worry = (d: Day) => !!d.issue && !(d.kind === "work" ? d.issue === "placed" : d.issue === "off");
     const all = rows.flat().filter((d) => d.kind);
-    return { rows, hits: all.length, flagged: all.filter((d) => d.issue).length };
+    return { rows, hits: all.length, flagged: all.filter(worry).length, worry };
   }, [pats, st, asOf, from, phId]);
 
   const wouldConflict = useMemo(() => {
@@ -319,7 +321,7 @@ function PatternBuilder() {
             <div data-testid="pattern-preview" role="list" aria-label="Days the pattern lands on" className="mt-1 grid w-max grid-cols-7 gap-1">
               {cal.rows.flat().map((d) => d.kind ? (
                 <span key={d.date} role="listitem" data-hit="yes" data-kind={d.kind} data-date={d.date} data-issue={d.issue ?? ""} aria-label={`${dayLabel(d.date)}${d.kind === "off" ? ", usual day off" : `, ${d.code}`}${d.text ? `. ${d.text}` : ""}`} data-tip={`${dayLabel(d.date)} | ${d.kind === "off" ? "Usual day off" : `Works at ${d.code}`}${d.text ? ` | ${d.text}` : ""}`}
-                  className={`grid size-10 place-items-center rounded-md text-[11px] font-bold leading-none tabular-nums ${d.issue ? "bg-warn-bg text-warn ring-2 ring-warn/50" : d.kind === "off" ? "bg-[#f0c4ba] text-illegal ring-1 ring-[#d98b7b]" : "bg-ink text-white"}`}>
+                  className={`grid size-10 place-items-center rounded-md text-[11px] font-bold leading-none tabular-nums ${cal.worry(d) ? "bg-warn-bg text-warn ring-2 ring-warn/50" : d.kind === "off" ? "bg-[#f0c4ba] text-illegal ring-1 ring-[#d98b7b]" : "bg-ink text-white"}`}>
                   <span>{Number(d.date.slice(8))}</span><span className="text-[10px] font-semibold opacity-90">{d.kind === "off" ? "off" : d.code}</span>
                 </span>
               ) : (
@@ -328,7 +330,7 @@ function PatternBuilder() {
             </div>
             {cal.flagged > 0 && (
               <ul className="mt-2 list-disc pl-5 text-xs text-warn">
-                {cal.rows.flat().filter((d) => d.issue).slice(0, 4).map((d) => <li key={d.date}>{dayLabel(d.date)}: {d.text}</li>)}
+                {cal.rows.flat().filter((d) => cal.worry(d)).slice(0, 4).map((d) => <li key={d.date}>{dayLabel(d.date)}: {d.text}</li>)}
                 {cal.flagged > 4 && <li>and {cal.flagged - 4} more</li>}
               </ul>
             )}
