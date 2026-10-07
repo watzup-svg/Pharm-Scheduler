@@ -58,6 +58,7 @@ const allGaps = async () => {
 const firstGap = async () => (await allGaps())[0];
 
 const shots = [
+  ["overview", async () => { await reset("overview"); }],
   ["wall-stores", async () => { await reset("wall", "store"); }],
   ["wall-people", async () => { await reset("wall", "pharmacist"); }],
   ["wall-key", async () => { await reset("wall", "store"); await page.getByRole("button", { name: "Key" }).click(); }],
@@ -104,6 +105,13 @@ const shots = [
   ["high-contrast-print", async () => { await reset("print"); }],
   ["larger-text", async () => { await pref("High contrast"); await reset("wall", "store"); await pref("Larger text"); }],
   ["larger-text-timeoff", async () => { await reset("timeoff"); }],
+  ["overview-problems", async () => {
+    // last on purpose: this loads a different world, and the shots above are of the practice month
+    await app(() => document.documentElement.classList.remove("text-large", "contrast"));
+    await app(() => window.__v3.loadProblems());
+    await app(() => { const a = window.__v3.app.getState(); a.setAsOf("2026-10-06"); a.setWindow("2026-10-01", "2026-10-31"); });
+    await reset("overview");
+  }],
 ];
 // The proposal bar must be gone and the toggles back before anything that follows.
 const after = {

@@ -13,7 +13,7 @@ const MODES = [
   { id: "large+contrast", large: true, contrast: true },
 ];
 const SCREENS = [
-  { id: "Schedule", view: "wall" }, { id: "Time off", view: "timeoff" }, { id: "Print", view: "print" }, { id: "Plan", view: "plan" },
+  { id: "Overview", view: "overview" }, { id: "Schedule", view: "wall" }, { id: "Time off", view: "timeoff" }, { id: "Print", view: "print" }, { id: "Plan", view: "plan" },
   ...["stores", "pharmacists", "patterns", "dates", "travel", "rules", "checks"].map((t) => ({ id: `Setup/${t}`, view: "setup", tab: t })),
 ];
 

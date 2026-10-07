@@ -29,8 +29,9 @@ export async function serveV3() {
   return { base: `http://127.0.0.1:${server.address().port}/v3.html`, close: () => server.close() };
 }
 
-/** Opens the app. `practice: true` loads the practice month through the importer. */
-export async function openApp(browser, base, { practice = true, size = { width: 1366, height: 800 }, context } = {}) {
+/** Opens the app. `practice: true` loads the practice month through the importer. The app opens on the Overview; `view` picks the screen
+ * the test starts on ("wall" by default, so tests about the Schedule keep working; pass "overview" for the home screen, or null to leave it). */
+export async function openApp(browser, base, { practice = true, size = { width: 1366, height: 800 }, context, view = "wall" } = {}) {
   const page = await (context ?? browser).newPage({ viewport: size });
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -38,6 +39,7 @@ export async function openApp(browser, base, { practice = true, size = { width: 
   await page.goto(base, { waitUntil: "load" });
   await page.waitForFunction(() => window.__v3);
   if (practice) { await page.evaluate(() => window.__v3.loadPractice()); await page.waitForTimeout(200); }
+  if (practice && view) { await page.evaluate((v) => window.__v3.app.getState().setView(v), view); await page.waitForTimeout(100); }
   return { page, errors };
 }
 

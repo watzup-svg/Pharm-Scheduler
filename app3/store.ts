@@ -11,7 +11,7 @@ import { record as diag, setContext } from "./diagnostics.ts";
 import { describeEdits } from "./copy.ts";
 
 /** The screens. Travel, Rules and Checks are tabs inside Setup; setView still accepts their old names and routes there. */
-export type Screen = "wall" | "plan" | "timeoff" | "setup" | "print";
+export type Screen = "overview" | "wall" | "plan" | "timeoff" | "setup" | "print";
 export type SetupTab = "stores" | "pharmacists" | "patterns" | "dates" | "travel" | "rules" | "checks";
 export type View = Screen | "travel" | "rules" | "checks";
 export type Axis = "store" | "pharmacist";
@@ -134,7 +134,7 @@ export const useApp = create<AppState>((set, get) => {
     asOf: todayISO(),
     window: monthWindow(todayISO()),
     axis: "store",
-    view: "wall",
+    view: "overview",
     setupTab: "stores",
     drawer: false,
     outForm: false,
@@ -158,7 +158,7 @@ export const useApp = create<AppState>((set, get) => {
     say: (kind, text, undoId) => set({ notice: { id: ++noticeId, kind, text, ...(undoId ? { undoId } : {}) } }),
     clearNotice: () => set({ notice: null }),
 
-    closeSchedule: () => (diag("persist", "schedule closed (back to Start)"), set({ world: null, readOnlyProblems: null, fileName: null, selection: null, drawer: false, outForm: false, view: "wall", notice: null })),
+    closeSchedule: () => (diag("persist", "schedule closed (back to Start)"), set({ world: null, readOnlyProblems: null, fileName: null, selection: null, drawer: false, outForm: false, view: "overview", notice: null })),
 
     setWorld: (w, opts = {}) => (diag("persist", `schedule opened${opts.fileName ? " (file)" : ""}`), set({ world: w, fileName: opts.fileName ?? get().fileName, readOnlyProblems: opts.readOnlyProblems ?? null, repairResult: null, selection: null })),
 
