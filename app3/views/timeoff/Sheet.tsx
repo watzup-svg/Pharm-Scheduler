@@ -5,19 +5,13 @@ import type { ISODate } from "@domain";
 import { useApp } from "../../store.ts";
 import { useViewState, useWindowDates } from "../../derive.ts";
 import { shortName } from "../../names.ts";
+import { paletteVar } from "../../ui/PersonDisc.tsx";
 import { Grid, type RowDef } from "../wall/Grid.tsx";
 import { Swatch, TIMEOFF_COLOURS } from "../wall/Key.tsx";
 import { activePharmacists, indexByPharmacist, widthKind, windowFor, type WidthKind } from "../wall/model.ts";
 import { buildSheetRows, indexRecords, kindOf } from "./sheet.ts";
 import { useTimeOffUi } from "./ui.ts";
 import { useWhyLocked } from "./lib.ts";
-
-/** A stable colour for a person: one of the eight palette tokens, by a hash of the id (the same as the Schedule's People rows). */
-function paletteVar(id: string): string {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return `var(--color-p${h % 8})`;
-}
 
 const WIDTHS: { kind: Exclude<WidthKind, "custom" | "4w">; label: string }[] = [{ kind: "month", label: "Month" }, { kind: "2w", label: "2 weeks" }];
 

@@ -4,6 +4,12 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 export const cx = (...a: (string | false | null | undefined)[]) => a.filter(Boolean).join(" ");
 
 type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { tone?: "ink" | "quiet" | "ghost" };
+/**
+ * Buttons: one rule on every screen.
+ *  - "ink" (black) is the ONE next thing to do on the screen (Build, Post, Add a store, Save). At most one per screen; e2e/v3-unity.mjs checks it.
+ *  - "quiet" (beige, the default) is everything else, including every row action (Find cover, Fix, Review, Remove).
+ *  - "ghost" is an optional extra, shown as text.
+ */
 export function Btn({ tone = "quiet", className, ...p }: BtnProps) {
   const t = tone === "ink" ? "bg-ink text-white hover:bg-black" : tone === "ghost" ? "text-ink hover:bg-fill" : "bg-fill text-ink hover:bg-line";
   return <button type="button" {...p} className={cx("inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink", t, className)} />;

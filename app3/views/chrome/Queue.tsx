@@ -4,6 +4,7 @@ import { useApp } from "../../store.ts";
 import { useIssues, type Issue } from "../../derive.ts";
 import { cx, GLYPH } from "../../ui/primitives.tsx";
 import { BlockMark, RULE_MARK, type MarkKind } from "../../ui/icons.tsx";
+import { HexBadge } from "../../ui/HexBadge.tsx";
 import { RepairOptions } from "./RepairOptions.tsx";
 import { fmtDate, fmtShort, goTo } from "./shared.tsx";
 
@@ -20,6 +21,7 @@ export function Queue() {
   const sel = useApp((s) => s.selection);
   const all = useIssues();
   const [seeAll, setSeeAll] = useState(false);
+  const store = (id: string) => useApp.getState().world?.state.stores[id]?.code ?? id;
   // Open spots first, then broken rules, then warnings: the drawer shows the top few; the rest sit behind "See all".
   const rank = (i: Issue) => GROUPS.findIndex((g) => g.kind === i.kind);
   const ordered = all.slice().sort((a, b) => rank(a) - rank(b));
@@ -52,7 +54,7 @@ export function Queue() {
                       className={cx("q-row flex w-full items-start gap-2.5 rounded-lg py-2 pl-2.5 pr-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-ink", on && "q-on")}
                     >
                       <BlockMark kind={mark} tone={sev} size={24} className="mt-px" />
-                      <span className="min-w-0"><span className="block font-semibold">{fmtDate(i.date)}</span><span className="block text-ink/80">{i.text}</span></span>
+                      <span className="min-w-0"><span className="block font-semibold">{fmtDate(i.date)}</span><span className="flex flex-wrap items-center gap-1 text-ink/80">{i.kind === "open" ? <><HexBadge label={store(i.storeId)} size={24} />{i.text.replace(new RegExp(`^${store(i.storeId)}\\s+`), "")}</> : i.text}</span></span>
                     </button>
                   </li>
                 );

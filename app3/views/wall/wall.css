@@ -298,42 +298,6 @@
   border-bottom: 1px solid var(--color-edge);
   color: var(--color-ink);
 }
-.w-seg {
-  display: inline-flex;
-  border-radius: 8px;
-  background: var(--color-fill);
-  padding: 2px;
-  gap: 2px;
-}
-.w-seg button {
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 6px;
-  font-weight: 600;
-  color: var(--color-ink);
-}
-.w-seg button:hover {
-  background: var(--color-line);
-}
-.w-seg button[aria-pressed="true"] {
-  background: var(--color-ink);
-  color: #fff;
-}
-.w-seg button:focus-visible,
-.w-btn:focus-visible {
-  outline: 2px solid var(--color-ink);
-  outline-offset: 1px;
-}
-.w-btn {
-  height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
-  background: var(--color-fill);
-  font-weight: 600;
-}
-.w-btn:hover {
-  background: var(--color-line);
-}
 .w-controls .w-btn {
   height: 28px;
 }
@@ -591,7 +555,8 @@
 .w-seg button:hover {
   background: var(--color-line);
 }
-.w-seg button[aria-pressed="true"] {
+.w-seg button[aria-pressed="true"],
+.w-seg button[aria-selected="true"] {
   background: var(--color-ink);
   color: #fff;
 }

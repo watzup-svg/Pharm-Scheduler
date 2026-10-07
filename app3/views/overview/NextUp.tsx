@@ -3,6 +3,7 @@
 import { useApp } from "../../store.ts";
 import { Btn } from "../../ui/primitives.tsx";
 import { StateMark } from "../../ui/icons.tsx";
+import { HexBadge } from "../../ui/HexBadge.tsx";
 import { fmtDate } from "../../copy.ts";
 import { RepairOptions } from "../chrome/RepairOptions.tsx";
 import { findCover, seeAllProblems, showOnWall, showProblem } from "./actions.ts";
@@ -10,7 +11,10 @@ import { markOfProblem, type MonthFacts } from "./facts.ts";
 import { nextProblems } from "./lib.ts";
 import type { MarkKind } from "../../ui/icons.tsx";
 
+const stripCode = (text: string, code: string) => text.replace(new RegExp(`^${code}\\s+`), "");
+
 export function NextUp({ m }: { m: MonthFacts }) {
+  const codeOfStore = (id: string | undefined) => (id ? useApp.getState().world?.state.stores[id]?.code ?? "" : "");
   const busy = useApp((s) => s.busy);
   const proposal = useApp((s) => !!s.world?.session.proposal);
   const queueOpen = useApp((s) => s.drawer && s.leftTab === "queue");
@@ -32,7 +36,8 @@ export function NextUp({ m }: { m: MonthFacts }) {
               <StateMark kind={(markOfProblem(p) as MarkKind)} size={20} />
               <button type="button" onClick={() => showProblem(p)} data-tip={`${fmtDate(p.date)} | ${p.text} | Open it on the wall`}
                 className="min-w-0 flex-1 rounded text-left text-sm hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">
-                <span className="font-semibold">{fmtDate(p.date)}</span><span className="text-muted"> · {p.text}</span>
+                <span className="font-semibold">{fmtDate(p.date)}</span><span className="text-muted"> · </span>
+                {p.kind === "open" && <HexBadge label={codeOfStore(p.storeIds[0])} size={28} className="mx-0.5 align-middle" />}<span className="text-muted">{p.kind === "open" ? ` ${stripCode(p.text, codeOfStore(p.storeIds[0]))}` : p.text}</span>
               </button>
               {p.kind === "open"
                 ? <Btn disabled={off} title={why} aria-label={`Find cover: ${fmtDate(p.date)}, ${p.text}`} onClick={() => findCover(p)}>Find cover</Btn>

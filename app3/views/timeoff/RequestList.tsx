@@ -5,6 +5,8 @@ import { applyScratch, type DomainState, type ISODate, type Unavailability } fro
 import { useApp } from "../../store.ts";
 import { shortName } from "../../names.ts";
 import { cx } from "../../ui/primitives.tsx";
+import { Segmented } from "../../ui/Segmented.tsx";
+import { PersonDisc } from "../../ui/PersonDisc.tsx";
 import { BlockMark, type MarkKind } from "../../ui/icons.tsx";
 import { windowFor } from "../wall/model.ts";
 import { callers, consequenceText, safeToApprove, type Cell } from "./calc.ts";
@@ -69,14 +71,7 @@ export function RequestList() {
 
   return (
     <div className="px-3 py-2.5" data-request-list>
-      <div role="group" aria-label="Show" className="flex gap-1">
-        {TABS.map(([t, label]) => (
-          <button key={t} type="button" aria-pressed={tab === t} onClick={() => ui.setTab(t)}
-            className={cx("rounded-md px-2.5 py-1 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink", tab === t ? "bg-ink text-white" : "text-muted hover:bg-fill")}>
-            {label}{t === "waiting" && waiting.length ? ` ${waiting.length}` : ""}
-          </button>
-        ))}
-      </div>
+      <Segmented label="Show" value={tab} onChange={ui.setTab} options={TABS.map(([t, label]) => ({ value: t, label, ...(t === "waiting" && waiting.length ? { count: waiting.length } : {}) }))} />
       {tab === "waiting" && safe.length > 1 && (
         <button type="button" disabled={locked} onClick={approveSafe} data-tip={`Approve ${safe.length} | They leave every store covered, together | One change; Undo puts them all back`}
           className="mt-2 rounded-md px-1 py-0.5 text-left text-sm font-semibold underline underline-offset-2 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-ink">
@@ -96,7 +91,7 @@ export function RequestList() {
                   className={cx("q-row flex w-full items-start gap-2.5 rounded-lg py-2 pl-2.5 pr-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-ink", on && "q-on")}>
                   <BlockMark kind={mark} tone={sev ?? "quiet"} size={24} className="mt-px" />
                   <span className="min-w-0">
-                    <span className="block font-semibold">{shortName(who(u), 24)}</span>
+                    <span className="flex items-center gap-1.5 font-semibold"><PersonDisc id={u.pharmacistId} size={14} />{shortName(who(u), 24)}</span>
                     <span className="block text-ink/80">{span(u)} · {typeWord(u)}</span>
                     {tab === "waiting" && <span data-consequence className="block text-xs text-ink/70">{cells.length ? `Approving leaves ${cells.length === 1 ? "1 store day" : `${cells.length} store days`} short` : "Approving leaves every store covered"}</span>}
                   </span>

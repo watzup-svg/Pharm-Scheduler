@@ -3,6 +3,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { BlockMark, MARKS, MARK_TONE, TIMEOFF_MARKS, TONE_TITLE, type MarkKind, type MarkTone } from "../../ui/icons.tsx";
 import { COLOURS, Swatch, TIMEOFF_COLOURS } from "../wall/Key.tsx";
+import { useApp } from "../../store.ts";
 import { useChrome } from "./shared.tsx";
 import { KindChip } from "../ahead/MonthRail.tsx";
 
@@ -13,6 +14,9 @@ const kindsOf = (t: MarkTone) => (Object.keys(MARKS) as MarkKind[]).filter((k) =
 export function IconGuide() {
   const open = useChrome((s) => s.guide);
   const setGuide = useChrome((s) => s.setGuide);
+  const view = useApp((s) => s.view);
+  // The part about the screen you came from comes first.
+  const first = (k: "timeoff" | "ahead") => ({ order: view === k ? -1 : 0 });
   return (
     <Dialog.Root open={open} onOpenChange={setGuide}>
       <Dialog.Portal>
@@ -23,7 +27,7 @@ export function IconGuide() {
             <Dialog.Close className="rounded px-2 py-1 text-sm text-muted hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">Close</Dialog.Close>
           </div>
           <p className="mt-1 text-sm text-muted">The colour of a block says whether the shift is covered. A picture on it says what still needs a look. No picture means all is well.</p>
-          <div tabIndex={0} role="region" aria-label="Colours and pictures" className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1 focus-visible:outline-2 focus-visible:outline-ink">
+          <div tabIndex={0} role="region" aria-label="Colours and pictures" className="mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto pr-1 focus-visible:outline-2 focus-visible:outline-ink">
             <section aria-label="Colours">
               <h3 className="mb-1.5 text-sm font-semibold">Colours, by store</h3>
               <ul className="flex flex-col gap-1.5 text-sm">
@@ -49,7 +53,7 @@ export function IconGuide() {
                 </dl>
               </section>
             ))}
-            <section aria-label="Time off screen" className="mt-4">
+            <section aria-label="Time off screen" className="mt-4" style={first("timeoff")}>
               <h3 className="mb-1.5 text-sm font-semibold">On the Time off screen</h3>
               <ul className="flex flex-col gap-1.5 text-sm">
                 {TIMEOFF_COLOURS.map((c) => <li key={c.name} className="flex items-center gap-2.5"><Swatch block={c.block} mark={c.mark} past={c.past} sev={c.sev} /><span><b>{c.name}</b> <span className="text-muted">{c.line}</span></span></li>)}
@@ -63,7 +67,7 @@ export function IconGuide() {
                 ))}
               </dl>
             </section>
-            <section aria-label="Plan ahead" className="mt-4">
+            <section aria-label="Plan ahead" className="mt-4" style={first("ahead")}>
               <h3 className="mb-1.5 text-sm font-semibold">On Plan ahead</h3>
               <ul className="flex flex-col gap-1.5 text-sm">
                 <li className="flex items-center gap-2.5"><span className="w-28 shrink-0"><KindChip kind="empty" /></span><span className="text-muted">Nothing is scheduled for that month yet.</span></li>

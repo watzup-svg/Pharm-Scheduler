@@ -127,6 +127,7 @@ export function TopBar() {
         </nav>
         <div className="ml-auto flex min-w-0 items-center gap-3">
           <SaveControls extra={extra} />
+          <Btn tone="ghost" aria-label="Icon guide" data-tip="Guide | What every colour and picture means, starting with the screen you are on" onClick={() => useChrome.getState().setGuide(true)} className="w-8 px-0">?</Btn>
           <Btn tone="ghost" aria-label="Search" data-tip="Search | Stores, people and screens | Press /" onClick={() => window.dispatchEvent(new Event("hs-search"))}>⌕ Search</Btn>
           <Btn aria-label="Undo" disabled={!target} data-tip={target ? `Undo | ${target.label}` : "Nothing to undo"} onClick={() => { if (target) useApp.getState().undo(target.id); }}>↶ Undo</Btn>
         </div>

@@ -9,6 +9,7 @@ import { Btn, Chip, cx, GLYPH } from "../ui/primitives.tsx";
 import { DEFAULT_PRINT_OPTIONS, paginate, pdfFileName, periodLabel, snapshotToPrintModel, type PrintModel, type PrintOptions } from "../print/model.ts";
 import { buildPacketBytes, packetBlob } from "../print/pdf.ts";
 import { PAPER_IN, SheetView } from "./print/Sheets.tsx";
+import { PageFrame } from "../ui/PageFrame.tsx";
 import { Title } from "./chrome/Title.tsx";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -134,7 +135,7 @@ export function PrintView() {
   const page = Math.min(sheetNo, Math.max(0, sheets.length - 1));
 
   return (
-    <div className="mx-auto flex max-w-[860px] flex-col gap-4 p-4" data-print-view>
+    <PageFrame width="narrow" data-print-view="">
       <style>{printCss(opts)}</style>
       <Title tip="Posting saves a copy of the schedule as it is now. | The printed packet always comes from that copy, so a reprint is the same sheet. | Posting never blocks: open shifts and problems are listed first.">Post and print</Title>
 
@@ -284,7 +285,7 @@ export function PrintView() {
         </div>,
         document.body,
       )}
-    </div>
+    </PageFrame>
   );
 }
 

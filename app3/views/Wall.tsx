@@ -9,16 +9,10 @@ import { DayView } from "./wall/DayView.tsx";
 import { useWallUi } from "./wall/ui.ts";
 import { HexBadge } from "../ui/HexBadge.tsx";
 import { shortName } from "../names.ts";
+import { paletteVar } from "../ui/PersonDisc.tsx";
 import {
   activePharmacists, activeStores, buildPharmacistModels, buildStoreModels, indexByCell, indexByPharmacist, openByStore, rowStatus,
 } from "./wall/model.ts";
-
-/** A stable colour for a person: one of the eight palette tokens, by a hash of the id. */
-function paletteVar(id: string): string {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return `var(--color-p${h % 8})`;
-}
 
 export function Wall() {
   const world = useApp((s) => s.world);
