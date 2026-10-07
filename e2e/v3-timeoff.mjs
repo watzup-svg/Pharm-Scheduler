@@ -11,7 +11,7 @@ const srv = await serveV3();
 const ctx = await flowContext(b, { shim: false });
 const { page, errors } = await openApp(b, srv.base, { practice: false, context: ctx });
 await page.addStyleTag({ content: "*,*::before,*::after{animation:none!important;transition:none!important}" });
-await page.evaluate(() => window.__v3.loadProblems());
+await page.evaluate(() => { window.__v3.loadProblems(); window.__v3.app.getState().setView("wall"); });
 await page.waitForSelector('[role="gridcell"]');
 const app = (fn, arg) => page.evaluate(fn, arg);
 const world = () => readWorld(page);
