@@ -20,9 +20,15 @@ function buildStamp() {
   return { at, sha };
 }
 
+// For running it from a cloud machine or another computer: `npm run dev:v3` (live) or `npm run serve:v3` (the built file). The page address is
+// the server root, so "/" shows the app. Hosts are not restricted because the address of a cloud preview changes.
+const rootIsApp = { name: "v3-root", configureServer(s: { middlewares: { use: (f: (req: { url?: string }, res: unknown, next: () => void) => void) => void } }) { s.middlewares.use((req, _res, next) => { if (req.url === "/" || req.url?.startsWith("/?")) req.url = "/v3.html"; next(); }); }, configurePreviewServer(s: { middlewares: { use: (f: (req: { url?: string }, res: unknown, next: () => void) => void) => void } }) { s.middlewares.use((req, _res, next) => { if (req.url === "/" || req.url?.startsWith("/?")) req.url = "/v3.html"; next(); }); } };
+
 export default defineConfig({
+  server: { host: "0.0.0.0", port: 3000, allowedHosts: true },
+  preview: { host: "0.0.0.0", port: 3000, allowedHosts: true },
   define: { __BUILD__: JSON.stringify(buildStamp()) },
   resolve: { alias: [{ find: /^@v3\//, replacement: r("app3") + "/" }, { find: /^@domain$/, replacement: r("domain/src/index.ts") }, { find: /^@persist$/, replacement: r("persist/index.ts") }] },
-  plugins: [viteReact(), tailwindcss(), viteSingleFile()],
+  plugins: [viteReact(), tailwindcss(), viteSingleFile(), rootIsApp],
   build: { outDir: "dist-v3", emptyOutDir: true, assetsInlineLimit: 100_000_000, rollupOptions: { input: r("v3.html") } },
 });

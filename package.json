@@ -26,6 +26,8 @@
     "pressure": "node scripts/pressure.mjs",
     "check:v3": "tsc --noEmit -p domain && tsc --noEmit -p app3 && node --experimental-strip-types --test domain/test/*.test.ts scripts/v3-compare.test.ts && npm run test:persist",
     "test:persist": "node --experimental-strip-types --test persist/test/*.test.ts",
+    "dev:v3": "vite dev -c vite.v3.config.ts",
+    "serve:v3": "npm run build:v3 && vite preview -c vite.v3.config.ts",
     "build:v3": "vite build -c vite.v3.config.ts",
     "typecheck:v3": "tsc --noEmit -p app3",
     "e2e:v3": "node scripts/v3-e2e.mjs",
