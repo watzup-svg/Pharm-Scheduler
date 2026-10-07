@@ -20,7 +20,8 @@ export function Choices({ ctx, replace, onDone, footer }: { ctx: Ctx; replace: C
     const s = applyScratch(state, [{ t: "remove", assignmentId: replace.id }]);
     return "refused" in s ? state : s;
   }, [state, replace]);
-  const choices = useMemo(() => choicesFor(base, storeId, date, asOf).filter((c) => !replace || c.pharmacistId !== replace.pharmacistId), [base, storeId, date, asOf, replace]);
+  // Someone not licensed in this state is never suggested.
+  const choices = useMemo(() => choicesFor(base, storeId, date, asOf).filter((c) => !replace || c.pharmacistId !== replace.pharmacistId).filter((c) => !c.blocks.includes("licensing")), [base, storeId, date, asOf, replace]);
   const list = all ? choices : choices.slice(0, FIRST);
 
   const go = (c: Choice) => {

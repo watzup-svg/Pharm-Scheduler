@@ -25,11 +25,11 @@ export function IconGuide() {
             <section aria-label="Colours">
               <h3 className="mb-1.5 text-sm font-semibold">Colours, by store</h3>
               <ul className="flex flex-col gap-1.5 text-sm">
-                {COLOURS.store.map((c) => <li key={c.name} className="flex items-center gap-2.5"><Swatch block={c.block} mark={c.mark} n={c.n} past={c.past} /><span><b>{c.name}</b> <span className="text-muted">{c.line}</span></span></li>)}
+                {COLOURS.store.map((c) => <li key={c.name} className="flex items-center gap-2.5"><Swatch block={c.block} mark={c.mark} n={c.n} past={c.past} sev={c.sev} /><span><b>{c.name}</b> <span className="text-muted">{c.line}</span></span></li>)}
               </ul>
               <h3 className="mb-1.5 mt-3 text-sm font-semibold">Colours, by person</h3>
               <ul className="flex flex-col gap-1.5 text-sm">
-                {COLOURS.pharmacist.map((c) => <li key={c.name} className="flex items-center gap-2.5"><Swatch block={c.block} /><span><b>{c.name}</b> <span className="text-muted">{c.line}</span></span></li>)}
+                {COLOURS.pharmacist.map((c) => <li key={c.name} className="flex items-center gap-2.5"><Swatch block={c.block} mark={c.mark} sev={c.sev} /><span><b>{c.name}</b> <span className="text-muted">{c.line}</span></span></li>)}
               </ul>
               <p className="mt-2 text-sm text-muted">A store that needs two people shows a small 1/2 until it is fully covered.</p>
             </section>
@@ -40,14 +40,14 @@ export function IconGuide() {
                 <dl className="flex flex-col gap-1.5 text-sm">
                   {kindsOf(t).map((k) => (
                     <div key={k} className="flex items-center gap-2.5">
-                      <dt className="flex w-9 shrink-0 justify-center rounded-md bg-ok-lite/70 py-1"><BlockMark kind={k} tone={t} size={22} /><span className="sr-only">{MARKS[k].name}</span></dt>
+                      <dt className="flex w-9 shrink-0 justify-center rounded-md py-1" style={{ backgroundColor: t === "bad" ? "var(--w-bad)" : t === "warn" ? "var(--w-warn)" : "var(--color-ok-lite)" }}><BlockMark kind={k} tone={t} size={22} /><span className="sr-only">{MARKS[k].name}</span></dt>
                       <dd><b>{MARKS[k].name}</b> <span className="text-muted">{MARKS[k].meaning}</span></dd>
                     </div>
                   ))}
                 </dl>
               </section>
             ))}
-            <p className="mt-4 text-sm text-muted">A problem you accepted shows nothing on the block. It is in the hover note and in the Inspector. Pointing at a block (or right click) lists the names and the reasons.</p>
+            <p className="mt-4 text-sm text-muted">A problem you accepted keeps its colour and picture, faded, so you can see it is handled but still true. The details are in the hover note and in the Inspector. Pointing at a block (or right click) lists the names and the reasons.</p>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

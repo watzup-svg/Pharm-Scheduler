@@ -39,13 +39,14 @@ export function CellControls({ ctx }: { ctx: Ctx }) {
   return (
     <div>
       <Stepper
-        label="Accept being short" value={cv.acceptedShort} max={Math.max(cv.required, cv.acceptedShort)} disabled={!!lock || cv.required === 0} title={title}
+        label="Accept being short" hint="Run this day with fewer people than needed. It stops counting as open, and stays marked (faded)." value={cv.acceptedShort} max={Math.max(cv.required, cv.acceptedShort)} disabled={!!lock || cv.required === 0} title={title}
         onChange={(v) => setCount({ acceptedShort: v }, "Accepted short")}
       />
-      <Stepper label="Locum cover" value={cv.locum} max={9} disabled={!!lock} title={title} onChange={(v) => setCount({ locum: v }, "Locum")} />
+      <Stepper label="Locum cover" hint="An outside pharmacist fills a spot. It counts as covered; nobody on your list is placed." value={cv.locum} max={9} disabled={!!lock} title={title} onChange={(v) => setCount({ locum: v }, "Locum")} />
 
       <div className="mt-2 border-t border-line pt-2">
         {dayText && <p className="text-sm" data-testid="override-text">{dayText}</p>}
+        <p className="text-xs font-semibold text-muted">Change what this day needs</p>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {override && (
             <Act disabled={!!lock} title={title} onClick={() => commitEdits([{ t: "dateOverride.clear", storeId, date }], `Back to the usual at ${code}`)}>
@@ -58,6 +59,7 @@ export function CellControls({ ctx }: { ctx: Ctx }) {
           <Act disabled={!!lock || usual === 0} title={lock ?? (usual === 0 ? "The store is not open this day" : undefined)} pressed={form === "clinic"} onClick={() => open("clinic")}>Extra clinic (+{n})</Act>
           {!override && usual === 0 && <Act disabled={!!lock} title={title} pressed={form === "open"} onClick={() => open("open")}>Open this day</Act>}
         </div>
+        <p className="mt-1.5 text-xs text-muted">Close: nobody is needed (holiday, inventory). Extra clinic: this store needs one more person than usual. You write a note, and Undo reverses it.</p>
         {form && (
           <div className="mt-2 rounded-md bg-fill p-2" role="group" aria-label={form === "close" ? "Close this day" : form === "clinic" ? "Extra clinic" : "Open this day"}>
             {form === "clinic" && <Stepper label="Extra pharmacists needed" value={n} min={1} max={4} onChange={setN} />}
