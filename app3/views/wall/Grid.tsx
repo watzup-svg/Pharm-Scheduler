@@ -68,6 +68,7 @@ const Cell = memo(function Cell({ m, selected, tab }: { m: CellModel; selected: 
       data-ghost={m.ghostAdd || m.ghostRem ? "" : undefined}
       data-kind={m.block === "closed" ? "closed" : m.block === "away" ? "away" : undefined}
       data-tip={m.tip}
+      data-tip-list=""
       data-tip-tone={m.tone === "plain" ? undefined : m.tone}
       data-tip-mark={m.chip ?? undefined}
       className={cx("w-cell", m.past && "w-past", m.weekend && "w-wkend", m.asOfCol && "w-asof", selected && "w-sel")}

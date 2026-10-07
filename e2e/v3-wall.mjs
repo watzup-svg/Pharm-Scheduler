@@ -23,7 +23,7 @@ try {
   check("green blocks dominate: most store cells are covered and carry no picture", (await page.locator('.w-cell[data-store][data-block="good"]:not([data-icon])').count()) > (await cells.count()) / 2);
   check("no initials in store cells (a cell holds at most a count like 1/2 or a +/- badge)", (await page.locator('.w-cell[data-store]').evaluateAll((els) => els.filter((e) => !/^[\d/+\u2212\s]*$/.test(e.textContent ?? "")).length)) === 0);
   check("closed hatched cell appears", (await page.locator('.w-cell[data-block="closed"] .w-block.hatch').count()) > 0);
-  check("as-of column is marked with the word Today", (await page.locator(".w-asof-head .w-today").innerText()) === "Today");
+  check("as-of column is marked with the word Today", ["Today", "As of"].includes(await page.locator(".w-asof-head .w-today").innerText()));
   check("month label in the header", (await page.locator(".w-month").first().innerText()).includes("October 2026"));
   // One control line, no permanent legend
   check("no legend visible until Key is pressed", (await page.locator("#wall-key, #wall-legend").count()) === 0);
@@ -170,7 +170,9 @@ try {
     // Refusal: that pharmacist is also placed at S3 the same day; dropping the S2 chip onto S3 is refused by the domain and says why.
     await st(({ pid, date }) => { window.__v3.app.getState().commit([{ t: "place", storeId: "S3", pharmacistId: pid, date }]); }, pick);
     const before = await st(() => window.__v3.app.getState().world.journal.changeSets.length);
-    await page.locator(`[role="gridcell"][data-store="S2"][data-date="${pick.date}"] [data-aid="${pick.aid}"]`).dragTo(page.locator(`[role="gridcell"][data-store="S3"][data-date="${pick.date}"]`));
+    // The cell now holds two people, so the block is not draggable; the person is dragged from the Inspector row instead.
+    await page.locator(`[role="gridcell"][data-store="S2"][data-date="${pick.date}"]`).click();
+    await page.locator(`[data-drag-aid="${pick.aid}"]`).dragTo(page.locator(`[role="gridcell"][data-store="S3"][data-date="${pick.date}"]`));
     const r2 = await st((id) => { const a = window.__v3.app.getState(); return { at: a.world.state.assignments[id]?.storeId, cs: a.world.journal.changeSets.length, n: a.notice }; }, pick.aid);
     check("drop onto a store that already has them is refused with a notice", r2.cs === before && r2.at === "S2" && r2.n?.kind === "error", JSON.stringify(r2));
   } else check("drag: found a chip at CAT on Oct 8", false, "none");

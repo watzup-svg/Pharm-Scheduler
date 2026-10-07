@@ -66,6 +66,7 @@ export function DayView({ date }: { date: ISODate }) {
                 aria-pressed={on}
                 aria-label={m.label + (call.length ? `, you could call ${call.join(", ")}` : "")}
                 data-tip={tip}
+                data-tip-list=""
                 data-tip-tone={m.tone === "plain" ? undefined : m.tone}
                 data-tip-mark={m.chip ?? undefined}
                 onClick={() => useApp.getState().select({ storeId: store.id, date })}
