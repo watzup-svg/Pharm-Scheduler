@@ -1,7 +1,7 @@
 // What is going on in one store-day (or one person-day), said in plain words for the header band: a headline, a line of context, and the
 // people involved with what is true of each. Pure; the same facts the colours and pictures on the wall come from (see storeLook in model.ts).
 import { weekday, type DomainState, type Evaluation, type ISODate } from "@domain";
-import { buildCellView } from "../../derive.ts";
+import { buildCellView, dropSuperseded } from "../../derive.ts";
 import type { MarkKind, MarkTone } from "../../ui/icons.tsx";
 import { RULE_MARK } from "../../ui/icons.tsx";
 import { storeLook } from "./model.ts";
@@ -52,8 +52,10 @@ function problemsOf(state: DomainState, ev: Evaluation, a: { id: string; pharmac
   const who = state.pharmacists[a.pharmacistId]?.name ?? a.pharmacistId;
   const code = st?.code ?? a.storeId;
   const out: { rule: string; sentence: string; note: string; tone: "bad" | "warn" }[] = [];
-  for (const r of ev.assignments[a.id]?.results ?? []) {
-    if (r.verdict !== "Fail" || r.overridden) continue;
+  const results = ev.assignments[a.id]?.results ?? [];
+  const failing = dropSuperseded(results.filter((x) => x.verdict === "Fail" && !x.overridden).map((x) => x.ruleId));
+  for (const r of results) {
+    if (r.verdict !== "Fail" || r.overridden || !failing.includes(r.ruleId)) continue;
     switch (r.ruleId) {
       case "licensing": out.push({ rule: r.ruleId, sentence: `${who} is not licensed for ${st?.state ? `${st.state} ` : ""}${code}`, note: `Not licensed${st?.state ? ` in ${st.state}` : ""}. Does not count`, tone: "bad" }); break;
       case "availability": { const w = whyAway(state, a.pharmacistId, a.date, a.storeId); out.push({ rule: r.ruleId, sentence: `${who} is scheduled at ${code} but is ${w.phrase}${w.when ? ` (${w.when})` : ""}`, note: `${w.phrase[0]!.toUpperCase()}${w.phrase.slice(1)}${w.when ? `, ${w.when}` : ""}${w.note ? ` · ${w.note}` : ""}. Does not count`, tone: "bad" }); break; }
@@ -88,7 +90,8 @@ function explainStoreDay(state: DomainState, ev: Evaluation, storeId: string, da
   for (const a of placed) {
     const ps = issues.filter((i) => i.a.id === a.id);
     const counts = ev.assignments[a.id]?.counts ?? false;
-    const note = ps.length ? ps[0]!.note : !a.agreed ? "Not confirmed yet" : a.pinned ? "Pinned in place" : a.partialNote ? `Part day: ${a.partialNote}` : counts ? "Working" : "Does not count";
+    // The issue itself is said once, above; the pill only says whether this person still counts.
+    const note = ps.length ? (counts ? "Still counts" : "Does not count") : !a.agreed ? "Not confirmed yet" : a.pinned ? "Pinned in place" : a.partialNote ? `Part day: ${a.partialNote}` : counts ? "Working" : "Does not count";
     people.push({ name: nameOf(a.pharmacistId), note, tone: ps[0]?.tone ?? (!a.agreed ? "warn" : "ok") });
   }
 
@@ -127,7 +130,7 @@ function explainPersonDay(state: DomainState, ev: Evaluation, pid: string, date:
   if (!placed.length) return { mark: null, tone: "ok", headline: `${p.name} is not scheduled`, context, more: [], people: [] };
   const code = (id: string) => state.stores[id]?.code ?? id;
   const issues = date < asOf ? [] : placed.flatMap((a) => problemsOf(state, ev, a));
-  const people: Involved[] = placed.map((a) => ({ name: state.stores[a.storeId]?.name ?? code(a.storeId), note: problemsOf(state, ev, a)[0]?.note ?? "Working", tone: problemsOf(state, ev, a)[0]?.tone ?? "ok" }));
+  const people: Involved[] = placed.map((a) => ({ name: state.stores[a.storeId]?.name ?? code(a.storeId), note: problemsOf(state, ev, a).length ? (ev.assignments[a.id]?.counts ? "Still counts" : "Does not count") : "Working", tone: problemsOf(state, ev, a)[0]?.tone ?? "ok" }));
   if (issues.length) return { mark: RULE_MARK[issues[0]!.rule] ?? null, tone: issues[0]!.tone, headline: issues[0]!.sentence, context, more: issues.slice(1).map((i) => i.sentence), people };
   return { mark: null, tone: "ok", headline: `${p.name} works at ${placed.map((a) => state.stores[a.storeId]?.name ?? code(a.storeId)).join(" and ")}`, context, more: [], people };
 }

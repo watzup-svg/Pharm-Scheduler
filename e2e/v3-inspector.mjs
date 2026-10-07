@@ -206,6 +206,7 @@ check("Find cover shows options or a plain message", nOpt > 0 || /No solution|Ca
 check("Search wider carries the day-off caveat", await insp.getByRole("button", { name: "Search wider" }).isVisible() && /day off to take extra shifts/.test(resText));
 await page.screenshot({ path: shot });
 if (nOpt > 0) {
+  check("each option shows before and after for every store it touches", (await options.first().locator("[data-effect] li").count()) >= 1 && /→/.test(await options.first().locator("[data-effect]").innerText()));
   check("options are explained in words", /Changes \w+ (person|people)/.test(resText) && /Drive \d+ min/.test(resText));
   await insp.getByRole("button", { name: /^Preview/ }).first().click(); await settle();
   check("Preview opens a proposal", await get(() => !!window.__v3.app.getState().world.session.proposal));

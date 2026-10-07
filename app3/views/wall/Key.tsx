@@ -31,10 +31,21 @@ export const COLOURS: Record<Axis, { block: Block; mark?: MarkKind; n?: number; 
   ],
 };
 
+/** The Time off screen's colours: one line each. Printed in its Key and in the Icon guide. */
+export const TIMEOFF_COLOURS: { block: Block; mark?: MarkKind; sev?: MarkTone; past?: boolean; name: string; line: string }[] = [
+  { block: "work", name: "Working", line: "No time off. The store code shows where they work, as on the Schedule's People rows." },
+  { block: "req", mark: "waiting", sev: "warn", name: "Asked", line: "A request you have not answered yet." },
+  { block: "away", mark: "away", sev: "bad", name: "Off", line: "Approved time off. A request that spans days is one bar, with its picture on the first day." },
+  { block: "away", mark: "sick", sev: "bad", name: "Sick", line: "Out sick (approved)." },
+  { block: "good", mark: "away", sev: "bad", name: "Off, still scheduled", line: "Approved, but the person is still placed at a store (its code shows), so that store is short." },
+  { block: "declined", mark: "declined", sev: "quiet", name: "Declined", line: "A request you turned down." },
+  { block: "work", past: true, name: "Faded", line: "A day that has passed." },
+];
+
 const TONES: MarkTone[] = ["bad", "warn", "quiet"];
 /** One example picture per colour of picture, from the table (the first kind of each tone). */
 export function exampleOf(tone: MarkTone): MarkKind {
-  const order: MarkKind[] = ["licence", "drive", "short"];
+  const order: MarkKind[] = ["licence", "drive", "covering"];
   return order.find((k) => MARK_TONE[k] === tone)!;
 }
 

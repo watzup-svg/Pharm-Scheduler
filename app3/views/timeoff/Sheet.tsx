@@ -5,7 +5,7 @@ import { useApp } from "../../store.ts";
 import { useViewState, useWindowDates } from "../../derive.ts";
 import { shortName } from "../../names.ts";
 import { Grid, type RowDef } from "../wall/Grid.tsx";
-import { Swatch } from "../wall/Key.tsx";
+import { Swatch, TIMEOFF_COLOURS } from "../wall/Key.tsx";
 import { activePharmacists, indexByPharmacist, widthKind, windowFor, type WidthKind } from "../wall/model.ts";
 import { buildSheetRows, indexRecords, kindOf } from "./sheet.ts";
 import { useTimeOffUi } from "./ui.ts";
@@ -20,13 +20,7 @@ function paletteVar(id: string): string {
 
 const WIDTHS: { kind: Exclude<WidthKind, "custom" | "4w">; label: string }[] = [{ kind: "month", label: "Month" }, { kind: "2w", label: "2 weeks" }];
 
-const LEGEND = [
-  { block: "req", mark: "waiting", sev: "warn", name: "Asked", line: "A request you have not answered." },
-  { block: "away", mark: "away", sev: "bad", name: "Off", line: "Approved time off. A bar runs across its days." },
-  { block: "away", mark: "sick", sev: "bad", name: "Sick", line: "Out sick." },
-  { block: "good", mark: "away", sev: "bad", name: "Off, still scheduled", line: "Approved, but the person is still placed at a store (its code shows). That store is short." },
-  { block: "declined", mark: "declined", sev: "quiet", name: "Declined", line: "A request you turned down." },
-] as const;
+
 
 function Controls() {
   const win = useApp((s) => s.window);
@@ -62,8 +56,8 @@ function Controls() {
       {key && (
         <div id="sheet-key" role="region" aria-label="Key" className="w-keypanel">
           <div className="flex flex-col gap-1.5">
-            {LEGEND.map((l) => <div key={l.name} className="w-key-item"><Swatch block={l.block} mark={l.mark} sev={l.sev} /><span><b>{l.name}</b> <span className="text-muted">{l.line}</span></span></div>)}
-            <p className="text-muted">Days that have passed are faded. Click a day, or a request on the list, to decide it on the right.</p>
+            {TIMEOFF_COLOURS.map((l) => <div key={l.name} className="w-key-item"><Swatch block={l.block} mark={l.mark} sev={l.sev} past={l.past} /><span><b>{l.name}</b> <span className="text-muted">{l.line}</span></span></div>)}
+            <p className="text-muted">Click a day, or a request on the list, to decide it on the right.</p>
           </div>
         </div>
       )}

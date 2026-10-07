@@ -5,6 +5,7 @@ import { useApp } from "../../store.ts";
 import { Chip } from "../../ui/primitives.tsx";
 import { codeOf, nameOf, numWord, plural, type Ctx } from "./lib.ts";
 import { Act } from "./ui.tsx";
+import { OptionEffect } from "../chrome/OptionEffect.tsx";
 
 export function SearchWider({ ctx }: { ctx: Ctx }) {
   const { state, lock, storeId, date, asOf } = ctx;
@@ -74,6 +75,7 @@ function Option({ ctx, option, n }: { ctx: Ctx; option: RepairOption; n: number 
       <ul className="mt-1 list-disc pl-4 text-sm">
         {option.explanation.map((x, i) => <li key={i}>{x}</li>)}
       </ul>
+      <OptionEffect edits={option.edits} />
       <div className="mt-1.5 flex flex-wrap gap-1">
         <Chip tone="info">Changes {m.changedPharmacistDates} {plural(m.changedPharmacistDates, "person", "people")}</Chip>
         <Chip tone="info">Drive {m.travelMinutes} min</Chip>

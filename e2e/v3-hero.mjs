@@ -55,6 +55,21 @@ const good = page.locator('.w-cell[data-block="good"]:not([data-icon])').nth(40)
 await good.click();
 check("a fine cell says Covered", /is covered/.test(await headline()) && (await hero.getAttribute("data-explain")) === "ok", await headline());
 
+// the same issue is never said twice: across every cell that has a problem, no line repeats and a very long drive does not also say "long drive"
+{
+  const cells = await page.locator('.w-cell[data-icon]:not([data-icon="covering"]):not([data-icon="short"])').evaluateAll((els) => els.slice(0, 60).map((e) => ({ store: e.dataset.store, date: e.dataset.date })));
+  let bad = "";
+  for (const c of cells) {
+    if (!c.store) continue;
+    await page.locator(`.w-cell[data-store="${c.store}"][data-date="${c.date}"]`).click();
+    const lines = [await headline(), ...(await hero.locator("ul:not([aria-label]) li").allInnerTexts())].map((x) => x.trim()).filter(Boolean);
+    const dupe = lines.find((l, i) => lines.indexOf(l) !== i);
+    const drive = lines.filter((l) => /long drive/i.test(l));
+    if (dupe || drive.length > 1) { bad = `${c.store} ${c.date}: ${dupe ?? drive.join(" | ")}`; break; }
+  }
+  check(`no issue is repeated in the header (${cells.length} cells checked)`, bad === "", bad);
+}
+
 // hide the list
 await left.getByRole("button", { name: "Close the list" }).click();
 check("Hide closes the left list", (await page.locator('aside[aria-label="Left panel"]').count()) === 0);

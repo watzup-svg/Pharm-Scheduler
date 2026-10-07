@@ -98,7 +98,7 @@ await page.getByRole("menuitem", { name: /^Icon guide/ }).click();
 const guide = page.getByRole("dialog", { name: "Icon guide" });
 check("File > Icon guide opens the guide", (await guide.count()) === 1);
 const nKinds = await st(() => 0);
-check("the guide explains every picture in the table (red, amber and quiet sections)", (await guide.locator("dt [data-statemark]").count()) === 13 && (await guide.getByText("Green", { exact: true }).count()) >= 1 && (await guide.getByText("Red", { exact: true }).count()) >= 1, String(await guide.locator("dt [data-statemark]").count()));
+check("the guide explains every picture in the table (red, amber and quiet sections)", (await guide.locator("dt [data-statemark]").count()) === 16 && (await guide.getByText("Green", { exact: true }).count()) >= 1 && (await guide.getByText("Red", { exact: true }).count()) >= 1, String(await guide.locator("dt [data-statemark]").count()));
 void nKinds;
 await page.keyboard.press("Escape");
 check("Esc closes the guide", (await guide.count()) === 0);

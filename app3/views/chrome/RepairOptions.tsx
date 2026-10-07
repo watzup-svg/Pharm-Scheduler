@@ -2,6 +2,7 @@
 import { useApp } from "../../store.ts";
 import { Btn, Chip, cx } from "../../ui/primitives.tsx";
 import { codeOf, fmtDate, plural, useChrome } from "./shared.tsx";
+import { OptionEffect } from "./OptionEffect.tsx";
 
 export function RepairOptions({ where }: { where: "queue" | "out" }) {
   const rr = useApp((s) => s.repairResult);
@@ -29,6 +30,7 @@ export function RepairOptions({ where }: { where: "queue" | "out" }) {
           <ul className="mt-1 list-disc pl-4 text-xs">
             {o.explanation.map((line, j) => <li key={j}>{line}</li>)}
           </ul>
+          <OptionEffect edits={o.edits} />
           <div className="mt-1 flex flex-wrap gap-1">
             <Chip tone={o.metrics.openRemaining ? "serious" : "ok"}>{o.metrics.openRemaining ? `□ ${o.metrics.openRemaining} still open` : "✓ Fills every gap"}</Chip>
             {o.metrics.violationsIntroduced > 0 && <Chip tone="serious">! {plural(o.metrics.violationsIntroduced, "new problem")}</Chip>}

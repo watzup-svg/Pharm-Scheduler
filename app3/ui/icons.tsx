@@ -34,7 +34,7 @@ export const MARKS: Record<MarkKind, { family: MarkFamily; icon: IconKey; name: 
   sick: { family: "away", icon: "sick", name: "Sick", meaning: "Out sick" },
   declined: { family: "neutral", icon: "declined", name: "Declined", meaning: "A time-off request you turned down" },
   unverified: { family: "neutral", icon: "unverified", name: "Cannot fully check", meaning: "A licence or drive time is not recorded. Counts, flagged" },
-  short: { family: "neutral", icon: "asis", name: "Short, accepted", meaning: "You decided to run this day short" },
+  short: { family: "neutral", icon: "asis", name: "Short, accepted", meaning: "You decided to run this day short. Still true, so it stays on the block, faded" },
   covering: { family: "cover", icon: "covering", name: "Covering", meaning: "Working away from their home store. A reminder only" },
   pinned: { family: "neutral", icon: "pinned", name: "Pinned", meaning: "Held in place. The engine never moves it" },
   locum: { family: "cover", icon: "locum", name: "Locum", meaning: "An outside locum covers a shift" },
@@ -77,7 +77,7 @@ export type MarkTone = "bad" | "warn" | "quiet";
 export const MARK_TONE: Record<MarkKind, MarkTone> = {
   open: "bad", closure: "bad", double: "bad", licence: "bad", away: "bad",
   sick: "bad", declined: "quiet", waiting: "warn", drive: "warn", streak: "warn", unverified: "warn", unconfirmed: "warn",
-  short: "quiet", covering: "quiet", pinned: "quiet", locum: "quiet",
+  short: "bad", covering: "quiet", pinned: "quiet", locum: "quiet",
 };
 export const TONE_TITLE: Record<MarkTone, { title: string; line: string }> = {
   bad: { title: "Red", line: "A rule is broken, or the shift needs cover. The block is red too." },

@@ -2,7 +2,7 @@
 // (MARKS and MARK_TONE in ui/icons.tsx, COLOURS in wall/Key.tsx), so a new picture shows up here by itself and nothing can drift.
 import * as Dialog from "@radix-ui/react-dialog";
 import { BlockMark, MARKS, MARK_TONE, TIMEOFF_MARKS, TONE_TITLE, type MarkKind, type MarkTone } from "../../ui/icons.tsx";
-import { COLOURS, Swatch } from "../wall/Key.tsx";
+import { COLOURS, Swatch, TIMEOFF_COLOURS } from "../wall/Key.tsx";
 import { useChrome } from "./shared.tsx";
 
 const TONES: MarkTone[] = ["bad", "warn", "quiet"];
@@ -48,6 +48,20 @@ export function IconGuide() {
                 </dl>
               </section>
             ))}
+            <section aria-label="Time off screen" className="mt-4">
+              <h3 className="mb-1.5 text-sm font-semibold">On the Time off screen</h3>
+              <ul className="flex flex-col gap-1.5 text-sm">
+                {TIMEOFF_COLOURS.map((c) => <li key={c.name} className="flex items-center gap-2.5"><Swatch block={c.block} mark={c.mark} past={c.past} sev={c.sev} /><span><b>{c.name}</b> <span className="text-muted">{c.line}</span></span></li>)}
+              </ul>
+              <dl className="mt-2 flex flex-col gap-1.5 text-sm">
+                {TIMEOFF_MARKS.map((k) => (
+                  <div key={k} className="flex items-center gap-2.5">
+                    <dt className="flex w-9 shrink-0 justify-center py-1"><BlockMark kind={k} size={22} /><span className="sr-only">{MARKS[k].name}</span></dt>
+                    <dd><b>{MARKS[k].name}</b> <span className="text-muted">{MARKS[k].meaning}</span></dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
             <p className="mt-4 text-sm text-muted">A problem you accepted keeps its colour and picture, faded, so you can see it is handled but still true. The details are in the hover note and in the Inspector. Pointing at a block (or right click) lists the names and the reasons.</p>
           </div>
         </Dialog.Content>

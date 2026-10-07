@@ -98,7 +98,7 @@ export function buildCellView(state: DomainState, ev: Evaluation, storeId: strin
         id: a.id, pharmacistId: a.pharmacistId, initials: ph?.initials ?? a.pharmacistId, name: ph?.name ?? a.pharmacistId,
         counts: e?.counts ?? false, unverified: e?.unverified ?? false, pinned: a.pinned, agreed: a.agreed, partialNote: a.partialNote, source: a.source,
         blocks: fails.filter((r) => RULE_BY_ID[r.ruleId]?.kind === "presence").map((r) => r.ruleId),
-        warns: fails.filter((r) => RULE_BY_ID[r.ruleId]?.kind === "policy").map((r) => r.ruleId),
+        warns: dropSuperseded(fails.filter((r) => RULE_BY_ID[r.ruleId]?.kind === "policy").map((r) => r.ruleId)),
         overridden: results.filter((r) => r.overridden).map((r) => r.ruleId),
         outdated: results.filter((r) => r.outdated).map((r) => r.ruleId),
       };
@@ -114,6 +114,9 @@ export function buildCellView(state: DomainState, ev: Evaluation, storeId: strin
     marker: serious ? "serious" : warning ? "warning" : info ? "info" : null,
   };
 }
+
+/** A very long drive already says the drive is long: the softer rule is the same issue, so it is not listed a second time. */
+export const dropSuperseded = (rules: string[]): string[] => (rules.includes("travel-hard") ? rules.filter((r) => r !== "travel-soft") : rules);
 
 export type IssueKind = "open" | "violation" | "warning";
 export type Issue = {
@@ -139,8 +142,9 @@ export function buildIssues(state: DomainState, ev: Evaluation, win: { from: ISO
     if (a.date < asOf || a.date < win.from || a.date > win.to) continue;
     const e = ev.assignments[a.id];
     if (!e) continue;
+    const failing = dropSuperseded(e.results.filter((x) => x.verdict === "Fail" && !x.overridden).map((x) => x.ruleId));
     for (const r of e.results) {
-      if (r.verdict !== "Fail" || r.overridden) continue;
+      if (r.verdict !== "Fail" || r.overridden || !failing.includes(r.ruleId)) continue;
       const def = RULE_BY_ID[r.ruleId];
       if (!def) continue;
       const who = state.pharmacists[a.pharmacistId]?.name ?? a.pharmacistId;
