@@ -1,9 +1,10 @@
-// Setup: stores, pharmacists, patterns and one-off dates. Every change is a change set (undoable); each row has an explicit Save.
+// Setup: people, stores, patterns, holidays and one-off dates, then travel, rules and the check. Every change is a change set (undoable); each row has an explicit Save.
 import { type KeyboardEvent } from "react";
 import { useApp } from "../store.ts";
 import { cx } from "../ui/primitives.tsx";
 import { StoresTab } from "./setup/StoresTab.tsx";
-import { PharmacistsTab } from "./setup/PharmacistsTab.tsx";
+import { PeopleTab } from "./setup/PeopleTab.tsx";
+import { HolidaysTab } from "./setup/HolidaysTab.tsx";
 import { PatternsTab } from "./setup/PatternsTab.tsx";
 import { DatesTab } from "./setup/DatesTab.tsx";
 import { useLocked } from "./setup/shared.tsx";
@@ -12,9 +13,10 @@ import { RulesView } from "./RulesView.tsx";
 import { Checks } from "./Checks.tsx";
 
 const TABS = [
+  { id: "pharmacists", label: "People" },
   { id: "stores", label: "Stores" },
-  { id: "pharmacists", label: "Pharmacists" },
   { id: "patterns", label: "Patterns" },
+  { id: "holidays", label: "Holidays" },
   { id: "dates", label: "Dates" },
   { id: "travel", label: "Travel" },
   { id: "rules", label: "Rules" },
@@ -38,7 +40,7 @@ export function Setup() {
   };
 
   return (
-    <div className="mx-auto flex max-w-[1180px] flex-col gap-3 p-3">
+    <div className="mx-auto flex max-w-[1180px] flex-col gap-4 p-4">
       <h2 className="sr-only">Setup</h2>
       {locked && <p role="status" className="rounded-md bg-warn-bg px-3 py-2 text-sm text-warn ring-1 ring-warn/35">▲ {locked}</p>}
       <div role="tablist" aria-label="Setup sections" className="flex gap-1 border-b border-line">
@@ -51,8 +53,9 @@ export function Setup() {
       </div>
       <div role="tabpanel" id={`setup-panel-${tab}`} aria-labelledby={`setup-tab-${tab}`}>
         {tab === "stores" && <StoresTab />}
-        {tab === "pharmacists" && <PharmacistsTab />}
+        {tab === "pharmacists" && <PeopleTab />}
         {tab === "patterns" && <PatternsTab />}
+        {tab === "holidays" && <HolidaysTab />}
         {tab === "dates" && <DatesTab />}
         {tab === "travel" && <TravelView />}
         {tab === "rules" && <RulesView />}

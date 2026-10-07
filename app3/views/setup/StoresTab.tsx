@@ -1,234 +1,137 @@
-// Setup > Stores. Add and edit stores, each with an explicit Save. Stores are never deleted: history refers to them.
+// Setup > Stores. One quiet row per store: the weekdays it needs staff (with the number), its month as one thin line, and the longest stretch
+// one pharmacist stayed. Stores are never deleted: history refers to them. Each change is a change set with Undo.
 import { useMemo, useState } from "react";
-import { isValidDate, type Edit, type ISODate, type StateCode, type Store } from "@domain";
+import { monthDates, monthOf, type DomainState, type ISODate, type Store } from "@domain";
 import { useApp } from "../../store.ts";
-import { setupDefaults } from "../../newWorld.ts";
-import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
-import { Hint } from "../chrome/Title.tsx";
-import {
-  DateField, EPOCH, SelectField, TableShell, TextField, WEEK_ORDER, WEEKDAY_LONG, WEEKDAY_SHORT, inputCls, nextIdFor, niceDate, storesSorted, td, th, useLocked, weeklyNeedOn,
-} from "./shared.tsx";
+import { evaluateCached, useViewState } from "../../derive.ts";
+import { Btn, Chip, cx } from "../../ui/primitives.tsx";
+import { HexBadge, type HexStatus } from "../../ui/HexBadge.tsx";
+import { shortName } from "../../names.ts";
+import { TipButton } from "../chrome/Title.tsx";
+import { DriveTimesHelper } from "./DriveTimesHelper.tsx";
+import { StoreEditor } from "./StoreEditor.tsx";
+import { ListMenu, MonthLine, WeekdayLetters } from "./parts.tsx";
+import { DAY_LONG, DAY_SHORT, MON_FIRST, dayLabel, indexByCell, monthDay, storeActiveOn, storeMonth, storesByCode, storesList, weeklyNeed, type StoreMonth } from "./lib.ts";
+import { niceDate, useLocked } from "./shared.tsx";
 
-const STATE_OPTIONS = [
-  { value: "", label: "Not recorded" },
-  { value: "OR", label: "Oregon (OR)" },
-  { value: "WA", label: "Washington (WA)" },
-];
+const COLS = "grid-cols-[minmax(13rem,1.3fr)_10.5rem_minmax(14rem,1.4fr)_4.5rem]";
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-function statusOf(st: Store, asOf: ISODate): { tone: "ok" | "warning" | "neutral"; text: string } {
+const KEY_TIP = "A store's month | One thin line per store, one tick for each day | Tall red: someone is missing | Tall amber: a rule is broken | Medium green: covered | Short grey: closed | Weekday squares show how many pharmacists the store needs";
+
+function statusOf(st: Store, asOf: ISODate): { tone: "warning" | "neutral"; text: string } | null {
   if (st.inactiveFrom && st.inactiveFrom <= asOf) return { tone: "neutral", text: `Closed since ${niceDate(st.inactiveFrom)}` };
   if (st.activeFrom && st.activeFrom > asOf) return { tone: "warning", text: `Opens ${niceDate(st.activeFrom)}` };
   if (st.inactiveFrom) return { tone: "warning", text: `Closes ${niceDate(st.inactiveFrom)}` };
-  return { tone: "ok", text: "Active" };
+  return null;
 }
 
 export function StoresTab() {
   const world = useApp((s) => s.world)!;
   const asOf = useApp((s) => s.asOf);
+  const win = useApp((s) => s.window);
+  const vs = useViewState();
   const locked = useLocked();
   const [editing, setEditing] = useState<string | null>(null); // store id, "new", or null
-  const stores = useMemo(() => storesSorted(world.state), [world.state]);
+  const [helperFor, setHelperFor] = useState<string | null>(null);
+  const [helperOpen, setHelperOpen] = useState(false);
+  const st = world.state;
+  const stores = useMemo(() => storesByCode(st), [st]);
+
+  const month = monthOf(win.from);
+  const dates = useMemo(() => monthDates(month), [month]);
+  const months = useMemo(() => {
+    const state = vs?.state ?? st;
+    const ev = evaluateCached(state, asOf, { range: { from: dates[0]!, to: dates[dates.length - 1]! }, ...(vs?.scenario ? { includeRequested: true } : {}) });
+    const byCell = indexByCell(state);
+    return new Map(stores.map((s) => [s.id, storeMonth(ev, s.id, dates, byCell)] as const));
+  }, [vs, st, asOf, dates, stores]);
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-4">
-        <Hint title="Stores" line="Weekly need is pharmacists per weekday." tip="0 means closed that day. | Stores are kept, not deleted, because the schedule's history refers to them. | To close one for good, mark the first day it stays closed." />
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="flex-1" />
+        <TipButton title="Stores" tip={KEY_TIP} />
+        <ListMenu name="stores" build={() => storesList(st, asOf)} />
         <Btn tone="ink" className="shrink-0 whitespace-nowrap" disabled={!!locked || editing === "new"} onClick={() => setEditing("new")}>Add a store</Btn>
       </div>
-      {editing === "new" && <StoreEditor key="new" onDone={() => setEditing(null)} />}
-      <TableShell label="Stores">
-        <thead>
-          <tr>
-            <th className={th}>Code</th><th className={th}>Name</th><th className={th}>State</th><th className={th}>Status</th>
-            {WEEK_ORDER.map((w) => <th key={w} className={`${th} px-1 text-center`}>{WEEKDAY_SHORT[w]}</th>)}
-            <th className={th}><span className="sr-only">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {stores.length === 0 && <tr><td className={`${td} text-muted`} colSpan={12}>No stores yet. Use "Add a store" to start.</td></tr>}
-          {stores.map((st) => {
-            const status = statusOf(st, asOf);
-            return (
-              <StoreRows key={st.id} store={st} status={status} asOf={asOf} editing={editing === st.id} locked={!!locked} onEdit={() => setEditing(st.id)} onDone={() => setEditing(null)} />
-            );
-          })}
-        </tbody>
-      </TableShell>
-      <p className="text-xs text-muted">Weekly need shown is the one in force on {niceDate(asOf)}; a dash means closed that day. Open a store to see its history or to change it from a later date.</p>
-    </div>
-  );
-}
 
-function StoreRows({ store, status, asOf, editing, locked, onEdit, onDone }: { store: Store; status: { tone: "ok" | "warning" | "neutral"; text: string }; asOf: ISODate; editing: boolean; locked: boolean; onEdit: () => void; onDone: () => void }) {
-  const world = useApp((s) => s.world)!;
-  return (
-    <>
-      <tr data-store-row={store.code}>
-        <td className={`${td} font-semibold`}>{store.code}</td>
-        <td className={td}>{store.name}</td>
-        <td className={td}>{store.state ?? <span className="text-muted">Not recorded</span>}</td>
-        <td className={td}><Chip tone={status.tone} className="whitespace-nowrap">{status.tone === "ok" ? GLYPH.ok : status.tone === "warning" ? GLYPH.warning : "–"} {status.text}</Chip></td>
-        {WEEK_ORDER.map((w) => {
-          const n = weeklyNeedOn(world.state, store.id, w, asOf);
-          return <td key={w} className={`${td} px-1 text-center ${n === 0 ? "text-muted" : ""}`}>{n === 0 ? <><span aria-hidden>—</span><span className="sr-only">closed</span></> : n}</td>;
-        })}
-        <td className={`${td} text-right`}>
-          <Btn tone="quiet" aria-label={`Edit store ${store.code}`} aria-expanded={editing} disabled={editing || locked} onClick={onEdit}>Edit</Btn>
-        </td>
-      </tr>
-      {editing && (
-        <tr><td colSpan={12} className="border-b border-line bg-paper p-3"><StoreEditor store={store} onDone={onDone} /></td></tr>
+      {editing === "new" && (
+        <StoreEditor key="new" onDone={(newId) => { setEditing(null); if (newId) { setHelperFor(newId); setHelperOpen(true); } }} />
       )}
-    </>
-  );
-}
 
-function StoreEditor({ store, onDone }: { store?: Store; onDone: () => void }) {
-  const world = useApp((s) => s.world)!;
-  const asOf = useApp((s) => s.asOf);
-  const locked = useLocked();
-  const commit = useApp((s) => s.commit);
-  const isNew = !store;
+      <DriveTimesHelper open={helperOpen} onOpen={setHelperOpen} focusStoreId={helperFor} />
 
-  const [code, setCode] = useState(store?.code ?? "");
-  const [name, setName] = useState(store?.name ?? "");
-  const [state, setState] = useState<string>(store ? store.state ?? "" : setupDefaults.state ?? "");
-  const [activeFrom, setActiveFrom] = useState(store?.activeFrom ?? "");
-  const [touched, setTouched] = useState(false);
-
-  // weekly need: for a new store, the starting numbers; for an existing one, changes from a date
-  const [newNeed, setNewNeed] = useState<Record<number, string>>({ 0: "0", 1: "1", 2: "1", 3: "1", 4: "1", 5: "1", 6: "0" });
-  const [effFrom, setEffFrom] = useState<string>(asOf);
-  const [edited, setEdited] = useState<Record<number, string>>({});
-  const [needTouched, setNeedTouched] = useState(false);
-  const [closeFrom, setCloseFrom] = useState<string>(store?.inactiveFrom ?? "");
-
-  const others = Object.values(world.state.stores).filter((s) => s.id !== store?.id);
-  const codeError = !code.trim() ? "Give the store a short code, for example EST." : others.some((s) => s.code.trim().toUpperCase() === code.trim().toUpperCase()) ? `Another store already uses the code ${code.trim().toUpperCase()}.` : null;
-  const nameError = !name.trim() ? "Give the store a name." : null;
-  const activeError = activeFrom && !isValidDate(activeFrom) ? "That is not a date." : activeFrom && store?.inactiveFrom && store.inactiveFrom <= activeFrom ? "The store would be closed before it opens." : null;
-
-  const countOk = (v: string) => /^\d$/.test(v.trim());
-  const shown = (w: number): string => (isNew ? newNeed[w]! : edited[w] ?? String(weeklyNeedOn(world.state, store!.id, w, effFrom || asOf)));
-  const needErrors = WEEK_ORDER.filter((w) => !countOk(shown(w)));
-
-  const history = useMemo(() => {
-    if (!store) return {} as Record<number, string>;
-    const out: Record<number, string> = {};
-    for (let w = 0; w < 7; w++) {
-      const rows = Object.values(world.state.requirements).filter((r) => r.storeId === store.id && r.weekday === w).sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1));
-      out[w] = rows.map((r) => `${r.count === 0 ? "closed" : r.count} from ${niceDate(r.effectiveFrom)}`).join(", then ") || "no need recorded";
-    }
-    return out;
-  }, [store, world.state.requirements]);
-
-  const build = (over: Partial<Store> = {}): Store => {
-    const out: Store = { id: store?.id ?? "", code: code.trim().toUpperCase(), name: name.trim(), state: (state || null) as StateCode | null };
-    if (activeFrom) out.activeFrom = activeFrom;
-    const inactive = "inactiveFrom" in over ? over.inactiveFrom : store?.inactiveFrom;
-    if (inactive) out.inactiveFrom = inactive;
-    return out;
-  };
-
-  const saveDetails = () => {
-    setTouched(true);
-    if (codeError || nameError || activeError) return;
-    if (isNew) {
-      if (needErrors.length) { setNeedTouched(true); return; }
-      const id = nextIdFor("S", Object.keys(world.state.stores), world.state.nextId.store);
-      const st = { ...build(), id };
-      const edits: Edit[] = [{ t: "store.set", store: st }];
-      for (let w = 0; w < 7; w++) edits.push({ t: "requirement.set", storeId: id, weekday: w, effectiveFrom: EPOCH, count: Number(newNeed[w]) });
-      if (commit(edits, `Added store ${st.code}.`)) onDone();
-      return;
-    }
-    const next = build();
-    next.id = store.id;
-    const same = next.code === store.code && next.name === store.name && next.state === store.state && next.activeFrom === store.activeFrom;
-    if (same) { useApp.getState().say("info", "Nothing to change."); return; }
-    commit([{ t: "store.set", store: next }], `Updated store ${next.code}.`);
-  };
-
-  const saveNeed = () => {
-    if (!store) return;
-    setNeedTouched(true);
-    if (!effFrom || !isValidDate(effFrom) || needErrors.length) return;
-    const edits: Edit[] = [];
-    const days: string[] = [];
-    for (const w of WEEK_ORDER) {
-      const n = Number(shown(w));
-      if (n !== weeklyNeedOn(world.state, store.id, w, effFrom)) { edits.push({ t: "requirement.set", storeId: store.id, weekday: w, effectiveFrom: effFrom, count: n }); days.push(`${WEEKDAY_SHORT[w]} ${n}`); }
-    }
-    if (!edits.length) { useApp.getState().say("info", "No weekday has a different number from that date."); return; }
-    if (commit(edits, `Changed ${store.code} weekly need from ${niceDate(effFrom)}: ${days.join(", ")}.`)) setEdited({});
-  };
-
-  const saveClose = (clear: boolean) => {
-    if (!store) return;
-    if (!clear && (!closeFrom || !isValidDate(closeFrom))) return;
-    const next: Store = { ...store };
-    if (clear) delete next.inactiveFrom; else next.inactiveFrom = closeFrom;
-    if (commit([{ t: "store.set", store: next }], clear ? `Made store ${store.code} active again.` : `Marked store ${store.code} inactive from ${niceDate(closeFrom)}.`) && clear) setCloseFrom("");
-  };
-
-  const stateNote = state === "" ? "Licensing is not checked at this store while its state is not recorded." : null;
-
-  return (
-    <div role="group" aria-label={isNew ? "Add a store" : `Edit store ${store.code}`} className="flex flex-col gap-4 rounded-md bg-white p-3 ring-1 ring-line">
-      <h3 className="text-sm font-semibold">{isNew ? "New store" : `Store ${store.code}`}</h3>
-      <div className="flex flex-wrap items-start gap-3">
-        <TextField label="Code" value={code} onChange={(v) => setCode(v.toUpperCase())} maxLength={5} className="w-28" error={touched ? codeError : null} hint="Short letters shown on the wall" />
-        <TextField label="Name" value={name} onChange={setName} className="w-72" error={touched ? nameError : null} />
-        <SelectField label="State" value={state} onChange={setState} options={STATE_OPTIONS} hint={stateNote ?? "Used to check pharmacist licenses"} className="w-56" />
-        <DateField label="Active from (optional)" value={activeFrom} onChange={setActiveFrom} error={touched ? activeError : null} hint="First day it needs staff" />
-      </div>
-      <div className="flex gap-2">
-        <Btn tone="ink" disabled={!!locked} onClick={saveDetails}>{isNew ? "Add store" : "Save store details"}</Btn>
-        <Btn tone="ghost" onClick={onDone}>{isNew ? "Cancel" : "Done"}</Btn>
-        {locked && <p className="self-center text-xs text-muted">{locked}</p>}
-      </div>
-
-      <div className="flex flex-col gap-2 border-t border-line pt-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">Weekly need</h4>
-        {!isNew && (
-          <div className="flex flex-wrap items-end gap-3">
-            <DateField label="Change from" value={effFrom} onChange={setEffFrom} error={needTouched && !isValidDate(effFrom) ? "Pick the date the new numbers start." : null} hint="Earlier dates keep their old numbers" />
-          </div>
-        )}
-        <div className="overflow-x-auto"><table aria-label="Weekly need" className="text-sm">
-          <thead><tr><th className={th}>Day</th><th className={th}>Pharmacists needed</th>{!isNew && <th className={th}>History</th>}</tr></thead>
-          <tbody>
-            {WEEK_ORDER.map((w) => {
-              const v = shown(w);
-              const bad = !countOk(v);
-              return (
-                <tr key={w}>
-                  <td className={td}>{WEEKDAY_LONG[w]}</td>
-                  <td className={td}>
-                    <input aria-label={`${WEEKDAY_LONG[w]} pharmacists needed`} inputMode="numeric" value={v} onChange={(e) => (isNew ? setNewNeed((p) => ({ ...p, [w]: e.target.value })) : setEdited((p) => ({ ...p, [w]: e.target.value })))} className={`${inputCls} w-16 text-center`} aria-invalid={bad} />
-                    {v.trim() === "0" && <span className="ml-2 text-xs text-muted">closed</span>}
-                    {bad && needTouched && <span role="alert" className="ml-2 text-xs text-illegal">▲ Use a whole number from 0 to 9.</span>}
-                  </td>
-                  {!isNew && <td className={`${td} text-xs text-muted`}>{history[w]}</td>}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table></div>
-        {!isNew && <div><Btn tone="ink" disabled={!!locked} onClick={saveNeed}>Save weekly need</Btn></div>}
-      </div>
-
-      {!isNew && (
-        <div className="flex flex-col gap-2 border-t border-line pt-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">Closing this store</h4>
-          <p className="max-w-xl text-xs text-muted">The date is the first day the store stays closed. Earlier days keep their history.</p>
-          <div className="flex flex-wrap items-end gap-3">
-            <DateField label="First closed day" value={closeFrom} onChange={setCloseFrom} />
-            <Btn tone="quiet" disabled={!!locked || !closeFrom || !isValidDate(closeFrom)} onClick={() => saveClose(false)}>Mark inactive from {closeFrom ? niceDate(closeFrom) : "…"}</Btn>
-            {store.inactiveFrom && <Btn tone="ghost" disabled={!!locked} onClick={() => saveClose(true)}>Make active again</Btn>}
-          </div>
+      <div className="rounded-md bg-white ring-1 ring-line">
+        <div aria-hidden className={cx("grid items-end gap-x-4 border-b border-line px-3 pb-1 pt-2 text-xs font-semibold text-muted", COLS)}>
+          <span />
+          <WeekdayLetters />
+          <span>{MONTHS[Number(month.slice(5)) - 1]} {month.slice(0, 4)}</span>
+          <span />
         </div>
-      )}
+        <ul aria-label="Stores" className="divide-y divide-line/60">
+          {stores.length === 0 && <li className="px-3 py-4 text-sm text-muted">No stores yet. Use "Add a store" to start.</li>}
+          {stores.map((s) => (
+            <li key={s.id} data-store-row={s.code}>
+              <Row store={s} state={st} asOf={asOf} month={months.get(s.id)!} monthName={MONTHS[Number(month.slice(5)) - 1]!} locked={!!locked} editing={editing === s.id} onEdit={() => setEditing(s.id)} />
+              {editing === s.id && <div className="border-t border-line bg-paper p-3"><StoreEditor store={s} onDone={() => setEditing(null)} /></div>}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
+  );
+}
+
+function Row({ store, state, asOf, month, monthName, locked, editing, onEdit }: { store: Store; state: DomainState; asOf: ISODate; month: StoreMonth; monthName: string; locked: boolean; editing: boolean; onEdit: () => void }) {
+  const status = statusOf(store, asOf);
+  const { counts, longest } = month;
+  const trouble = counts.open + counts.broken;
+  const hex: HexStatus = !storeActiveOn(store, asOf) ? "closed" : trouble > 0 ? "fix" : "ok";
+  const summary = `${monthName}: ${counts.covered} ${counts.covered === 1 ? "day" : "days"} covered${counts.open ? `, ${counts.open} with someone missing` : ""}${counts.broken ? `, ${counts.broken} with a rule broken` : ""}${counts.closed ? `, ${counts.closed} closed` : ""}`;
+  const tipLines = [
+    store.name,
+    counts.covered ? `Covered: ${counts.covered}` : "",
+    counts.open ? `Someone missing: ${month.ticks.filter((t) => t.open).slice(0, 6).map((t) => dayLabel(t.date)).join(", ")}${counts.open > 6 ? ` and ${counts.open - 6} more` : ""}` : "",
+    counts.broken ? `Rule broken: ${month.ticks.filter((t) => t.broken && !t.open).slice(0, 6).map((t) => dayLabel(t.date)).join(", ")}${counts.broken > 6 ? " and more" : ""}` : "",
+  ].filter(Boolean);
+  const ph = longest ? state.pharmacists[longest.pharmacistId] : undefined;
+  return (
+    <div className={cx("grid items-center gap-x-4 px-3 py-2", COLS)}>
+      <div className="flex min-w-0 items-center gap-3">
+        <HexBadge label={store.code} size={30} status={hex} />
+        <div className="min-w-0">
+          <p className="truncate font-semibold">{store.name} {status && <Chip tone={status.tone} className="ml-1 whitespace-nowrap align-middle">{status.text}</Chip>}</p>
+          <p className="truncate text-xs text-muted">{store.state ?? "State not recorded"}</p>
+        </div>
+      </div>
+      <NeedMarks state={state} store={store} date={asOf} />
+      <div className="flex min-w-0 flex-col gap-1">
+        <MonthLine label={store.code} ticks={month.ticks} summary={summary} tip={tipLines.join(" | ")} />
+        <p className="truncate text-xs text-muted" data-run={longest?.days ?? 0} data-tip={ph && longest ? `Longest stay | ${ph.name}, ${longest.days} open days in a row | ${monthDay(longest.from)} to ${monthDay(longest.to)}` : undefined}>
+          {ph && longest && longest.days > 1 ? `${shortName(ph.name, 18)} · ${longest.days} in a row` : " "}
+        </p>
+      </div>
+      <div className="text-right"><Btn tone="ghost" aria-label={`Edit store ${store.code}`} aria-expanded={editing} disabled={editing || locked} onClick={onEdit}>Edit</Btn></div>
+    </div>
+  );
+}
+
+/** Seven squares, Monday first: the number of pharmacists the store needs that weekday, or a quiet dash when it is closed. */
+function NeedMarks({ state, store, date }: { state: DomainState; store: Store; date: ISODate }) {
+  const needs = MON_FIRST.map((w) => weeklyNeed(state, store.id, w, date));
+  const words = MON_FIRST.map((w, i) => `${DAY_SHORT[w]} ${needs[i] === 0 ? "closed" : needs[i]}`).join(", ");
+  return (
+    <span role="img" aria-label={`${store.code} needs: ${words}`} className="inline-flex" data-need-marks>
+      {MON_FIRST.map((w, i) => {
+        const n = needs[i]!;
+        return (
+          <span key={w} data-need={n} data-weekday={DAY_SHORT[w]} data-tip={`${DAY_LONG[w]} | ${n === 0 ? "Closed" : `Needs ${n}`}`}
+            className={cx("grid size-6 place-items-center text-xs", n === 0 ? "text-muted/70" : "bg-ok-bg font-semibold text-ink")}>
+            {n === 0 ? <span aria-hidden>–</span> : n}
+          </span>
+        );
+      })}
+    </span>
   );
 }
