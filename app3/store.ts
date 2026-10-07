@@ -32,6 +32,9 @@ export type AppState = {
   setupTab: SetupTab;
   /** The queue / history drawer on the left. Closed by default. */
   drawer: boolean;
+  /** The right-hand details panel (Inspector) on the screens that have one. */
+  rightOpen: boolean;
+  setRight(open: boolean): void;
   /** The Someone's out form in the right column. */
   outForm: boolean;
   leftTab: LeftTab;
@@ -138,6 +141,7 @@ export const useApp = create<AppState>((set, get) => {
     view: "overview",
     setupTab: "stores",
     drawer: false,
+    rightOpen: true,
     outForm: false,
     leftTab: "queue",
     selection: null,
@@ -156,6 +160,7 @@ export const useApp = create<AppState>((set, get) => {
       if (listy(cur.view) && listWasOpen === false) { listWasOpen = null; return set({ view: v, drawer: false, ...(cur.leftTab === "months" ? { leftTab: "queue" as const } : {}) }); }
       return set({ view: v, ...(cur.leftTab === "months" ? { leftTab: "queue" as const } : {}) });
     },    setSetupTab: (setupTab) => set({ setupTab }),
+    setRight: (rightOpen) => set({ rightOpen }),
     setDrawer: (drawer, tab) => set(tab ? { drawer, leftTab: tab } : { drawer }),
     setOutForm: (outForm) => set({ outForm }),
     setAxis: (axis) => set({ axis }),

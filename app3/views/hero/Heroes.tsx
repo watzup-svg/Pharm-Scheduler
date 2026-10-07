@@ -38,6 +38,9 @@ function useScheduleHero() {
 const CHIP_BG = { bad: "#f0c4ba", warn: "#f2da8f", ok: "#6fb78d" } as const; // the same colours as the blocks on the wall (wall.css)
 const CHIP_INK = { bad: "var(--color-illegal)", warn: "var(--color-warn)", ok: "var(--color-ok)" } as const;
 
+/** The band never grows past this many detail lines, so the grid below always keeps its room; the rest is in the Inspector. */
+const MAX_DETAIL = 4;
+
 /** The informational band: a big picture in the issue's colour, a large centred headline, one line of context, and a few full sentences of detail. Nothing to click. */
 function InfoHero({ ex, label, emptyTitle, emptyText, extra }: { ex: Explain | null; label: string; emptyTitle: string; emptyText: string; extra?: Record<string, string | number> }) {
   const icon = ex?.mark ? MARKS[ex.mark].icon : ex ? "asis" : null;
@@ -50,8 +53,18 @@ function InfoHero({ ex, label, emptyTitle, emptyText, extra }: { ex: Explain | n
         {ex ? (
           <>
             <h2 className="text-[32px] font-semibold leading-tight tracking-tight text-[#f7e9e4]" data-hero-headline>{ex.headline}</h2>
-            <p className="mt-1 text-base text-cream/70" data-hero-context>{ex.context}</p>
-            {ex.more.length > 0 && <div className="mx-auto mt-2 max-w-[62rem] space-y-1 text-[15px] leading-snug text-cream/85" data-hero-detail>{ex.more.map((m) => <p key={m}>{m}</p>)}</div>}
+            {/* The title is centred; the details under it share one left edge, in a block that sits centred beneath the title. */}
+            <div className="mx-auto mt-2 w-fit max-w-full text-left">
+              <p className="text-[15px] font-semibold text-cream/75" data-hero-context>{ex.context}</p>
+              {ex.more.length > 0 && (
+                <ul className="mt-1.5 space-y-1 text-[15px] leading-snug text-cream/85" data-hero-detail>
+                  {ex.more.slice(0, MAX_DETAIL).map((m) => (
+                    <li key={m} className="flex gap-2"><span aria-hidden className="mt-[0.55em] size-1.5 shrink-0 rounded-full bg-cream/40" /><span>{m}</span></li>
+                  ))}
+                  {ex.more.length > MAX_DETAIL && <li className="flex gap-2 text-cream/60"><span aria-hidden className="mt-[0.55em] size-1.5 shrink-0 rounded-full bg-cream/25" /><span>and {ex.more.length - MAX_DETAIL} more in the panel on the right.</span></li>}
+                </ul>
+              )}
+            </div>
           </>
         ) : (
           <>

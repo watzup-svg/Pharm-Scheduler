@@ -10,6 +10,7 @@ import { PersonDisc } from "../../ui/PersonDisc.tsx";
 import { fmtDate } from "../../copy.ts";
 import { shortName } from "../../names.ts";
 import { Act, Disclosure } from "./ui.tsx";
+import { HomeCode } from "../../ui/HomeCode.tsx";
 
 const FIRST = 3;
 
@@ -59,7 +60,7 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
     <div>
       <header className="border-b border-line px-3 py-2.5">
         <div className="flex items-start justify-between gap-2">
-          <span className="flex min-w-0 items-center gap-2"><PersonDisc id={ph.id} size={22} /><h2 className="min-w-0 truncate text-base font-semibold" title={ph.name}>{shortName(ph.name, 28)}</h2></span>
+          <span className="flex min-w-0 items-center gap-2"><PersonDisc id={ph.id} size={22} /><h2 className="min-w-0 truncate text-base font-semibold" title={ph.name}>{shortName(ph.name, 28)}<HomeCode pharmacistId={ph.id} /></h2></span>
           <button type="button" onClick={() => useApp.getState().select(null)} className="shrink-0 rounded-md px-1.5 text-xs text-muted underline focus-visible:outline-2 focus-visible:outline-ink" aria-label="Clear the selection">Clear</button>
         </div>
         <p className="mt-0.5 text-sm text-muted">{fmtDate(date)}{date < asOf ? " (past)" : ""}</p>

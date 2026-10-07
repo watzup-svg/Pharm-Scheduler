@@ -63,7 +63,7 @@ const placed = await get((c) => Object.values(window.__v3.app.getState().world.s
 check("a manual unconfirmed assignment was written", placed.length === 1 && placed[0].src === "manual" && !placed[0].agreed, JSON.stringify(placed));
 const row1 = insp.locator("section", { hasText: "Working here" });
 check("a row shows its actions up front: Swap and Remove; Pin and the partial-day note sit under More", (await row1.getByRole("button", { name: "Remove", exact: true }).count()) === 1 && (await row1.getByRole("button", { name: "Swap to someone else" }).count()) === 1 && (await row1.getByRole("button", { name: "Pin", exact: true }).count()) === 0 && (await row1.getByRole("button", { name: "More actions", exact: true }).first().getAttribute("aria-expanded")) === "false");
-check("a row carries its context: who placed it, agreed or not, and the home store", /Placed by|From the pattern|Scheduled by/.test(await row1.innerText()) && /Home store/.test(await row1.innerText()));
+check("a row carries its context: who placed it, agreed or not, and the home store", /Placed by|From the pattern|Scheduled by/.test(await row1.innerText()) && (await row1.locator("[data-home]").count()) === 1);
 check("a covered cell shows no Next step", (await insp.getByRole("button", { name: "Find cover" }).count()) === 0 && (await rows.count()) === 0);
 await openDetails();
 check("row says it is not confirmed yet", /not confirmed yet/i.test(await insp.innerText()));

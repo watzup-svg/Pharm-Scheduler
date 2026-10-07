@@ -182,6 +182,12 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = 
         want.current = null;
         if (w.focus) el.focus();
         if (w.focus || w.reveal) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+        // The browser does not always honour the scroll margin when the scroll area is short; never leave the cell under the sticky header.
+        if ((w.focus || w.reveal) && sc) {
+          const headH = ref.current?.querySelector<HTMLElement>(".w-head")?.getBoundingClientRect().height ?? 0;
+          const under = sc.getBoundingClientRect().top + headH - el.getBoundingClientRect().top;
+          if (under > 0) sc.scrollTop -= under + 4;
+        }
       } else if (virt && sc) {
         // The row is not drawn: scroll to it; the scroll event redraws the window and this runs again.
         const top = rowTop(cur.r);

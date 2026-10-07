@@ -175,6 +175,6 @@ function explainPersonDay(state: DomainState, ev: Evaluation, pid: string, date:
   if (!placed.length) return { mark: null, tone: "ok", headline: `${p.name} is not scheduled`, context, more: [homeLine] };
   const issues = date < asOf ? [] : placed.flatMap((a) => problemsOf(state, ev, a));
   const where = list(placed.map((a) => state.stores[a.storeId]?.name ?? code(a.storeId)));
-  if (issues.length) return { mark: RULE_MARK[issues[0]!.rule] ?? null, tone: issues[0]!.tone, headline: issues[0]!.sentence, context, more: [...problemLines(issues), `Scheduled at ${where}.`, homeLine] };
+  if (issues.length) return { mark: RULE_MARK[issues[0]!.rule] ?? null, tone: issues[0]!.tone, headline: issues[0]!.sentence, context, more: [...problemLines(issues), ...(issues.some((i) => (i.sentence + i.detail).includes(where)) ? [] : [`Scheduled at ${where}.`]), homeLine] };
   return { mark: null, tone: "ok", headline: `${p.name} works at ${where}`, context, more: [homeLine] };
 }

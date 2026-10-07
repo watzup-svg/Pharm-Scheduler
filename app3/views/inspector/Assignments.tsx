@@ -10,6 +10,7 @@ import { shortName } from "../../names.ts";
 import { Chip, cx, GLYPH } from "../../ui/primitives.tsx";
 import { commitEdits, codeOf, plainFail, SOURCE_WORDS, type Ctx } from "./lib.ts";
 import { Act, DisclosureButton, TextField } from "./ui.tsx";
+import { HomeCode } from "../../ui/HomeCode.tsx";
 
 export function Assignments({ ctx, swapId, onSwap }: { ctx: Ctx; swapId: string | null; onSwap: (id: string | null) => void }) {
   const { cv } = ctx;
@@ -61,7 +62,8 @@ function AssignmentRow({ ctx, a, swapping, onSwap }: { ctx: Ctx; a: CellAssignme
   const ph = state.pharmacists[a.pharmacistId];
   const base = ph?.baseStoreId ? state.stores[ph.baseStoreId] : undefined;
   const drive = base && base.id !== storeId ? state.travel[`${base.id}|${storeId}`]?.minutes : undefined;
-  const homeLine = base ? (base.id === storeId ? `Home store: ${base.name}` : `Home store: ${base.name} (${base.code})${drive !== undefined ? ` · ${drive} min drive here` : ""}`) : null;
+  // The home store code already sits after the name; the line only adds what the code cannot say: the drive from home.
+  const homeLine = base && base.id !== storeId ? (drive !== undefined ? `${drive} min drive from home (${base.name})` : `Home store is ${base.name}; drive time not recorded`) : null;
   const label = (verb: string) => `${verb} ${a.name} at ${codeOf(state, storeId)}`;
 
   const unpin = () => {
@@ -72,7 +74,7 @@ function AssignmentRow({ ctx, a, swapping, onSwap }: { ctx: Ctx; a: CellAssignme
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-sm font-semibold" title={a.name}>{shortName(a.name, 26)}</span>
+        <span className="min-w-0 truncate text-sm font-semibold" title={a.name}>{shortName(a.name, 26)}<HomeCode pharmacistId={a.pharmacistId} /></span>
         {shown.length > 0 && <DisclosureButton label="Why" open={open} controls={detailsId} onClick={() => setOpen(!open)} />}
       </div>
       {chip && <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-ink"><StateMark kind={chip.kind} size={16} />{chip.word}</p>}

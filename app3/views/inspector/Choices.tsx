@@ -6,6 +6,7 @@ import { shortName } from "../../names.ts";
 import { Tags } from "./Tags.tsx";
 import { commitEdits, codeOf, describeChoice, describeTags, nameOf, type Ctx } from "./lib.ts";
 import { Act } from "./ui.tsx";
+import { HomeCode } from "../../ui/HomeCode.tsx";
 
 const FIRST = 3;
 
@@ -59,7 +60,7 @@ export function Choices({ ctx, replace, onDone, footer }: { ctx: Ctx; replace: C
             <li key={c.pharmacistId} className="py-1.5" data-pharmacist={c.pharmacistId}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold" title={name}>{shortName(name, 26)}</div>
+                  <div className="truncate text-sm font-semibold" title={name}>{shortName(name, 26)}<HomeCode pharmacistId={c.pharmacistId} /></div>
                   <Tags tags={describeTags(state, c, storeId, date)} />
                   <span className="sr-only">{p.text}</span>
                 </div>

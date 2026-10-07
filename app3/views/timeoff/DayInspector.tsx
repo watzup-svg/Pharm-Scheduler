@@ -15,6 +15,7 @@ import { opensIfApprovedAll, monthLoads, span, useWhyLocked } from "./lib.ts";
 import { Consequence } from "./RequestList.tsx";
 import { indexRecords, kindOf, recordsOn, typeWord } from "./sheet.ts";
 import { useTimeOffUi } from "./ui.ts";
+import { HomeCode } from "../../ui/HomeCode.tsx";
 
 export function DayInspector() {
   const world = useApp((s) => s.world);
@@ -52,7 +53,7 @@ export function DayInspector() {
       {form}
       <header className="border-b border-line px-3 py-2.5">
         <div className="flex items-center gap-2">
-          <PersonDisc id={p.id} size={22} /><h2 className="min-w-0 flex-1 truncate text-base font-semibold" title={p.name}>{p.name}</h2>
+          <PersonDisc id={p.id} size={22} /><h2 className="min-w-0 flex-1 truncate text-base font-semibold" title={p.name}>{p.name}<HomeCode pharmacistId={p.id} /></h2>
           <button type="button" onClick={() => useApp.getState().select(null)} className="shrink-0 rounded-md px-1.5 text-xs text-muted underline focus-visible:outline-2 focus-visible:outline-ink" aria-label="Clear the selection">Clear</button>
         </div>
         <p className="mt-1 text-sm text-muted">{fmtDate(date)}{date < asOf ? " (past)" : ""}</p>

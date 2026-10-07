@@ -46,6 +46,32 @@ await page.evaluate(() => { const a = window.__v3.app.getState(); const asg = Ob
 await page.waitForTimeout(300);
 check("the Schedule's person Inspector shows the disc too", (await page.locator('aside[aria-label="Inspector"] header span[aria-hidden="true"].rounded-full').count()) >= 1);
 
+// 4b. The home store code sits after a pharmacist's name wherever people are listed.
+await go("wall");
+await page.evaluate(() => { const a = window.__v3.app.getState(); const e = Object.values(a.world.state.stores)[3]; a.select({ storeId: e.id, date: "2026-10-20" }); });
+await page.waitForTimeout(300);
+const cand = page.locator('aside[aria-label="Inspector"] ul[aria-label="Who can work here"] li').first();
+if (await cand.count()) check("the Next step list shows each candidate's home store after the name", (await cand.locator("[data-home]").count()) === 1 && /^[A-Z0-9]{2,4}$/.test((await cand.locator("[data-home]").innerText()).trim()));
+await go("timeoff");
+check("Time off request rows show the home store too", (await page.locator("[data-request-list] li [data-home]").count()) >= 1);
+
+// 4c. Both side columns fold away, on every screen that has them.
+for (const v of ["wall", "ahead", "timeoff"]) {
+  await go(v);
+  const aside = page.locator('aside[aria-label="Inspector"]');
+  check(`${v}: the details panel is open at first, with a Hide button`, (await aside.count()) === 1 && (await aside.getByRole("button", { name: "Hide the details panel" }).count()) === 1);
+  const w0 = (await page.locator("main").boundingBox()).width;
+  await aside.getByRole("button", { name: "Hide the details panel" }).click();
+  check(`${v}: hiding it leaves a slim edge and gives the middle more room`, (await aside.count()) === 0 && (await page.getByRole("button", { name: "Open the details panel" }).count()) === 1 && (await page.locator("main").boundingBox()).width > w0 + 250);
+  await page.getByRole("button", { name: "Open the details panel" }).click();
+  check(`${v}: the edge opens it again`, (await aside.count()) === 1);
+}
+await go("timeoff");
+await page.locator('aside[aria-label="Inspector"]').getByRole("button", { name: "Hide the details panel" }).click();
+await page.locator(".w-controls").getByRole("button", { name: "Add time off" }).click();
+check("opening the Add time off form brings the panel back by itself", (await page.locator('aside[aria-label="Inspector"] [data-add-form]').count()) === 1);
+await page.locator('aside[aria-label="Inspector"]').getByRole("button", { name: "Close the form" }).click();
+
 // 5. One guide button, in the top bar on every screen, opening the guide at the part for this screen.
 for (const [v, want] of [["overview", null], ["timeoff", "Time off screen"], ["ahead", "Plan ahead"]]) {
   await go(v);

@@ -132,7 +132,11 @@ export function describeTags(state: DomainState, c: Choice, storeId: string, dat
   else if (c.travelMinutes !== null && c.travelMinutes > 0) out.push({ mark: "covering", tone: "ok", label: `${c.travelMinutes} min`, title: `Drive ${c.travelMinutes} min` });
   if (c.warns.includes("consecutive-days")) out.push({ mark: "streak", tone: "warn", label: `${ordinal(runPosition(state, c.pharmacistId, date))} day`, title: `${ordinal(runPosition(state, c.pharmacistId, date))} day in a row` });
   if (c.unknown.length) out.push({ mark: "unverified", tone: "warn", label: "Not fully checked", title: c.unknown.some((r) => r.startsWith("travel")) ? "Drive time not known" : "Licensing not recorded" });
-  if (!skipCurrent && (!out.length || (c.currently === "off" && !c.blocks.length && !requested && out.every((t) => t.tone === "ok")))) out.unshift({ mark: "short", tone: "ok", label: "Free", title: "Free that day" });
+  // Free = not placed anywhere that day and nothing stops them. Green when that is the whole story; yellow when it comes with a caution (a long drive, many days in a row): available, but think about it.
+  if (!skipCurrent && (!out.length || (c.currently === "off" && !c.blocks.length && !requested))) {
+    const caution = out.some((t) => t.tone === "warn" || t.tone === "bad");
+    out.unshift({ mark: "short", tone: caution ? "warn" : "ok", label: "Free", title: caution ? "Free that day, but see the other notes" : "Free that day" });
+  }
   return out;
 }
 

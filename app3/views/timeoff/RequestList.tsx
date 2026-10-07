@@ -13,6 +13,7 @@ import { callers, consequenceText, safeToApprove, type Cell } from "./calc.ts";
 import { opensIfApprovedAll, span } from "./lib.ts";
 import { kindOf, isTimeOff, typeWord } from "./sheet.ts";
 import { useTimeOffUi, type Tab } from "./ui.ts";
+import { HomeCode } from "../../ui/HomeCode.tsx";
 
 const TABS: [Tab, string][] = [["waiting", "Waiting"], ["approved", "Approved"], ["declined", "Declined"]];
 const byDate = (a: Unavailability, b: Unavailability) => (a.first < b.first ? -1 : a.first > b.first ? 1 : a.id < b.id ? -1 : 1);
@@ -91,7 +92,7 @@ export function RequestList() {
                   className={cx("q-row flex w-full items-start gap-2.5 rounded-lg py-2 pl-2.5 pr-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-ink", on && "q-on")}>
                   <BlockMark kind={mark} tone={sev ?? "quiet"} size={24} className="mt-px" />
                   <span className="min-w-0">
-                    <span className="flex items-center gap-1.5 font-semibold"><PersonDisc id={u.pharmacistId} size={14} />{shortName(who(u), 24)}</span>
+                    <span className="flex items-center gap-1.5 font-semibold"><PersonDisc id={u.pharmacistId} size={14} />{shortName(who(u), 24)}<HomeCode pharmacistId={u.pharmacistId} className="!ml-0.5" /></span>
                     <span className="block text-ink/80">{span(u)} · {typeWord(u)}</span>
                     {tab === "waiting" && <span data-consequence className="block text-xs text-ink/70">{cells.length ? `Approving leaves ${cells.length === 1 ? "1 store day" : `${cells.length} store days`} short` : "Approving leaves every store covered"}</span>}
                   </span>

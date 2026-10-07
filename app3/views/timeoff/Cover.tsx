@@ -8,6 +8,7 @@ import { Btn } from "../../ui/primitives.tsx";
 import { callers } from "./calc.ts";
 import { describeTags } from "../inspector/lib.ts";
 import { Tags } from "../inspector/Tags.tsx";
+import { HomeCode } from "../../ui/HomeCode.tsx";
 
 const FIRST = 3;
 
@@ -27,7 +28,7 @@ export function Cover({ state, storeId, date, exclude = [], locked }: { state: D
           return (
             <li key={c.pharmacistId} data-caller={c.pharmacistId} className="flex items-start justify-between gap-3 py-1.5">
               <div className="min-w-0 text-sm">
-                <div className="truncate font-medium" title={who}>{shortName(who, 28)}</div>
+                <div className="truncate font-medium" title={who}>{shortName(who, 28)}<HomeCode pharmacistId={c.pharmacistId} /></div>
                 <Tags tags={describeTags(state, c.choice, storeId, date)} />
                 <span className="sr-only">{[...c.good, ...c.caution].join(" · ")}</span>
               </div>

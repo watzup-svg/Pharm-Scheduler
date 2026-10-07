@@ -1,8 +1,10 @@
+import { useEffect, type ReactNode } from "react";
 import { useApp } from "./store.ts";
 import { useIssues } from "./derive.ts";
 import { Wall } from "./views/Wall.tsx";
 import { Inspector } from "./views/Inspector.tsx";
 import { DayInspector } from "./views/timeoff/DayInspector.tsx";
+import { useTimeOffUi } from "./views/timeoff/ui.ts";
 import { SomeonesOut } from "./views/SomeonesOut.tsx";
 import { LeftPanel } from "./views/LeftPanel.tsx";
 import { ProposalBar } from "./views/ProposalBar.tsx";
@@ -23,6 +25,32 @@ import { HoverNotes } from "./ui/notes.tsx";
 import { SearchPalette } from "./ui/SearchPalette.tsx";
 import { AheadHero, ScheduleHero, SetupHero, PrintHero, TimeOffHero } from "./views/hero/Heroes.tsx";
 import { Ahead } from "./views/ahead/Ahead.tsx";
+
+/** The right-hand column: details for what is selected. It can be folded away (like the list on the left) to give the grid more room; it opens itself when something needs it (a what-if, the add-time-off form). */
+function DetailsPanel({ children }: { children: ReactNode }) {
+  const open = useApp((s) => s.rightOpen);
+  const needs = useApp((s) => s.outForm || !!s.world?.session.scenario);
+  const adding = useTimeOffUi((s) => s.add !== null);
+  useEffect(() => { if (needs || adding) useApp.getState().setRight(true); }, [needs, adding]);
+  if (!open) {
+    return (
+      <button type="button" aria-label="Open the details panel" aria-expanded={false} data-tip="Details | Open the panel for what is selected" onClick={() => useApp.getState().setRight(true)}
+        className="flex w-8 shrink-0 flex-col items-center gap-2 border-l border-line bg-cream pt-3 text-xs font-semibold text-muted hover:bg-fill">
+        <span aria-hidden>‹</span>
+        <span className="mt-1 [writing-mode:vertical-rl]">Details</span>
+      </button>
+    );
+  }
+  return (
+    <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-3 py-1">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted">Details</span>
+        <button type="button" aria-label="Hide the details panel" data-tip="Hide the details | You can open them again from the edge" onClick={() => useApp.getState().setRight(false)} className="rounded-md px-2 py-0.5 text-sm text-muted hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">Hide ›</button>
+      </div>
+      {children}
+    </aside>
+  );
+}
 
 // Shell: one top row; the schedule fills the middle under one header band; the Inspector docks on the right; the
 // queue / history live in a drawer on the left that is closed until asked for; the Proposal Bar sits
@@ -75,16 +103,12 @@ export function App() {
           </ErrorBoundary>
         </main>
         {(view === "wall" || view === "plan" || view === "ahead") && (
-          <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
+          <DetailsPanel>
             {(outForm || !!world.session.scenario) && <SomeonesOut compact showForm={outForm} onClose={() => useApp.getState().setOutForm(false)} />}
             {(view === "wall" || view === "ahead") && <ErrorBoundary name="the inspector"><Inspector /></ErrorBoundary>}
-          </aside>
+          </DetailsPanel>
         )}
-        {view === "timeoff" && (
-          <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
-            <ErrorBoundary name="the day details"><DayInspector /></ErrorBoundary>
-          </aside>
-        )}
+        {view === "timeoff" && <DetailsPanel><ErrorBoundary name="the day details"><DayInspector /></ErrorBoundary></DetailsPanel>}
       </div>
       {proposal && <ProposalBar />}
       <Notice />
