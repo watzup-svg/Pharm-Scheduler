@@ -21,7 +21,7 @@ export function IconGuide() {
             <Dialog.Close className="rounded px-2 py-1 text-sm text-muted hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">Close</Dialog.Close>
           </div>
           <p className="mt-1 text-sm text-muted">The colour of a block says whether the shift is covered. A picture on it says what still needs a look. No picture means all is well.</p>
-          <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
+          <div tabIndex={0} role="region" aria-label="Colours and pictures" className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1 focus-visible:outline-2 focus-visible:outline-ink">
             <section aria-label="Colours">
               <h3 className="mb-1.5 text-sm font-semibold">Colours, by store</h3>
               <ul className="flex flex-col gap-1.5 text-sm">

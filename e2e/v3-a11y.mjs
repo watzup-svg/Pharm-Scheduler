@@ -57,6 +57,11 @@ async function tour(page, size, after) {
   await page.locator('[role="gridcell"]').nth(40).click(); await step("wall (pharmacist cell selected)");
   if (hasRows) await rows.getByRole("button", { name: "Stores" }).click();
   await page.locator('[role="gridcell"]').nth(40).click(); await step("wall (store cell selected)");
+  await page.getByRole("button", { name: "Day", exact: true }).click(); await step("wall (one day)");
+  await page.getByRole("button", { name: "Month", exact: true }).click();
+  await page.getByRole("button", { name: "Key", exact: true }).click(); await step("wall key open");
+  await page.getByRole("button", { name: "What do these mean?" }).click(); await step("icon guide open");
+  await page.keyboard.press("Escape");
   await page.evaluate(() => window.__v3.app.getState().setOutForm(true)); await step("wall with the Someone's out form open");
   await page.evaluate(() => window.__v3.app.getState().setOutForm(false));
   for (const t of ["tell", "history", "queue"]) { await drawer(page, t); await step(`left drawer: ${t}`); }
