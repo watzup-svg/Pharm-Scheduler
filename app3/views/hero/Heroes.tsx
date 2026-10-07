@@ -163,7 +163,7 @@ export function TimeOffHero() {
       tiles={tiles}
       actions={<>
         <HeroBtn tone="away" onClick={() => ui.openAdd("add")}><Pic icon="timeOff" className="size-4" /> Add time off</HeroBtn>
-        <HeroBtn onClick={() => ui.openAdd("sick")}>Sick today</HeroBtn>
+        <HeroBtn onClick={() => ui.openAdd("sick")}>Out sick</HeroBtn>
       </>}
       graphic={<Standing waiting={waiting} approved={approved} declined={declined} />}
     />
