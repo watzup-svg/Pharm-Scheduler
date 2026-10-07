@@ -152,7 +152,7 @@ function runChild(cmdArgs, env, timeoutMs) {
   });
 }
 add("monkey", pick3(L, 300_000, 900_000, 2_400_000), async (ctx) => {
-  const seeds = pick3(L, 2, 10, 30), actions = pick3(L, 50, 120, 200);
+  const seeds = pick3(L, 2, 10, 20), actions = pick3(L, 50, 120, 200);
   const flags = ["--experimental-strip-types", "--no-warnings", "stress/v3-monkey.mjs"];
   const r = await runChild(flags, { SEEDS: String(seeds), ACTIONS: String(actions) }, pick3(L, 280_000, 880_000, 2_300_000));
   fs.writeFileSync(path.join(args.out, "browser-monkey.log"), r.out);

@@ -5,7 +5,7 @@ import { sha256 } from "./hash.ts";
 import { evaluate } from "./coverage.ts";
 import { RULES, RULE_BY_ID } from "./rules.ts";
 import type { CommitResult, Edit, Meta, Refusal, World } from "./api-types.ts";
-import type { AssignmentSource, ChangeSet, DomainEvent, DomainState, EventType } from "./types.ts";
+import type { Assignment, AssignmentSource, ChangeSet, DomainEvent, DomainState, EventType } from "./types.ts";
 
 export const ENGINE_VERSION = "v3.0";
 
@@ -393,6 +393,14 @@ export function undo(world: World, changeSetId: string): CommitResult {
   const state = clone(world.state);
   const inv = invert(cs.events);
   applyEvents(state, inv);
+  // Putting a placement back (undoing a removal, or redoing a placement) must not make the same person appear twice at the same store and day:
+  // a later change may have placed them there again under a new id, which the key check above cannot see.
+  for (const e of inv) {
+    if (!e.key.startsWith("assignment:") || e.after === null || e.after === undefined) continue;
+    const a = e.after as Assignment;
+    const twin = Object.values(state.assignments).find((x) => x.id !== a.id && x.pharmacistId === a.pharmacistId && x.storeId === a.storeId && x.date === a.date);
+    if (twin) return refuse(`Can't undo: ${state.pharmacists[a.pharmacistId]?.name ?? a.pharmacistId} is already placed at ${state.stores[a.storeId]?.code ?? a.storeId} on ${a.date} by a later change.`, { laterChangeSets: [], detail: [e.key, `assignment:${twin.id}`] });
+  }
   const { id, seq } = nextCsId(state);
   const t = applyTold(world.journal.told, cs.told ?? [], true);
   const undoCs: ChangeSet = { id, seq, kind: "undo", label: `Undid ${cs.id}: ${cs.label}`, events: inv, reverses: cs.id, ...(t.applied.length ? { told: t.applied } : {}) };
