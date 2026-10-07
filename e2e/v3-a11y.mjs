@@ -30,7 +30,7 @@ const runAxe = async (page, name) => {
   check(`axe: ${name}`, bad.length === 0, bad.slice(0, 6).map((b) => `${b.rule} ${b.sel} ${b.msg}`).join(" | ") + (bad.length > 6 ? ` (+${bad.length - 6} more)` : ""));
 };
 
-// Screens are Schedule / Time off / Print / Setup. Plan is reached through the store; Travel, Rules and Checks are tabs inside Setup.
+// Screens are Overview / Schedule / Time off / Print / Setup. Plan is reached through the store; Travel, Rules and Checks are tabs inside Setup.
 const SETUP_TABS = { Travel: "Travel", Rules: "Rules", Checks: "Check" };
 const go = async (page, label) => {
   const hdr = page.locator("header");
@@ -41,13 +41,14 @@ const go = async (page, label) => {
   await page.waitForTimeout(150);
 };
 const drawer = (page, tab) => page.evaluate((t) => window.__v3.app.getState().setDrawer(!!t, t ?? undefined), tab);
-const VIEWS = ["Wall", "Plan", "Time off", "Setup", "Travel", "Rules", "Checks", "Print"];
+const VIEWS = ["Overview", "Wall", "Plan", "Time off", "Setup", "Travel", "Rules", "Checks", "Print"];
 const setup = (page, tab) => page.getByRole("tab", { name: tab }).click().then(() => page.waitForTimeout(100));
 
 /** Every view and dialog, once, with `after` called on each (axe, screenshots...). */
 async function tour(page, size, after) {
   const tag = `${size.width}`;
   const step = async (name) => { await page.waitForTimeout(120); await after(name, tag); };
+  await go(page, "Overview"); await step("overview");
   await go(page, "Wall"); await step("wall (stores)");
   const rows = page.getByRole("group", { name: "Rows" });
   const hasRows = (await rows.count()) > 0;

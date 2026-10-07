@@ -46,7 +46,7 @@ for (const [label, view] of [["Time off", "timeoff"], ["Print", "print"], ["Setu
   const cur = await bar.locator('[aria-current="page"]').innerText();
   check(`tab ${label} switches the view`, s0.view === view && cur.startsWith(label), `${s0.view} / ${cur}`);
 }
-check("exactly four screen tabs", (await bar.locator('nav[aria-label="Screens"] button').count()) === 4);
+check("exactly five screen tabs", (await bar.locator('nav[aria-label="Screens"] button').count()) === 5);
 for (const view of ["travel", "rules", "checks"]) {
   await st((v) => window.__v3.app.getState().setView(v), view);
   const s1 = await st(() => ({ v: window.__v3.app.getState().view, t: window.__v3.app.getState().setupTab }));

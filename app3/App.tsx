@@ -10,6 +10,8 @@ import { Start } from "./views/Start.tsx";
 import { OtherWindow } from "./views/OtherWindow.tsx";
 import { useWindowState } from "./windowLock.ts";
 import { Plan } from "./views/Plan.tsx";
+import { Overview } from "./views/Overview.tsx";
+import { OverviewHero } from "./views/hero/OverviewHero.tsx";
 import { Setup } from "./views/Setup.tsx";
 import { TimeOff } from "./views/TimeOff.tsx";
 import { PrintView } from "./views/PrintView.tsx";
@@ -54,11 +56,13 @@ export function App() {
         )}
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <ErrorBoundary name={`the ${view} screen`} resetKey={view} probe>
+            {view === "overview" && <OverviewHero />}
             {(view === "wall" || view === "plan") && <ScheduleHero />}
             {view === "setup" && <SetupHero />}
             {view === "timeoff" && <TimeOffHero />}
             {view === "print" && <PrintHero />}
             <div className="relative min-h-0 flex-1 overflow-auto">
+              {view === "overview" && <Overview />}
               {view === "wall" && <Wall />}
               {view === "plan" && <Plan />}
               {view === "timeoff" && <TimeOff />}
