@@ -94,6 +94,7 @@ function monthWindow(d: ISODate): { from: ISODate; to: ISODate } {
   return { from: `${d.slice(0, 7)}-01`, to: addDays(next, -1) };
 }
 
+let listWasOpen: boolean | null = null;
 export const useApp = create<AppState>((set, get) => {
   const world = () => {
     const w = get().world;
@@ -145,7 +146,14 @@ export const useApp = create<AppState>((set, get) => {
     readOnlyProblems: null,
     busy: null,
 
-    setView: (v) => (v === "travel" || v === "rules" || v === "checks" ? set({ view: "setup", setupTab: v }) : set({ view: v })),
+    setView: (v) => {
+      if (v === "travel" || v === "rules" || v === "checks") return set({ view: "setup", setupTab: v });
+      const cur = get();
+      // The Time off screen is built around its request list, so the left panel opens with it, and goes back to how it was when you leave.
+      if (v === "timeoff" && cur.view !== "timeoff") { listWasOpen = cur.drawer; return set({ view: v, drawer: true }); }
+      if (v !== "timeoff" && cur.view === "timeoff" && listWasOpen === false) { listWasOpen = null; return set({ view: v, drawer: false }); }
+      return set({ view: v });
+    },
     setSetupTab: (setupTab) => set({ setupTab }),
     setDrawer: (drawer, tab) => set(tab ? { drawer, leftTab: tab } : { drawer }),
     setOutForm: (outForm) => set({ outForm }),

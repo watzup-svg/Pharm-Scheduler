@@ -41,9 +41,10 @@ function AddForm({ onDone }: { onDone: () => void }) {
   const state = useApp((s) => s.world!.state);
   const asOf = useApp((s) => s.asOf);
   const seedDate = useTimeOffUi((s) => s.addDate);
+  const seedPid = useTimeOffUi((s) => s.addPid);
   const people = useActive();
   const why = useWhyLocked();
-  const [pid, setPid] = useState("");
+  const [pid, setPid] = useState(seedPid ?? "");
   const [first, setFirst] = useState<ISODate>(seedDate ?? asOf);
   const [last, setLast] = useState("");
   const [type, setType] = useState<UnavailType>("Vacation");
@@ -114,7 +115,7 @@ function SickForm({ onDone }: { onDone: () => void }) {
   const asOf = useApp((s) => s.asOf);
   const people = useActive();
   const why = useWhyLocked();
-  const [pid, setPid] = useState("");
+  const [pid, setPid] = useState(useTimeOffUi.getState().addPid ?? "");
   const [start, setStart] = useState<ISODate>(asOf);
   const [days, setDays] = useState(1);
   const [marked, setMarked] = useState<{ who: string; first: ISODate; last: ISODate } | null>(null);
@@ -234,7 +235,7 @@ export function AddDrawer() {
           </div>
           <div role="group" aria-label="What to record" className="mb-4 flex gap-1 rounded-lg bg-fill p-1">
             {([["add", "Time off"], ["sick", "Out sick"]] as [AddMode, string][]).map(([m, label]) => (
-              <button key={m} type="button" aria-pressed={mode === m} onClick={() => openAdd(m, useTimeOffUi.getState().addDate ?? undefined)}
+              <button key={m} type="button" aria-pressed={mode === m} onClick={() => openAdd(m, useTimeOffUi.getState().addDate ?? undefined, useTimeOffUi.getState().addPid ?? undefined)}
                 className={cx("h-8 flex-1 rounded-md text-sm font-medium focus-visible:outline-2 focus-visible:outline-ink", mode === m ? "bg-white shadow-sm ring-1 ring-line" : "text-muted hover:text-ink")}>{label}</button>
             ))}
           </div>

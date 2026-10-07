@@ -4,7 +4,8 @@ import { prepareChoices, requiredFor, indexRequirements, type ISODate, type Unav
 import { evaluateCached, useEvaluation, useViewState } from "../../derive.ts";
 import { useApp } from "../../store.ts";
 import { Chip, Section } from "../../ui/primitives.tsx";
-import { codeOf, choiceFor, commitEdits, describeChoice, nameOf, shortDate, useLock } from "./lib.ts";
+import { codeOf, choiceFor, commitEdits, describeChoice, describeTags, nameOf, shortDate, useLock, type Tag } from "./lib.ts";
+import { Tags } from "./Tags.tsx";
 import { fmtDate } from "../../copy.ts";
 import { shortName } from "../../names.ts";
 import { Act, Disclosure } from "./ui.tsx";
@@ -51,6 +52,7 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
   const list = all ? rows : rows.slice(0, FIRST);
   const setStatus = (id: string, status: UnavailStatus) => commitEdits([{ t: "unavail.update", id, patch: { status } }], `${status === "Denied" ? "Denied" : "Approved"} time off for ${ph.name}`);
 
+  const leaves = mine.length === 1 && rows.some((r) => r.choice.leavesShort) ? { here: codeOf(state, mine[0]!.storeId) } : null;
   const where = mine.length === 0 ? "Not scheduled this day" : mine.length === 1 ? `At ${codeOf(state, mine[0]!.storeId)}` : `Booked at ${mine.map((m) => codeOf(state, m.storeId)).join(" and ")}`;
 
   return (
@@ -61,11 +63,11 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
           <button type="button" onClick={() => useApp.getState().select(null)} className="shrink-0 rounded-md px-1.5 text-xs text-muted underline focus-visible:outline-2 focus-visible:outline-ink" aria-label="Clear the selection">Clear</button>
         </div>
         <p className="mt-0.5 text-sm text-muted">{fmtDate(date)}{date < asOf ? " (past)" : ""}</p>
-        <p className="text-sm font-semibold" data-testid="pharmacist-where">{where}</p>
+        <p className="sr-only" data-testid="pharmacist-where">{where}</p>
       </header>
 
       <Section title="Where they are">
-        {mine.length === 0 ? <p className="text-sm text-muted">Not scheduled anywhere this day.</p> : (
+        {mine.length === 0 ? <p className="text-sm font-semibold">Not scheduled this day</p> : (
           <ul className="flex flex-col gap-1.5">
             {mine.map((a) => {
               const res = dayEv.assignments[a.id];
@@ -100,8 +102,8 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
           return <p key={a.id} className="text-xs text-muted">Drive from {base.code} to {codeOf(state, a.storeId)}: {pair ? `${pair.minutes} min` : "not known"}.</p>;
         })}
 
-      <div className="mb-3"><h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Time off covering this day</h3>
-        {records.length === 0 ? <p className="text-sm text-muted">Nothing recorded for this day.</p> : (
+      {records.length > 0 && <div className="mb-3"><h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Time off covering this day</h3>
+        {(
           <ul className="flex flex-col gap-2">
             {records.map((u) => (
               <li key={u.id} className="rounded-md bg-white p-2 ring-1 ring-line">
@@ -127,10 +129,11 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
             ))}
           </ul>
         )}
-      </div>
+      </div>}
 
 
-      <div><h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Schedule at a store</h3>
+      <div className="mt-3"><h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Schedule at a store</h3>
+        {leaves && <p className="mb-1 text-xs text-muted">Moving them from {leaves.here} leaves {leaves.here} short.</p>}
         <ul className="flex flex-col divide-y divide-line" aria-label="Stores where they could work">
           {list.map(({ store, choice, open }) => {
             const p = describeChoice(state, choice, store.id, date);
@@ -142,8 +145,8 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold" title={store.name}>{store.code} <span className="font-normal text-muted">{store.name}</span></div>
-                    <p className="text-xs text-muted">{open > 0 ? `Needs ${open} more` : "Already covered"}</p>
-                    <div className="flex gap-1.5 text-xs"><Chip tone={p.tone} className="shrink-0 self-start">{p.glyph}</Chip><span className="min-w-0">{p.text}</span></div>
+                    <Tags tags={[open > 0 ? { mark: "open", tone: "bad", label: `Needs ${open}`, title: `${store.code} needs ${open} more` } : { mark: "short", tone: "ok", label: "Covered", title: `${store.code} is already covered` } satisfies Tag, ...describeTags(state, choice, store.id, date, true)]} />
+                    <span className="sr-only">{p.text}</span>
                   </div>
                   {hard
                     ? <Act disabled title={p.text} aria-label={`${verb} at ${store.code}: not allowed. ${p.text}`}>{verb}</Act>

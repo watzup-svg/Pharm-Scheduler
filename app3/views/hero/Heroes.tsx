@@ -3,17 +3,14 @@ import { useMemo } from "react";
 import { dateRange, RULES, type DomainState } from "@domain";
 import { useApp } from "../../store.ts";
 import { evaluateCached, useEvaluation, useIssues, useViewState } from "../../derive.ts";
-import { countsOf, fmtDate } from "../chrome/shared.tsx";
+import { countsOf } from "../chrome/shared.tsx";
 import { MARKS, Pic } from "../../ui/icons.tsx";
-import { explainSelection } from "../wall/explain.ts";
+import { explainSelection, type Explain } from "../wall/explain.ts";
 import { plural } from "../../copy.ts";
-import { Hero, HeroBtn, type Tile } from "./Hero.tsx";
+import { Hero, type Tile } from "./Hero.tsx";
 import { MonthDial } from "./MonthDial.tsx";
 import { LicenceRings, PaperStack } from "./Graphics.tsx";
-import { Standing } from "../timeoff/Standing.tsx";
-import { troubleDay } from "../timeoff/calc.ts";
-import { monthLoads } from "../timeoff/lib.ts";
-import { useTimeOffUi } from "../timeoff/ui.ts";
+import { explainTimeOff } from "../timeoff/explain.ts";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const monthLabel = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
@@ -38,15 +35,11 @@ const CHIP_BG = { bad: "#f0c4ba", warn: "#f2da8f", ok: "#6fb78d" } as const; // 
 const CHIP_INK = { bad: "var(--color-illegal)", warn: "var(--color-warn)", ok: "var(--color-ok)" } as const;
 const DOT = { bad: "#f0c4ba", warn: "#f2da8f", quiet: "#9fd3b4", ok: "#9fd3b4" } as const;
 
-export function ScheduleHero() {
-  const { vs, win, counts, asOf } = useScheduleHero();
-  const ev = useEvaluation();
-  const sel = useApp((s) => s.selection);
-  const ex = useMemo(() => (vs && ev ? explainSelection(vs.state, ev, sel, asOf) : null), [vs, ev, sel, asOf]);
-  const problems = counts.problems + counts.warnings;
+/** The informational band: a big picture in the issue's colour, a headline, context, extra lines and the people involved. Nothing to click. */
+function InfoHero({ ex, label, emptyTitle, emptyText, extra }: { ex: Explain | null; label: string; emptyTitle: string; emptyText: string; extra?: Record<string, string | number> }) {
   const icon = ex?.mark ? MARKS[ex.mark].icon : ex ? "asis" : null;
   return (
-    <section aria-label={`${monthLabel(win.from)} summary`} data-open={counts.open} data-problems={problems} data-explain={ex ? ex.tone : "none"} className="hero-band relative mx-3 mt-2 flex min-h-[104px] items-center gap-5 overflow-hidden rounded-xl bg-night px-5 py-3 text-cream shadow-[0_8px_20px_-14px_rgba(32,24,32,0.7)]">
+    <section aria-label={label} data-explain={ex ? ex.tone : "none"} {...Object.fromEntries(Object.entries(extra ?? {}).map(([k, v]) => [`data-${k}`, v]))} className="hero-band relative mx-3 mt-2 flex min-h-[104px] items-center gap-5 overflow-hidden rounded-xl bg-night px-5 py-3 text-cream shadow-[0_8px_20px_-14px_rgba(32,24,32,0.7)]">
       <span aria-hidden className="grid size-16 shrink-0 place-items-center rounded-2xl" style={ex ? { background: CHIP_BG[ex.tone], color: CHIP_INK[ex.tone] } : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", outline: "1px dashed rgba(255,255,255,0.3)", outlineOffset: -1 }}>
         {icon ? <Pic icon={icon} className="size-9" /> : <Pic icon="unverified" className="size-8" />}
       </span>
@@ -69,14 +62,22 @@ export function ScheduleHero() {
           </>
         ) : (
           <>
-            <h2 className="text-[26px] font-semibold leading-tight tracking-tight text-cream/80" data-hero-headline>No cell selected</h2>
-            <p className="mt-0.5 text-sm text-cream/60" data-hero-context>Pick a day on the schedule, or a problem on the list, to see what is going on.</p>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-tight text-cream/80" data-hero-headline>{emptyTitle}</h2>
+            <p className="mt-0.5 text-sm text-cream/60" data-hero-context>{emptyText}</p>
           </>
         )}
       </div>
-      <MonthDial size={56} />
+      <MonthDial size={92} />
     </section>
   );
+}
+
+export function ScheduleHero() {
+  const { vs, win, counts, asOf } = useScheduleHero();
+  const ev = useEvaluation();
+  const sel = useApp((s) => s.selection);
+  const ex = useMemo(() => (vs && ev ? explainSelection(vs.state, ev, sel, asOf) : null), [vs, ev, sel, asOf]);
+  return <InfoHero ex={ex} label={`${monthLabel(win.from)} summary`} emptyTitle="No cell selected" emptyText="Pick a day on the schedule, or a problem on the list, to see what is going on." extra={{ open: counts.open, problems: counts.problems + counts.warnings }} />;
 }
 
 function licensedIn(state: DomainState, code: "OR" | "WA") {
@@ -148,29 +149,8 @@ export function PrintHero() {
 export function TimeOffHero() {
   const vs = useViewState();
   const asOf = useApp((s) => s.asOf);
-  const ui = useTimeOffUi();
-  const month = ui.month ?? asOf.slice(0, 7);
-  const state = vs?.state;
-  const trouble = useMemo(() => (state ? troubleDay(monthLoads(state, asOf, month)) : null), [state, asOf, month]);
-  if (!state) return null;
-  const rec = Object.values(state.unavailability).filter((u) => u.last >= asOf && u.type !== "Turned-down");
-  const waiting = rec.filter((u) => u.status === "Requested").length;
-  const approved = rec.filter((u) => u.status === "Approved" || u.status === "Actual").length;
-  const declined = rec.filter((u) => u.status === "Denied").length;
-  const tiles: Tile[] = trouble
-    ? [{ kind: "open", n: trouble.short.length, word: trouble.short.length === 1 ? "store short on the worst day" : "stores short on the worst day", onClick: () => ui.openDay(trouble.date), tip: `Worst day | ${fmtDate(trouble.date)} | Open the day` }]
-    : [];
-  return (
-    <Hero
-      label="Time off"
-      lead={waiting}
-      leadWord="to approve"
-      tiles={tiles}
-      actions={<>
-        <HeroBtn tone="away" onClick={() => ui.openAdd("add")}><Pic icon="timeOff" className="size-4" /> Add time off</HeroBtn>
-        <HeroBtn onClick={() => ui.openAdd("sick")}>Out sick</HeroBtn>
-      </>}
-      graphic={<Standing waiting={waiting} approved={approved} declined={declined} />}
-    />
-  );
+  const sel = useApp((s) => s.selection);
+  const ex = useMemo(() => (vs ? explainTimeOff(vs.state, sel, asOf) : null), [vs, sel, asOf]);
+  if (!vs) return null;
+  return <InfoHero ex={ex} label="Time off summary" emptyTitle="No day selected" emptyText="Pick a person's day on the sheet, or a request on the list, to see what it does to the stores." />;
 }

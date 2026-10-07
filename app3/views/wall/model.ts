@@ -98,7 +98,7 @@ export type Chip = {
   /** Plain words for the tooltip and the accessible name. */
   words: string;
 };
-export type Block = "good" | "open" | "closed" | "away" | "req" | "none";
+export type Block = "good" | "open" | "closed" | "away" | "req" | "declined" | "none";
 export type CellModel = {
   axis: "store" | "pharmacist";
   r: number;
@@ -144,6 +144,9 @@ export type CellModel = {
   /** Hover note: "Title | line | line". */
   tip: string;
   tone: "bad" | "off" | "ok" | "plain";
+  /** Time off sheet: draw the picture in the middle like the store axis, and say where in a multi-day request this day sits. */
+  centered?: boolean;
+  run?: "single" | "start" | "mid" | "end";
 };
 
 const RULE_WORDS: Record<string, string> = {

@@ -138,9 +138,7 @@ await select({ storeId: wa.storeId, date: wa.date });
 if (!(await insp.getByRole("button", { name: /^Show all/ }).count())) { await openMore(); await insp.getByRole("button", { name: "Add another person" }).click(); } // a covered day lists people only on request
 await insp.getByRole("button", { name: /^Show all/ }).click();
 const unlicRow = insp.locator(`li[data-pharmacist="${wa.pharmacistId}"]`);
-check("unlicensed choice says Not licensed in WA", /Not licensed in WA/.test(await unlicRow.innerText()));
-check("unlicensed choice has only a disabled button", (await unlicRow.getByRole("button").count()) === 1 && (await unlicRow.getByRole("button").isDisabled()));
-check("no Place anyway for licensing", (await unlicRow.getByRole("button", { name: /anyway/ }).count()) === 0);
+check("an unlicensed pharmacist is never suggested for that store", (await unlicRow.count()) === 0);
 await commit([{ t: "place", storeId: wa.storeId, pharmacistId: wa.pharmacistId, date: wa.date }]);
 await settle();
 const wrow = insp.getByRole("listitem", { name: wa.name });

@@ -12,37 +12,29 @@ const readTab = (): Tab | null => {
 const writeTab = (t: Tab) => { try { localStorage.setItem(KEY, t); } catch { /* browser storage may be off; the choice still holds until the page closes */ } };
 
 type TimeOffUi = {
-  /** The last filter the DM chose; null until they choose one (then the page opens on Waiting if anything waits). */
+  /** The last filter the DM chose; null until they choose one (then the list opens on Waiting if anything waits). */
   tab: Tab | null;
-  /** Month on show, "2026-10"; null = the month of the as-of date. */
-  month: string | null;
-  /** The open day, if any. */
-  day: ISODate | null;
-  /** A request's dates, outlined on the month while its row is pointed at. */
-  lit: { first: ISODate; last: ISODate } | null;
+  /** Text typed in the "Find a person" box above the sheet. */
+  filter: string;
   /** The Add drawer: which mode it is in, or null when closed. */
   add: AddMode | null;
-  /** A day to start the Add drawer on (from the open day). */
+  /** A day and a person to start the Add drawer on (from the selected cell). */
   addDate: ISODate | null;
+  addPid: string | null;
   setTab(t: Tab): void;
-  setMonth(m: string | null): void;
-  openDay(d: ISODate | null): void;
-  setLit(l: TimeOffUi["lit"]): void;
-  openAdd(mode: AddMode | null, date?: ISODate): void;
+  setFilter(f: string): void;
+  openAdd(mode: AddMode | null, date?: ISODate, pid?: string): void;
 };
 
 export const useTimeOffUi = create<TimeOffUi>((set) => ({
   tab: readTab(),
-  month: null,
-  day: null,
-  lit: null,
+  filter: "",
   add: null,
   addDate: null,
+  addPid: null,
   setTab: (tab) => { writeTab(tab); set({ tab }); },
-  setMonth: (month) => set({ month, day: null }),
-  openDay: (day) => set(day ? { day, month: day.slice(0, 7) } : { day: null }),
-  setLit: (lit) => set({ lit }),
-  openAdd: (add, date) => set({ add, addDate: date ?? null }),
+  setFilter: (filter) => set({ filter }),
+  openAdd: (add, date, pid) => set({ add, addDate: date ?? null, addPid: pid ?? null }),
 }));
 
 export const shiftMonth = (ym: string, by: number): string => {

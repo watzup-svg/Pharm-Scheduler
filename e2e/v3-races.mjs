@@ -236,7 +236,8 @@ await sc("edit during Find cover", async () => {
   await header(S).getByRole("button", { name: /^Time off/ }).click();
   const li = S.page.getByRole("list", { name: "Waiting for an answer" }).locator("li").first();
   const id = await li.getAttribute("data-unavail");
-  await li.getByRole("button", { name: /^Approve/ }).click();
+  await li.getByRole("button").click();
+  await S.page.locator('aside[aria-label="Inspector"]').locator(`[data-unavail="${id}"]`).getByRole("button", { name: /^Approve/ }).click();
   const st = await get(S, (u) => window.__v3.app.getState().world.state.unavailability[u].status, id);
   check("Approve during Find cover is refused (record unchanged, notice says wait)", st === "Requested" && /Wait for Find cover to finish/.test(await notice(S)), `${st} / ${await notice(S)}`);
   // (b) Undo is not blocked: it changes the schedule, so the search result must be dropped

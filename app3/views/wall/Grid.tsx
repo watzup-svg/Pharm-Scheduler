@@ -23,9 +23,10 @@ function CodeView({ ch }: { ch: Chip }) {
 /** The coloured block. Store axis: no text at all, only the picture of the worst thing still wrong, a count, a "1/2". People axis: the store code. */
 function Block({ m }: { m: CellModel }) {
   if (m.block === "none") return null;
-  const store = m.axis === "store";
+  const store = m.axis === "store" || !!m.centered;
   return (
     <span
+      data-run={m.run}
       className={cx("w-block", m.block === "closed" && "hatch", m.block === "away" && "hatch", !store && "w-pblock")}
       data-block={m.block}
       data-sev={m.iconTone ?? undefined}
@@ -110,7 +111,7 @@ function monthBands(dates: ISODate[]): { key: string; from: number; span: number
   return out;
 }
 
-export function Grid({ rows, dates, axis, asOf, corner, ariaLabel }: { rows: RowDef[]; dates: ISODate[]; axis: "store" | "pharmacist"; asOf: ISODate; corner: string; ariaLabel: string }) {
+export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = true }: { rows: RowDef[]; dates: ISODate[]; axis: "store" | "pharmacist"; asOf: ISODate; corner: string; ariaLabel: string; dayButtons?: boolean }) {
   const LAB = axis === "store" ? LAB_STORE : LAB_PERSON;
   const selection = useApp((s) => s.selection);
   const ref = useRef<HTMLDivElement>(null);
@@ -338,8 +339,8 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel }: { rows: Row
                 key={d}
                 role="columnheader"
                 aria-label={`${niceDate(d)}${isAsOf ? (asOf === today ? ", today" : ", as of date") : d < asOf ? ", past" : ""}`}
-                onClick={() => useWallUi.getState().setDay(d)}
-                className={cx("w-day", (wd === 0 || wd === 6) && "w-wkend", d < asOf && "w-past", isAsOf && "w-asof w-asof-head", dayNum(d) === 1 && "w-first", "w-day-btn")}
+                onClick={dayButtons ? () => useWallUi.getState().setDay(d) : undefined}
+                className={cx("w-day", (wd === 0 || wd === 6) && "w-wkend", d < asOf && "w-past", isAsOf && "w-asof w-asof-head", dayNum(d) === 1 && "w-first", dayButtons && "w-day-btn")}
               >
                 {isAsOf ? <span className="w-today">{asOf === today ? "Today" : "As of"}</span> : <span className="w-dow">{DOW_LETTER[wd]}</span>}
                 <span className="w-num">{dayNum(d)}</span>

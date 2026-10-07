@@ -6,6 +6,8 @@ import { fmtDate } from "../../copy.ts";
 import { shortName } from "../../names.ts";
 import { Btn } from "../../ui/primitives.tsx";
 import { callers } from "./calc.ts";
+import { describeTags } from "../inspector/lib.ts";
+import { Tags } from "../inspector/Tags.tsx";
 
 const FIRST = 3;
 
@@ -26,8 +28,8 @@ export function Cover({ state, storeId, date, exclude = [], locked }: { state: D
             <li key={c.pharmacistId} data-caller={c.pharmacistId} className="flex items-start justify-between gap-3 py-1.5">
               <div className="min-w-0 text-sm">
                 <div className="truncate font-medium" title={who}>{shortName(who, 28)}</div>
-                <div className="text-xs text-muted">{c.good.join(" · ")}</div>
-                {c.caution.length > 0 && <div className="text-xs text-warn">▲ {c.caution.join(" · ")}</div>}
+                <Tags tags={describeTags(state, c.choice, storeId, date)} />
+                <span className="sr-only">{[...c.good, ...c.caution].join(" · ")}</span>
               </div>
               <Btn aria-label={`${verb}: ${who} at ${code}, ${fmtDate(date)}`} disabled={locked} className="shrink-0"
                 onClick={() => useApp.getState().commit([c.edit], `${c.edit.t === "move" ? "Moved" : "Scheduled"} ${shortName(who, 22)} at ${code} on ${fmtDate(date)}.`)}>

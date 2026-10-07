@@ -3,8 +3,8 @@ import { useMemo, useState } from "react";
 import { applyScratch, choicesFor, type Choice, type Edit } from "@domain";
 import type { CellAssignment } from "../../derive.ts";
 import { shortName } from "../../names.ts";
-import { Chip } from "../../ui/primitives.tsx";
-import { commitEdits, codeOf, describeChoice, nameOf, type Ctx } from "./lib.ts";
+import { Tags } from "./Tags.tsx";
+import { commitEdits, codeOf, describeChoice, describeTags, nameOf, type Ctx } from "./lib.ts";
 import { Act } from "./ui.tsx";
 
 const FIRST = 3;
@@ -60,10 +60,8 @@ export function Choices({ ctx, replace, onDone, footer }: { ctx: Ctx; replace: C
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold" title={name}>{shortName(name, 26)}</div>
-                  <div className="flex gap-1.5 text-xs">
-                    <Chip tone={p.tone} className="shrink-0 self-start">{p.glyph}</Chip>
-                    <span className="min-w-0">{p.text}</span>
-                  </div>
+                  <Tags tags={describeTags(state, c, storeId, date)} />
+                  <span className="sr-only">{p.text}</span>
                 </div>
                 {hardStop ? (
                   <Act disabled title={p.text} aria-label={`${verb} ${name}: not allowed. ${p.text}`}>{verb}</Act>

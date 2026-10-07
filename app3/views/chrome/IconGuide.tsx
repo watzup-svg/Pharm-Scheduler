@@ -1,13 +1,13 @@
 // The Icon guide: every colour and picture on the schedule in plain words. Built from the same tables the wall draws from
 // (MARKS and MARK_TONE in ui/icons.tsx, COLOURS in wall/Key.tsx), so a new picture shows up here by itself and nothing can drift.
 import * as Dialog from "@radix-ui/react-dialog";
-import { BlockMark, MARKS, MARK_TONE, TONE_TITLE, type MarkKind, type MarkTone } from "../../ui/icons.tsx";
+import { BlockMark, MARKS, MARK_TONE, TIMEOFF_MARKS, TONE_TITLE, type MarkKind, type MarkTone } from "../../ui/icons.tsx";
 import { COLOURS, Swatch } from "../wall/Key.tsx";
 import { useChrome } from "./shared.tsx";
 
 const TONES: MarkTone[] = ["bad", "warn", "quiet"];
 // Time-off requests are not drawn on the Schedule screen (the Time off page handles them), so the guide leaves them out.
-const kindsOf = (t: MarkTone) => (Object.keys(MARKS) as MarkKind[]).filter((k) => MARK_TONE[k] === t && k !== "waiting");
+const kindsOf = (t: MarkTone) => (Object.keys(MARKS) as MarkKind[]).filter((k) => MARK_TONE[k] === t && !TIMEOFF_MARKS.includes(k));
 
 export function IconGuide() {
   const open = useChrome((s) => s.guide);

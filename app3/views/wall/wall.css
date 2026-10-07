@@ -653,3 +653,13 @@
   border-color: var(--color-ink);
   box-shadow: 0 0 0 1px var(--color-ink);
 }
+
+/* Time off sheet: a request is one bar across its days, and a declined one is a quiet grey. */
+.w-block[data-block="declined"] {
+  background: var(--color-fill);
+}
+.w-block[data-run="start"] { margin-right: -3px; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.w-block[data-run="mid"] { margin-left: -3px; margin-right: -3px; border-radius: 0; }
+.w-block[data-run="end"] { margin-left: -3px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.w-past .w-block[data-block="away"],
+.w-past .w-block[data-block="req"] { opacity: 0.55; }

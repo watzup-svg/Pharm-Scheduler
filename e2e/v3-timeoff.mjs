@@ -16,38 +16,44 @@ await page.waitForSelector('[role="gridcell"]');
 const app = (fn, arg) => page.evaluate(fn, arg);
 const world = () => readWorld(page);
 const hash = async () => stateHash((await world()).state);
-const goTimeOff = async () => { await app((d) => { const a = window.__v3.app.getState(); a.setAsOf(d); a.setView("timeoff"); a.clearNotice(); }, TODAY); await page.waitForSelector("[data-standing]"); };
+const goTimeOff = async () => { await app((d) => { const a = window.__v3.app.getState(); a.setAsOf(d); a.setView("timeoff"); a.clearNotice(); }, TODAY); await page.waitForSelector("[data-request-list]"); };
 await goTimeOff();
 const toast = () => page.locator("div.fixed.right-4");
 const undoToast = async () => { await toast().getByRole("button", { name: "Undo" }).click(); await page.waitForTimeout(100); };
 const nameOf = (w, id) => w.state.pharmacists[id].name;
 
-// ---- 1. the header picture
+const left = page.locator('aside[aria-label="Left panel"]');
+const right = page.locator('aside[aria-label="Inspector"]');
+const tab = (name) => left.getByRole("group", { name: "Show" }).getByRole("button", { name });
+const sheetCell = (pid, d) => page.locator(`[role="gridcell"][data-pid="${pid}"][data-date="${d}"]`);
+
+// ---- 1. the header is informational
 {
-  const w = await world();
-  const recs = Object.values(w.state.unavailability).filter((u) => u.last >= TODAY && u.type !== "Turned-down");
-  const n = (f) => recs.filter(f).length;
-  const exp = `To approve ${n((u) => u.status === "Requested")}, approved ${n((u) => u.status === "Approved" || u.status === "Actual")}, declined ${n((u) => u.status === "Denied")}`;
-  check("the header shows three bars: to approve, approved, declined, with the domain's counts", (await page.locator("[data-standing]").getAttribute("aria-label")) === exp, `${await page.locator("[data-standing]").getAttribute("aria-label")} vs ${exp}`);
-  check("the lead number is the to-approve count", (await page.locator("section.hero-band").innerText()).replace(/\s+/g, " ").includes(`${n((u) => u.status === "Requested")} to approve`));
+  const hero = page.locator("section.hero-band");
+  check("with nothing selected the header says No day selected", /No day selected/.test(await hero.innerText()));
+  check("the header has no buttons (only the month dial)", (await hero.locator("button").count()) === 0);
+  check("the Add and Sick buttons sit above the sheet", (await page.locator(".w-controls").getByRole("button", { name: "Add time off" }).count()) === 1 && (await page.locator(".w-controls").getByRole("button", { name: "Out sick" }).count()) === 1);
 }
 
-// ---- 2. the waiting list: soonest first, consequence in words
-const waitingIds = async () => page.getByRole("list", { name: "Waiting for an answer" }).locator("li").evaluateAll((els) => els.map((e) => e.getAttribute("data-unavail")));
+// ---- 2. the waiting list: soonest first, consequence in words; a click selects the request
+const waitingIds = async () => left.getByRole("list", { name: "Waiting for an answer" }).locator("li").evaluateAll((els) => els.map((e) => e.getAttribute("data-unavail")));
 {
   const ids = await waitingIds();
   const w = await world();
-  const exp = Object.values(w.state.unavailability).filter((u) => u.status === "Requested" && u.last >= TODAY).sort((a, c) => (a.first < c.first ? -1 : a.first > c.first ? 1 : a.id < c.id ? -1 : 1)).map((u) => u.id);
-  check("To approve lists every waiting request, soonest first", JSON.stringify(ids) === JSON.stringify(exp), `${ids} vs ${exp}`);
-  const texts = await page.getByRole("list", { name: "Waiting for an answer" }).locator("li").evaluateAll((els) => els.map((e) => e.querySelector("[data-consequence]")?.textContent ?? ""));
-  check("every row says what approving does before you decide", texts.length > 0 && texts.every((t) => /Approving (leaves every store covered\.|opens [A-Z0-9]+ on \w{3} \w{3} \d+)/.test(t)), texts.join(" || "));
-  check("a row that opens a store says how many people could cover", texts.some((t) => /could cover|nobody is free to cover/i.test(t)), texts.join(" || "));
-  const row = page.locator(`[data-unavail="${ids[0]}"]`);
-  check("each row has Approve and Decline", (await row.getByRole("button", { name: /^Approve/ }).count()) === 1 && (await row.getByRole("button", { name: /^Decline/ }).count()) === 1);
-  const first = w.state.unavailability[ids[0]].first;
-  await row.hover();
-  check("pointing at a request outlines its days on the month", (await page.locator(`[data-date="${first}"]`).getAttribute("class")).includes("ring-warn"));
-  await page.mouse.move(2, 2);
+  const exp = Object.values(w.state.unavailability).filter((u) => u.status === "Requested" && u.last >= TODAY && u.type !== "Turned-down").sort((a, c) => (a.first < c.first ? -1 : a.first > c.first ? 1 : a.id < c.id ? -1 : 1)).map((u) => u.id);
+  check("Waiting lists every waiting request, soonest first", JSON.stringify(ids) === JSON.stringify(exp), `${ids} vs ${exp}`);
+  const texts = await left.getByRole("list", { name: "Waiting for an answer" }).locator("li").evaluateAll((els) => els.map((e) => e.querySelector("[data-consequence]")?.textContent ?? ""));
+  check("every row says what approving does before you decide", texts.length > 0 && texts.every((t) => /Approving leaves (every store covered|\d+ store days? short)/.test(t)), texts.join(" || "));
+  check("the tab shows how many wait", (await tab("Waiting").innerText()).includes(String(ids.length)));
+  await left.locator(`[data-unavail="${ids[0]}"] button`).click();
+  const card = right.locator(`[data-unavail="${ids[0]}"]`);
+  await card.waitFor();
+  const t = await card.innerText();
+  check("the Inspector says what approving does, in words, with who could cover", /Approving (leaves every store covered|opens [A-Z0-9]+ on \w{3} \w{3} \d+)/.test(t), t);
+  check("it offers Approve and Decline", (await card.getByRole("button", { name: /^Approve/ }).count()) === 1 && (await card.getByRole("button", { name: /^Decline/ }).count()) === 1);
+  const hero = await page.locator("section.hero-band").innerText();
+  check("the header explains the request (who, dates, waiting)", /asked for/.test(hero) && /waiting for your answer/.test(hero), hero.replace(/\s+/g, " ").slice(0, 160));
+  check("the row is marked as the current one", (await left.locator(`[data-unavail="${ids[0]}"] button`).getAttribute("aria-current")) === "true");
 }
 
 // ---- 3. approve then Undo returns the exact state; decline likewise
@@ -55,16 +61,17 @@ const waitingIds = async () => page.getByRole("list", { name: "Waiting for an an
   const ids = await waitingIds();
   const h0 = await hash();
   const n0 = (await world()).journal.changeSets.length;
-  await page.locator(`[data-unavail="${ids[0]}"]`).getByRole("button", { name: /^Approve/ }).click();
+  await right.locator(`[data-unavail="${ids[0]}"]`).getByRole("button", { name: /^Approve/ }).click();
   let w = await world();
   check("Approve is one change set", w.journal.changeSets.length === n0 + 1 && w.state.unavailability[ids[0]].status === "Approved");
   check("the toast says what happened and offers Undo", /Approved time off for/.test(await toast().innerText()) && (await toast().getByRole("button", { name: "Undo" }).count()) === 1);
   check("the approved request leaves the waiting list", !(await waitingIds()).includes(ids[0]));
-  check("approving the last waiting request does not flip the tab", (await page.getByRole("group", { name: "Show" }).getByRole("button", { name: "Waiting" }).getAttribute("aria-pressed")) === "true");
+  check("approving the last waiting request does not flip the tab", (await tab("Waiting").getAttribute("aria-pressed")) === "true");
   await undoToast();
   check("Undo returns the exact state (same hash)", (await hash()) === h0);
   check("the request is waiting again", (await waitingIds()).includes(ids[0]));
-  await page.locator(`[data-unavail="${ids[1]}"]`).getByRole("button", { name: /^Decline/ }).click();
+  await left.locator(`[data-unavail="${ids[1]}"] button`).click();
+  await right.locator(`[data-unavail="${ids[1]}"]`).getByRole("button", { name: /^Decline/ }).click();
   w = await world();
   check("Decline records Denied as one change set", w.state.unavailability[ids[1]].status === "Denied" && w.journal.changeSets.length === n0 + 3);
   await undoToast();
@@ -73,55 +80,65 @@ const waitingIds = async () => page.getByRole("list", { name: "Waiting for an an
 
 // ---- 4. filter tabs remember the last choice
 {
-  const tab = (name) => page.getByRole("group", { name: "Show" }).getByRole("button", { name });
   await tab("Approved").click();
-  check("Approved tab lists approved time off with Remove", (await page.getByRole("list", { name: "Approved time off" }).locator("li").count()) > 0 && (await page.getByRole("list", { name: "Approved time off" }).getByRole("button", { name: /^Remove/ }).count()) > 0);
+  check("Approved tab lists approved time off", (await left.getByRole("list", { name: "Approved time off" }).locator("li").count()) > 0);
   await app(() => window.__v3.app.getState().setView("wall"));
   await goTimeOff();
   check("the filter is remembered after leaving the page", (await tab("Approved").getAttribute("aria-pressed")) === "true");
   check("and it is kept in the browser's storage", (await page.evaluate(() => localStorage.getItem("hs-timeoff-tab"))) === "approved");
   await tab("Declined").click();
-  check("Declined tab opens (empty here) without error", (await page.getByText("Nothing declined.").count()) === 1);
+  check("Declined tab opens (empty here) without error", (await left.getByText("Nothing declined.").count()) === 1);
   await tab("Waiting").click();
 }
 
-// ---- 5. the calendar: loads, the worst day, holidays, today, keyboard
-const cell = (d) => page.locator(`[data-date="${d}"]`);
+// ---- 5. the sheet: pharmacists down the side, days across; every cell agrees with the domain
 {
-  check("today is marked", (await cell(TODAY).getAttribute("data-today")) === "true");
-  const trouble = page.locator("[data-trouble]");
-  check("exactly one day is marked as the one with the most trouble", (await trouble.count()) === 1);
+  check("today is marked", (await page.locator(".w-asof-head").count()) === 1);
   const w = await world();
-  const ev = evaluate(w.state, TODAY, { range: { from: "2026-10-01", to: "2026-10-31" } });
-  const shortDays = new Set();
-  for (const a of Object.values(w.state.assignments)) { const r = ev.assignments[a.id]?.results.find((x) => x.ruleId === "availability"); if (r && r.verdict === "Fail" && !r.overridden && (ev.cells[`${a.storeId}|${a.date}`]?.open ?? 0) > 0) shortDays.add(a.date); }
-  const marked = await page.locator("[data-short]").evaluateAll((els) => els.filter((e) => Number(e.getAttribute("data-short")) > 0).map((e) => e.getAttribute("data-date")));
-  check("days with a store left short because of time off match the domain", JSON.stringify([...shortDays].sort()) === JSON.stringify(marked.sort()), `${[...shortDays]} vs ${marked}`);
-  check("a holiday is flagged (Columbus Day, Oct 12) and named in its note", (await cell("2026-10-12").getAttribute("aria-label")).includes("Columbus Day") && (await cell("2026-10-12").locator("svg").count()) > 0);
-  check("a day has a hover note in the project's style", /\|/.test(await cell("2026-10-13").getAttribute("data-tip")));
+  const dates = await page.locator('[role="gridcell"][data-r="0"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-date")));
+  const first = dates[0], last = dates.at(-1);
+  const active = Object.values(w.state.pharmacists).filter((p) => p.inactiveFrom === undefined || p.inactiveFrom > first);
+  check("one row per active pharmacist", (await page.locator('[role="row"][data-ri]').count()) === active.length, `${await page.locator('[role="row"][data-ri]').count()} vs ${active.length}`);
+  const expect = { approved: new Set(), waiting: new Set(), declined: new Set() };
+  for (const u of Object.values(w.state.unavailability)) {
+    if (u.scopeStoreId || u.type === "Turned-down") continue;
+    const kind = u.status === "Requested" ? "waiting" : u.status === "Denied" ? "declined" : "approved";
+    for (let d = u.first; d <= u.last; d = new Date(Date.parse(d + "T12:00:00Z") + 864e5).toISOString().slice(0, 10)) if (d >= first && d <= last) expect[kind].add(`${u.pharmacistId}|${d}`);
+  }
+  const seen = (sel) => page.locator(`[role="gridcell"]${sel}`).evaluateAll((els) => els.map((e) => `${e.getAttribute("data-pid")}|${e.getAttribute("data-date")}`));
+  const approved = new Set([...(await seen('[data-block="away"]')), ...(await seen('[data-block="good"]'))]);
+  const sameSet = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+  // a day with both an approved and a waiting record shows as approved
+  for (const k of expect.approved) expect.waiting.delete(k);
+  check("the off cells are exactly the approved days", sameSet(approved, expect.approved), `${approved.size} vs ${expect.approved.size}`);
+  check("the waiting cells are exactly the waiting days", sameSet(new Set(await seen('[data-block="req"]')), expect.waiting));
+  check("a cell that is off and still scheduled shows the store code and is rose", (await page.locator('[role="gridcell"][data-block="good"] .w-frac').count()) >= 1);
+  check("an approved bar carries the palm picture", (await page.locator('[role="gridcell"][data-icon="away"]').count()) >= 1);
+  check("a waiting request carries the clock", (await page.locator('[role="gridcell"][data-icon="waiting"]').count()) >= 1);
+  check("a cell has a hover note in the project's style", /\|/.test(await page.locator('[role="gridcell"][data-block="req"]').first().getAttribute("data-tip")));
   // keyboard
-  await cell("2026-10-13").focus();
+  const any = page.locator('[role="gridcell"][data-r="0"]').nth(3);
+  await any.focus();
   await page.keyboard.press("ArrowRight");
-  check("Arrow keys move between days", (await page.evaluate(() => document.activeElement?.getAttribute("data-date"))) === "2026-10-14");
+  check("Arrow keys move between days", (await page.evaluate(() => document.activeElement?.getAttribute("data-c"))) === "4");
   await page.keyboard.press("ArrowDown");
-  check("ArrowDown moves a week", (await page.evaluate(() => document.activeElement?.getAttribute("data-date"))) === "2026-10-21");
+  check("ArrowDown moves to the next person", (await page.evaluate(() => document.activeElement?.getAttribute("data-r"))) === "1");
   await page.keyboard.press("Enter");
-  check("Enter opens the day and focus moves into it", (await page.locator("[data-day-detail]").getAttribute("data-day-detail")) === "2026-10-21" && (await page.evaluate(() => document.activeElement?.id)) === "day-title");
-  await page.getByRole("button", { name: "‹ Month" }).click();
-  check("closing the day puts focus back on its square", (await page.evaluate(() => document.activeElement?.getAttribute("data-date"))) === "2026-10-21");
+  check("Enter selects the day: the Inspector shows that person", (await right.locator("[data-day-inspector]").count()) === 1);
+  check("an empty day says so", /Not off|Working at/.test(await right.locator('[data-testid="cell-status"]').innerText()), await right.locator('[data-testid="cell-status"]').innerText());
+  await app(() => window.__v3.app.getState().select(null));
 }
 
 // ---- 6. the Add drawer: preview before saving, and the month reflects the new absence
 {
   const w = await world();
   const date = "2026-10-14";
-  const offThen = Number(await cell(date).getAttribute("data-off"));
   const offIds = new Set(Object.values(w.state.unavailability).filter((u) => (u.status === "Approved" || u.status === "Actual") && u.first <= date && date <= u.last).map((u) => u.pharmacistId));
   // someone working that day alone at a store, so the preview has something to say
   const ev = evaluate(w.state, TODAY, { range: { from: date, to: date } });
   const solo = Object.values(w.state.assignments).find((a) => a.date === date && !offIds.has(a.pharmacistId) && (ev.cells[`${a.storeId}|${date}`]?.counted ?? 0) === (ev.cells[`${a.storeId}|${date}`]?.required ?? 0) && (ev.cells[`${a.storeId}|${date}`]?.required ?? 0) === 1);
   check("(setup) found a pharmacist who is the only one at a store on 14 Oct", !!solo);
-  await page.locator("section.hero-band").getByRole("button", { name: /Add time off/ }).click();
+  await page.locator(".w-controls").getByRole("button", { name: "Add time off" }).click();
   const drawer = page.locator("[data-add-drawer]");
   await drawer.waitFor();
   await drawer.getByLabel("Who").selectOption(solo.pharmacistId);
@@ -137,27 +154,32 @@ const cell = (d) => page.locator(`[data-date="${d}"]`);
   const w2 = await world();
   const rec = Object.values(w2.state.unavailability).find((u) => u.pharmacistId === solo.pharmacistId && u.first === date && u.type === "Other");
   check("saving adds an Approved record with the note, as one change set", rec?.status === "Approved" && rec?.note === "Dentist" && w2.journal.changeSets.length === w.journal.changeSets.length + 1);
-  check("the calendar's load for that day went up by one", Number(await cell(date).getAttribute("data-off")) === offThen + 1, `${offThen} -> ${await cell(date).getAttribute("data-off")}`);
-  check("and that store is now marked short", Number(await cell(date).getAttribute("data-short")) >= 1);
+  check("the sheet shows that person off on that day", /^(away|good)$/.test((await sheetCell(solo.pharmacistId, date).getAttribute("data-block")) ?? ""), String(await sheetCell(solo.pharmacistId, date).getAttribute("data-block")));
+  await sheetCell(solo.pharmacistId, date).click();
+  check("and the Inspector shows the store they leave short", (await right.locator(`[data-open-store="${solo.storeId}"]`).count()) === 1);
   await undoToast();
   check("Undo returns the exact state", (await hash()) === h0);
-  check("and the load goes back", Number(await cell(date).getAttribute("data-off")) === offThen);
+  check("and the sheet goes back", (await sheetCell(solo.pharmacistId, date).getAttribute("data-block")) === "none");
 }
 
-// ---- 7. the day detail: stores left short and who could be called
+// ---- 7. the selected day: stores left short and who could be called
 {
-  const day = await page.locator("[data-trouble]").getAttribute("data-date");
-  await cell(day).click();
-  const detail = page.locator("[data-day-detail]");
-  check("click a day opens its detail", (await detail.getAttribute("data-day-detail")) === day);
-  const stores = detail.locator("[data-open-store]");
-  check("it lists the stores left empty or short", (await stores.count()) >= 1);
-  const first = stores.first();
-  check("each says who is off", /is off|are off/.test(await first.innerText()));
+  await app(() => window.__v3.app.getState().select(null));
+  const clashes = await page.locator('[role="gridcell"][data-block="good"][data-pid]').evaluateAll((els) => els.map((e) => ({ pid: e.getAttribute("data-pid"), date: e.getAttribute("data-date") })));
+  check("(setup) a person is off but still scheduled", clashes.length >= 1);
+  let pick = null;
+  for (const c of clashes.slice(0, 12)) {
+    await sheetCell(c.pid, c.date).click();
+    if ((await right.locator("[data-open-store]").count()) >= 1) { pick = c; break; }
+  }
+  check("click a day opens its details with the stores it leaves short", !!pick);
+  const hero = await page.locator("section.hero-band").innerText();
+  check("the header names the person and says the store is short", /Still scheduled at/.test(hero), hero.replace(/\s+/g, " ").slice(0, 200));
+  const first = right.locator("[data-open-store]").first();
   const callers = first.locator("[data-caller]");
-  check("and who could be called, with reason words", (await callers.count()) >= 1 && /Free that day|At [A-Z0-9]+ that day/.test(await callers.first().innerText()));
-  check("it lists who is off, with Remove", (await detail.getByRole("list", { name: "People off" }).locator("li").count()) >= 1);
+  check("it lists who could be called, with the Schedule's pictures", (await callers.count()) >= 1 && (await callers.first().locator("[data-tag]").count()) >= 1);
   const store = await first.getAttribute("data-open-store");
+  const day = pick.date;
   const h0 = await hash();
   const before = Object.values((await world()).state.assignments).filter((a) => a.storeId === store && a.date === day).length;
   await callers.first().getByRole("button", { name: /^(Place|Move here)/ }).click();
@@ -165,11 +187,12 @@ const cell = (d) => page.locator(`[data-date="${d}"]`);
   check("Place puts the person there as one change", after === before + 1);
   await undoToast();
   check("Undo returns the exact state", (await hash()) === h0);
-  await page.locator("[data-day-detail]").getByRole("button", { name: /^Find cover for/ }).first().click();
+  await sheetCell(pick.pid, day).click();
+  await right.getByRole("button", { name: /^Find cover for/ }).first().click();
   await page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 90000 });
-  check("Find cover shows its options in the day", (await page.getByRole("region", { name: "Cover options" }).count()) === 1);
+  check("Find cover shows its options", (await page.getByRole("region", { name: "Cover options" }).count()) === 1);
   check("it changed nothing by itself", (await hash()) === h0);
-  await page.getByRole("button", { name: "‹ Month" }).click();
+  await app(() => window.__v3.app.getState().select(null));
 }
 
 // ---- 8. Out sick (today)
@@ -180,7 +203,7 @@ const cell = (d) => page.locator(`[data-date="${d}"]`);
   const solo = Object.values(w.state.assignments).find((a) => a.date === TODAY && !offToday.has(a.pharmacistId) && (ev.cells[`${a.storeId}|${TODAY}`]?.covered ?? 0) === 1 && (ev.cells[`${a.storeId}|${TODAY}`]?.required ?? 0) === 1);
   check("(setup) someone is the only pharmacist at a store today", !!solo);
   const h0 = await hash();
-  await page.locator("section.hero-band").getByRole("button", { name: "Out sick" }).click();
+  await page.locator(".w-controls").getByRole("button", { name: "Out sick" }).click();
   const drawer = page.locator("[data-add-drawer]");
   await drawer.getByLabel("Who is out sick?").selectOption(solo.pharmacistId);
   check("it says what that would leave uncovered before marking", /Saving this opens [A-Z0-9]+ on Tue Oct 6/.test(await drawer.locator("[data-add-preview]").innerText()));
@@ -212,7 +235,7 @@ const cell = (d) => page.locator(`[data-date="${d}"]`);
   const solo = Object.values(w.state.assignments).find((a) => a.date === TOM && !off(TOM).has(a.pharmacistId) && (ev.cells[`${a.storeId}|${TOM}`]?.covered ?? 0) === 1 && (ev.cells[`${a.storeId}|${TOM}`]?.required ?? 0) === 1);
   check("(setup) someone is the only pharmacist at a store tomorrow", !!solo);
   const h0 = await hash();
-  await page.locator("section.hero-band").getByRole("button", { name: "Out sick" }).click();
+  await page.locator(".w-controls").getByRole("button", { name: "Out sick" }).click();
   const drawer = page.locator("[data-add-drawer]");
   await drawer.getByRole("group", { name: "Which day" }).getByRole("button", { name: "Tomorrow" }).click();
   await drawer.getByRole("group", { name: "How many days" }).getByRole("button", { name: "3 days" }).click();

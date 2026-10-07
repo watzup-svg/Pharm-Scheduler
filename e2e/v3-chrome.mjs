@@ -232,8 +232,11 @@ check("a Requested record says 'if approved'", /would be affected if approved/.t
 const recId = await st((pid) => Object.values(window.__v3.app.getState().world.state.unavailability).find((u) => u.status === "Requested" && u.pharmacistId === pid)?.id, pick.pid);
 await st(() => window.__v3.app.getState().setOutForm(false));
 await bar.getByRole("button", { name: "Time off" }).click();
-const card = page.locator(`[data-unavail="${recId}"]`);
-check("a waiting request is listed under Waiting on the Time off screen", (await page.getByRole("list", { name: "Waiting for an answer" }).locator(`[data-unavail="${recId}"]`).count()) === 1);
+const listRow = left.locator(`[data-unavail="${recId}"]`);
+check("a waiting request is listed under Waiting on the Time off screen", (await left.getByRole("list", { name: "Waiting for an answer" }).locator(`[data-unavail="${recId}"]`).count()) === 1);
+await listRow.getByRole("button").click();
+const card = right.locator(`[data-unavail="${recId}"]`);
+await card.waitFor();
 const ifApproved = await card.innerText();
 check("a Requested record says what approving would do, in words", /Approving (leaves every store covered|opens \w+ on \w{3} \w{3} \d+)/.test(ifApproved), ifApproved);
 const nUn = (await get()).cs.length;
@@ -256,11 +259,14 @@ await bar.getByRole("button", { name: "Undo" }).click();
 check("top-bar Undo reverses the Approve", (await st((id) => window.__v3.app.getState().world.state.unavailability[id].status, recId)) === "Requested");
 await card.getByRole("button", { name: /^Decline/ }).click();
 check("Decline records the answer as one change", (await st((id) => window.__v3.app.getState().world.state.unavailability[id].status, recId)) === "Denied");
-await page.getByRole("group", { name: "Show" }).getByRole("button", { name: "Declined" }).click();
-await page.locator(`[data-unavail="${recId}"]`).getByRole("button", { name: /^Remove/ }).click();
+await left.getByRole("tab", { name: "Requests" }).click();
+await left.getByRole("group", { name: "Show" }).getByRole("button", { name: "Declined" }).click();
+check("a declined request moves to the Declined list", (await left.locator(`[data-unavail="${recId}"]`).count()) === 1);
+await card.getByRole("button", { name: /^Remove/ }).click();
 check("Remove deletes the record", (await st((id) => !window.__v3.app.getState().world.state.unavailability[id], recId)));
 
 // ---- checkpoint and revert ----
+await left.getByRole("tab", { name: "History" }).click();
 await left.getByLabel("Checkpoint name").fill("Before test");
 await left.getByRole("button", { name: "Checkpoint now" }).click();
 check("checkpoint is listed", (await get()).checkpoints.some((c) => c.name === "Before test") && (await left.innerText()).includes("Before test"));

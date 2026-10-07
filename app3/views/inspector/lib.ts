@@ -5,6 +5,7 @@ import {
 import { useApp } from "../../store.ts";
 import type { CellView } from "../../derive.ts";
 import type { ChipTone } from "../../ui/primitives.tsx";
+import type { MarkKind, MarkTone } from "../../ui/icons.tsx";
 
 /** What every store-cell piece needs. `lock` is the one-line reason edits are off (or null). */
 export type Ctx = { state: DomainState; ev: Evaluation; asOf: ISODate; lock: string | null; storeId: string; date: ISODate; cv: CellView };
@@ -107,6 +108,32 @@ export function describeChoice(state: DomainState, c: Choice, storeId: string, d
   if (c.currently === "off" && !c.blocks.length && !requested) parts.unshift("Free");
   const glyph = tone === "serious" ? "!" : tone === "warning" ? "▲" : "✓";
   return { text: parts.join(" · ") || "Free", tone, glyph, hard };
+}
+
+/** One small picture-and-word per thing worth knowing about a candidate, in the Schedule's own icons: a store left short (red), a long drive (amber car), time off (palm). */
+export type Tag = { mark: MarkKind; tone: MarkTone | "ok"; label: string; title: string };
+/** `skipCurrent`: leave out where the person is now (the caller says it once for the whole list). */
+export function describeTags(state: DomainState, c: Choice, storeId: string, date: ISODate, skipCurrent = false): Tag[] {
+  const out: Tag[] = [];
+  const code = (id: string) => codeOf(state, id);
+  for (const rule of c.blocks) {
+    if (rule === "availability") out.push({ mark: "away", tone: "bad", label: "Off", title: `Not available: ${unavailReason(state, c.pharmacistId, storeId, date)}` });
+    else if (rule === "closure") out.push({ mark: "closure", tone: "bad", label: "Closed", title: "Store is closed that day" });
+    else if (rule === "double-booking") out.push({ mark: "double", tone: "bad", label: c.currently.split(",").map(code).join(" + "), title: "Already booked at two stores that day" });
+  }
+  if (!skipCurrent && c.currently !== "off" && !c.blocks.includes("double-booking")) {
+    const here = code(c.currently);
+    out.push(c.leavesShort ? { mark: "open", tone: "bad", label: `${here} short`, title: `At ${here} today. Moving them leaves ${here} short` } : { mark: "covering", tone: "ok", label: `At ${here}`, title: `At ${here} today` });
+  }
+  const requested = Object.values(state.unavailability).some((u) => u.pharmacistId === c.pharmacistId && u.status === "Requested" && u.first <= date && date <= u.last && (!u.scopeStoreId || u.scopeStoreId === storeId));
+  if (requested) out.push({ mark: "waiting", tone: "warn", label: "Asked off", title: "Asked for time off (not decided yet)" });
+  if (c.warns.includes("travel-hard")) out.push({ mark: "drive", tone: "bad", label: `${c.travelMinutes ?? "?"} min`, title: `Long drive (${c.travelMinutes ?? "?"} min), over the hard limit` });
+  else if (c.warns.includes("travel-soft")) out.push({ mark: "drive", tone: "warn", label: `${c.travelMinutes ?? "?"} min`, title: `Long drive (${c.travelMinutes ?? "?"} min)` });
+  else if (c.travelMinutes !== null && c.travelMinutes > 0) out.push({ mark: "covering", tone: "ok", label: `${c.travelMinutes} min`, title: `Drive ${c.travelMinutes} min` });
+  if (c.warns.includes("consecutive-days")) out.push({ mark: "streak", tone: "warn", label: `${ordinal(runPosition(state, c.pharmacistId, date))} day`, title: `${ordinal(runPosition(state, c.pharmacistId, date))} day in a row` });
+  if (c.unknown.length) out.push({ mark: "unverified", tone: "warn", label: "Not fully checked", title: c.unknown.some((r) => r.startsWith("travel")) ? "Drive time not known" : "Licensing not recorded" });
+  if (!skipCurrent && (!out.length || (c.currently === "off" && !c.blocks.length && !requested && out.every((t) => t.tone === "ok")))) out.unshift({ mark: "short", tone: "ok", label: "Free", title: "Free that day" });
+  return out;
 }
 
 /** The Choice for one pharmacist at one store (choicesFor does this for everyone at one store). Null if the edit cannot be applied. Pass `prepared` to judge many stores for one day. */

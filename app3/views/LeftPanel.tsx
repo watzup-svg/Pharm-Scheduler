@@ -3,14 +3,16 @@ import { useApp, type LeftTab } from "../store.ts";
 import { cx } from "../ui/primitives.tsx";
 import { Queue } from "./chrome/Queue.tsx";
 import { History } from "./chrome/History.tsx";
+import { RequestList } from "./timeoff/RequestList.tsx";
 
 export function LeftPanel() {
   const world = useApp((s) => s.world);
   const tab = useApp((s) => s.leftTab);
+  const view = useApp((s) => s.view);
   const setTab = useApp((s) => s.setLeftTab);
   if (!world) return null;
   const tabs: { id: LeftTab; label: string }[] = [
-    { id: "queue", label: "Queue" },
+    { id: "queue", label: view === "timeoff" ? "Requests" : "Queue" },
     { id: "history", label: "History" },
   ];
   return (
@@ -35,7 +37,7 @@ export function LeftPanel() {
         <button type="button" aria-label="Close the list" data-tip="Hide the list | You can open it again from the edge" onClick={() => useApp.getState().setDrawer(false)} className="my-1 ml-auto mr-1 rounded-md px-2 text-sm text-muted hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">Hide ‹</button>
       </div>
       <div role="tabpanel" id="left-tabpanel" aria-labelledby={`left-tab-${tab}`} className="min-h-0 flex-1">
-        {tab === "queue" && <Queue />}
+        {tab === "queue" && (view === "timeoff" ? <RequestList /> : <Queue />)}
         {tab === "history" && <History />}
       </div>
     </div>

@@ -1,7 +1,7 @@
 // The picture language of the old scheduler, carried over: one rounded-square chip, a picture inside, a colour that names the family.
 // Every state also has a word wherever it is shown (colour is never the only cue). Picture choices follow src/components/icons.tsx.
 import {
-  Car, Check, CircleHelp, Clock, Copy, DoorClosed, Handshake, Heart, House, LifeBuoy, Moon, Palmtree, Pin, Route, ShieldAlert, Stethoscope,
+  Ban, Car, Check, CircleHelp, Clock, Copy, DoorClosed, Handshake, Heart, House, LifeBuoy, Moon, Palmtree, Pin, Route, ShieldAlert, Stethoscope,
   Thermometer, TriangleAlert, UserPlus, UserX, type LucideIcon,
 } from "lucide-react";
 import { cx } from "./primitives.tsx";
@@ -9,7 +9,7 @@ import { cx } from "./primitives.tsx";
 export const ICON = {
   home: House, float: LifeBuoy, drive: Car, noCoverage: UserX, twice: Copy, closed: DoorClosed, licence: ShieldAlert,
   timeOff: Palmtree, sick: Thermometer, appointment: Stethoscope, family: Heart, covering: Route, asis: Check, streak: Moon,
-  unverified: CircleHelp, pinned: Pin, locum: UserPlus, waiting: Clock, agree: Handshake, warning: TriangleAlert,
+  unverified: CircleHelp, pinned: Pin, locum: UserPlus, declined: Ban, waiting: Clock, agree: Handshake, warning: TriangleAlert,
 } as const satisfies Record<string, LucideIcon>;
 export type IconKey = keyof typeof ICON;
 
@@ -19,7 +19,7 @@ export function Pic({ icon, className, style }: { icon: IconKey; className?: str
 }
 
 export type MarkFamily = "problem" | "away" | "cover" | "neutral";
-export type MarkKind = "open" | "closure" | "double" | "licence" | "away" | "waiting" | "drive" | "streak" | "unverified" | "short" | "covering" | "pinned" | "locum" | "unconfirmed";
+export type MarkKind = "open" | "closure" | "double" | "licence" | "away" | "waiting" | "sick" | "declined" | "drive" | "streak" | "unverified" | "short" | "covering" | "pinned" | "locum" | "unconfirmed";
 
 /** What each state is called, drawn as, and coloured. The Setup Check legend and the wall both read this. */
 export const MARKS: Record<MarkKind, { family: MarkFamily; icon: IconKey; name: string; meaning: string }> = {
@@ -31,6 +31,8 @@ export const MARKS: Record<MarkKind, { family: MarkFamily; icon: IconKey; name: 
   drive: { family: "away", icon: "drive", name: "Long drive", meaning: "Over the drive limit from their home store. Still counts" },
   streak: { family: "away", icon: "streak", name: "Many days in a row", meaning: "Past the limit for days in a row. Still counts" },
   waiting: { family: "away", icon: "waiting", name: "Waiting", meaning: "A time-off request you have not decided" },
+  sick: { family: "away", icon: "sick", name: "Sick", meaning: "Out sick" },
+  declined: { family: "neutral", icon: "declined", name: "Declined", meaning: "A time-off request you turned down" },
   unverified: { family: "neutral", icon: "unverified", name: "Cannot fully check", meaning: "A licence or drive time is not recorded. Counts, flagged" },
   short: { family: "neutral", icon: "asis", name: "Short, accepted", meaning: "You decided to run this day short" },
   covering: { family: "cover", icon: "covering", name: "Covering", meaning: "Working away from their home store. A reminder only" },
@@ -69,10 +71,12 @@ export const RULE_MARK: Record<string, MarkKind> = {
 // ---- Block marks: the small picture on a coloured block of the schedule ----
 // The block takes the colour of its picture (red / yellow / green) so a cell reads at a glance; the picture says what is wrong:
 // red = a rule is broken, amber = take a look, quiet green = for information only. This table is also what the Icon guide prints.
+/** Pictures that belong to the Time off screen only. The Schedule's Icon guide leaves them out. */
+export const TIMEOFF_MARKS: MarkKind[] = ["waiting", "sick", "declined"];
 export type MarkTone = "bad" | "warn" | "quiet";
 export const MARK_TONE: Record<MarkKind, MarkTone> = {
   open: "bad", closure: "bad", double: "bad", licence: "bad", away: "bad",
-  waiting: "warn", drive: "warn", streak: "warn", unverified: "warn", unconfirmed: "warn",
+  sick: "bad", declined: "quiet", waiting: "warn", drive: "warn", streak: "warn", unverified: "warn", unconfirmed: "warn",
   short: "quiet", covering: "quiet", pinned: "quiet", locum: "quiet",
 };
 export const TONE_TITLE: Record<MarkTone, { title: string; line: string }> = {

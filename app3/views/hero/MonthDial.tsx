@@ -52,8 +52,8 @@ export function MonthDial({ size = 88 }: { size?: number }) {
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); (e.currentTarget as SVGPathElement).dispatchEvent(new MouseEvent("click", { bubbles: true })); } }} />
       ))}
       {hand !== null && <line x1={c + (r - 4) * Math.cos(hand)} y1={c + (r - 4) * Math.sin(hand)} x2={c + (R + 2) * Math.cos(hand)} y2={c + (R + 2) * Math.sin(hand)} stroke="#fff" strokeWidth={2} strokeLinecap="round" />}
-      <text x="50" y="52" textAnchor="middle" fontSize="11" fontWeight="700" fill="#f7f4ef" fontFamily="'Source Sans 3', system-ui, sans-serif" letterSpacing="1">{label}</text>
-      <text x="50" y="64" textAnchor="middle" fontSize="7" fill="#b9b1a3" fontFamily="'Source Sans 3', system-ui, sans-serif">{month.slice(0, 4)}</text>
+      <text x="50" y="52" textAnchor="middle" fontSize="13" fontWeight="700" fill="#f7f4ef" fontFamily="'Source Sans 3', system-ui, sans-serif" letterSpacing="1">{label}</text>
+      <text x="50" y="65" textAnchor="middle" fontSize="8.5" fill="#b9b1a3" fontFamily="'Source Sans 3', system-ui, sans-serif">{month.slice(0, 4)}</text>
     </svg>
   );
 }

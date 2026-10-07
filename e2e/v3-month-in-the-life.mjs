@@ -179,7 +179,10 @@ await step("record a time-off request (compact form) and see the waiting badge",
 
 await step("approve the request on the Time off screen", async () => {
   await header.getByRole("button", { name: /^Time off/ }).click();
-  const li = page.getByRole("list", { name: "Waiting for an answer" }).locator(`[data-unavail="${request.id}"]`);
+  const row = page.getByRole("list", { name: "Waiting for an answer" }).locator(`[data-unavail="${request.id}"]`);
+  await row.waitFor();
+  await row.getByRole("button").click();
+  const li = page.locator('aside[aria-label="Inspector"]').locator(`[data-unavail="${request.id}"]`);
   await li.waitFor();
   if (!/Approving (leaves every store covered|opens \w+ on \w{3} \w{3} \d+)/.test(await li.innerText())) throw new Error("no 'Approving ...' line");
   await li.getByRole("button", { name: /^Approve/ }).click();

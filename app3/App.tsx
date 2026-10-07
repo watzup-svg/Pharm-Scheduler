@@ -2,6 +2,7 @@ import { useApp } from "./store.ts";
 import { useIssues } from "./derive.ts";
 import { Wall } from "./views/Wall.tsx";
 import { Inspector } from "./views/Inspector.tsx";
+import { DayInspector } from "./views/timeoff/DayInspector.tsx";
 import { SomeonesOut } from "./views/SomeonesOut.tsx";
 import { LeftPanel } from "./views/LeftPanel.tsx";
 import { ProposalBar } from "./views/ProposalBar.tsx";
@@ -74,6 +75,11 @@ export function App() {
           <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
             {(outForm || !!world.session.scenario) && <SomeonesOut compact showForm={outForm} onClose={() => useApp.getState().setOutForm(false)} />}
             {view === "wall" && <ErrorBoundary name="the inspector"><Inspector /></ErrorBoundary>}
+          </aside>
+        )}
+        {view === "timeoff" && (
+          <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
+            <ErrorBoundary name="the day details"><DayInspector /></ErrorBoundary>
           </aside>
         )}
       </div>
