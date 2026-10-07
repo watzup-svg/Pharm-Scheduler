@@ -31,6 +31,7 @@ export function HolidaysTab() {
   const [year, setYear] = useState(Number(asOf.slice(0, 4)));
   const [observed, setObserved] = useState(false);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [showPast, setShowPast] = useState(false);
   const st = world.state;
   const list = useMemo(() => usHolidays(year), [year]);
   const otherChanges = useMemo(() => {
@@ -39,6 +40,9 @@ export function HolidaysTab() {
   }, [st.dateOverrides, list, year]);
 
   const dateOf = (h: UsHoliday): ISODate => (observed && h.observed ? h.observed : h.date);
+  // Holidays that have gone by cannot be changed here, so they are tucked away rather than shown as dead controls.
+  const nPast = list.filter((h) => dateOf(h) < asOf).length;
+  const shown = showPast ? list : list.filter((h) => dateOf(h) >= asOf);
 
   const toggle = (h: UsHoliday) => {
     const date = dateOf(h);
@@ -66,11 +70,13 @@ export function HolidaysTab() {
         </div>
         <label className="flex h-8 items-center gap-1.5 text-sm text-muted"><input type="checkbox" checked={observed} onChange={(e) => setObserved(e.target.checked)} /> On a weekend, use the weekday it is observed</label>
         <span className="flex-1" />
+        {nPast > 0 && <button type="button" aria-pressed={showPast} onClick={() => setShowPast(!showPast)} className="rounded-md px-2 py-1 text-sm font-semibold underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-ink">{showPast ? "Hide past holidays" : `Show ${nPast} past ${nPast === 1 ? "holiday" : "holidays"}`}</button>}
         <TipButton title="Holidays" tip="Worked out on this computer; nothing is looked up online. | Which holidays your stores close for is up to you. | Closing a store sets that date's need to 0, named after the holiday. It also shows on the Dates tab. | Every click can be undone." />
       </div>
 
       <ul aria-label={`Holidays in ${year}`} className="divide-y divide-line/60 rounded-md bg-white ring-1 ring-line">
-        {list.map((h) => {
+        {shown.length === 0 && <li className="px-3 py-4 text-sm text-muted">No holidays left in {year}.</li>}
+        {shown.map((h) => {
           const date = dateOf(h);
           const rows = dayStatuses(st, date);
           const { text, set } = statusText(rows);
@@ -87,15 +93,16 @@ export function HolidaysTab() {
                   {h.observed && <span className="ml-2 text-xs text-muted">{observed ? `on ${dayLabel(h.date)}` : `observed ${dayLabel(h.observed)}`}</span>}
                 </span>
                 <span className={cx("text-sm", set ? "font-semibold text-ok" : "text-muted")} data-holiday-status>{set && <span aria-hidden>{GLYPH.ok} </span>}{text}</span>
-                <button type="button" role="switch" aria-checked={on} aria-label={`Close the stores on ${h.label}`} disabled={!!locked || past || (todo.edits.length === 0)}
+                {past ? (<><span className="text-xs text-muted" data-tip="Past date | Use the Dates tab to change a day that has gone by">Past</span><span /></>) : (<>
+                <button type="button" role="switch" aria-checked={on} aria-label={`Close the stores on ${h.label}`} disabled={!!locked || (todo.edits.length === 0)}
                   data-tip={past ? "Past date | Use the Dates tab to change a day that has gone by" : on ? `Open the stores again | Only the ones this holiday closed` : "Close the stores | Every store that is open that day"}
                   onClick={() => toggle(h)}
                   className="relative h-6 w-11 shrink-0 rounded-full bg-black/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-40 aria-checked:bg-ok">
                   <span aria-hidden className={cx("absolute top-0.5 size-5 rounded-full bg-white shadow transition-all", on ? "left-[22px]" : "left-0.5")} />
                 </button>
-                <Btn tone="ghost" aria-expanded={expanded} aria-label={`Choose stores for ${h.label}`} onClick={() => setOpenKey(expanded ? null : h.key)}>Stores</Btn>
+                <Btn tone="ghost" aria-expanded={expanded} aria-label={`Choose stores for ${h.label}`} onClick={() => setOpenKey(expanded ? null : h.key)}>Stores</Btn></>)}
               </div>
-              {expanded && <StoreChoices rows={rows} st={st} locked={!!locked || past} onSet={(id, s) => setStore(h, id, s)} />}
+              {expanded && !past && <StoreChoices rows={rows} st={st} locked={!!locked} onSet={(id, s) => setStore(h, id, s)} />}
             </li>
           );
         })}
@@ -121,9 +128,9 @@ function StoreChoices({ rows, st, locked, onSet }: { rows: DayStatus[]; st: Doma
           <li key={r.storeId} className="flex items-center justify-between gap-2" data-store-choice={s.code}>
             <span className="min-w-0 truncate text-sm" title={s.name}><strong>{s.code}</strong></span>
             {r.kind === "shut" ? <span className="text-xs text-muted">Closed that weekday</span> : (
-              <select aria-label={`${s.code} on this holiday`} disabled={locked} value={value} className={cx(inputCls, "h-7 w-32 pr-5 text-sm")}
+              <select aria-label={`${s.code} on this holiday`} disabled={locked} value={value} className={cx(inputCls, "h-8 w-36 pr-6 text-sm")}
                 onChange={(e) => { const v = e.target.value; onSet(r.storeId, v === "usual" ? { t: "usual" } : v === "closed" ? { t: "close" } : { t: "need", n: Number(v) }); }}>
-                <option value="usual">Usual need ({r.usual})</option>
+                <option value="usual">Usual ({r.usual})</option>
                 <option value="closed">Closed</option>
                 {counts.map((n) => <option key={n} value={String(n)}>Needs {n}</option>)}
               </select>

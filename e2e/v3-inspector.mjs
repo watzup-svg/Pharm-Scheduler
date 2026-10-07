@@ -84,8 +84,8 @@ check("partial-day note cleared", !(await get((id) => window.__v3.app.getState()
 
 // remove through the inline confirm
 await insp.getByRole("button", { name: "Remove", exact: true }).click();
-check("remove asks inline", await insp.getByRole("button", { name: "Yes, remove" }).isVisible());
-await insp.getByRole("button", { name: "Yes, remove" }).click(); await settle();
+check("remove needs no second question", (await insp.getByRole("button", { name: "Yes, remove" }).count()) === 0);
+await settle();
 check("removed, cell open again", (await status()) === "Needs 1 more");
 
 // 3. accept an override with a reason. Make a free person unavailable, place them anyway, then accept.
@@ -165,8 +165,7 @@ check("swap replaced the person", (await insp.getByRole("listitem", { name: swap
 const remaining = await get((c) => Object.values(window.__v3.app.getState().world.state.assignments).filter((a) => a.storeId === c.storeId && a.date === c.date).length, cell);
 check("exactly one assignment after swap", remaining === 1);
 await openDetails();
-await insp.getByRole("button", { name: "Remove", exact: true }).click();
-await insp.getByRole("button", { name: "Yes, remove" }).click(); await settle();
+await insp.getByRole("button", { name: "Remove", exact: true }).click(); await settle();
 
 // 6. cell controls (behind More for this day)
 await openMore();

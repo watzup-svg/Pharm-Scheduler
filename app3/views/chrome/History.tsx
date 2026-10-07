@@ -21,7 +21,6 @@ export function History() {
   const world = useApp((s) => s.world)!;
   const [msg, setMsg] = useState<{ id: string; text: string } | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
-  const [confirm, setConfirm] = useState<string | null>(null);
   const [cpMsg, setCpMsg] = useState<{ name: string; text: string } | null>(null);
   const [name, setName] = useState("");
   const list = world.journal.changeSets;
@@ -43,7 +42,6 @@ export function History() {
     const r = api.revertToCheckpoint(world, cpName);
     if ("refused" in r) { setCpMsg({ name: cpName, text: r.reason }); return; }
     setCpMsg(null);
-    setConfirm(null);
     useApp.getState().revert(cpName);
   };
   const toggle = (id: string) => setOpen((o) => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -77,17 +75,7 @@ export function History() {
                   <span className="min-w-0 truncate font-semibold" title={cp.name}>{cp.name}</span>
                   <span className="shrink-0 text-xs text-muted">{later === 0 ? "No changes since" : `${plural(later, "change")} since`}</span>
                 </div>
-                {confirm === cp.name ? (
-                  <div className="mt-1.5">
-                    <p>{later === 0 ? "The schedule already matches this checkpoint." : `This undoes ${plural(later, "change set")} made after "${cp.name}" as one new step in History. You can undo it again.`}</p>
-                    <div className="mt-1.5 flex gap-1.5">
-                      <Btn tone="ink" onClick={() => revert(cp.name)}>Revert now</Btn>
-                      <Btn tone="ghost" onClick={() => { setConfirm(null); setCpMsg(null); }}>Keep as it is</Btn>
-                    </div>
-                  </div>
-                ) : (
-                  <Btn className="mt-1.5" onClick={() => { setConfirm(cp.name); setCpMsg(null); }}>Revert to this checkpoint</Btn>
-                )}
+                <Btn className="mt-1.5" disabled={later === 0} title={later === 0 ? "The schedule already matches this checkpoint" : `Undoes ${plural(later, "change set")} as one new step in History. Undo puts them back.`} onClick={() => revert(cp.name)}>Revert to this checkpoint</Btn>
                 {cpMsg?.name === cp.name && <p role="alert" className="mt-1 text-xs text-illegal">▲ {cpMsg.text}</p>}
               </li>
             );

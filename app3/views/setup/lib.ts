@@ -486,6 +486,43 @@ export function previewPattern(state: DomainState, draft: Standing, from: ISODat
   return { rows, hits, flagged };
 }
 
+/** The days a "usual days off" pattern covers, from `from` to `to` (or `weeks` weeks when open-ended). Merged into runs, so Sat + Sun is one record. Days that already have approved time off are left out. */
+export function daysOffRuns(state: DomainState, draft: Standing, from: ISODate, to: ISODate): { first: ISODate; last: ISODate }[] {
+  const dates = dateRange(from, to).filter((d) => standingMatches(draft, d) && !Object.values(state.unavailability).some((u) => u.pharmacistId === draft.pharmacistId && u.scopeStoreId === undefined && (u.status === "Approved" || u.status === "Actual") && u.first <= d && d <= u.last));
+  const runs: { first: ISODate; last: ISODate }[] = [];
+  for (const d of dates) {
+    const last = runs[runs.length - 1];
+    if (last && addDays(last.last, 1) === d) last.last = d; else runs.push({ first: d, last: d });
+  }
+  return runs;
+}
+
+/** Like previewPattern, for usual days off: a matching day is flagged when the person is already placed somewhere (they would then not count) or already has time off. */
+export function previewDaysOff(state: DomainState, draft: Standing, from: ISODate, weeks = 4): { rows: PreviewDay[][]; hits: number; flagged: number } {
+  const monday = mondayOf(from);
+  const rows: PreviewDay[][] = [];
+  let hits = 0;
+  let flagged = 0;
+  for (let w = 0; w < weeks; w++) {
+    const row: PreviewDay[] = [];
+    for (let i = 0; i < 7; i++) {
+      const date = addDays(monday, w * 7 + i);
+      if (!(date >= from && standingMatches(draft, date))) { row.push({ date, hit: false }); continue; }
+      hits += 1;
+      const mine = Object.values(state.assignments).filter((a) => a.pharmacistId === draft.pharmacistId && a.date === date);
+      const already = Object.values(state.unavailability).some((u) => u.pharmacistId === draft.pharmacistId && u.scopeStoreId === undefined && (u.status === "Approved" || u.status === "Actual") && u.first <= date && date <= u.last);
+      let issue: PreviewIssue | undefined;
+      let text: string | undefined;
+      if (already) { issue = "off"; text = "Already has time off that day; nothing to add."; }
+      else if (mine.length) { issue = "placed-elsewhere"; text = `Scheduled at ${state.stores[mine[0]!.storeId]?.code ?? mine[0]!.storeId} that day, so they would not count there.`; }
+      if (issue) flagged += 1;
+      row.push({ date, hit: true, ...(issue ? { issue } : {}), ...(text ? { text } : {}) });
+    }
+    rows.push(row);
+  }
+  return { rows, hits, flagged };
+}
+
 /** The need for a store on a date, with date changes and the store's active dates applied. */
 function weeklyNeedWithDates(state: DomainState, storeId: string, date: ISODate): number {
   const o = state.dateOverrides[`${storeId}|${date}`];

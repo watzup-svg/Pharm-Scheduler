@@ -204,6 +204,25 @@ try {
     check("pattern: removed", !w.standing[t2.id] && !!w.standing[t.id]);
     check("pattern: banner gone after removing", (await page.getByRole("alert", { name: "Pattern conflicts" }).count()) === 0);
 
+    // usual days off: split days, every second week, recorded as approved time off in one change set
+    await ag.getByRole("button", { name: "Usual days off" }).click();
+    check("days off: no store to choose", (await ag.getByLabel("Store", { exact: true }).count()) === 0);
+    await ag.getByLabel("Pharmacist", { exact: true }).selectOption(ph.id);
+    await ag.getByRole("checkbox", { name: "Tue" }).check();
+    await ag.getByRole("checkbox", { name: "Thu" }).check();
+    await ag.getByLabel("Repeats").selectOption("2");
+    check("days off: it says how many days it will mark", /days off through/.test(await ag.getByTestId("days-off-summary").innerText()));
+    const nCs = (await worldOf(page)) && (await page.evaluate(() => window.__v3.app.getState().world.journal.changeSets.length));
+    await ag.getByRole("button", { name: "Mark days off" }).click();
+    await page.waitForTimeout(150);
+    const recs = await page.evaluate((id) => Object.values(window.__v3.app.getState().world.state.unavailability).filter((u) => u.pharmacistId === id && u.note === "Usual day off"), ph.id);
+    const nCs2 = await page.evaluate(() => window.__v3.app.getState().world.journal.changeSets.length);
+    check("days off: approved time-off records, 'Usual day off', Tue/Thu only, in one change set", recs.length >= 6 && recs.every((u) => u.status === "Approved" && [2, 4].includes(new Date(`${u.first}T12:00:00Z`).getUTCDay()) && u.first === u.last) && nCs2 === nCs + 1, `${recs.length} records, ${nCs2 - nCs} change sets`);
+    await page.getByRole("button", { name: "Undo" }).first().click();
+    await page.waitForTimeout(150);
+    check("days off: Undo takes them all back", (await page.evaluate((id) => Object.values(window.__v3.app.getState().world.state.unavailability).filter((u) => u.pharmacistId === id && u.note === "Usual day off").length, ph.id)) === 0);
+    await ag.getByRole("button", { name: "Works at a store" }).click();
+
     // --- dates
     await page.getByRole("tab", { name: "Dates" }).click();
     const dg = page.getByRole("group", { name: "Add a date change" });

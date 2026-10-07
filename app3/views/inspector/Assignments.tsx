@@ -84,7 +84,7 @@ function AssignmentRow({ ctx, a, swapping, onSwap }: { ctx: Ctx; a: CellAssignme
               </ul>
             )}
             <div className="flex flex-wrap gap-1.5">
-              <Act disabled={!!lock} title={lock ?? undefined} onClick={() => setMode(mode === "remove" ? null : "remove")} pressed={mode === "remove"}>Remove</Act>
+              <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "remove", assignmentId: a.id }], label("Removed"))}>Remove</Act>
               {a.pinned
                 ? <Act disabled={!!lock} title={lock ?? "The engine will not move this person"} onClick={unpin}>{hasBlock ? "Unpin and repair" : "Unpin"}</Act>
                 : <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "update", assignmentId: a.id, patch: { pinned: true } }], label("Pinned"))}>Pin</Act>}
@@ -101,15 +101,6 @@ function AssignmentRow({ ctx, a, swapping, onSwap }: { ctx: Ctx; a: CellAssignme
         </div>
       )}
 
-      {mode === "remove" && (
-        <div className="mt-2 rounded-md bg-fill p-2 text-sm" role="group" aria-label={`Remove ${a.name}`}>
-          <p>Take {a.name} off {codeOf(state, storeId)} this day?</p>
-          <div className="mt-1.5 flex gap-1.5">
-            <Act tone="danger" disabled={!!lock} onClick={() => { if (commitEdits([{ t: "remove", assignmentId: a.id }], label("Removed"))) setMode(null); }}>Yes, remove</Act>
-            <Act onClick={() => setMode(null)}>Keep</Act>
-          </div>
-        </div>
-      )}
       {mode === "note" && (
         <div className="mt-2 rounded-md bg-fill p-2" role="group" aria-label="Partial-day note">
           <TextField

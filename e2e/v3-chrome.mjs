@@ -277,11 +277,9 @@ await right.getByLabel("First day").fill(pick.date);
 await right.getByLabel("Type").selectOption("Other");
 await right.getByRole("button", { name: "Add time off" }).click();
 check("a change was made after the checkpoint", (await get()).nUnav === snapUnav + 1);
+check("revert says what it does on hover, with no second question", /Undoes 1 change set/.test((await left.getByRole("button", { name: "Revert to this checkpoint" }).getAttribute("title")) ?? ""));
 await left.getByRole("button", { name: "Revert to this checkpoint" }).click();
-const sentence = await left.getByText(/This undoes 1 change set made after "Before test"/).count();
-check("revert asks first, in a plain sentence", sentence === 1);
-await shot("6-revert-confirm");
-await left.getByRole("button", { name: "Revert now" }).click();
+check("it reverts at once (Undo is the way back)", (await left.getByRole("button", { name: "Revert now" }).count()) === 0);
 s = await get();
 check("revert restores the checkpointed state", s.nUnav === snapUnav && s.cs[s.cs.length - 1].kind === "revert", `${s.nUnav} vs ${snapUnav}`);
 

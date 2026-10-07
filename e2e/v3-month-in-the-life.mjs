@@ -343,7 +343,6 @@ await step("edit after posting: Print says what changed since revision 1", async
   await page.locator(`[role="gridcell"][data-store="${a.storeId}"][data-date="${a.date}"]`).click();
   await inspector.getByRole("button", { name: /^Details/ }).first().click();
   await inspector.getByRole("button", { name: "Remove", exact: true }).first().click();
-  await inspector.getByRole("button", { name: /^Yes, remove/ }).first().click();
   const w2 = await readWorld(page);
   if (w2.journal.changeSets.length !== w.journal.changeSets.length + 1) throw new Error("the removal was not committed");
   await header.getByRole("button", { name: "Print" }).click();
@@ -419,7 +418,6 @@ await step("History > Revert to 'Month start' undoes the month in one step", asy
   const cpName = await left.getByText("Month start", { exact: true }).count();
   if (cpName < 1) throw new Error("the checkpoint was not kept through the reload");
   await left.getByRole("button", { name: "Revert to this checkpoint" }).click();
-  await left.getByRole("button", { name: "Revert now" }).click();
   const kinds = await app(() => window.__v3.app.getState().world.journal.changeSets.map((c) => c.kind));
   if (kinds.length !== before + 1 || kinds.at(-1) !== "revert") throw new Error(`last change set ${kinds.at(-1)}`);
   const w = await readWorld(page);

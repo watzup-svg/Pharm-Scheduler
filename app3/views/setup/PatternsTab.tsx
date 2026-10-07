@@ -1,10 +1,10 @@
 // Setup > Patterns. Standing assignments: who usually works where. A recurrence builder with a live preview of the next matching dates.
 import { Fragment, useMemo, useState } from "react";
-import { addDays, cmp, deepEqual, expectedOn, isValidDate, standingMatches, type DomainState, type ISODate, type Recurrence, type Standing } from "@domain";
+import { addDays, cmp, dateRange, deepEqual, expectedOn, isValidDate, standingMatches, type DomainState, type ISODate, type Recurrence, type Standing } from "@domain";
 import { useApp } from "../../store.ts";
 import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
 import { Hint } from "../chrome/Title.tsx";
-import { dayLabel, previewPattern } from "./lib.ts";
+import { dayLabel, daysOffRuns, previewDaysOff, previewPattern } from "./lib.ts";
 import { DateField, ORDINAL, SelectField, TableShell, WEEKDAY_SHORT, WEEK_ORDER, niceDate, shortDate, pharmacistsSorted, storesSorted, td, th, useLocked } from "./shared.tsx";
 
 const WINDOW_DAYS = 56; // the next 8 weeks
@@ -148,11 +148,15 @@ function PatternBuilder() {
   const [from, setFrom] = useState<string>(asOf);
   const [to, setTo] = useState("");
   const [touched, setTouched] = useState(false);
+  // "work": a pattern that puts someone at a store. "off": their usual days off (recorded as approved time off, so Build and the rules respect them).
+  const [mode, setMode] = useState<"work" | "off">("work");
+  const off = mode === "off";
+  const HORIZON_WEEKS = 26;
 
   const toggle = <T,>(list: T[], v: T): T[] => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   const errors = {
-    store: !storeId ? "Choose a store." : null,
+    store: !off && !storeId ? "Choose a store." : null,
     ph: !phId ? "Choose a pharmacist." : null,
     days: days.length === 0 ? "Tick at least one weekday." : null,
     anchor: cycle > 1 && !isValidDate(anchor) ? "Pick a date in week 1 of the cycle." : null,
@@ -162,25 +166,38 @@ function PatternBuilder() {
   const anyError = Object.values(errors).some(Boolean);
 
   const draft: Standing | null = useMemo(() => {
-    if (!storeId || !phId || !days.length || !isValidDate(from) || (to && (!isValidDate(to) || to < from)) || (cycle > 1 && !isValidDate(anchor))) return null;
+    if ((!off && !storeId) || !phId || !days.length || !isValidDate(from) || (to && (!isValidDate(to) || to < from)) || (cycle > 1 && !isValidDate(anchor))) return null;
     const recurrence: Recurrence = { weekdays: days.slice().sort((a, b) => a - b), cycleWeeks: cycle, anchor: cycle > 1 ? anchor : from };
     if (nth.length) recurrence.nth = nth.slice().sort((a, b) => a - b);
-    return { id: "draft", storeId, pharmacistId: phId, recurrence, effectiveFrom: from, ...(to ? { effectiveTo: to } : {}) };
-  }, [storeId, phId, days, cycle, anchor, nth, from, to]);
+    return { id: "draft", storeId: off ? "" : storeId, pharmacistId: phId, recurrence, effectiveFrom: from, ...(to ? { effectiveTo: to } : {}) };
+  }, [storeId, phId, days, cycle, anchor, nth, from, to, off]);
 
-  const cal = useMemo(() => (draft ? previewPattern(st, draft, asOf > from ? asOf : from, 4) : null), [draft, st, asOf, from]);
+  const cal = useMemo(() => (draft ? (off ? previewDaysOff(st, draft, asOf > from ? asOf : from, 4) : previewPattern(st, draft, asOf > from ? asOf : from, 4)) : null), [draft, st, asOf, from, off]);
+  const offEnd = to || addDays(from, HORIZON_WEEKS * 7 - 1);
+  const offRuns = useMemo(() => (draft && off ? daysOffRuns(st, draft, from, offEnd) : []), [draft, st, from, offEnd, off]);
   const preview = useMemo(() => (cal ? cal.rows.flat().filter((d) => d.hit).map((d) => d.date) : []), [cal]);
 
   // Would this pattern put the pharmacist at two stores on one date? Check with the draft added.
   const wouldConflict = useMemo(() => {
-    if (!draft) return [] as Conflict[];
+    if (!draft || off) return [] as Conflict[];
     const withDraft: DomainState = { ...st, standing: { ...st.standing, [draft.id]: draft } };
     return findConflicts(withDraft, asOf, preview).filter((c) => c.standingIds.includes(draft.id));
   }, [draft, st, asOf, preview]);
 
   const duplicate = draft && Object.values(st.standing).some((t) => t.storeId === draft.storeId && t.pharmacistId === draft.pharmacistId && t.effectiveFrom === draft.effectiveFrom && t.effectiveTo === draft.effectiveTo && deepEqual(t.recurrence, draft.recurrence));
 
+  const markOff = () => {
+    setTouched(true);
+    if (anyError || !draft) return;
+    if (!offRuns.length) { say("info", "Nothing to add: those days are already marked off."); return; }
+    const ph = st.pharmacists[phId]!;
+    const nDays = offRuns.reduce((n, r) => n + dateRange(r.first, r.last).length, 0);
+    const label = `Marked ${nDays} usual ${nDays === 1 ? "day" : "days"} off for ${ph.name}, ${describeRecurrence(draft.recurrence)} (to ${niceDate(offEnd)}).`;
+    if (commit(offRuns.map((r) => ({ t: "unavail.add" as const, pharmacistId: phId, first: r.first, last: r.last, status: "Approved" as const, type: "Other" as const, note: "Usual day off" })), label)) { setDays([]); setNth([]); setTo(""); }
+  };
+
   const add = () => {
+    if (off) { markOff(); return; }
     setTouched(true);
     if (anyError || !draft) return;
     if (duplicate) { say("info", "That pattern is already there, so nothing was added."); return; }
@@ -194,12 +211,18 @@ function PatternBuilder() {
   return (
     <div role="group" aria-label="Add a pattern" className="flex flex-col gap-3 rounded-md bg-white p-3 ring-1 ring-line">
       <h3 className="text-sm font-semibold">Add a pattern</h3>
+      <div role="group" aria-label="What the pattern says" className="flex w-max gap-1 rounded-lg bg-fill p-1">
+        {([["work", "Works at a store"], ["off", "Usual days off"]] as const).map(([m, label]) => (
+          <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}
+            className={`h-8 rounded-md px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ink ${mode === m ? "bg-white shadow-sm ring-1 ring-line" : "text-muted hover:text-ink"}`}>{label}</button>
+        ))}
+      </div>
       <div className="flex flex-wrap items-start gap-3">
-        <SelectField label="Store" value={storeId} onChange={setStoreId} options={[{ value: "", label: "Choose…" }, ...stores.map((s) => ({ value: s.id, label: `${s.code}  ${s.name}` }))]} error={touched ? errors.store : null} className="w-64" />
+        {!off && <SelectField label="Store" value={storeId} onChange={setStoreId} options={[{ value: "", label: "Choose…" }, ...stores.map((s) => ({ value: s.id, label: `${s.code}  ${s.name}` }))]} error={touched ? errors.store : null} className="w-64" />}
         <SelectField label="Pharmacist" value={phId} onChange={setPhId} options={[{ value: "", label: "Choose…" }, ...phs.map((p) => ({ value: p.id, label: p.name }))]} error={touched ? errors.ph : null} className="w-56" />
       </div>
       <fieldset className="flex flex-col gap-1">
-        <legend className="text-xs font-semibold text-muted">Works on</legend>
+        <legend className="text-xs font-semibold text-muted">{off ? "Off on" : "Works on"}</legend>
         <div className="flex flex-wrap gap-3">
           {WEEK_ORDER.map((w) => (
             <label key={w} className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={days.includes(w)} onChange={() => setDays((d) => toggle(d, w))} /> {WEEKDAY_SHORT[w]}</label>
@@ -220,7 +243,7 @@ function PatternBuilder() {
       </div>
       <div className="flex flex-wrap items-start gap-3">
         <DateField label="Applies from" value={from} onChange={setFrom} error={touched ? errors.from : null} />
-        <DateField label="Applies until (optional)" value={to} onChange={setTo} error={touched ? errors.to : null} hint="Last day; blank means no end" />
+        <DateField label="Applies until (optional)" value={to} onChange={setTo} error={touched ? errors.to : null} hint={off ? `Last day; blank means the next ${HORIZON_WEEKS} weeks` : "Last day; blank means no end"} />
       </div>
 
       <div aria-live="polite" className="rounded-md bg-paper p-3 text-sm">
@@ -228,7 +251,7 @@ function PatternBuilder() {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">What this gives over the next 4 weeks</p>
           {cal && cal.hits > 0 && <p className="text-xs text-muted" data-testid="pattern-preview-count">{cal.hits} {cal.hits === 1 ? "day" : "days"}{cal.flagged ? `, ${cal.flagged} to look at` : ""}</p>}
         </div>
-        {!cal ? <p className="mt-1 text-muted">Fill in the store, pharmacist and weekdays to see the days.</p> : cal.hits === 0 ? <p className="mt-1 text-muted">This pattern matches no days. Check the weekdays, the weeks of the month and the dates.</p> : (
+        {!cal ? <p className="mt-1 text-muted">{off ? "Fill in the pharmacist and weekdays to see the days." : "Fill in the store, pharmacist and weekdays to see the days."}</p> : cal.hits === 0 ? <p className="mt-1 text-muted">This pattern matches no days. Check the weekdays, the weeks of the month and the dates.</p> : (
           <>
             <div className="mt-2 grid w-max grid-cols-7 gap-1">
               {WEEK_ORDER.map((w) => <span key={w} aria-hidden className="text-center text-xs font-semibold text-muted">{WEEKDAY_SHORT[w]![0]}</span>)}
@@ -255,7 +278,8 @@ function PatternBuilder() {
         {duplicate && <p className="mt-2 text-xs text-muted">This exact pattern already exists. Adding it again changes nothing.</p>}
       </div>
       <div className="flex items-center gap-2">
-        <Btn tone="ink" disabled={!!locked} onClick={add}>Add pattern</Btn>
+        <Btn tone="ink" disabled={!!locked} onClick={add}>{off ? "Mark days off" : "Add pattern"}</Btn>
+        {off && draft && <p className="text-xs text-muted" data-testid="days-off-summary">{offRuns.length ? `Marks ${offRuns.reduce((n, r) => n + dateRange(r.first, r.last).length, 0)} days off through ${niceDate(offEnd)}, as approved time off you can see on the Time off screen.` : "Every one of those days is already marked off."}</p>}
         {locked && <p className="text-xs text-muted">{locked}</p>}
       </div>
     </div>

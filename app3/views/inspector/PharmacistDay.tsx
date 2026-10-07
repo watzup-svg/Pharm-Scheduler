@@ -18,7 +18,6 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
   const asOf = useApp((s) => s.asOf);
   const lock = useLock();
   const [all, setAll] = useState(false);
-  const [removing, setRemoving] = useState<string | null>(null);
 
   const state = vs?.state;
   const dayEv = useMemo(() => (state ? evaluateCached(state, asOf, { range: { from: date, to: date }, window: { from: date, to: date }, ...(vs?.scenario ? { includeRequested: true } : {}) }) : null), [state, vs?.scenario, asOf, date]);
@@ -79,9 +78,7 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
                   </span>
                   <span className="flex shrink-0 gap-1.5">
                     <Act onClick={() => useApp.getState().select({ storeId: a.storeId, date })}>Open store day</Act>
-                    {removing === a.id
-                      ? <Act tone="danger" disabled={!!lock} title={lock ?? undefined} onClick={() => { if (commitEdits([{ t: "remove", assignmentId: a.id }], `Removed ${ph.name} from ${codeOf(state, a.storeId)}`)) setRemoving(null); }}>Yes, remove</Act>
-                      : <Act disabled={!!lock} title={lock ?? undefined} onClick={() => setRemoving(a.id)}>Remove</Act>}
+                    <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "remove", assignmentId: a.id }], `Removed ${ph.name} from ${codeOf(state, a.storeId)}`)}>Remove</Act>
                   </span>
                 </li>
               );
@@ -121,9 +118,7 @@ export function PharmacistDay({ pharmacistId, date }: { pharmacistId: string; da
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {(u.status === "Requested" || u.status === "Denied") && <Act disabled={!!lock} title={lock ?? undefined} onClick={() => setStatus(u.id, "Approved")}>Approve</Act>}
                   {u.status === "Requested" && <Act disabled={!!lock} title={lock ?? undefined} onClick={() => setStatus(u.id, "Denied")}>Deny</Act>}
-                  {removing === u.id
-                    ? <Act tone="danger" disabled={!!lock} title={lock ?? undefined} onClick={() => { if (commitEdits([{ t: "unavail.remove", id: u.id }], `Removed time off for ${ph.name}`)) setRemoving(null); }}>Yes, remove the record</Act>
-                    : <Act disabled={!!lock} title={lock ?? undefined} onClick={() => setRemoving(u.id)}>Remove</Act>}
+                  <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "unavail.remove", id: u.id }], `Removed time off for ${ph.name}`)}>Remove</Act>
                 </div>
               </li>
             ))}
