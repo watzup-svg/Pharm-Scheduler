@@ -90,8 +90,8 @@ async function open({ size = { width: 1366, height: 768 }, init = [], world = nu
   E.step = (s) => { E.log.push(`+${Date.now() - E.t0}ms ${s}`); };
   await page.goto(srv.base, { waitUntil: "load" });
   await page.waitForFunction(() => window.__v3);
-  if (practice) await page.evaluate(() => window.__v3.loadPractice());
-  if (world) await page.evaluate(([w, a, win2]) => { const s = window.__v3.app.getState(); s.setWorld(w, { fileName: "Pressure.sqlite" }); s.setAsOf(a); s.setWindow(win2[0], win2[1]); }, [world, asOf, win]);
+  if (practice) await page.evaluate(() => { window.__v3.loadPractice(); window.__v3.app.getState().setView("wall"); });
+  if (world) await page.evaluate(([w, a, win2]) => { const s = window.__v3.app.getState(); s.setWorld(w, { fileName: "Pressure.sqlite" }); s.setView("wall"); s.setAsOf(a); s.setWindow(win2[0], win2[1]); }, [world, asOf, win]);
   return E;
 }
 const settle = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
@@ -184,7 +184,7 @@ add("scale-load", 120_000, async (ctx) => {
   const E = await open();
   return finish("scale-load", E, async () => {
     const t = Date.now();
-    await E.page.evaluate(([w]) => { const s = window.__v3.app.getState(); s.setWorld(w, { fileName: "Big.sqlite" }); s.setAsOf("2026-10-06"); s.setWindow("2026-10-01", "2026-10-31"); }, [world]);
+    await E.page.evaluate(([w]) => { const s = window.__v3.app.getState(); s.setWorld(w, { fileName: "Big.sqlite" }); s.setView("wall"); s.setAsOf("2026-10-06"); s.setWindow("2026-10-01", "2026-10-31"); }, [world]);
     await E.page.waitForSelector('[role="gridcell"]', { timeout: 60000 });
     await settle(E.page);
     const ms = Date.now() - t;
