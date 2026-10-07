@@ -1,84 +1,19 @@
-// Setup > Pharmacists. Name, initials, base store, licenses per state, active dates. Never deleted: mark inactive from a date.
-import { Fragment, useMemo, useState } from "react";
+// The pharmacist form: name, initials, base store, licences per state, start and leave dates. Each Save is one change set.
+import { useMemo, useState } from "react";
 import { isValidDate, type Edit, type ISODate, type Pharmacist, type StateCode } from "@domain";
 import { useApp } from "../../store.ts";
-import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
-import { Hint } from "../chrome/Title.tsx";
-import { DateField, SelectField, TableShell, TextField, inputCls, nextIdFor, niceDate, pharmacistsSorted, storesSorted, td, th, useLocked } from "./shared.tsx";
+import { Btn } from "../../ui/primitives.tsx";
+import { DateField, SelectField, TextField, inputCls, nextIdFor, niceDate, storesSorted, useLocked } from "./shared.tsx";
 
 const STATES: { code: StateCode; label: string }[] = [{ code: "OR", label: "Oregon" }, { code: "WA", label: "Washington" }];
-
-function statusOf(p: Pharmacist, asOf: ISODate): { tone: "ok" | "warning" | "neutral"; text: string } {
-  if (p.inactiveFrom && p.inactiveFrom <= asOf) return { tone: "neutral", text: `Left ${niceDate(p.inactiveFrom)}` };
-  if (p.activeFrom && p.activeFrom > asOf) return { tone: "warning", text: `Starts ${niceDate(p.activeFrom)}` };
-  if (p.inactiveFrom) return { tone: "warning", text: `Leaves ${niceDate(p.inactiveFrom)}` };
-  return { tone: "ok", text: "Active" };
-}
 
 function suggestInitials(name: string): string {
   return name.split(/\s+/).filter(Boolean).map((w) => w[0]!.toUpperCase()).join("");
 }
 
-export function PharmacistsTab() {
-  const world = useApp((s) => s.world)!;
-  const asOf = useApp((s) => s.asOf);
-  const locked = useLocked();
-  const [editing, setEditing] = useState<string | null>(null);
-  const list = useMemo(() => pharmacistsSorted(world.state), [world.state]);
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-4">
-        <Hint title="Pharmacists" line="Pharmacists are kept, not deleted." tip="The schedule's history refers to them. | When someone leaves, mark the first day they are no longer available." />
-        <Btn tone="ink" className="shrink-0 whitespace-nowrap" disabled={!!locked || editing === "new"} onClick={() => setEditing("new")}>Add a pharmacist</Btn>
-      </div>
-      {editing === "new" && <PharmacistEditor key="new" onDone={() => setEditing(null)} />}
-      <TableShell label="Pharmacists">
-        <thead>
-          <tr>
-            <th className={th}>Name</th><th className={th}>Initials</th><th className={th}>Base store</th><th className={th}>Licenses</th><th className={th}>Status</th>
-            <th className={th}><span className="sr-only">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.length === 0 && <tr><td className={`${td} text-muted`} colSpan={6}>No pharmacists yet. Use "Add a pharmacist" to start.</td></tr>}
-          {list.map((p) => {
-            const status = statusOf(p, asOf);
-            const base = p.baseStoreId ? world.state.stores[p.baseStoreId]?.code ?? p.baseStoreId : null;
-            return (
-              <Fragment key={p.id}>
-                <tr data-pharmacist-row={p.name}>
-                  <td className={`${td} font-semibold`}>{p.name}</td>
-                  <td className={td}>{p.initials}</td>
-                  <td className={td}>{base ?? <span className="text-muted">None</span>}</td>
-                  <td className={td}><Licenses p={p} /></td>
-                  <td className={td}><Chip tone={status.tone} className="whitespace-nowrap">{status.tone === "ok" ? GLYPH.ok : status.tone === "warning" ? GLYPH.warning : "–"} {status.text}</Chip></td>
-                  <td className={`${td} text-right`}><Btn aria-label={`Edit ${p.name}`} disabled={editing === p.id || !!locked} aria-expanded={editing === p.id} onClick={() => setEditing(p.id)}>Edit</Btn></td>
-                </tr>
-                {editing === p.id && <tr><td colSpan={6} className="border-b border-line bg-paper p-3"><PharmacistEditor pharmacist={p} onDone={() => setEditing(null)} /></td></tr>}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </TableShell>
-    </div>
-  );
-}
-
-function Licenses({ p }: { p: Pharmacist }) {
-  if (!p.licenses) return <Chip tone="warning" title="Counted at any store, but flagged as unverified">{GLYPH.info} Not recorded</Chip>;
-  const keys = (Object.keys(p.licenses) as StateCode[]).sort();
-  if (!keys.length) return <span className="text-muted">Not licensed in OR or WA</span>;
-  return (
-    <span className="flex flex-wrap gap-1">
-      {keys.map((k) => <Chip key={k} tone="info">{k}{p.licenses![k] ? ` until ${niceDate(p.licenses![k])}` : ""}</Chip>)}
-    </span>
-  );
-}
-
 type LicState = Record<StateCode, { on: boolean; until: string }>;
 
-function PharmacistEditor({ pharmacist, onDone }: { pharmacist?: Pharmacist; onDone: () => void }) {
+export function PharmacistEditor({ pharmacist, onDone }: { pharmacist?: Pharmacist; onDone: () => void }) {
   const world = useApp((s) => s.world)!;
   const locked = useLocked();
   const commit = useApp((s) => s.commit);

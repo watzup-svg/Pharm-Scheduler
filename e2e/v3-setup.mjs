@@ -117,8 +117,8 @@ try {
     w = await worldOf(page);
     check("requirement: new row from the chosen date", w.requirements[`${store.id}|1|${asOf}`]?.count === 2 && w.requirements[`${store.id}|1|0001-01-01`]?.count === 1);
     check("requirement: history list shows both", (await eg.getByText(/1 from the beginning, then 2 from/).count()) === 1);
-    const cells = await page.locator('tr[data-store-row="TST"] td').allInnerTexts();
-    check("requirement: table shows 2 for Monday", cells[4]?.trim() === "2", JSON.stringify(cells));
+    const monNeed = await page.locator('[data-store-row="TST"] [data-need-marks] [data-weekday="Mon"]').getAttribute("data-need");
+    check("requirement: the week marks show 2 for Monday", monNeed === "2", String(monNeed));
     // the wall's own numbers come from these rows
     const need = { req: Object.values(w.requirements).filter((r) => r.storeId === store.id && r.weekday === 1).map((r) => r.count) };
     check("requirement: wall data holds both rows", need.req.length === 2);
@@ -136,7 +136,7 @@ try {
     await shot(page, "stores-edited");
 
     // --- pharmacists
-    await page.getByRole("tab", { name: "Pharmacists" }).click();
+    await page.getByRole("tab", { name: "People", exact: true }).click();
     await page.getByRole("button", { name: "Add a pharmacist" }).click();
     const pg = page.getByRole("group", { name: "Add a pharmacist" });
     await pg.getByLabel("Name").fill("Tess Tester");
@@ -161,7 +161,7 @@ try {
     w = await worldOf(page);
     const tom = Object.values(w.pharmacists).find((p) => p.name === "Tom Tester");
     check("pharmacist: not recorded stores no license map", !!tom && tom.licenses === undefined);
-    check("pharmacist: table says not recorded", (await page.locator('tr[data-pharmacist-row="Tom Tester"]').innerText()).includes("Not recorded"));
+    check("pharmacist: table says not recorded", (await page.locator('[data-pharmacist-row="Tom Tester"]').innerText()).includes("Not recorded"));
 
     // --- patterns
     await page.getByRole("tab", { name: "Patterns" }).click();
@@ -173,9 +173,9 @@ try {
     await ag.getByRole("checkbox", { name: "Mon" }).check();
     await ag.getByRole("checkbox", { name: "Wed" }).check();
     await ag.getByLabel("Repeats").selectOption("2");
-    const previewItems = await ag.getByTestId("pattern-preview").locator("li").allInnerTexts();
-    check("pattern: preview lists 8 dates", previewItems.length === 8, JSON.stringify(previewItems));
-    check("pattern: preview only Mon/Wed", previewItems.every((t) => /^(Mon|Wed)/.test(t)), JSON.stringify(previewItems));
+    const hits = await ag.getByTestId("pattern-preview").locator('[data-hit="yes"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-date")));
+    check("pattern: preview shows 4 weeks, every 2nd week Mon/Wed = 3 or 4 days (first week starts today)", hits.length >= 3 && hits.length <= 4, JSON.stringify(hits));
+    check("pattern: preview only Mon/Wed", hits.every((d) => [1, 3].includes(new Date(`${d}T12:00:00Z`).getUTCDay())), JSON.stringify(hits));
     await shot(page, "pattern-builder");
     await ag.getByRole("button", { name: "Add pattern" }).click();
     await page.waitForTimeout(150);

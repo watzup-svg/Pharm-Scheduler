@@ -14,7 +14,7 @@ const MODES = [
 ];
 const SCREENS = [
   { id: "Overview", view: "overview" }, { id: "Schedule", view: "wall" }, { id: "Time off", view: "timeoff" }, { id: "Print", view: "print" }, { id: "Plan", view: "plan" },
-  ...["stores", "pharmacists", "patterns", "dates", "travel", "rules", "checks"].map((t) => ({ id: `Setup/${t}`, view: "setup", tab: t })),
+  ...["stores", "pharmacists", "patterns", "holidays", "dates", "travel", "rules", "checks"].map((t) => ({ id: `Setup/${t}`, view: "setup", tab: t })),
 ];
 
 // The shell is min 1280 wide by design (App.tsx, AGENT_BRIEF): below that the page may scroll sideways, but nothing may go past the shell.
