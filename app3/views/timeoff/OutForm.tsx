@@ -6,6 +6,7 @@ import { Btn } from "../../ui/primitives.tsx";
 import { RepairOptions } from "../chrome/RepairOptions.tsx";
 import { plural, useChrome } from "../chrome/shared.tsx";
 import { affectedBy, span } from "./lib.ts";
+import { AddPreview } from "./Preview.tsx";
 
 const TYPES: UnavailType[] = ["Vacation", "Sick", "Other", "Turned-down"];
 const field = "h-8 w-full rounded-md border border-edge bg-white px-1.5 text-sm";
@@ -45,6 +46,12 @@ export function OutForm({ onAdded, label = "Add time off" }: { onAdded?: () => v
     const gaps = affected.filter((g) => g.date >= asOf && (ev.cells[`${g.storeId}|${g.date}`]?.open ?? 0) > 0);
     return { counts, affected, gaps };
   }, [state, addedRec, asOf]);
+  const chosenPid0 = pid && pharmacists.some((p) => p.id === pid) ? pid : pharmacists[0]?.id ?? "";
+  const firstDay0 = first || asOf;
+  const lastDay0 = last || firstDay0;
+  const effStatus0: UnavailStatus = status ?? (type === "Vacation" ? "Requested" : "Approved");
+  // What the record would leave uncovered, shown before saving (not for "turned down", which is about one store).
+  const rec = useMemo(() => (type === "Turned-down" || (added && !first) || !chosenPid0 || lastDay0 < firstDay0 ? null : { pharmacistId: chosenPid0, first: firstDay0, last: lastDay0, status: effStatus0, type }), [type, added, first, chosenPid0, firstDay0, lastDay0, effStatus0]);
   if (!world || !state) return null;
 
   const chosenPid = pid && pharmacists.some((p) => p.id === pid) ? pid : pharmacists[0]?.id ?? "";
@@ -117,6 +124,7 @@ export function OutForm({ onAdded, label = "Add time off" }: { onAdded?: () => v
             </select>
           </div>
         )}
+        <AddPreview state={state} rec={rec} />
         {error && <p role="alert" className="text-xs text-illegal">▲ {error}</p>}
         <div className="flex items-center gap-2">
           <Btn type="submit" tone="ink" disabled={busy || !chosenPid}>Add time off</Btn>

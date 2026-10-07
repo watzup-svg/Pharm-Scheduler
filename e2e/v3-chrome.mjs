@@ -201,7 +201,7 @@ await bar.getByRole("button", { name: "Time off" }).click();
 const card = page.locator(`[data-unavail="${recId}"]`);
 check("a waiting request is listed under Waiting on the Time off screen", (await page.getByRole("list", { name: "Waiting for an answer" }).locator(`[data-unavail="${recId}"]`).count()) === 1);
 const ifApproved = await card.innerText();
-check("a Requested record shows 'If approved: N cells open'", /If approved: (no cells|\d+ cells?) open/.test(ifApproved), ifApproved);
+check("a Requested record says what approving would do, in words", /Approving (leaves every store covered|opens \w+ on \w{3} \w{3} \d+)/.test(ifApproved), ifApproved);
 const nUn = (await get()).cs.length;
 check("the preview does not commit", (await st((id) => window.__v3.app.getState().world.state.unavailability[id].status, recId)) === "Requested");
 await card.getByRole("button", { name: /^Approve/ }).click();
@@ -220,7 +220,10 @@ await shot("5-history");
 // the newest change can be undone from the top bar, which puts the record back to Requested
 await bar.getByRole("button", { name: "Undo" }).click();
 check("top-bar Undo reverses the Approve", (await st((id) => window.__v3.app.getState().world.state.unavailability[id].status, recId)) === "Requested");
-await card.getByRole("button", { name: /^Remove/ }).click();
+await card.getByRole("button", { name: /^Decline/ }).click();
+check("Decline records the answer as one change", (await st((id) => window.__v3.app.getState().world.state.unavailability[id].status, recId)) === "Denied");
+await page.getByRole("group", { name: "Show" }).getByRole("button", { name: "Declined" }).click();
+await page.locator(`[data-unavail="${recId}"]`).getByRole("button", { name: /^Remove/ }).click();
 check("Remove deletes the record", (await st((id) => !window.__v3.app.getState().world.state.unavailability[id], recId)));
 
 // ---- checkpoint and revert ----

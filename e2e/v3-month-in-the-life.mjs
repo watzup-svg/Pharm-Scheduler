@@ -184,7 +184,7 @@ await step("approve the request on the Time off screen", async () => {
   await header.getByRole("button", { name: /^Time off/ }).click();
   const li = page.getByRole("list", { name: "Waiting for an answer" }).locator(`[data-unavail="${request.id}"]`);
   await li.waitFor();
-  if (!/If approved: (no cells|\d+ cells?) open/.test(await li.innerText())) throw new Error("no 'If approved' line");
+  if (!/Approving (leaves every store covered|opens \w+ on \w{3} \w{3} \d+)/.test(await li.innerText())) throw new Error("no 'Approving ...' line");
   await li.getByRole("button", { name: /^Approve/ }).click();
   const st = await app((id) => window.__v3.app.getState().world.state.unavailability[id].status, request.id);
   if (st !== "Approved") throw new Error(`status ${st}`);

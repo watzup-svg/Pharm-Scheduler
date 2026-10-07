@@ -3,12 +3,16 @@ import { useMemo } from "react";
 import { dateRange, RULES, type DomainState } from "@domain";
 import { useApp } from "../../store.ts";
 import { evaluateCached, useEvaluation, useIssues, useViewState } from "../../derive.ts";
-import { countsOf, stepIssue, goTo } from "../chrome/shared.tsx";
+import { countsOf, stepIssue, goTo, fmtDate } from "../chrome/shared.tsx";
 import { Pic } from "../../ui/icons.tsx";
 import { plural } from "../../copy.ts";
 import { Hero, HeroBtn, type Tile } from "./Hero.tsx";
 import { MonthDial } from "./MonthDial.tsx";
 import { LicenceRings, PaperStack } from "./Graphics.tsx";
+import { Standing } from "../timeoff/Standing.tsx";
+import { troubleDay } from "../timeoff/calc.ts";
+import { monthLoads } from "../timeoff/lib.ts";
+import { useTimeOffUi } from "../timeoff/ui.ts";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const monthLabel = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
@@ -128,10 +132,29 @@ export function PrintHero() {
 export function TimeOffHero() {
   const vs = useViewState();
   const asOf = useApp((s) => s.asOf);
-  if (!vs) return null;
-  const rec = Object.values(vs.state.unavailability).filter((u) => u.last >= asOf);
+  const ui = useTimeOffUi();
+  const month = ui.month ?? asOf.slice(0, 7);
+  const state = vs?.state;
+  const trouble = useMemo(() => (state ? troubleDay(monthLoads(state, asOf, month)) : null), [state, asOf, month]);
+  if (!state) return null;
+  const rec = Object.values(state.unavailability).filter((u) => u.last >= asOf && u.type !== "Turned-down");
   const waiting = rec.filter((u) => u.status === "Requested").length;
   const approved = rec.filter((u) => u.status === "Approved" || u.status === "Actual").length;
-  const tiles: Tile[] = [{ kind: "waiting", n: waiting, word: "waiting" }, { kind: "away", n: approved, word: "approved" }];
-  return <Hero label="Time off" lead={rec.length} leadWord="upcoming" tiles={tiles} />;
+  const declined = rec.filter((u) => u.status === "Denied").length;
+  const tiles: Tile[] = trouble
+    ? [{ kind: "open", n: trouble.short.length, word: trouble.short.length === 1 ? "store short on the worst day" : "stores short on the worst day", onClick: () => ui.openDay(trouble.date), tip: `Worst day | ${fmtDate(trouble.date)} | Open the day` }]
+    : [];
+  return (
+    <Hero
+      label="Time off"
+      lead={waiting}
+      leadWord="to approve"
+      tiles={tiles}
+      actions={<>
+        <HeroBtn tone="away" onClick={() => ui.openAdd("add")}><Pic icon="timeOff" className="size-4" /> Add time off</HeroBtn>
+        <HeroBtn onClick={() => ui.openAdd("sick")}>Sick today</HeroBtn>
+      </>}
+      graphic={<Standing waiting={waiting} approved={approved} declined={declined} />}
+    />
+  );
 }
