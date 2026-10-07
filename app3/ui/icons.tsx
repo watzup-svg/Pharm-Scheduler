@@ -1,7 +1,7 @@
 // The picture language of the old scheduler, carried over: one rounded-square chip, a picture inside, a colour that names the family.
 // Every state also has a word wherever it is shown (colour is never the only cue). Picture choices follow src/components/icons.tsx.
 import {
-  Car, Check, CircleHelp, Clock, Copy, DoorClosed, Heart, House, LifeBuoy, Moon, Palmtree, Pin, Route, ShieldAlert, Stethoscope,
+  Car, Check, CircleHelp, Clock, Copy, DoorClosed, Handshake, Heart, House, LifeBuoy, Moon, Palmtree, Pin, Route, ShieldAlert, Stethoscope,
   Thermometer, TriangleAlert, UserPlus, UserX, type LucideIcon,
 } from "lucide-react";
 import { cx } from "./primitives.tsx";
@@ -9,7 +9,7 @@ import { cx } from "./primitives.tsx";
 export const ICON = {
   home: House, float: LifeBuoy, drive: Car, noCoverage: UserX, twice: Copy, closed: DoorClosed, licence: ShieldAlert,
   timeOff: Palmtree, sick: Thermometer, appointment: Stethoscope, family: Heart, covering: Route, asis: Check, streak: Moon,
-  unverified: CircleHelp, pinned: Pin, locum: UserPlus, waiting: Clock, warning: TriangleAlert,
+  unverified: CircleHelp, pinned: Pin, locum: UserPlus, waiting: Clock, agree: Handshake, warning: TriangleAlert,
 } as const satisfies Record<string, LucideIcon>;
 export type IconKey = keyof typeof ICON;
 
@@ -28,15 +28,15 @@ export const MARKS: Record<MarkKind, { family: MarkFamily; icon: IconKey; name: 
   double: { family: "problem", icon: "twice", name: "Twice", meaning: "The same pharmacist at two stores on one day" },
   licence: { family: "problem", icon: "licence", name: "Licence", meaning: "Placed in a state they are not licensed in" },
   away: { family: "away", icon: "timeOff", name: "Time off", meaning: "Placed on a day they are off. They do not count" },
-  waiting: { family: "away", icon: "waiting", name: "Waiting", meaning: "A time-off request you have not decided" },
   drive: { family: "away", icon: "drive", name: "Long drive", meaning: "Over the drive limit from their home store. Still counts" },
   streak: { family: "away", icon: "streak", name: "Many days in a row", meaning: "Past the limit for days in a row. Still counts" },
+  waiting: { family: "away", icon: "waiting", name: "Waiting", meaning: "A time-off request you have not decided" },
   unverified: { family: "neutral", icon: "unverified", name: "Cannot fully check", meaning: "A licence or drive time is not recorded. Counts, flagged" },
   short: { family: "neutral", icon: "asis", name: "Short, accepted", meaning: "You decided to run this day short" },
   covering: { family: "cover", icon: "covering", name: "Covering", meaning: "Working away from their home store. A reminder only" },
   pinned: { family: "neutral", icon: "pinned", name: "Pinned", meaning: "Held in place. The engine never moves it" },
   locum: { family: "cover", icon: "locum", name: "Locum", meaning: "An outside locum covers a shift" },
-  unconfirmed: { family: "neutral", icon: "waiting", name: "Not confirmed", meaning: "Placed, but the pharmacist has not agreed yet" },
+  unconfirmed: { family: "neutral", icon: "agree", name: "Not confirmed", meaning: "Placed, but the pharmacist has not agreed yet" },
 };
 
 const FAMILY: Record<MarkFamily, string> = {

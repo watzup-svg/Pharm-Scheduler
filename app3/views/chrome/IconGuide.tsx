@@ -6,7 +6,8 @@ import { COLOURS, Swatch } from "../wall/Key.tsx";
 import { useChrome } from "./shared.tsx";
 
 const TONES: MarkTone[] = ["bad", "warn", "quiet"];
-const kindsOf = (t: MarkTone) => (Object.keys(MARKS) as MarkKind[]).filter((k) => MARK_TONE[k] === t);
+// Time-off requests are not drawn on the Schedule screen (the Time off page handles them), so the guide leaves them out.
+const kindsOf = (t: MarkTone) => (Object.keys(MARKS) as MarkKind[]).filter((k) => MARK_TONE[k] === t && k !== "waiting");
 
 export function IconGuide() {
   const open = useChrome((s) => s.guide);
