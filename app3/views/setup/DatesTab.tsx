@@ -13,6 +13,7 @@ export function DatesTab() {
   const asOf = useApp((s) => s.asOf);
   const locked = useLocked();
   const commit = useApp((s) => s.commit);
+  const setTab = useApp((s) => s.setSetupTab);
   const st = world.state;
   const stores = useMemo(() => storesSorted(st), [st]);
 
@@ -93,6 +94,7 @@ export function DatesTab() {
         <div className="flex flex-wrap items-center gap-2">
           <Btn tone="ink" disabled={!!locked} onClick={add}>Save date change</Btn>
           <Btn disabled={!!locked} onClick={closeAll} title="Marks every store closed on the chosen date">Close all stores on this date</Btn>
+          <Btn tone="ghost" onClick={() => setTab("holidays")}>Common holidays</Btn>
           {locked && <p className="text-xs text-muted">{locked}</p>}
         </div>
       </div>

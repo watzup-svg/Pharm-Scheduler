@@ -12,7 +12,7 @@ import { describeEdits } from "./copy.ts";
 
 /** The screens. Travel, Rules and Checks are tabs inside Setup; setView still accepts their old names and routes there. */
 export type Screen = "overview" | "wall" | "plan" | "timeoff" | "setup" | "print";
-export type SetupTab = "stores" | "pharmacists" | "patterns" | "dates" | "travel" | "rules" | "checks";
+export type SetupTab = "stores" | "pharmacists" | "patterns" | "holidays" | "dates" | "travel" | "rules" | "checks";
 export type View = Screen | "travel" | "rules" | "checks";
 export type Axis = "store" | "pharmacist";
 export type LeftTab = "queue" | "tell" | "history";

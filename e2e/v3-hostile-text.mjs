@@ -248,7 +248,7 @@ await visit("Print", view("print"));
   const head = (await import("node:fs")).readFileSync(path).subarray(0, 5).toString();
   check("Download PDF hands out a PDF named from dates and revision only", head === "%PDF-" && /^HiSchool_[0-9_a-z-]+_rev\d+\.pdf$/.test(dl.suggestedFilename()), `${head} ${dl.suggestedFilename()}`);
 }
-for (const tab of ["stores", "pharmacists", "patterns", "dates", "travel", "rules", "checks"]) {
+for (const tab of ["stores", "pharmacists", "patterns", "holidays", "dates", "travel", "rules", "checks"]) {
   const expect = tab === "pharmacists" ? SHORT.filter((h) => FULL_MATCH(h) && Object.values(ph).includes(h) && h === h.trim()).slice(0, 3)
     : tab === "stores" ? SHORT.filter((h) => FULL_MATCH(h) && Object.values(st).some((s) => s.name === h) && h === h.trim()).slice(0, 3)
     : tab === "dates" ? placed.notes.filter((n) => n.kind === "override" && FULL_MATCH(n.note) && n.note === n.note.trim()).slice(0, 2).map((n) => n.note) : [];

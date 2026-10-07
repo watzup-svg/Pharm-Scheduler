@@ -74,7 +74,7 @@ const shots = [
   ["out-form", async () => { await reset("wall", "store"); await app(() => window.__v3.app.getState().setOutForm(true)); }],
   ["timeoff", async () => { await reset("timeoff"); }],
   ["plan", async () => { await reset("plan"); }],
-  ...[["stores", "Stores"], ["pharmacists", "Pharmacists"], ["patterns", "Patterns"], ["dates", "Dates"], ["travel", "Travel"], ["rules", "Rules"], ["checks", "Check"]].map(([id, label]) => [`setup-${id}`, async () => {
+  ...[["stores", "Stores"], ["pharmacists", "People"], ["patterns", "Patterns"], ["holidays", "Holidays"], ["dates", "Dates"], ["travel", "Travel"], ["rules", "Rules"], ["checks", "Check"]].map(([id, label]) => [`setup-${id}`, async () => {
     await reset("setup");
     await page.getByRole("tab", { name: label, exact: true }).click();
   }]),

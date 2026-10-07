@@ -4,6 +4,7 @@ import { addDays, cmp, deepEqual, expectedOn, isValidDate, standingMatches, type
 import { useApp } from "../../store.ts";
 import { Btn, Chip, GLYPH } from "../../ui/primitives.tsx";
 import { Hint } from "../chrome/Title.tsx";
+import { dayLabel, previewPattern } from "./lib.ts";
 import { DateField, ORDINAL, SelectField, TableShell, WEEKDAY_SHORT, WEEK_ORDER, niceDate, shortDate, pharmacistsSorted, storesSorted, td, th, useLocked } from "./shared.tsx";
 
 const WINDOW_DAYS = 56; // the next 8 weeks
@@ -167,7 +168,8 @@ function PatternBuilder() {
     return { id: "draft", storeId, pharmacistId: phId, recurrence, effectiveFrom: from, ...(to ? { effectiveTo: to } : {}) };
   }, [storeId, phId, days, cycle, anchor, nth, from, to]);
 
-  const preview = useMemo(() => (draft ? nextMatches(draft, asOf > from ? asOf : from, 8) : []), [draft, asOf, from]);
+  const cal = useMemo(() => (draft ? previewPattern(st, draft, asOf > from ? asOf : from, 4) : null), [draft, st, asOf, from]);
+  const preview = useMemo(() => (cal ? cal.rows.flat().filter((d) => d.hit).map((d) => d.date) : []), [cal]);
 
   // Would this pattern put the pharmacist at two stores on one date? Check with the draft added.
   const wouldConflict = useMemo(() => {
@@ -221,12 +223,33 @@ function PatternBuilder() {
         <DateField label="Applies until (optional)" value={to} onChange={setTo} error={touched ? errors.to : null} hint="Last day; blank means no end" />
       </div>
 
-      <div aria-live="polite" className="rounded-md bg-paper p-2 text-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Next 8 matching dates</p>
-        {!draft ? <p className="text-muted">Fill in the store, pharmacist and weekdays to see the dates.</p> : preview.length === 0 ? <p className="text-muted">This pattern matches no dates. Check the weekdays, the weeks of the month and the dates.</p> : (
-          <ol data-testid="pattern-preview" className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-            {preview.map((d) => <li key={d}>{shortDate(d)}</li>)}
-          </ol>
+      <div aria-live="polite" className="rounded-md bg-paper p-3 text-sm">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">What this gives over the next 4 weeks</p>
+          {cal && cal.hits > 0 && <p className="text-xs text-muted" data-testid="pattern-preview-count">{cal.hits} {cal.hits === 1 ? "day" : "days"}{cal.flagged ? `, ${cal.flagged} to look at` : ""}</p>}
+        </div>
+        {!cal ? <p className="mt-1 text-muted">Fill in the store, pharmacist and weekdays to see the days.</p> : cal.hits === 0 ? <p className="mt-1 text-muted">This pattern matches no days. Check the weekdays, the weeks of the month and the dates.</p> : (
+          <>
+            <div className="mt-2 grid w-max grid-cols-7 gap-1">
+              {WEEK_ORDER.map((w) => <span key={w} aria-hidden className="text-center text-xs font-semibold text-muted">{WEEKDAY_SHORT[w]![0]}</span>)}
+            </div>
+            <div data-testid="pattern-preview" role="list" aria-label="Days the pattern lands on" className="mt-1 grid w-max grid-cols-7 gap-1">
+              {cal.rows.flat().map((d) => d.hit ? (
+                <span key={d.date} role="listitem" data-hit="yes" data-date={d.date} data-issue={d.issue ?? ""} aria-label={`${dayLabel(d.date)}${d.text ? `. ${d.text}` : ""}`} data-tip={`${dayLabel(d.date)} | ${d.text ?? "The pattern lands here"}`}
+                  className={`grid size-9 place-items-center rounded-md text-sm font-semibold tabular-nums ${d.issue ? "bg-warn-bg text-warn ring-2 ring-warn/50" : "bg-ink text-white"}`}>
+                  {d.issue && <span aria-hidden className="mr-0.5 text-[10px]">{GLYPH.warning}</span>}{Number(d.date.slice(8))}
+                </span>
+              ) : (
+                <span key={d.date} aria-hidden data-hit="no" data-date={d.date} className="grid size-9 place-items-center rounded-md text-sm tabular-nums text-muted/60">{Number(d.date.slice(8))}</span>
+              ))}
+            </div>
+            {cal.flagged > 0 && (
+              <ul className="mt-2 list-disc pl-5 text-xs text-warn">
+                {cal.rows.flat().filter((d) => d.hit && d.issue).slice(0, 4).map((d) => <li key={d.date}>{dayLabel(d.date)}: {d.text}</li>)}
+                {cal.flagged > 4 && <li>and {cal.flagged - 4} more</li>}
+              </ul>
+            )}
+          </>
         )}
         {wouldConflict.length > 0 && <p role="alert" className="mt-2 text-sm text-warn">{GLYPH.warning} Build will skip both: pattern conflict. {conflictSummary(st, wouldConflict)[0]}</p>}
         {duplicate && <p className="mt-2 text-xs text-muted">This exact pattern already exists. Adding it again changes nothing.</p>}
