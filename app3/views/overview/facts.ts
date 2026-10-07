@@ -63,7 +63,6 @@ export function useChecklist(m: MonthFacts | null): ChecklistItem[] {
     const checks = buildChecks(world.state, asOf, win);
     const snaps = world.journal.snapshots.filter((s) => s.from <= m.bounds.to && s.to >= m.bounds.from);
     const posted = snaps.length ? Math.max(...snaps.map((s) => s.revision)) : null;
-    const told = new Set(api.toTell(world, asOf).map((e) => e.pharmacistId)).size;
     const unsaved = save.unsavedChanges;
     const fileSaved = !(save.neverSaved || unsaved > 0 || save.error || save.needsPermission);
     const fileDetail = save.error ? "Not saved" : save.needsPermission ? "Needs permission" : save.neverSaved ? "Not saved to a file yet" : unsaved > 0 ? `${unsaved} ${unsaved === 1 ? "change" : "changes"} not saved` : save.lastSavedAt ? "Saved" : "Nothing to save yet";
@@ -77,7 +76,6 @@ export function useChecklist(m: MonthFacts | null): ChecklistItem[] {
       firstProblem: first ? { storeId: first.storeIds[0]!, date: first.date } : null,
       postedRevision: posted,
       changedDays: posted === null ? 0 : api.changedSincePosting(world).length,
-      toTell: posted === null ? 0 : told,
       fileSaved, fileDetail,
     };
     return buildChecklist(facts);

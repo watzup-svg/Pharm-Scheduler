@@ -79,7 +79,7 @@ check("See all shows the rest", (await st(() => document.querySelectorAll('aside
 for (const g of ["Needs coverage", "Problems"]) check(`queue group ${g}`, (await left.getByRole("region", { name: g }).count()) > 0);
 const firstRow = left.getByRole("region", { name: "Needs coverage" }).locator("button").first();
 const rowText = await firstRow.innerText();
-check("queue rows are one line like 'Fri Oct 9 · EST needs 1 more'", /[A-Z][a-z]{2} [A-Z][a-z]{2} \d+ · .*needs \d+ more/.test(rowText) && (await firstRow.boundingBox()).height < 40, rowText);
+check("queue rows read like 'Fri Oct 9' then 'EST needs 1 more', in the colour of the issue", /[A-Z][a-z]{2} [A-Z][a-z]{2} \d+\s+.*needs \d+ more/s.test(rowText) && (await firstRow.getAttribute("data-sev")) === "bad", rowText);
 await firstRow.click();
 let s = await get();
 check("clicking a queue row selects that cell", !!s.sel?.storeId && rowText.includes(new Date(s.sel.date + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })), JSON.stringify(s.sel));
@@ -90,13 +90,7 @@ check("n moves to the next problem", s.sel && (s.sel.date !== sel1.date || s.sel
 await page.keyboard.press("Shift+N");
 s = await get();
 check("Shift+N goes back to the previous problem", s.sel && s.sel.date === sel1.date && s.sel.storeId === sel1.storeId, JSON.stringify(s.sel));
-await page.getByRole("button", { name: "Fix: next problem" }).click();
-s = await get();
-check("the Fix button steps to the next problem", s.sel && (s.sel.date !== sel1.date || s.sel.storeId !== sel1.storeId), JSON.stringify(s.sel));
-await page.getByRole("button", { name: "Previous problem" }).click();
-s = await get();
-check("the previous-problem button steps back", s.sel && s.sel.date === sel1.date && s.sel.storeId === sel1.storeId, JSON.stringify(s.sel));
-check("the header is one line: 'N shifts need cover · M problems'", /\d+\s+shifts?\s+needs?\s+cover/.test(await page.locator("section.hero-band").innerText()) && (await page.locator("section.hero-band").boundingBox()).height <= 60, (await page.locator("section.hero-band").innerText()).replace(/\n/g, " / "));
+check("the hero is informational: no buttons, only text and the month dial", (await page.locator("section.hero-band button").count()) === 0 && (await page.locator("section.hero-band").innerText()).length > 0);
 
 // ---- Icon guide and Day view ----
 await bar.getByRole("button", { name: "File menu" }).click();
@@ -104,7 +98,7 @@ await page.getByRole("menuitem", { name: /^Icon guide/ }).click();
 const guide = page.getByRole("dialog", { name: "Icon guide" });
 check("File > Icon guide opens the guide", (await guide.count()) === 1);
 const nKinds = await st(() => 0);
-check("the guide explains every picture in the table (red, amber and quiet sections)", (await guide.locator("dt [data-statemark]").count()) === 14 && (await guide.getByText("Green", { exact: true }).count()) >= 1 && (await guide.getByText("Pink", { exact: true }).count()) === 1, String(await guide.locator("dt [data-statemark]").count()));
+check("the guide explains every picture in the table (red, amber and quiet sections)", (await guide.locator("dt [data-statemark]").count()) === 14 && (await guide.getByText("Green", { exact: true }).count()) >= 1 && (await guide.getByText("Red", { exact: true }).count()) >= 1, String(await guide.locator("dt [data-statemark]").count()));
 void nKinds;
 await page.keyboard.press("Escape");
 check("Esc closes the guide", (await guide.count()) === 0);
@@ -130,8 +124,8 @@ await page.getByRole("button", { name: "Month", exact: true }).click();
 await shot("1-queue");
 
 const openOutForm = async () => { await st(() => { const a = window.__v3.app.getState(); a.setView("wall"); a.setOutForm(true); }); await right.getByRole("form", { name: "Add time off" }).waitFor(); };
-await page.getByRole("button", { name: /Someone.s out/ }).first().click();
-check("the yellow Someone's out button opens the form above the Inspector", (await right.getByRole("form", { name: "Add time off" }).count()) === 1 && (await get()).view === "wall");
+await openOutForm();
+check("the Someone's out form (opened from the palette) sits above the Inspector", (await right.getByRole("form", { name: "Add time off" }).count()) === 1 && (await get()).view === "wall");
 await right.getByRole("button", { name: "Close", exact: true }).click();
 check("Close puts the form away", (await right.getByRole("form", { name: "Add time off" }).count()) === 0);
 // ---- someone's out: add an absence, see affected count, find cover, preview, accept ----
@@ -284,30 +278,6 @@ await shot("6-revert-confirm");
 await left.getByRole("button", { name: "Revert now" }).click();
 s = await get();
 check("revert restores the checkpointed state", s.nUnav === snapUnav && s.cs[s.cs.length - 1].kind === "revert", `${s.nUnav} vs ${snapUnav}`);
-
-// ---- to tell ----
-await left.getByRole("tab", { name: "To tell" }).click();
-check("To tell lists changes (practice month starts untold)", (await left.getByRole("button", { name: /^Mark told/ }).count()) > 0);
-await left.getByRole("button", { name: "Mark all told" }).click();
-check("Everyone has been told after Mark all", (await left.innerText()).includes("Everyone has been told."));
-const rm = await st(() => {
-  const a = window.__v3.app.getState();
-  const x = Object.values(a.world.state.assignments).filter((y) => y.date > a.asOf).sort((p, q) => (p.date < q.date ? -1 : 1))[0];
-  return { id: x.id, name: a.world.state.pharmacists[x.pharmacistId].name, date: x.date };
-});
-await st((id) => window.__v3.app.getState().commit([{ t: "remove", assignmentId: id }]), rm.id);
-const groupEl = left.getByLabel(`To tell: ${rm.name}`);
-const gtxt = await groupEl.innerText();
-check("a changed shift appears under that person, in plain words", /was [A-Z0-9 +]+, now off/.test(gtxt), gtxt);
-await groupEl.getByRole("button", { name: /^Copy message/ }).click();
-await page.waitForTimeout(150);
-const copied = (await left.getByText(/Copied the message/).count()) === 1;
-const fb = left.getByLabel(/Copying did not work/);
-const msg = copied ? await page.evaluate(() => navigator.clipboard.readText()).catch(() => "") : await fb.inputValue();
-check("Copy message gives a plain sentence, or a visible text box", /^Hi \w+, you're off [A-Z][a-z]{2} [A-Z][a-z]{2} \d+\.$/.test(msg) || (copied && msg === ""), msg);
-await shot("7-to-tell");
-await groupEl.getByRole("button", { name: /^Mark told/ }).click();
-check("Mark told clears the entry", (await left.innerText()).includes("Everyone has been told."));
 
 // ---- Build, proposal bar ----
 await left.getByRole("tab", { name: "Queue" }).click();

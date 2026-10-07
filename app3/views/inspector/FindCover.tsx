@@ -6,57 +6,43 @@ import { Chip } from "../../ui/primitives.tsx";
 import { codeOf, nameOf, numWord, plural, type Ctx } from "./lib.ts";
 import { Act } from "./ui.tsx";
 
-export function FindCover({ ctx }: { ctx: Ctx }) {
+export function SearchWider({ ctx }: { ctx: Ctx }) {
   const { state, lock, storeId, date, asOf } = ctx;
   const rr = useApp((s) => s.repairResult);
   const [near, setNear] = useState(false);
   const past = date < asOf;
-  const mine = !!rr && rr.gaps.some((g) => g.storeId === storeId && g.date === date);
+  const mine = !!rr && rr.wider && rr.gaps.some((g) => g.storeId === storeId && g.date === date);
   const [busy, setBusy] = useState(false);
   const running = useApp((s) => s.busy);
   // The search runs in the page; let "Searching..." paint first, since a wider search can take a while.
-  const run = (wider: boolean) => {
+  const run = () => {
     setNear(false);
     setBusy(true);
-    setTimeout(() => { try { useApp.getState().runRepair([{ storeId, date }], wider); } finally { setBusy(false); } }, 30);
+    setTimeout(() => { try { useApp.getState().runRepair([{ storeId, date }], true); } finally { setBusy(false); } }, 30);
   };
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Act tone="ink" disabled={!!lock || past || busy} title={lock ?? (past ? "This day has passed" : "Looks for ways to fill this day. Nothing changes until you accept.")} onClick={() => run(false)}>{busy ? "Searching..." : "Find cover"}</Act>
+    <div className="mt-3 rounded-md bg-fill p-2 text-sm">
+      <p className="text-xs">Nobody above fits? Searching wider tries plans with several moves, and may ask people on their day off to take extra shifts. Nothing changes until you accept.</p>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+        <Act tone="ink" disabled={!!lock || past || busy} title={lock ?? (past ? "This day has passed" : undefined)} onClick={run}>{busy ? "Searching..." : "Search wider"}</Act>
         {running && <Act onClick={() => useApp.getState().cancelEngine()}>Cancel</Act>}
-        {past && <span className="text-xs text-muted">This day has passed.</span>}
       </div>
-
       {mine && rr && (
         <div className="mt-2" aria-live="polite">
           {rr.gaps.length > 1 && <p className="mb-1 text-xs text-muted">This search looked at {numWord(rr.gaps.length)} open days together.</p>}
-          {rr.result.message && <p className="text-sm">{rr.result.message}</p>}
+          {rr.result.message && <p>{rr.result.message}</p>}
           {rr.result.status === "options" && rr.result.options.length > 0 && (
             <ol className="mt-1 flex flex-col gap-2">
               {rr.result.options.map((o, i) => <Option key={i} ctx={ctx} option={o} n={i + 1} />)}
             </ol>
           )}
-          {rr.result.options.length === 0 && rr.result.status === "none" && <p className="mt-1 text-sm text-muted">Nothing fits without breaking a rule.</p>}
-
+          {rr.result.options.length === 0 && rr.result.status === "none" && <p className="mt-1 text-muted">Nothing fits without breaking a rule.</p>}
           {rr.result.excludedUnknownTravel.length > 0 && (
             <p className="mt-2 text-xs text-muted">
               Not considered: drive time not known ({[...new Set(rr.result.excludedUnknownTravel.map((x) => `${state.pharmacists[x.pharmacistId]?.initials ?? x.pharmacistId} to ${codeOf(state, x.storeId)}`))].join(", ")}).
             </p>
           )}
-
-          <div className="mt-2 rounded-md bg-fill p-2 text-xs">
-            {rr.wider
-              ? <p>Searched wider: this may ask people on their day off to take extra shifts.</p>
-              : (
-                <>
-                  <p>Searching wider may ask people on their day off to take extra shifts.</p>
-                  <Act className="mt-1.5" disabled={!!lock || busy} title={lock ?? undefined} onClick={() => run(true)}>Search wider</Act>
-                </>
-              )}
-          </div>
-
           {rr.result.nearMiss && (
             <div className="mt-2">
               <Act pressed={near} onClick={() => setNear(!near)}>{near ? "Hide the closest option" : "Show the closest option"}</Act>

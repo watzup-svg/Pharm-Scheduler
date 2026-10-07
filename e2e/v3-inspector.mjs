@@ -38,9 +38,10 @@ await select({ storeId: cell.storeId, date: cell.date });
 check("open cell says Needs 1 more", (await status()) === "Needs 1 more", await status());
 const rows = insp.locator('ul[aria-label="Who can work here"] > li');
 check("best three candidates render", (await rows.count()) === 3, String(await rows.count()));
-check("Show all N is offered", await insp.getByRole("button", { name: /^Show all \d+$/ }).isVisible());
+check("Show all N is offered", await insp.getByRole("button", { name: /^Show all \d+/ }).isVisible());
+check("Search wider is hidden until the full list is open", (await insp.getByRole("button", { name: "Search wider" }).count()) === 0);
 check("each candidate has a one-line consequence and a button", (await rows.locator("button").count()) === 3 && /(Free|At \w+ today|Not|Drive)/.test(await rows.first().innerText()), await rows.first().innerText());
-check("Find cover button is shown for an open cell", await insp.getByRole("button", { name: "Find cover" }).isVisible());
+check("no separate Find cover button any more", (await insp.getByRole("button", { name: "Find cover", exact: true }).count()) === 0, String(await insp.getByRole("button", { name: "Find cover" }).evaluateAll((e) => e.map((x) => x.outerHTML.slice(0, 120)))));
 check("Details and More for this day start collapsed", (await insp.getByRole("button", { name: "More for this day" }).getAttribute("aria-expanded")) === "false");
 const nControls = await controlCount();
 check("12 or fewer controls on an open cell before any disclosure", nControls <= 12, String(nControls));
@@ -197,13 +198,14 @@ await get(({ c, s2People }) => {
   for (const p of [...s2People, "P5"]) if (!Object.values(g().world.state.assignments).some((a) => a.pharmacistId === p && a.date === c.date)) g().commit([{ t: "place", storeId: "S2", pharmacistId: p, date: c.date }]);
 }, { c: cell, s2People });
 await settle();
-await insp.getByRole("button", { name: "Find cover" }).click(); await settle();
+{ const all = insp.getByRole("button", { name: /^Show all \d+/ }); if (await all.count()) await all.click(); }
+await insp.getByRole("button", { name: "Search wider" }).click(); await settle();
 const options = insp.locator("ol > li");
 const nOpt = await options.count();
 if (false) console.log(await get((c) => JSON.stringify(Object.values(window.__v3.app.getState().world.state.assignments).filter((a) => a.date === c.date && ["S2", "S10"].includes(a.storeId))) + JSON.stringify(window.__v3.app.getState().repairResult?.result).slice(0, 300), cell));
 const resText = await insp.innerText();
 check("Find cover shows options or a plain message", nOpt > 0 || /No solution|Cannot evaluate|Search limit|Nothing/.test(resText), resText.slice(0, 200));
-check("Search wider is offered with the day-off caveat", await insp.getByRole("button", { name: "Search wider" }).isVisible() && /day off to take extra shifts/.test(resText));
+check("Search wider carries the day-off caveat", await insp.getByRole("button", { name: "Search wider" }).isVisible() && /day off to take extra shifts/.test(resText));
 await page.screenshot({ path: shot });
 if (nOpt > 0) {
   check("options are explained in words", /Changes \w+ (person|people)/.test(resText) && /Drive \d+ min/.test(resText));
@@ -211,9 +213,9 @@ if (nOpt > 0) {
   check("Preview opens a proposal", await get(() => !!window.__v3.app.getState().world.session.proposal));
   check("Inspector says to accept or discard first", /Accept or discard the preview first/.test(await insp.innerText()));
   check("Place buttons are disabled while previewing", (await insp.locator('button[aria-label^="Place: "]:not([disabled]), button[aria-label^="Move here: "]:not([disabled])').count()) === 0);
-  check("steppers and Find cover are disabled while previewing", await insp.getByRole("button", { name: "More: Accept being short" }).isDisabled() && await insp.getByRole("button", { name: "Find cover" }).isDisabled());
+  check("steppers and Find cover are disabled while previewing", await insp.getByRole("button", { name: "More: Accept being short" }).isDisabled() && await insp.getByRole("button", { name: "Search wider" }).isDisabled());
   await get(() => window.__v3.app.getState().discardProposal()); await settle();
-  check("controls come back after discarding", await insp.getByRole("button", { name: "Find cover" }).isEnabled());
+  check("controls come back after discarding", await insp.getByRole("button", { name: "Search wider" }).isEnabled());
 } else check("(no options to preview)", false);
 await insp.getByRole("button", { name: "Clear these results" }).click(); await settle();
 

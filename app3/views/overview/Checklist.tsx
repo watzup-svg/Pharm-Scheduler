@@ -4,7 +4,7 @@ import { cx } from "../../ui/primitives.tsx";
 import { goWhere } from "./actions.ts";
 import type { ChecklistItem, Where } from "./lib.ts";
 
-const VERB: Record<Where["to"], string> = { setup: "Check", timeoff: "Review", problem: "Show", print: "Post", tell: "Tell", save: "Save" };
+const VERB: Record<Where["to"], string> = { setup: "Check", timeoff: "Review", problem: "Show", print: "Post", save: "Save" };
 
 function Hex({ done, current, n }: { done: boolean; current: boolean; n: number }) {
   return (

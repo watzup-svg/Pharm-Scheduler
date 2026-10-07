@@ -23,7 +23,7 @@ import { SearchPalette } from "./ui/SearchPalette.tsx";
 import { ScheduleHero, SetupHero, PrintHero, TimeOffHero } from "./views/hero/Heroes.tsx";
 
 // Shell: one top row; the schedule fills the middle under one header band; the Inspector docks on the right; the
-// queue / who to tell / history live in a drawer on the left that is closed until asked for; the Proposal Bar sits
+// queue / history live in a drawer on the left that is closed until asked for; the Proposal Bar sits
 // along the bottom while a preview is open. Desktop only.
 export function App() {
   const world = useApp((s) => s.world);
@@ -43,11 +43,10 @@ export function App() {
       <div className="flex min-h-0 flex-1">
         {drawer ? (
           <aside aria-label="Left panel" className="relative w-[300px] shrink-0 overflow-y-auto border-r border-line bg-cream">
-            <button type="button" aria-label="Close the list" onClick={() => setDrawer(false)} className="absolute right-2 top-2 z-10 rounded px-2 py-1 text-sm text-muted hover:bg-fill">Close ✕</button>
             <ErrorBoundary name="the list"><LeftPanel /></ErrorBoundary>
           </aside>
         ) : (
-          <button type="button" aria-label="Open the list" aria-expanded={false} data-tip="Queue, who to tell, history | Open the list" onClick={() => setDrawer(true)}
+          <button type="button" aria-label="Open the list" aria-expanded={false} data-tip="Queue and history | Open the list" onClick={() => setDrawer(true)}
             className="flex w-8 shrink-0 flex-col items-center gap-2 border-r border-line bg-cream pt-3 text-xs font-semibold text-muted hover:bg-fill">
             <span aria-hidden>›</span>
             {serious > 0 && <span className="rounded-full bg-illegal-bg px-1.5 text-illegal ring-1 ring-inset ring-illegal/30">{serious}</span>}

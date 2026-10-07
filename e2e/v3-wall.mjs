@@ -142,7 +142,7 @@ try {
   await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "People" }).click();
   check("axis toggle: pharmacist rows", (await page.locator('[role="rowheader"]').count()) === 20 + 0 || (await page.locator('[role="row"]').count()) > 20, `${await page.locator('[role="row"]').count()} rows`);
   const ptext = await grid.innerText();
-  check("pharmacist axis shows approved time off as a pink hatch, with no OFF text", (await page.locator('.w-cell[data-pid] .w-block[data-block="away"].hatch').count()) > 0 && !ptext.includes("OFF"));
+  check("pharmacist axis does not show time off (it lives on the Time off page): no hatch, no OFF text", (await page.locator('.w-cell[data-pid] .w-block[data-block="away"]').count()) === 0 && !ptext.includes("OFF"));
   check("pharmacist axis cells are green with the store code", (await page.locator('.w-cell[data-pid] .w-block[data-block="good"]').count()) > 20);
   check("people rows have a coloured dot (no initials)", (await page.locator('[role="rowheader"] .w-disc').count()) > 10);
   check("pharmacist axis shows store codes", /\bEST\b|\bCAT\b|\bSIL\b/.test(ptext));

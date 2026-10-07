@@ -175,10 +175,10 @@ test("every write-out site in the app is one that has been reviewed", () => {
   for (const r of roots) walk(new URL(`../../${r}`, import.meta.url).pathname);
   const root = new URL("../../", import.meta.url).pathname;
   const rel = [...found.keys()].map((p) => p.slice(root.length)).sort();
-  // Reviewed: mileage CSV (csvLine), To tell (oneLine), diagnostics (log text, begins with a fixed header), print PDF (dates only name),
+  // Reviewed: mileage CSV (csvLine), diagnostics (log text, begins with a fixed header), print PDF (dates only name),
   // the schedule file (binary, file name via safeFileName), recovery download.
   assert.deepEqual(rel, [
-    "app3/diagnostics.ts", "app3/print/pdf.ts", "app3/views/PrintView.tsx", "app3/views/SaveControls.tsx", "app3/views/chrome/ToTell.tsx",
+    "app3/diagnostics.ts", "app3/print/pdf.ts", "app3/views/PrintView.tsx", "app3/views/SaveControls.tsx",
     "app3/views/setup/parts.tsx", "app3/views/travel/MileageReport.tsx",
     "persist/backends.ts", "persist/core.ts",
   ].sort());

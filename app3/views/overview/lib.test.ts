@@ -53,7 +53,7 @@ test("next problems are the first n on or after the date", () => {
   assert.equal(nextProblems(ps, "2026-10-01", 2).length, 2);
 });
 
-const base: ChecklistFacts = { licencesMissing: 0, driveTimesMissing: 0, waiting: 0, openShifts: 0, ruleBreaks: 0, firstProblem: null, postedRevision: 2, changedDays: 0, toTell: 0, fileSaved: true, fileDetail: "Saved" };
+const base: ChecklistFacts = { licencesMissing: 0, driveTimesMissing: 0, waiting: 0, openShifts: 0, ruleBreaks: 0, firstProblem: null, postedRevision: 2, changedDays: 0, fileSaved: true, fileDetail: "Saved" };
 test("checklist ticks from the facts", () => {
   assert.ok(buildChecklist(base).every((i) => i.done));
   const bad = buildChecklist({ ...base, licencesMissing: 1, driveTimesMissing: 2, waiting: 3, openShifts: 4, ruleBreaks: 5, firstProblem: { storeId: "S1", date: "2026-10-07" }, postedRevision: null, fileSaved: false, fileDetail: "Not saved to a file yet" });
@@ -61,8 +61,8 @@ test("checklist ticks from the facts", () => {
   assert.equal(bad[0]!.detail, "1 licence missing, 2 drive times missing");
   assert.equal(bad[4]!.detail, "Not posted yet");
   assert.deepEqual(bad[2]!.where, { to: "problem", storeId: "S1", date: "2026-10-07" });
-  const told = buildChecklist({ ...base, changedDays: 3, toTell: 2 });
-  assert.equal(told[4]!.done, false);
-  assert.equal(told[4]!.detail, "Changed since posting: tell 2 people");
-  assert.deepEqual(told[4]!.where, { to: "tell" });
+  const changed = buildChecklist({ ...base, changedDays: 3 });
+  assert.equal(changed[4]!.done, false);
+  assert.equal(changed[4]!.detail, "Changed since posting: 3 days");
+  assert.deepEqual(changed[4]!.where, { to: "print" });
 });

@@ -67,7 +67,7 @@ export const RULE_MARK: Record<string, MarkKind> = {
 };
 
 // ---- Block marks: the small picture on a coloured block of the schedule ----
-// Colour of the block says whether the shift is covered. The picture says what is still wrong, and its colour follows how serious that is:
+// The block takes the colour of its picture (red / yellow / green) so a cell reads at a glance; the picture says what is wrong:
 // red = a rule is broken, amber = take a look, quiet green = for information only. This table is also what the Icon guide prints.
 export type MarkTone = "bad" | "warn" | "quiet";
 export const MARK_TONE: Record<MarkKind, MarkTone> = {
@@ -76,9 +76,9 @@ export const MARK_TONE: Record<MarkKind, MarkTone> = {
   short: "quiet", covering: "quiet", pinned: "quiet", locum: "quiet",
 };
 export const TONE_TITLE: Record<MarkTone, { title: string; line: string }> = {
-  bad: { title: "Red", line: "A rule is broken, or the shift needs cover." },
-  warn: { title: "Amber", line: "Worth a look. The shift still counts as covered." },
-  quiet: { title: "Quiet green", line: "For information only. Nothing to fix." },
+  bad: { title: "Red", line: "A rule is broken, or the shift needs cover. The block is red too." },
+  warn: { title: "Amber", line: "Worth a look. The shift still counts as covered. The block is yellow." },
+  quiet: { title: "Quiet green", line: "For information only. Nothing to fix. The block stays green." },
 };
 const TONE_INK: Record<MarkTone, string> = { bad: "text-illegal", warn: "text-warn", quiet: "text-ok" };
 

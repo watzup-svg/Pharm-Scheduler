@@ -3,8 +3,9 @@ import { useMemo } from "react";
 import { dateRange, RULES, type DomainState } from "@domain";
 import { useApp } from "../../store.ts";
 import { evaluateCached, useEvaluation, useIssues, useViewState } from "../../derive.ts";
-import { countsOf, stepProblem, fmtDate } from "../chrome/shared.tsx";
-import { Pic } from "../../ui/icons.tsx";
+import { countsOf, fmtDate } from "../chrome/shared.tsx";
+import { MARKS, Pic } from "../../ui/icons.tsx";
+import { explainSelection } from "../wall/explain.ts";
 import { plural } from "../../copy.ts";
 import { Hero, HeroBtn, type Tile } from "./Hero.tsx";
 import { MonthDial } from "./MonthDial.tsx";
@@ -32,44 +33,48 @@ function useScheduleHero() {
   return { issues, vs, win, asOf, counts, awayCount, unverified };
 }
 
-function openOut() {
-  const a = useApp.getState();
-  a.setView("wall");
-  a.setOutForm(true);
-}
+/** The Schedule's header: it explains whatever is selected (a day at a store, or a person's day) in plain words: a big picture in the issue's colour, a headline, the store and date, and who is involved. Nothing to click here; the month dial stays at the right. */
+const CHIP_BG = { bad: "#f0c4ba", warn: "#f2da8f", ok: "#6fb78d" } as const; // the same colours as the blocks on the wall (wall.css)
+const CHIP_INK = { bad: "var(--color-illegal)", warn: "var(--color-warn)", ok: "var(--color-ok)" } as const;
+const DOT = { bad: "#f0c4ba", warn: "#f2da8f", quiet: "#9fd3b4", ok: "#9fd3b4" } as const;
 
-/** The Schedule's header: one calm line. "3 shifts need cover · 5 problems", then Fix (next problem) and Someone's out. The month dial stays at the right. */
 export function ScheduleHero() {
-  const { issues, vs, win, counts, awayCount, unverified } = useScheduleHero();
-  const goQueue = () => useApp.getState().setDrawer(true, "queue");
-  const step = (dir: 1 | -1) => { if (vs) stepProblem(issues, vs.state, dir); };
+  const { vs, win, counts, asOf } = useScheduleHero();
+  const ev = useEvaluation();
+  const sel = useApp((s) => s.selection);
+  const ex = useMemo(() => (vs && ev ? explainSelection(vs.state, ev, sel, asOf) : null), [vs, ev, sel, asOf]);
   const problems = counts.problems + counts.warnings;
-  void awayCount;
-  const tipOpen = "Needs cover | Shifts with fewer pharmacists than the store needs | Open the list";
-  const tipProblems = `Problems | ${counts.problems} that stop someone counting, ${counts.warnings} warnings (long drives, many days in a row)${unverified ? `, ${unverified} cannot be fully checked` : ""} | Open the list`;
-  const num = "text-2xl font-semibold leading-none tracking-tight text-[#f3dcd6]";
-  const link = "inline-flex items-baseline gap-1.5 rounded-md px-1.5 py-1 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white";
+  const icon = ex?.mark ? MARKS[ex.mark].icon : ex ? "asis" : null;
   return (
-    <section aria-label={`${monthLabel(win.from)} summary`} data-open={counts.open} data-problems={problems} className="hero-band relative mx-3 mt-2 flex h-14 items-center gap-3 overflow-hidden rounded-xl bg-night px-4 text-cream shadow-[0_8px_20px_-14px_rgba(32,24,32,0.7)]">
-      <p className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap text-sm text-cream/80" aria-live="polite">
-        {counts.open > 0 ? (
-          <button type="button" onClick={goQueue} data-tip={tipOpen} className={link}><b className={num}>{counts.open}</b><span>{counts.open === 1 ? "shift needs cover" : "shifts need cover"}</span></button>
+    <section aria-label={`${monthLabel(win.from)} summary`} data-open={counts.open} data-problems={problems} data-explain={ex ? ex.tone : "none"} className="hero-band relative mx-3 mt-2 flex min-h-[104px] items-center gap-5 overflow-hidden rounded-xl bg-night px-5 py-3 text-cream shadow-[0_8px_20px_-14px_rgba(32,24,32,0.7)]">
+      <span aria-hidden className="grid size-16 shrink-0 place-items-center rounded-2xl" style={ex ? { background: CHIP_BG[ex.tone], color: CHIP_INK[ex.tone] } : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", outline: "1px dashed rgba(255,255,255,0.3)", outlineOffset: -1 }}>
+        {icon ? <Pic icon={icon} className="size-9" /> : <Pic icon="unverified" className="size-8" />}
+      </span>
+      <div className="min-w-0 flex-1" aria-live="polite">
+        {ex ? (
+          <>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-tight text-[#f7e9e4]" data-hero-headline>{ex.headline}</h2>
+            <p className="mt-0.5 text-sm text-cream/70" data-hero-context>{ex.context}</p>
+            {ex.more.length > 0 && <ul className="mt-1 space-y-0.5 text-sm text-cream/85">{ex.more.map((m) => <li key={m}>{m}</li>)}</ul>}
+            {ex.people.length > 0 && (
+              <ul aria-label="People involved" className="mt-2 flex flex-wrap gap-1.5">
+                {ex.people.map((pp, i) => (
+                  <li key={pp.name + i} className="inline-flex items-center gap-2 rounded-full bg-white/10 py-1 pl-2.5 pr-3 text-sm ring-1 ring-inset ring-white/10">
+                    <span aria-hidden className="size-2.5 rounded-full" style={{ background: DOT[pp.tone] }} />
+                    <b className="font-semibold">{pp.name}</b><span className="text-cream/70">{pp.note}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         ) : (
-          <span className="px-1.5">{problems > 0 ? "All shifts covered" : "Everything is covered"}</span>
+          <>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-tight text-cream/80" data-hero-headline>No cell selected</h2>
+            <p className="mt-0.5 text-sm text-cream/60" data-hero-context>Pick a day on the schedule, or a problem on the list, to see what is going on.</p>
+          </>
         )}
-        {problems > 0 && <>
-          <span aria-hidden className="text-cream/40">·</span>
-          <button type="button" onClick={goQueue} data-tip={tipProblems} className={link}><b className={num}>{problems}</b><span>{problems === 1 ? "problem" : "problems"}</span></button>
-        </>}
-      </p>
-      <div className="ml-auto flex items-center gap-2">
-        <div className="flex items-center gap-0.5">
-          <HeroBtn tone="ghost" onClick={() => step(-1)} disabled={!issues.length} title="Previous problem | Press Shift+N" aria-label="Previous problem">‹</HeroBtn>
-          <HeroBtn tone="light" onClick={() => step(1)} disabled={!issues.length} title="Next problem | Press N" aria-label="Fix: next problem">Fix →</HeroBtn>
-        </div>
-        <HeroBtn tone="away" onClick={openOut}><Pic icon="timeOff" className="size-4" /> Someone’s out</HeroBtn>
-        <MonthDial size={44} />
       </div>
+      <MonthDial size={56} />
     </section>
   );
 }

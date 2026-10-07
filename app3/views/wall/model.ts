@@ -129,6 +129,8 @@ export type CellModel = {
   /** The one picture on the block (worst unresolved issue first), its severity colour, and the count (open spots, only when more than one). Null when all is good, and on past days. */
   chip: MarkKind | null;
   iconTone: MarkTone | null;
+  /** Checked off (accepted) but still true: same picture and colour, drawn faded like a past day. */
+  faded?: boolean;
   chipN: number;
   /** Two-person stores: "1/2", only while not fully covered. */
   frac: string | null;
@@ -153,7 +155,7 @@ const BLOCK_ORDER = ["licensing", "availability", "double-booking", "closure"];
 const MARK_WORD = { serious: "problem", warning: "warning", info: "to check" } as const;
 
 /** What a store-day looks like, from the evaluation alone. Pure: colour = coverage; the picture = the worst thing still unresolved. */
-export type StoreLook = { block: Block; chip: MarkKind | null; iconTone: MarkTone | null; chipN: number; frac: string | null };
+export type StoreLook = { block: Block; chip: MarkKind | null; iconTone: MarkTone | null; chipN: number; frac: string | null; faded?: boolean };
 
 export function storeLook(v: CellView, past: boolean, covering: boolean): StoreLook {
   const live = v.assignments;
@@ -175,6 +177,11 @@ export function storeLook(v: CellView, past: boolean, covering: boolean): StoreL
     look = { block: "good", chip: "unverified", iconTone: "warn", chipN: 0, frac: null };
   } else if (live.some((a) => !a.agreed)) {
     look = { block: "good", chip: "unconfirmed", iconTone: "warn", chipN: 0, frac: null };
+  } else if (live.some((a) => a.overridden.length) || v.acceptedShort > 0) {
+    // The DM accepted it, but it is still true: keep the picture and colour, faded.
+    const rule = live.flatMap((a) => a.overridden)[0];
+    const soft = rule === "travel-soft" || rule === "consecutive-days";
+    look = { block: "good", chip: rule ? RULE_MARK[rule] ?? "drive" : "short", iconTone: rule ? (soft ? "warn" : "bad") : "bad", chipN: 0, frac: null, faded: true };
   } else {
     const quiet: MarkKind | null = v.acceptedShort > 0 ? "short" : v.locum > 0 ? "locum" : live.some((a) => a.pinned) ? "pinned" : covering ? "covering" : null;
     look = { block: "good", chip: quiet, iconTone: quiet ? "quiet" : null, chipN: 0, frac: null };
@@ -247,7 +254,7 @@ export function buildStoreModels(
       axis: "store", r, c, date, storeId: s.id, past, weekend: isWeekend(date), asOfCol: date === asOf, closed: v.closed,
       chips: [], open: v.open, short: v.acceptedShort, locum: v.locum, marker: v.marker,
       label, hasDrag: !readOnly && !!one, ...(one ? { dragAid: one.id } : {}),
-      block: look.block, chip: look.chip, iconTone: look.iconTone, chipN: look.chipN, frac: look.frac,
+      block: look.block, chip: look.chip, iconTone: look.iconTone, chipN: look.chipN, frac: look.frac, ...(look.faded && !past ? { faded: true } : {}),
       people: v.assignments.length, ghostAdd: addNames.length, ghostRem: remNames.length, names, reason,
       tip, tone: look.iconTone === "bad" || (!past && v.open > 0) ? "bad" : look.iconTone === "warn" ? "off" : "plain",
     } satisfies CellModel;
@@ -310,8 +317,9 @@ export function buildPharmacistModels(
     let label: string;
     const where = chips.map((ch) => (ch.kind === "add" ? `${ch.text} would be added` : ch.kind === "rem" ? `${ch.text} would be removed` : ch.text)).join(" and ");
     if (!chips.length) {
-      word = absStatus ?? "–";
-      label = `${p.name}, ${niceDate(date)}: ${absStatus === "OFF" ? "away (approved)" : absStatus === "Req" ? "away requested, not approved" : "not scheduled"}`;
+      // Time off lives on the Time off page: here an empty day is just "not scheduled", whether or not the person is away.
+      word = "–";
+      label = `${p.name}, ${niceDate(date)}: not scheduled`;
     } else {
       label = `${p.name}, ${niceDate(date)}: at ${where}${live.length > 1 ? ", booked in two places" : ""}${absStatus === "OFF" ? ", but away" : ""}${marker ? `, ${MARK_WORD[marker]}` : ""}`;
     }
@@ -329,17 +337,16 @@ export function buildPharmacistModels(
     else if (policyFail) { chip = RULE_MARK[policyFail.ruleId] ?? "drive"; iconTone = "warn"; }
     else if (awayFromBase) { chip = "covering"; iconTone = "quiet"; }
     if (past) { chip = null; iconTone = null; }
-    const block: Block = absStatus === "OFF" ? "away" : chips.length ? "good" : absStatus === "Req" ? "req" : "none";
+    const block: Block = chips.length ? "good" : "none";
     const tfacts: string[] = [];
     if (live.length > 1) tfacts.push(`Booked at ${live.map((x) => x.text).join(" and ")}`);
     else if (live.length) tfacts.push(`At ${live[0]!.text}${live[0]!.unconfirmed ? " (not confirmed)" : ""}`);
-    if (absStatus === "OFF") tfacts.push(live.length ? "Away that day, does not count" : "Away (approved)");
-    else if (absStatus === "Req") tfacts.push("Away requested, not decided");
+    if (absStatus === "OFF" && live.length) tfacts.push("Away that day, does not count");
     if (!past) for (const id of failIds) if (id !== "double-booking" && id !== "availability") tfacts.push(RULE_WORDS[id] ? `Rule: ${RULE_WORDS[id]}` : id);
     if (awayFromBase && !past) tfacts.push("Working away from home store");
     if (!tfacts.length) tfacts.push("Not scheduled");
     const tip = [`${p.name} · ${niceDate(date)}`, ...tfacts.slice(0, 3), ...(live.length ? ["Open this day"] : [])].join(" | ");
-    return { ...base, chips, marker, word, hatchedAway: block === "away", label, block, chip, iconTone, people: live.length, ghostAdd: chips.filter((x) => x.kind === "add").length, ghostRem: chips.filter((x) => x.kind === "rem").length, tip, tone: iconTone === "bad" ? "bad" as const : iconTone === "warn" ? "off" as const : "plain" as const } satisfies CellModel;
+    return { ...base, chips, marker, word, hatchedAway: false, label, block, chip, iconTone, people: live.length, ghostAdd: chips.filter((x) => x.kind === "add").length, ghostRem: chips.filter((x) => x.kind === "rem").length, tip, tone: iconTone === "bad" ? "bad" as const : iconTone === "warn" ? "off" as const : "plain" as const } satisfies CellModel;
   }));
 }
 

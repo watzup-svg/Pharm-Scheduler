@@ -1,4 +1,14 @@
 /* The schedule wall. Colour is state only; every state also has a glyph or a word. */
+/* Shared by the wall, the header band and the list on the left, so they always agree. */
+:root {
+  /* A block is coloured like the picture on it: red = needs cover or a rule is broken, yellow = take a look, green = fine. */
+  --w-bad: #f0c4ba;
+  --w-bad-past: color-mix(in srgb, #f0c4ba 45%, white);
+  --w-warn: #f2da8f;
+  --w-warn-past: color-mix(in srgb, #f2da8f 45%, white);
+  --w-open: var(--w-bad);
+  --w-open-past: var(--w-bad-past);
+}
 .w-scroll {
   position: relative;
   min-height: 0;
@@ -10,8 +20,6 @@
   --w-line: color-mix(in srgb, var(--color-line) 55%, transparent);
   --w-good: var(--color-ok-lite);
   --w-good-past: color-mix(in srgb, var(--color-ok-lite) 38%, white);
-  --w-open: #f0c4ba;
-  --w-open-past: color-mix(in srgb, #f0c4ba 45%, white);
   position: relative;
   font-size: 13px;
   line-height: 1.2;
@@ -376,8 +384,12 @@
 .w-block[data-block="good"] {
   background: var(--w-good, var(--color-ok-lite));
 }
-.w-block[data-block="open"] {
-  background: var(--w-open, #f0c4ba);
+.w-block[data-block="open"],
+.w-block[data-block="good"][data-sev="bad"] {
+  background: var(--w-bad);
+}
+.w-block[data-block="good"][data-sev="warn"] {
+  background: var(--w-warn);
 }
 .w-block[data-block="closed"] {
   background-color: color-mix(in srgb, var(--color-shut) 45%, transparent);
@@ -394,8 +406,12 @@
 .w-past .w-block[data-block="good"] {
   background: var(--w-good-past, #c4e1d1);
 }
-.w-past .w-block[data-block="open"] {
-  background: var(--w-open-past, #f7e2dd);
+.w-past .w-block[data-block="open"],
+.w-past .w-block[data-block="good"][data-sev="bad"] {
+  background: var(--w-bad-past);
+}
+.w-past .w-block[data-block="good"][data-sev="warn"] {
+  background: var(--w-warn-past);
 }
 .w-pblock {
   flex-flow: row wrap;
@@ -484,8 +500,12 @@
 .d-tile[data-block="good"] {
   background: var(--color-ok-lite);
 }
-.d-tile[data-block="open"] {
-  background: #f0c4ba;
+.d-tile[data-block="open"],
+.d-tile[data-block="good"][data-sev="bad"] {
+  background: var(--w-bad);
+}
+.d-tile[data-block="good"][data-sev="warn"] {
+  background: var(--w-warn);
 }
 .d-tile[data-block="closed"] {
   min-height: 64px;
@@ -502,6 +522,15 @@
 }
 .d-past[data-block="good"] {
   background: color-mix(in srgb, var(--color-ok-lite) 38%, white);
+}
+.d-past[data-block="good"][data-sev="bad"] {
+  background: var(--w-bad-past);
+}
+.d-past[data-block="good"][data-sev="warn"] {
+  background: var(--w-warn-past);
+}
+.w-faded .w-pic {
+  opacity: 0.6;
 }
 .d-past[data-block="open"] {
   background: color-mix(in srgb, #f0c4ba 45%, white);
@@ -601,4 +630,26 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* The list on the left: each row wears the colour of its issue, like the cells. */
+.q-row {
+  border: 1px solid transparent;
+  border-left: 5px solid var(--q-edge);
+  background: var(--q-bg);
+}
+.q-row[data-sev="bad"] {
+  --q-bg: color-mix(in srgb, var(--w-bad) 55%, white);
+  --q-edge: #d98b7b;
+}
+.q-row[data-sev="warn"] {
+  --q-bg: color-mix(in srgb, var(--w-warn) 55%, white);
+  --q-edge: #d3b341;
+}
+.q-row:hover {
+  background: color-mix(in srgb, var(--q-bg) 80%, white);
+}
+.q-row.q-on {
+  border-color: var(--color-ink);
+  box-shadow: 0 0 0 1px var(--color-ink);
 }

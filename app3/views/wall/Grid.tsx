@@ -28,6 +28,7 @@ function Block({ m }: { m: CellModel }) {
     <span
       className={cx("w-block", m.block === "closed" && "hatch", m.block === "away" && "hatch", !store && "w-pblock")}
       data-block={m.block}
+      data-sev={m.iconTone ?? undefined}
       draggable={store && m.hasDrag ? true : undefined}
       data-aid={store && m.hasDrag ? m.dragAid : undefined}
     >
@@ -65,13 +66,14 @@ const Cell = memo(function Cell({ m, selected, tab }: { m: CellModel; selected: 
       data-block={m.block}
       data-icon={m.chip ?? undefined}
       data-sev={m.iconTone ?? undefined}
+      data-faded={m.faded ? "" : undefined}
       data-ghost={m.ghostAdd || m.ghostRem ? "" : undefined}
       data-kind={m.block === "closed" ? "closed" : m.block === "away" ? "away" : undefined}
       data-tip={m.tip}
       data-tip-list=""
       data-tip-tone={m.tone === "plain" ? undefined : m.tone}
       data-tip-mark={m.chip ?? undefined}
-      className={cx("w-cell", m.past && "w-past", m.weekend && "w-wkend", m.asOfCol && "w-asof", selected && "w-sel")}
+      className={cx("w-cell", (m.past || m.faded) && "w-past", m.faded && "w-faded", m.weekend && "w-wkend", m.asOfCol && "w-asof", selected && "w-sel")}
     >
       <Block m={m} />
     </div>

@@ -67,7 +67,7 @@ try {
   check("  text is only a count or a fraction", /^[\d/\s]*$/.test(o0.text), o0.text);
   await st((o) => window.__v3.app.getState().commit([{ t: "cell.set", storeId: o.sid, date: o.date, acceptedShort: 1 }]), open[0]);
   l = await look(open[0].sid, open[0].date);
-  check("ACCEPTED SHORT: green with the quiet picture", l.block === "good" && l.icon === "short" && l.sev === "quiet", JSON.stringify(l));
+  check("ACCEPTED SHORT: faded rose with the same picture (checked off, still true)", l.block === "good" && l.icon === "short" && l.sev === "bad" && (await page.locator(`.w-cell.w-faded[data-date="${open[0].date}"]`).count()) >= 1, JSON.stringify(l));
   await st((o) => window.__v3.app.getState().commit([{ t: "cell.set", storeId: o.sid, date: o.date, locum: 1 }]), open[1]);
   l = await look(open[1].sid, open[1].date);
   check("LOCUM: green with the quiet picture", l.block === "good" && l.icon === "locum" && l.sev === "quiet", JSON.stringify(l));
@@ -75,13 +75,13 @@ try {
   check("CLOSED: hatch, nothing else", (await closed.locator(".w-block.hatch").count()) === 1 && ((await closed.innerText()) ?? "").trim() === "" && !(await closed.getAttribute("data-icon")));
   const past = await st(() => [...document.querySelectorAll('[role="gridcell"][data-store]')].filter((e) => e.dataset.date < "2026-10-06").filter((e) => e.dataset.icon || e.querySelector("[data-statemark]")).length);
   check("PAST days carry no pictures", past === 0, String(past));
-  check("PAST days are dimmed", (await page.locator('.w-cell.w-past[data-store]').count()) === 5 * 16);
+  check("PAST days are dimmed", (await page.locator('.w-cell.w-past:not(.w-faded)[data-store]').count()) === 5 * 16);
   const initials = await st(() => [...document.querySelectorAll('[role="gridcell"][data-store]')].filter((e) => !/^[\d/+−\s]*$/.test(e.textContent ?? "")).length);
   check("no initials or names in any store-axis cell", initials === 0, String(initials));
 
   // severity picture colour in the DOM follows the tone
   const tones = await st(() => { const m = {}; for (const e of document.querySelectorAll('[role="gridcell"][data-store] [data-statemark]')) m[e.dataset.statemark] = e.dataset.tone; return m; });
-  check("picture colour follows severity (open red, short quiet)", tones.open === "bad" && (tones.short ?? "quiet") === "quiet", JSON.stringify(tones));
+  check("picture colour follows severity (open and accepted-short red (short faded))", tones.open === "bad" && tones.short === "bad", JSON.stringify(tones));
 
   // the practice-with-problems world: green dominant, few pictures
   await st(() => window.__v3.loadProblems());

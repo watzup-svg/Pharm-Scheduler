@@ -15,7 +15,7 @@ export type Screen = "overview" | "wall" | "plan" | "timeoff" | "setup" | "print
 export type SetupTab = "stores" | "pharmacists" | "patterns" | "holidays" | "dates" | "travel" | "rules" | "checks";
 export type View = Screen | "travel" | "rules" | "checks";
 export type Axis = "store" | "pharmacist";
-export type LeftTab = "queue" | "tell" | "history";
+export type LeftTab = "queue" | "history";
 export type Selection = { storeId?: string; pharmacistId?: string; date: ISODate } | null;
 export type Notice = { id: number; kind: "info" | "ok" | "error"; text: string; /** A change set this line can undo. */ undoId?: string };
 
@@ -30,7 +30,7 @@ export type AppState = {
   axis: Axis;
   view: Screen;
   setupTab: SetupTab;
-  /** The queue / to tell / history drawer on the left. Closed by default. */
+  /** The queue / history drawer on the left. Closed by default. */
   drawer: boolean;
   /** The Someone's out form in the right column. */
   outForm: boolean;

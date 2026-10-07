@@ -65,7 +65,7 @@ async function tour(page, size, after) {
   await page.keyboard.press("Escape");
   await page.evaluate(() => window.__v3.app.getState().setOutForm(true)); await step("wall with the Someone's out form open");
   await page.evaluate(() => window.__v3.app.getState().setOutForm(false));
-  for (const t of ["tell", "history", "queue"]) { await drawer(page, t); await step(`left drawer: ${t}`); }
+  for (const t of ["history", "queue"]) { await drawer(page, t); await step(`left drawer: ${t}`); }
   await drawer(page, null);
   await go(page, "Plan"); await step("plan");
   await go(page, "Time off"); await step("time off");

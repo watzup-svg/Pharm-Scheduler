@@ -9,7 +9,8 @@ import { Act } from "./ui.tsx";
 
 const FIRST = 3;
 
-export function Choices({ ctx, replace, onDone }: { ctx: Ctx; replace: CellAssignment | null; onDone: () => void }) {
+/** `footer` renders under the full list (or under the short list when there is nothing more to show). */
+export function Choices({ ctx, replace, onDone, footer }: { ctx: Ctx; replace: CellAssignment | null; onDone: () => void; footer?: React.ReactNode }) {
   const { state, asOf, lock, storeId, date } = ctx;
   const [all, setAll] = useState(false);
 
@@ -79,9 +80,10 @@ export function Choices({ ctx, replace, onDone }: { ctx: Ctx; replace: CellAssig
         })}
       </ul>
       {choices.length > FIRST && (
-        <div className="mt-1.5"><Act onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all ${choices.length}`}</Act></div>
+        <div className="mt-1.5"><Act onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all ${choices.length} who could go`}</Act></div>
       )}
       {!choices.length && <p className="text-sm text-muted">Nobody else is on the list.</p>}
+      {(all || choices.length <= FIRST) && footer}
     </div>
   );
 }

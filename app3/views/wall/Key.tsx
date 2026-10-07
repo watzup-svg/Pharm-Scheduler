@@ -5,10 +5,10 @@ import type { Axis } from "../../store.ts";
 import type { Block } from "./model.ts";
 
 /** A little block in the colour a cell gets. Same class and data attribute as the cells, so the key cannot drift from the wall. */
-export function Swatch({ block, mark, n, past }: { block: Block; mark?: MarkKind; n?: number; past?: boolean }) {
+export function Swatch({ block, mark, n, past, sev }: { block: Block; mark?: MarkKind; n?: number; past?: boolean; sev?: MarkTone }) {
   return (
     <span className={cx("w-sw", past && "w-past")} aria-hidden="true">
-      <span className={cx("w-block", (block === "closed" || block === "away") && "hatch")} data-block={block}>
+      <span className={cx("w-block", (block === "closed" || block === "away") && "hatch")} data-block={block} data-sev={sev}>
         {mark && <BlockMark kind={mark} n={n} size={18} />}
       </span>
     </span>
@@ -16,17 +16,18 @@ export function Swatch({ block, mark, n, past }: { block: Block; mark?: MarkKind
 }
 
 /** The colours, per axis. One line each; the words here are the only place they are written down besides the Icon guide. */
-export const COLOURS: Record<Axis, { block: Block; mark?: MarkKind; n?: number; past?: boolean; name: string; line: string }[]> = {
+export const COLOURS: Record<Axis, { block: Block; mark?: MarkKind; n?: number; past?: boolean; sev?: MarkTone; name: string; line: string }[]> = {
   store: [
     { block: "good", name: "Green", line: "Covered. Nothing to look at." },
-    { block: "open", mark: "open", name: "Pink", line: "Needs cover. A number shows when more than one is missing." },
+    { block: "good", sev: "warn", mark: "drive", name: "Yellow", line: "Covered, but take a look (a long drive, many days in a row)." },
+    { block: "open", sev: "bad", mark: "open", name: "Red", line: "Needs cover, or a rule is broken. A number shows when more than one is missing." },
     { block: "closed", name: "Hatched", line: "The store is closed that day." },
-    { block: "good", past: true, name: "Faded", line: "A day that has passed. No problem pictures." },
+    { block: "good", past: true, sev: "warn", mark: "drive", name: "Faded", line: "A day that has passed (no pictures), or a problem you accepted that is still true (the picture stays, faded)." },
   ],
   pharmacist: [
     { block: "good", name: "Green", line: "Working, with the store's code. Nothing to look at." },
-    { block: "away", name: "Pink hatch", line: "Time off, approved." },
-    { block: "req", name: "Yellow", line: "Time off asked for, not decided." },
+    { block: "good", sev: "warn", mark: "drive", name: "Yellow", line: "Working, but take a look." },
+    { block: "good", sev: "bad", mark: "double", name: "Red", line: "A rule is broken for this person that day." },
   ],
 };
 
@@ -41,7 +42,7 @@ export function KeyPanelBody({ axis }: { axis: Axis }) {
   return (
     <div className="flex flex-col gap-1.5">
       {COLOURS[axis].map((c) => (
-        <div key={c.name} className="w-key-item"><Swatch block={c.block} mark={c.mark} n={c.n} past={c.past} /><span><b>{c.name}</b> <span className="text-muted">{c.line}</span></span></div>
+        <div key={c.name} className="w-key-item"><Swatch block={c.block} mark={c.mark} n={c.n} past={c.past} sev={c.sev} /><span><b>{c.name}</b> <span className="text-muted">{c.line}</span></span></div>
       ))}
       <div className="mt-1 border-t border-line pt-2" />
       {TONES.map((t) => (

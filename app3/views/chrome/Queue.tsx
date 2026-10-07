@@ -1,8 +1,9 @@
-// Queue: what needs a look in the window, serious first. Click a row to see it on the wall.
+// Queue: what needs a look in the window, serious first. Click a row to see it on the wall. Each row wears the colour of its issue (rose = needs cover or a rule is broken, yellow = take a look), the same colours as the schedule.
 import { useState } from "react";
 import { useApp } from "../../store.ts";
 import { useIssues, type Issue } from "../../derive.ts";
 import { cx, GLYPH } from "../../ui/primitives.tsx";
+import { BlockMark, RULE_MARK, type MarkKind } from "../../ui/icons.tsx";
 import { RepairOptions } from "./RepairOptions.tsx";
 import { fmtDate, fmtShort, goTo } from "./shared.tsx";
 
@@ -38,6 +39,8 @@ export function Queue() {
             <ul className="space-y-1">
               {rows.map((i) => {
                 const on = sel?.storeId === i.storeId && sel.date === i.date;
+                const mark: MarkKind = i.kind === "open" ? "open" : RULE_MARK[i.ruleId ?? ""] ?? "double";
+                const sev = i.severity === "serious" ? "bad" : "warn";
                 return (
                   <li key={i.id}>
                     <button
@@ -45,11 +48,11 @@ export function Queue() {
                       onClick={() => goTo(i.storeId, i.date)}
                       title={`${fmtDate(i.date)} · ${i.text}`}
                       aria-current={on ? "true" : undefined}
-                      className={cx("block w-full truncate rounded-md px-2 py-1.5 text-left text-sm ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-ink", on ? "bg-white ring-ink" : "bg-white/70 ring-line hover:bg-white")}
+                      data-sev={sev}
+                      className={cx("q-row flex w-full items-start gap-2.5 rounded-lg py-2 pl-2.5 pr-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-ink", on && "q-on")}
                     >
-                      <span className="mr-1.5 font-semibold" aria-hidden="true">{g.glyph}</span>
-                      <span className="font-semibold">{fmtDate(i.date)}</span>
-                      <span className="text-muted"> · {i.text}</span>
+                      <BlockMark kind={mark} tone={sev} size={24} className="mt-px" />
+                      <span className="min-w-0"><span className="block font-semibold">{fmtDate(i.date)}</span><span className="block text-ink/80">{i.text}</span></span>
                     </button>
                   </li>
                 );

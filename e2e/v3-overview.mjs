@@ -178,7 +178,7 @@ check("the checklist has the six steps", Object.keys(it).join() === "setup,reque
 check("licences and drive times are not done (some are missing)", !it.setup.done && /missing/.test(it.setup.text), it.setup.text);
 check("requests are not done and say how many wait", !it.requests.done && new RegExp(`${d.waiting} waiting`).test(it.requests.text), it.requests.text);
 check("cover and rule breaks are not done", !it.cover.done && !it.rules.done);
-check("posted is not done and says who to tell", !it.posted.done && /tell \d+ people/.test(it.posted.text), it.posted.text);
+check("posted is not done (the month changed since it was posted)", !it.posted.done && /Changed since posting/.test(it.posted.text), it.posted.text);
 // decide every waiting request (the same edit the Time off page makes)
 const waitingIds = Object.values(w.state.unavailability).filter((x) => x.status === "Requested" && x.last >= ASOF).map((x) => x.id);
 await app((ids) => { const a = window.__v3.app.getState(); ids.forEach((id, i) => a.commit([{ t: "unavail.update", id, patch: { status: i % 2 ? "Denied" : "Approved" } }])); }, waitingIds);
@@ -200,20 +200,13 @@ if (opt) {
   check("accepting a cover lowers the figure and it still equals the domain", d2.openShifts < d.openShifts && (await figure("open")) === d2.openShifts, `${await figure("open")} vs ${d2.openShifts} (was ${d.openShifts})`);
   d = d2;
 } else check("a cover option was found to accept", false);
-// post the month and tell everyone
+// post the month
 await app(() => window.__v3.app.getState().post({ from: "2026-10-01", to: "2026-10-31" }));
 const tellNow = await app(() => window.__v3.app.getState().world.journal.snapshots.length);
 check("posting made a revision", tellNow >= 1, String(tellNow));
 await home();
 it = await items();
-check("after posting, the item is either done or says who to tell", it.posted.done || /tell \d+ people/.test(it.posted.text), it.posted.text);
-if (!it.posted.done) {
-  const people = api.toTell(await readWorld(page), ASOF);
-  await app((es) => window.__v3.app.getState().markTold(es), people.map((e) => ({ pharmacistId: e.pharmacistId, date: e.date })));
-  await page.waitForTimeout(150);
-  it = await items();
-  check("posted and told ticks off once everyone is told", it.posted.done, it.posted.text);
-}
+check("right after posting, the item is done", it.posted.done, it.posted.text);
 // the item links
 await page.locator('[data-item="setup"] button').click();
 u = await ui();

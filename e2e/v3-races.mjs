@@ -83,7 +83,12 @@ async function optionGap(S) {
   return null;
 }
 
-const findCoverBtn = (S) => inspector(S).getByRole("button", { name: "Find cover", exact: true });
+/** The Inspector now lists the top three first; "Search wider" sits under the full list. Open the list if needed, then click it. */
+async function clickFind(S, opts) {
+  const all = inspector(S).getByRole("button", { name: /^Show all \d+/ });
+  if (await all.count()) await all.click();
+  await inspector(S).getByRole("button", { name: "Search wider", exact: true }).click(opts);
+}
 
 /** The common verdict. `extra` lists scenario-specific problems already found. */
 async function verdict(S, name, extra = []) {
@@ -148,17 +153,18 @@ await sc("triple Find cover, double Preview and Accept", async () => {
   await clickCell(S, g);
   await delay(S, 500);
   const r0 = await diagCount(S, /action: repair \d+ gap/g);
-  await findCoverBtn(S).click({ clickCount: 3 });
+  await clickFind(S, { clickCount: 3 });
   await S.page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && a.repairResult; }, null, { timeout: 60000 });
   await delay(S, 0);
   check("Find cover: a triple click starts one search", (await diagCount(S, /action: repair \d+ gap/g)) - r0 === 1, `${(await diagCount(S, /action: repair \d+ gap/g)) - r0}`);
   const preview = inspector(S).getByRole("button", { name: "Preview option 1", exact: true });
   if ((await preview.count()) === 0) { check("Find cover: the chosen day shows an option to preview", false, "none"); }
   else {
-    await preview.dblclick();
+    // The proposal bar can cover this button after the first click, so the second click is sent straight to it.
+    await preview.evaluate((e) => { e.click(); e.click(); });
     await sleep(100);
     check("Preview: a double click leaves one proposal", (await S.page.locator('section[aria-label="Proposal"]').count()) === 1 && (await hasProposal(S)) && (await cs(S)) === 0);
-    await bar(S).getByRole("button", { name: "Accept" }).dblclick();
+    await bar(S).getByRole("button", { name: "Accept" }).evaluate((e) => { e.click(); e.click(); });
     await sleep(150);
     const k = await kinds(S);
     await verdict(S, "Accept: a double click commits exactly one repair", k.length === 1 && k[0] === "repair" ? [] : [`change sets: ${k.join(",")}`]);
@@ -224,7 +230,7 @@ await sc("edit during Find cover", async () => {
   const g = (await gaps(S))[0];
   await clickCell(S, g);
   await delay(S, 2500);
-  await findCoverBtn(S).click();
+  await clickFind(S);
   await S.page.waitForFunction(() => window.__v3.app.getState().busy === "Find cover");
   // (a) a manual edit through the Time off screen is refused with a notice
   await header(S).getByRole("button", { name: /^Time off/ }).click();
@@ -375,7 +381,7 @@ await sc("view switching during Find cover", async () => {
   const g = (await gaps(S))[0];
   await clickCell(S, g);
   await delay(S, 1500);
-  await findCoverBtn(S).click();
+  await clickFind(S);
   await S.page.waitForFunction(() => window.__v3.app.getState().busy === "Find cover");
   for (let i = 0; i < 3; i++) for (const t of ["Time off", "Print", "Setup", "Schedule"]) await header(S).getByRole("button", { name: new RegExp(`^${t}`) }).click();
   await get(S, () => { const a = window.__v3.app; a.getState().setView("plan"); a.getState().setView("wall"); });
@@ -503,7 +509,7 @@ if (CHROMIUM) await sc("worker killed mid-search", async () => {
   // through the UI: click Find cover and kill the worker while the search is out
   await get(S, () => window.__v3.app.setState({ repairResult: null }));
   await clickCell(S, g);
-  await findCoverBtn(S).click();
+  await clickFind(S);
   await get(S, () => window.__v3.killWorker());
   await S.page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && (a.repairResult || a.notice); }, null, { timeout: 60000 });
   // three deaths in a row: the engine keeps working (in the page when the worker cannot be trusted)

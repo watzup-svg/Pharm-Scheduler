@@ -33,7 +33,6 @@ export function SearchPalette() {
     for (const [v, l] of [["overview", "Overview"], ["wall", "Schedule"], ["plan", "Plan (next weeks)"], ["timeoff", "Time off"], ["print", "Print"], ["setup", "Setup"], ["travel", "Travel and mileage"], ["rules", "Rules"], ["checks", "Setup check"]] as const) out.push({ id: `v${v}`, label: l, hint: "Go to", run: () => s.setView(v) });
     out.push({ id: "a-out", label: "Someone's out", hint: "Action", run: () => { s.setView("wall"); s.setOutForm(true); } });
     out.push({ id: "a-fix", label: "Show the queue", hint: "Action", run: () => s.setDrawer(true, "queue") });
-    out.push({ id: "a-tell", label: "Who to tell", hint: "Action", run: () => s.setDrawer(true, "tell") });
     out.push({ id: "a-hist", label: "History", hint: "Action", run: () => s.setDrawer(true, "history") });
     return out;
   }, [world, open]);

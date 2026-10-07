@@ -59,8 +59,9 @@ export function DayView({ date }: { date: ISODate }) {
             <li key={store.id}>
               <button
                 type="button"
-                className={cx("d-tile", m.past && "d-past", on && "d-sel", m.block === "closed" && "hatch")}
+                className={cx("d-tile", (m.past || m.faded) && "d-past", on && "d-sel", m.block === "closed" && "hatch")}
                 data-block={m.block}
+                data-sev={m.iconTone ?? undefined}
                 data-icon={m.chip ?? undefined}
                 data-store={store.id}
                 aria-pressed={on}
@@ -74,7 +75,7 @@ export function DayView({ date }: { date: ISODate }) {
                 <span className="d-head">
                   <HexBadge label={store.code} size={26} className="pointer-events-none" />
                   <span className="d-store">{store.name}</span>
-                  {m.chip && <BlockMark kind={m.chip} tone={m.iconTone ?? undefined} n={m.chipN} size={24} className="ml-auto" />}
+                  {m.chip && <BlockMark kind={m.chip} tone={m.iconTone ?? undefined} n={m.chipN} size={24} className={m.faded ? "ml-auto opacity-60" : "ml-auto"} />}
                 </span>
                 {m.names.length > 0 && <span className="d-names">{m.names.map((n) => <span key={n}>{n}</span>)}</span>}
                 {m.reason && m.block !== "closed" && <span className="d-reason">{m.reason}</span>}

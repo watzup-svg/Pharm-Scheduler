@@ -1,4 +1,4 @@
-// Inspector for one store on one day: who is working, the next step (find cover), and everything else behind one disclosure.
+// Inspector for one store on one day: who is working, the next step (top three, all, then search wider), and everything else behind one disclosure.
 import { useMemo, useState } from "react";
 import { type DomainState, type Evaluation, type ISODate } from "@domain";
 import { buildCellView, evaluateCached, useEvaluation, useViewState, type CellView } from "../../derive.ts";
@@ -9,7 +9,7 @@ import { Section } from "../../ui/primitives.tsx";
 import { Assignments } from "./Assignments.tsx";
 import { CellControls } from "./CellControls.tsx";
 import { Choices } from "./Choices.tsx";
-import { FindCover } from "./FindCover.tsx";
+import { SearchWider } from "./FindCover.tsx";
 import { numWord, useLock, weekdayName, type Ctx } from "./lib.ts";
 import { Act, Disclosure } from "./ui.tsx";
 
@@ -19,6 +19,7 @@ export function StoreCell({ storeId, date }: { storeId: string; date: ISODate })
   const asOf = useApp((s) => s.asOf);
   const lock = useLock();
   const [swapId, setSwapId] = useState<string | null>(null);
+  const [hideNext, setHideNext] = useState(false);
 
   // The window evaluation normally has this cell; if the day is outside it, evaluate that one day.
   const ev: Evaluation | null = useMemo(() => {
@@ -52,8 +53,15 @@ export function StoreCell({ storeId, date }: { storeId: string; date: ISODate })
       {cv.assignments.length > 0 && <Section title="Working here"><Assignments ctx={ctx} swapId={swapId} onSwap={setSwapId} /></Section>}
       {(needsPeople || swapping) && (
         <Section title={swapping ? "Swap in" : "Next step"}>
-          {!swapping && <div className="mb-2"><FindCover ctx={ctx} /></div>}
-          <Choices key={swapId ?? "add"} ctx={ctx} replace={swapping} onDone={() => setSwapId(null)} />
+          {!swapping && (
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <p className="text-xs text-muted">Best fits first. The top three are shown.</p>
+              <Act pressed={!hideNext} onClick={() => setHideNext(!hideNext)} aria-expanded={!hideNext}>{hideNext ? "Show" : "Minimise"}</Act>
+            </div>
+          )}
+          {(swapping || !hideNext) && (
+            <Choices key={swapId ?? "add"} ctx={ctx} replace={swapping} onDone={() => setSwapId(null)} footer={swapping ? undefined : <SearchWider ctx={ctx} />} />
+          )}
         </Section>
       )}
       <div className="px-3 py-2">

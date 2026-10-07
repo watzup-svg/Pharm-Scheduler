@@ -108,7 +108,6 @@ export type Where =
   | { to: "timeoff" }
   | { to: "problem"; storeId?: string; date?: ISODate }
   | { to: "print" }
-  | { to: "tell" }
   | { to: "save" };
 export type ChecklistItem = { id: string; label: string; detail: string; done: boolean; where: Where };
 
@@ -123,8 +122,6 @@ export type ChecklistFacts = {
   postedRevision: number | null;
   /** Days that differ from the latest posting. */
   changedDays: number;
-  /** People with a changed schedule they have not been told about. */
-  toTell: number;
   fileSaved: boolean;
   fileDetail: string;
 };
@@ -134,16 +131,16 @@ const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : 
 export function buildChecklist(f: ChecklistFacts): ChecklistItem[] {
   const setupGaps = f.licencesMissing + f.driveTimesMissing;
   const setupParts = [f.licencesMissing ? `${n(f.licencesMissing, "licence")} missing` : "", f.driveTimesMissing ? `${n(f.driveTimesMissing, "drive time")} missing` : ""].filter(Boolean).join(", ");
-  const postedDone = f.postedRevision !== null && f.changedDays === 0 && f.toTell === 0;
+  const postedDone = f.postedRevision !== null && f.changedDays === 0;
   return [
     { id: "setup", label: "Licences and drive times", detail: setupGaps ? setupParts : "All recorded", done: setupGaps === 0, where: { to: "setup", tab: "checks" } },
     { id: "requests", label: "Time-off requests", detail: f.waiting ? `${f.waiting} waiting` : "None waiting", done: f.waiting === 0, where: { to: "timeoff" } },
     { id: "cover", label: "Every shift covered", detail: f.openShifts ? `${n(f.openShifts, "shift")} still open` : "All covered", done: f.openShifts === 0, where: { to: "problem", ...(f.firstProblem ?? {}) } },
     { id: "rules", label: "No rule breaks", detail: f.ruleBreaks ? n(f.ruleBreaks, "break") : "None", done: f.ruleBreaks === 0, where: { to: "problem", ...(f.firstProblem ?? {}) } },
     {
-      id: "posted", label: "Posted and told",
-      detail: f.postedRevision === null ? "Not posted yet" : f.changedDays > 0 || f.toTell > 0 ? `Changed since posting: tell ${n(f.toTell, "person", "people")}` : `Revision ${f.postedRevision}`,
-      done: postedDone, where: f.postedRevision !== null && f.toTell > 0 ? { to: "tell" } : { to: "print" },
+      id: "posted", label: "Posted",
+      detail: f.postedRevision === null ? "Not posted yet" : f.changedDays > 0 ? `Changed since posting: ${n(f.changedDays, "day")}` : `Revision ${f.postedRevision}`,
+      done: postedDone, where: { to: "print" },
     },
     { id: "saved", label: "Changes saved", detail: f.fileDetail, done: f.fileSaved, where: { to: "save" } },
   ];

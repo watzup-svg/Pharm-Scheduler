@@ -39,7 +39,6 @@ export function goWhere(w: Where): void {
     case "setup": openSetup(w.tab); break;
     case "timeoff": openTimeOff(); break;
     case "print": s.setView("print"); break;
-    case "tell": s.setView("wall"); s.setDrawer(true, "tell"); break;
     case "problem": if (w.storeId && w.date) showOnWall(w.storeId, w.date); else seeAllProblems(); break;
     case "save": void saveNow(); break;
   }

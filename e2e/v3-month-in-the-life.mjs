@@ -1,10 +1,10 @@
 // One scripted run of the district manager's real month, through the REAL UI (clicks and keys), start to finish:
 //   Start screen -> look at the wall -> Find cover on a gap and accept -> record a time-off request (Someone's out) and see it waiting
 //   -> approve it -> Build a date range and accept -> Improve (discard, then accept) -> drag a shift to another store -> Undo and Redo
-//   -> a what-if, discarded -> Post (Print) and check To tell -> edit after posting and see "changed since posting" -> Save (file backend)
+//   -> a what-if, discarded -> Post (Print) -> edit after posting and see "changed since posting" -> Save (file backend)
 //   -> reload, recover -> revert to a checkpoint.
 // After EVERY step: the world is intact (domain checkIntegrity), the journal replays to the same state hash, no two proposals, nothing busy,
-// no console errors, and the numbers on screen (need cover, waiting badge, To tell list) equal what the domain computes from the world.
+// no console errors, and the numbers on screen (need cover, waiting badge) equal what the domain computes from the world.
 // A running log (step, ms, state hash) is printed at the end. The only store calls are test set-up and the what-if edit (the UI has no way to
 // add an edit to a what-if; see the note at that step).
 //   node e2e/v3-month-in-the-life.mjs          SOURCE=import  starts from the prototype file through the importer card instead of the practice link
@@ -23,7 +23,7 @@ const page = await ctx.newPage();
 page.on("dialog", (d) => { void d.accept(); }); // "leave the page?" while there are changes not in a file
 const errors = watchErrors(page);
 const log = [];
-const state = { hash: "", tellTab: true };
+const state = { hash: "" };
 let dead = false;
 
 const app = (fn, arg) => page.evaluate(fn, arg);
@@ -34,11 +34,6 @@ const left = page.locator('aside[aria-label="Left panel"]');
 const settle = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 20)))));
 const idle = (ms = 90000) => page.waitForFunction(() => window.__v3.app.getState().busy === null, null, { timeout: ms });
 
-/** Keep the To tell list open so its count can be read at every step. */
-async function showToTell() {
-  if ((await left.count()) === 0) await page.getByRole("button", { name: "Open the list" }).click();
-  if ((await left.getByRole("tab", { name: "To tell" }).getAttribute("aria-selected")) !== "true") await left.getByRole("tab", { name: "To tell" }).click();
-}
 
 /** What must hold after every step. Returns a list of problems (empty = fine). */
 async function verify() {
@@ -51,7 +46,6 @@ async function verify() {
   if (j.proposals > 1) problems.push("two proposals open");
   if (w.ui.busy) problems.push(`busy: ${w.ui.busy}`);
   if (w.session.proposal && w.session.scenario && !w.session.scenario.parked) problems.push("a proposal and an open what-if at once");
-  await showToTell();
   const exp = expectedCounts(w);
   const vis = await readVisible(page);
   if (vis.open !== null && vis.open !== exp.open) problems.push(`screen says ${vis.open} need cover, domain says ${exp.open}`);
@@ -134,7 +128,9 @@ await step("open a gap, Find cover, preview option 1, Accept", async () => {
   const before = await cs();
   for (const g of gaps.slice(0, 10)) {
     await page.locator(`[role="gridcell"][data-store="${g.storeId}"][data-date="${g.date}"]`).click();
-    await inspector.getByRole("button", { name: "Find cover", exact: true }).click();
+    const all = inspector.getByRole("button", { name: /^Show all \d+/ });
+    if (await all.count()) await all.click();
+    await inspector.getByRole("button", { name: "Search wider", exact: true }).click();
     await page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && (a.repairResult || a.notice?.kind === "error"); }, null, { timeout: 90000 });
     const preview = inspector.getByRole("button", { name: "Preview option 1", exact: true });
     if ((await preview.count()) === 0) { await app(() => window.__v3.app.setState({ repairResult: null })); continue; }
@@ -158,13 +154,14 @@ await step("open a gap, Find cover, preview option 1, Accept", async () => {
 
 // ---------------------------------------------------------------- 4. A time-off request, waiting badge, approve
 let request = null;
-await step("record a time-off request in Someone's out and see the waiting badge", async () => {
+await step("record a time-off request (compact form) and see the waiting badge", async () => {
   const w = await readWorld(page);
   const before = w.state.nextId.unavail;
   const waitingBefore = expectedCounts(w).waiting;
   const a = Object.values(w.state.assignments).filter((x) => x.date >= "2026-10-12" && x.date <= "2026-10-30").sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.id < y.id ? -1 : 1))[0];
   request = { pid: a.pharmacistId, date: a.date, id: `U${before}`, name: w.state.pharmacists[a.pharmacistId].name };
-  await page.getByRole("button", { name: /Someone.s out/ }).first().click();
+  // The Schedule no longer has a Someone's out button (time off lives on the Time off page); the compact form is opened through the store here.
+  await app(() => { const a = window.__v3.app.getState(); a.setView("wall"); a.setOutForm(true); });
   const form = inspector.getByRole("form", { name: "Add time off" });
   await form.waitFor();
   await form.getByLabel("Who").selectOption(request.pid);
@@ -282,6 +279,7 @@ await step("Undo from the top bar reverses the move", async () => {
   if (now !== moved.from) throw new Error(`after undo the shift is at ${now}, wanted ${moved.from}`);
 });
 await step("Redo from History brings it back (same state as before the undo)", async () => {
+  if ((await left.count()) === 0) await page.getByRole("button", { name: "Open the list" }).click();
   await left.getByRole("tab", { name: "History" }).click();
   const redo = left.getByRole("button", { name: /^Redo: #\d+$/ }).first();
   await redo.click();
@@ -313,14 +311,14 @@ await step("start a what-if from Plan (via search), edit it, discard it", async 
   if (v.problems.length) throw new Error(`while the what-if was open: ${v.problems.join("; ")}`);
   if (!v.w.session.scenario || v.w.session.scenario.edits.length !== 1) throw new Error("what-if has no edit");
   if (judge(v.w, base).hash !== hash0) throw new Error("the what-if changed the live schedule");
-  await page.getByRole("button", { name: /^Someone.s out$/ }).first().click();
+  // The what-if controls show in the right column on their own while a what-if is open.
   await inspector.getByRole("button", { name: "Discard", exact: true }).click();
   await inspector.getByRole("button", { name: "Discard what-if" }).click();
   if ((await app(() => window.__v3.app.getState().world.session.scenario)) !== null) throw new Error("what-if still open");
   if ((await cs()) !== before) throw new Error("a what-if wrote a change set");
 });
 
-// ---------------------------------------------------------------- 10. Post, To tell
+// ---------------------------------------------------------------- 10. Post
 await step("Print: post the schedule (revision 1)", async () => {
   await header.getByRole("button", { name: "Print" }).click();
   await page.waitForSelector("[data-print-view]");
@@ -330,17 +328,8 @@ await step("Print: post the schedule (revision 1)", async () => {
   if (n !== 1) throw new Error(`${n} snapshots`);
   if (!/Nothing has changed/.test(await page.locator("[data-changes]").innerText())) throw new Error("changed-since-posting is not empty right after posting");
 });
-await step("To tell lists people with changes; Mark all told empties it", async () => {
-  await showToTell();
-  const w = await readWorld(page);
-  const exp = expectedCounts(w);
-  if (exp.toTellEntries === 0) throw new Error("expected people to tell after the month's edits");
-  await left.getByRole("button", { name: "Mark all told" }).click();
-  await left.getByText("Everyone has been told.").waitFor();
-  if (expectedCounts(await readWorld(page)).toTellEntries !== 0) throw new Error("the domain still has people to tell");
-});
 let postedHash = "";
-await step("edit after posting: Print says what changed since revision 1; To tell shows it", async () => {
+await step("edit after posting: Print says what changed since revision 1", async () => {
   postedHash = state.hash;
   const w = await readWorld(page);
   const snap = w.journal.snapshots.at(-1);
@@ -361,9 +350,6 @@ await step("edit after posting: Print says what changed since revision 1; To tel
   const listed = await page.locator("[data-change-list] li").count();
   if (listed !== exp.changedSincePosting) throw new Error(`Print lists ${listed} changed days, domain says ${exp.changedSincePosting}`);
   if (!/day[s]? differs? from revision 1/.test(await page.locator("[data-changes]").innerText())) throw new Error("no 'differs from revision 1' sentence");
-  await showToTell();
-  const told = await left.locator('li[aria-label^="To tell:"]').count();
-  if (told !== exp.toTellPeople || told < 1) throw new Error(`To tell shows ${told} people, domain ${exp.toTellPeople}`);
 });
 void postedHash;
 
@@ -397,7 +383,6 @@ await step("reload right after saving: boot restores the same state hash", async
   await page.waitForSelector('[role="gridcell"], [data-overview]', { timeout: 20000 });
   const boot = await app(() => window.__bootResult);
   if (boot !== "world") throw new Error(`boot said ${boot}`);
-  if (state.tellTab) await showToTell();
   const w = await readWorld(page);
   if (judge(w, base).hash !== savedHash) throw new Error("the state after reload is not the saved state");
   if (w.journal.changeSets.length !== savedCs) throw new Error(`change sets ${savedCs} -> ${w.journal.changeSets.length}`);
@@ -426,6 +411,7 @@ await step("edit, reload without saving: recovery offers the newer browser copy,
 // ---------------------------------------------------------------- 12. Back to the checkpoint
 await step("History > Revert to 'Month start' undoes the month in one step", async () => {
   const before = await cs();
+  if ((await left.count()) === 0) await page.getByRole("button", { name: "Open the list" }).click();
   await left.getByRole("tab", { name: "History" }).click();
   const cpName = await left.getByText("Month start", { exact: true }).count();
   if (cpName < 1) throw new Error("the checkpoint was not kept through the reload");
@@ -437,7 +423,6 @@ await step("History > Revert to 'Month start' undoes the month in one step", asy
   if (judge(w, base).hash !== startHash) throw new Error("reverting to the checkpoint did not restore the starting state");
 });
 await step("final: wall still renders and Undo reverses the revert", async () => {
-  await showToTell();
   await header.getByRole("button", { name: "Undo" }).click();
   const w = await readWorld(page);
   if (judge(w, base).hash === startHash) throw new Error("undo of the revert changed nothing");
