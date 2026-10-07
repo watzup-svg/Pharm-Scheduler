@@ -81,7 +81,7 @@ export function buildSheetRows(
       axis: "pharmacist", r, c, date, pharmacistId: p.id, past, weekend: isWeekend(date), asOfCol: date === asOf, closed: false,
       chips: [], open: 0, short: 0, locum: 0, marker: null, label, hasDrag: false, block, chip: showChip ? chip : null, iconTone,
       chipN: 0, frac: showChip || kind === "approved" || block === "work" ? frac : null, people: asg.length, ghostAdd: 0, ghostRem: 0, names: [name], reason: "",
-      tip: [`${shortName(name, 24)} · ${niceDate(date)}`, ...(lines.length ? lines : ["No time off"]), "Open this day"].join(" | "),
+      tip: [`${shortName(name, 24)} · ${niceDate(date)}`, ...(lines.length ? lines : ["No time off"])].join(" | "),
       tone, centered: true, ...(run ? { run } : {}),
     } satisfies CellModel;
   }));

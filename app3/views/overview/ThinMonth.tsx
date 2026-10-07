@@ -106,7 +106,7 @@ export function ThinMonth({ state, ev, ym, asOf }: { state: DomainState; ev: Eva
                     onFocus={() => setAt([r, i + 1])} onKeyDown={(e) => move(e, r, i + 1)}
                     onClick={() => showOnWall(row.storeId, d)}
                     aria-label={`${row.code}, ${fmtDate(d)}: ${word}${row.notes[i] ? `, ${row.notes[i]!.toLowerCase()}` : ""}`}
-                    data-tip={`${row.code} · ${fmtDate(d)} | ${row.notes[i] || word.replace(/^./, (c) => c.toUpperCase())} | Open this day`}
+                    data-tip={`${row.code} · ${fmtDate(d)} | ${row.notes[i] || word.replace(/^./, (c) => c.toUpperCase())}`}
                     data-tip-tone={st === "open" || st === "break" ? "bad" : st === "ok" ? "ok" : undefined}
                     className="relative z-10 grid h-6 place-items-center rounded-sm hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">
                     <Tick state={st} past={d < asOf} />

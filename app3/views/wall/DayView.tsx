@@ -53,7 +53,7 @@ export function DayView({ date }: { date: ISODate }) {
       <ul className="d-grid">
         {tiles.map(({ m, store }) => {
           const call = data.call.get(store.id) ?? [];
-          const tip = call.length ? m.tip.replace(/ \| Open this day$/, ` | Could call: ${call.join(", ")} | Open this day`) : m.tip;
+          const tip = call.length ? `${m.tip} | Could call: ${call.join(", ")}` : m.tip;
           const on = sel?.storeId === store.id && sel.date === date;
           return (
             <li key={store.id}>

@@ -250,7 +250,7 @@ export function buildStoreModels(
     if (facts.accepted.length) lines.push(`Accepted: ${facts.accepted.slice(0, 2).join("; ")}`);
     if (addNames.length) lines.push(`Preview adds ${addNames.join(", ")}`);
     if (remNames.length) lines.push(`Preview removes ${remNames.join(", ")}`);
-    const tip = [`${s.code} · ${niceDate(date)}`, ...lines.slice(0, 6), "Open this day"].join(" | ");
+    const tip = [`${s.code} · ${niceDate(date)}`, ...lines.slice(0, 6)].join(" | ");
     const reason = past ? "" : facts.problems[0] ?? (v.open > 0 ? `Needs ${v.open} more` : "");
     const one = v.assignments.length === 1 ? v.assignments[0]! : null;
     return {
@@ -348,7 +348,7 @@ export function buildPharmacistModels(
     if (!past) for (const id of failIds) if (id !== "double-booking" && id !== "availability") tfacts.push(RULE_WORDS[id] ? `Rule: ${RULE_WORDS[id]}` : id);
     if (awayFromBase && !past) tfacts.push("Working away from home store");
     if (!tfacts.length) tfacts.push("Not scheduled");
-    const tip = [`${p.name} · ${niceDate(date)}`, ...tfacts.slice(0, 3), ...(live.length ? ["Open this day"] : [])].join(" | ");
+    const tip = [`${p.name} · ${niceDate(date)}`, ...tfacts.slice(0, 3)].join(" | ");
     return { ...base, chips, marker, word, hatchedAway: false, label, block, chip, iconTone, people: live.length, ghostAdd: chips.filter((x) => x.kind === "add").length, ghostRem: chips.filter((x) => x.kind === "rem").length, tip, tone: iconTone === "bad" ? "bad" as const : iconTone === "warn" ? "off" as const : "plain" as const } satisfies CellModel;
   }));
 }

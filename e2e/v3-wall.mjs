@@ -66,7 +66,8 @@ try {
   check("clicking a cell selects store + date", sel?.storeId === wantStore && sel?.date === "2026-10-09", JSON.stringify(sel));
   check("selected cell has strong outline class", (await target.getAttribute("class")).includes("w-sel"));
   await target.click({ button: "right" });
-  check("right click on a cell opens its hover note", (await page.getByText("Open this day").count()) >= 1);
+  const tipHead = ((await target.getAttribute("data-tip")) ?? "").split(" | ")[0];
+  check("right click on a cell opens its hover note (and it no longer ends with 'Open this day')", tipHead !== "" && (await page.getByText(tipHead, { exact: true }).count()) >= 1 && (await page.getByText("Open this day").count()) === 0, tipHead);
   await page.keyboard.press("Escape");
 
   // Keyboard

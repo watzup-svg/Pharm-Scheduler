@@ -46,7 +46,7 @@ export function MonthDial({ size = 88 }: { size?: number }) {
     <svg viewBox="0 0 100 100" width={size} height={size} role="group" aria-label={`Month dial for ${month}. Each day is a button.`}>
       {dates.map((d, i) => (
         <path key={d} d={seg(i)} fill={FILL[states.get(d)!]} tabIndex={0} role="button" aria-label={`${fmtDate(d)}: ${states.get(d) === "fix" ? "needs attention" : states.get(d) === "closed" ? "nothing scheduled" : "covered"}`}
-          data-tip={`${fmtDate(d)} | ${states.get(d) === "fix" ? "Needs attention" : states.get(d) === "closed" ? "Nothing scheduled" : "Covered"} | Open this day`}
+          data-tip={`${fmtDate(d)} | ${states.get(d) === "fix" ? "Needs attention" : states.get(d) === "closed" ? "Nothing scheduled" : "Covered"}`}
           className="cursor-pointer outline-none focus-visible:stroke-white" strokeWidth={1.5} stroke="transparent"
           onClick={() => { const s = useApp.getState(); goTo(s.selection?.storeId ?? Object.keys(vs!.state.stores).sort()[0]!, d); }}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); (e.currentTarget as SVGPathElement).dispatchEvent(new MouseEvent("click", { bubbles: true })); } }} />
