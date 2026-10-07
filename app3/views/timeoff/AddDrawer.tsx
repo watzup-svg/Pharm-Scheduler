@@ -1,4 +1,4 @@
-// The Add drawer: new time off (with what it would leave uncovered, before saving) and the "Out sick" quick path (today, tomorrow or any coming day, for one or several days).
+// The Add drawer: one form for any time off (vacation, sick, other), with what it would leave uncovered shown before saving. An approved record then lists the stores it leaves short, with who could cover.
 import { useId, useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { addDays, dateRange, type ISODate, type UnavailStatus, type UnavailType } from "@domain";
@@ -12,7 +12,7 @@ import { useChrome } from "../chrome/shared.tsx";
 import { Cover } from "./Cover.tsx";
 import { AddPreview } from "./Preview.tsx";
 import { useWhyLocked } from "./lib.ts";
-import { useTimeOffUi, type AddMode } from "./ui.ts";
+import { useTimeOffUi } from "./ui.ts";
 
 const KINDS: UnavailType[] = ["Vacation", "Sick", "Other"];
 const field = "h-9 w-full rounded-md border border-edge bg-white px-2 text-sm";
@@ -50,6 +50,7 @@ function AddForm({ onDone }: { onDone: () => void }) {
   const [type, setType] = useState<UnavailType>("Vacation");
   const [status, setStatus] = useState<UnavailStatus | null>(null);
   const [note, setNote] = useState("");
+  const [marked, setMarked] = useState<Marked | null>(null);
   const who = pid && people.some((p) => p.id === pid) ? pid : people[0]?.id ?? "";
   const effStatus: UnavailStatus = status ?? (type === "Vacation" ? "Requested" : "Approved");
   const lastDay = last || first;
@@ -60,11 +61,13 @@ function AddForm({ onDone }: { onDone: () => void }) {
     if (bad) return;
     const name = shortName(state.pharmacists[who]?.name ?? who, 22);
     const ok = useApp.getState().commit(
-      [{ t: "unavail.add", pharmacistId: who, first, last: lastDay, status: effStatus, type, ...(note.trim() ? { note: note.trim() } : {}) }],
+      [{ t: "unavail.add", pharmacistId: who, first, last: lastDay, status: effStatus, type, ...(note.trim() || type === "Sick" ? { note: note.trim() || "Called in sick" } : {}) }],
       `Time off ${effStatus === "Requested" ? "requested" : "added"} for ${name}, ${fmtRange(first, lastDay)}.`,
     );
-    if (ok) onDone();
+    // An approved record can leave stores short: stay open and show them, with who could cover. A request just closes.
+    if (ok) { if (effStatus === "Approved") setMarked({ who, first, last: lastDay }); else onDone(); }
   };
+  if (marked) return <CoverPanel marked={marked} onDone={onDone} />;
   return (
     <form onSubmit={save} aria-label="Add time off" className="space-y-3">
       <div>
@@ -106,29 +109,16 @@ function AddForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-const DAYS = [1, 2, 3, 5, 7];
+type Marked = { who: string; first: ISODate; last: ISODate };
 
-/** Out sick: today, tomorrow or any day coming up, for one day or several. */
-function SickForm({ onDone }: { onDone: () => void }) {
-  const uid = useId();
+/** After an approved record is saved: the stores that person leaves short on each of those days, each with who could cover (read from the live schedule, so Undo makes them disappear). */
+function CoverPanel({ marked, onDone }: { marked: Marked; onDone: () => void }) {
   const state = useApp((s) => s.world!.state);
   const asOf = useApp((s) => s.asOf);
-  const people = useActive();
   const why = useWhyLocked();
-  const [pid, setPid] = useState(useTimeOffUi.getState().addPid ?? "");
-  const [start, setStart] = useState<ISODate>(asOf);
-  const [days, setDays] = useState(1);
-  const [marked, setMarked] = useState<{ who: string; first: ISODate; last: ISODate } | null>(null);
-  const first = start < asOf ? asOf : start;
-  const last = addDays(first, days - 1);
-  const working = useMemo(() => new Set(Object.values(state.assignments).filter((a) => a.date === first).map((a) => a.pharmacistId)), [state, first]);
-  const who = pid && people.some((p) => p.id === pid) ? pid : people.find((p) => working.has(p.id))?.id ?? people[0]?.id ?? "";
   const name = (id: string) => state.pharmacists[id]?.name ?? id;
-  const rec = useMemo(() => (who && !marked ? { pharmacistId: who, first, last, status: "Approved" as const, type: "Sick" as const } : null), [who, first, last, marked]);
   const when = (a: ISODate, b: ISODate) => (a === b ? (a === asOf ? "today" : a === addDays(asOf, 1) ? "tomorrow" : fmtDate(a)) : fmtRange(a, b));
-  // After marking: the stores this person leaves short on each of those days, read from the live schedule (so Undo makes them disappear).
   const left = useMemo(() => {
-    if (!marked) return [];
     const ev = evaluateCached(state, asOf, { range: { from: marked.first, to: marked.last } });
     const out: { date: ISODate; cells: NonNullable<(typeof ev.cells)[string]>[] }[] = [];
     for (const d of dateRange(marked.first, marked.last)) {
@@ -140,18 +130,10 @@ function SickForm({ onDone }: { onDone: () => void }) {
   }, [state, asOf, marked]);
   const gaps = left.flatMap((g) => g.cells.map((c) => ({ storeId: c.storeId, date: g.date })));
   const findCover = (list: { storeId: string; date: ISODate }[]) => { useChrome.getState().setRepairOrigin("out"); void useApp.getState().runRepair(list); };
-  const mark = () => {
-    const ok = useApp.getState().commit(
-      [{ t: "unavail.add", pharmacistId: who, first, last, status: "Approved", type: "Sick", note: "Called in sick" }],
-      `${shortName(name(who), 22)} is out sick ${when(first, last)}.`,
-    );
-    if (ok) setMarked({ who, first, last });
-  };
-
   if (marked) {
     return (
-      <div aria-label="Cover for the sick call" data-sick-cover className="space-y-3">
-        <p className="text-sm"><b>{name(marked.who)}</b> is out {when(marked.first, marked.last)}{marked.first === marked.last ? `, ${fmtDate(marked.first)}` : ""}.</p>
+      <div aria-label="Cover for the time off" data-sick-cover className="space-y-3">
+        <p className="text-sm"><b>{name(marked.who)}</b> is off {when(marked.first, marked.last)}{marked.first === marked.last ? `, ${fmtDate(marked.first)}` : ""}.</p>
         {gaps.length === 0 ? <p className="text-sm text-ok">✓ No store is left short.</p> : (
           <>
             {left.map((g) => (
@@ -178,45 +160,6 @@ function SickForm({ onDone }: { onDone: () => void }) {
       </div>
     );
   }
-  const chip = (label: string, on: boolean, click: () => void, aria?: string) => (
-    <button type="button" aria-pressed={on} aria-label={aria} onClick={click}
-      className={cx("h-9 flex-1 rounded-md px-2 text-sm font-medium ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink", on ? "bg-ink text-white ring-ink" : "bg-white text-ink ring-edge hover:bg-fill")}>{label}</button>
-  );
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); if (who && !why) mark(); }} aria-label="Out sick" className="space-y-3">
-      <div>
-        <span className="mb-1 block text-xs font-medium text-muted">Which day</span>
-        <div role="group" aria-label="Which day" className="flex gap-1">
-          {chip("Today", first === asOf, () => setStart(asOf))}
-          {chip("Tomorrow", first === addDays(asOf, 1), () => setStart(addDays(asOf, 1)))}
-        </div>
-        <div className="mt-2">
-          <label htmlFor={`${uid}-start`} className="mb-1 block text-xs font-medium text-muted">Or another day</label>
-          <input id={`${uid}-start`} type="date" className={field} value={first} min={asOf} onChange={(e) => e.target.value && setStart(e.target.value)} />
-        </div>
-      </div>
-      <div>
-        <span className="mb-1 block text-xs font-medium text-muted">How many days</span>
-        <div role="group" aria-label="How many days" className="flex gap-1">
-          {DAYS.map((n) => <span key={n} className="flex flex-1">{chip(String(n), days === n, () => setDays(n), `${n} ${n === 1 ? "day" : "days"}`)}</span>)}
-        </div>
-        {days > 1 && <p className="mt-1 text-xs text-muted">{fmtRange(first, last)}. Weekends count; a closed day changes nothing.</p>}
-      </div>
-      <div>
-        <label htmlFor={`${uid}-who`} className="mb-1 block text-xs font-medium text-muted">Who is out sick?</label>
-        <select id={`${uid}-who`} className={field} value={who} onChange={(e) => setPid(e.target.value)}>
-          <optgroup label={`Working ${when(first, first)}${first === asOf || first === addDays(asOf, 1) ? `, ${fmtDate(first)}` : ""}`}>{people.filter((p) => working.has(p.id)).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</optgroup>
-          <optgroup label="Everyone else">{people.filter((p) => !working.has(p.id)).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</optgroup>
-        </select>
-      </div>
-      <AddPreview state={state} rec={rec} label="What this would leave uncovered" />
-      {why && <p className="text-sm text-muted">{why}</p>}
-      <div className="flex gap-2 pt-1">
-        <Btn type="submit" tone="ink" disabled={!!why || !who}>Mark out sick</Btn>
-        <Btn tone="ghost" onClick={onDone}>Cancel</Btn>
-      </div>
-    </form>
-  );
 }
 
 export function AddDrawer() {
@@ -230,17 +173,10 @@ export function AddDrawer() {
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/25" />
         <Dialog.Content aria-describedby={undefined} data-add-drawer className="fixed right-0 top-0 z-50 flex h-full w-[440px] max-w-[94vw] flex-col overflow-y-auto bg-paper p-5 shadow-2xl ring-1 ring-line">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <Dialog.Title className="text-lg font-semibold">{mode === "sick" ? "Out sick" : "Add time off"}</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold">Add time off</Dialog.Title>
             <Dialog.Close aria-label="Close" className="rounded-md px-2 py-1 text-sm text-muted hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">Close ✕</Dialog.Close>
           </div>
-          <div role="group" aria-label="What to record" className="mb-4 flex gap-1 rounded-lg bg-fill p-1">
-            {([["add", "Time off"], ["sick", "Out sick"]] as [AddMode, string][]).map(([m, label]) => (
-              <button key={m} type="button" aria-pressed={mode === m} onClick={() => openAdd(m, useTimeOffUi.getState().addDate ?? undefined, useTimeOffUi.getState().addPid ?? undefined)}
-                className={cx("h-8 flex-1 rounded-md text-sm font-medium focus-visible:outline-2 focus-visible:outline-ink", mode === m ? "bg-white shadow-sm ring-1 ring-line" : "text-muted hover:text-ink")}>{label}</button>
-            ))}
-          </div>
-          {mode === "add" && <AddForm key="add" onDone={close} />}
-          {mode === "sick" && <SickForm key="sick" onDone={close} />}
+          <AddForm key="add" onDone={close} />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

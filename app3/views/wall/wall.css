@@ -663,3 +663,19 @@
 .w-block[data-run="end"] { margin-left: -3px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .w-past .w-block[data-block="away"],
 .w-past .w-block[data-block="req"] { opacity: 0.55; }
+.w-block[data-block="work"] { background: var(--w-good, var(--color-ok-lite)); color: var(--color-ink); }
+.w-block[data-block="work"] .w-frac { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+.w-past .w-block[data-block="work"] { background: var(--w-good-past, #c4e1d1); }
+
+/* The selected day must be easy to find: a white halo and an ink ring round the block, the block brighter and a touch bigger. */
+.w-cell.w-sel .w-block {
+  z-index: 4;
+  transform: scale(1.12);
+  filter: saturate(1.5) brightness(1.06);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--color-ink), 0 4px 10px rgba(32, 24, 32, 0.35);
+}
+.w-cell.w-sel .w-pic { transform: scale(1.1); }
+.d-tile.d-sel {
+  filter: saturate(1.4) brightness(1.05);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--color-ink);
+}

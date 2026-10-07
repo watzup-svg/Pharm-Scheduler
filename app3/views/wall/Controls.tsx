@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Store, User } from "lucide-react";
 import { useApp, type Axis } from "../../store.ts";
 import { addDays } from "@domain";
 import { ToolsMenu } from "../../ui/ToolsMenu.tsx";
@@ -54,7 +55,9 @@ export function Controls({ preview, whatIf, ghosts }: { preview: boolean; whatIf
         {!day && (
           <div className="w-seg" role="group" aria-label="Rows">
             {(["store", "pharmacist"] as Axis[]).map((a) => (
-              <button key={a} type="button" aria-pressed={axis === a} onClick={() => setAxis(a)}>{a === "store" ? "Stores" : "People"}</button>
+              <button key={a} type="button" aria-pressed={axis === a} aria-label={a === "store" ? "Stores" : "People"} data-tip={a === "store" ? "Stores | One row per store" : "People | One row per pharmacist"} onClick={() => setAxis(a)} className="grid place-items-center px-3">
+                {a === "store" ? <Store aria-hidden className="size-[18px]" /> : <User aria-hidden className="size-[18px]" />}
+              </button>
             ))}
           </div>
         )}

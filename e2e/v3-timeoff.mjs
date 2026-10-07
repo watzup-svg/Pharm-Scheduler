@@ -32,7 +32,7 @@ const sheetCell = (pid, d) => page.locator(`[role="gridcell"][data-pid="${pid}"]
   const hero = page.locator("section.hero-band");
   check("with nothing selected the header says No day selected", /No day selected/.test(await hero.innerText()));
   check("the header has no buttons (only the month dial)", (await hero.locator("button").count()) === 0);
-  check("the Add and Sick buttons sit above the sheet", (await page.locator(".w-controls").getByRole("button", { name: "Add time off" }).count()) === 1 && (await page.locator(".w-controls").getByRole("button", { name: "Out sick" }).count()) === 1);
+  check("one Add time off button sits above the sheet (sick is a kind inside it)", (await page.locator(".w-controls").getByRole("button", { name: "Add time off" }).count()) === 1 && (await page.locator(".w-controls").getByRole("button", { name: "Out sick" }).count()) === 0);
 }
 
 // ---- 2. the waiting list: soonest first, consequence in words; a click selects the request
@@ -150,6 +150,9 @@ const waitingIds = async () => left.getByRole("list", { name: "Waiting for an an
   check("the preview saves nothing", (await hash()) === h0);
   await drawer.getByLabel("Note").fill("Dentist");
   await drawer.getByRole("button", { name: "Add time off" }).click();
+  // An approved record stays open on the stores it leaves short, with who could cover.
+  check("saving an approved record shows the stores it leaves short", (await drawer.locator("[data-sick-cover]").count()) === 1);
+  await drawer.getByRole("button", { name: "Done" }).click();
   await drawer.waitFor({ state: "detached" });
   const w2 = await world();
   const rec = Object.values(w2.state.unavailability).find((u) => u.pharmacistId === solo.pharmacistId && u.first === date && u.type === "Other");
@@ -159,7 +162,7 @@ const waitingIds = async () => left.getByRole("list", { name: "Waiting for an an
   check("and the Inspector shows the store they leave short", (await right.locator(`[data-open-store="${solo.storeId}"]`).count()) === 1);
   await undoToast();
   check("Undo returns the exact state", (await hash()) === h0);
-  check("and the sheet goes back", (await sheetCell(solo.pharmacistId, date).getAttribute("data-block")) === "none");
+  check("and the sheet goes back", /^(none|work)$/.test((await sheetCell(solo.pharmacistId, date).getAttribute("data-block")) ?? ""));
 }
 
 // ---- 7. the selected day: stores left short and who could be called
@@ -195,63 +198,40 @@ const waitingIds = async () => left.getByRole("list", { name: "Waiting for an an
   await app(() => window.__v3.app.getState().select(null));
 }
 
-// ---- 8. Out sick (today)
-{
+// ---- 8. Out sick is a kind in the one Add form: today, then several days
+for (const [label, first, last] of [["today", TODAY, TODAY], ["three days from tomorrow", "2026-10-07", "2026-10-09"]]) {
   const w = await world();
-  const ev = evaluate(w.state, TODAY, { range: { from: TODAY, to: TODAY } });
-  const offToday = new Set(Object.values(w.state.unavailability).filter((u) => (u.status === "Approved" || u.status === "Actual") && u.first <= TODAY && TODAY <= u.last).map((u) => u.pharmacistId));
-  const solo = Object.values(w.state.assignments).find((a) => a.date === TODAY && !offToday.has(a.pharmacistId) && (ev.cells[`${a.storeId}|${TODAY}`]?.covered ?? 0) === 1 && (ev.cells[`${a.storeId}|${TODAY}`]?.required ?? 0) === 1);
-  check("(setup) someone is the only pharmacist at a store today", !!solo);
-  const h0 = await hash();
-  await page.locator(".w-controls").getByRole("button", { name: "Out sick" }).click();
-  const drawer = page.locator("[data-add-drawer]");
-  await drawer.getByLabel("Who is out sick?").selectOption(solo.pharmacistId);
-  check("it says what that would leave uncovered before marking", /Saving this opens [A-Z0-9]+ on Tue Oct 6/.test(await drawer.locator("[data-add-preview]").innerText()));
-  check("nothing is saved by looking", (await hash()) === h0);
-  await drawer.getByRole("button", { name: "Mark out sick" }).click();
-  const w2 = await world();
-  const rec = Object.values(w2.state.unavailability).find((u) => u.pharmacistId === solo.pharmacistId && u.type === "Sick" && u.first === TODAY);
-  check("Sick today marks today unavailable (Approved, Sick, one day) in one change set", rec?.status === "Approved" && rec.first === rec.last && w2.journal.changeSets.length === w.journal.changeSets.length + 1);
-  const store = drawer.locator(`[data-open-store="${solo.storeId}"]`);
-  check("it immediately shows the store they leave short", (await store.count()) === 1);
-  check("with people who could cover, and a Find cover button", (await store.locator("[data-caller]").count()) >= 1 && (await store.getByRole("button", { name: /^Find cover for/ }).count()) === 1);
-  await store.getByRole("button", { name: /^Find cover for/ }).click();
-  await page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 90000 });
-  check("Find cover shows ways to cover", (await drawer.getByRole("region", { name: "Cover options" }).count()) === 1);
-  await drawer.getByRole("button", { name: "Done" }).click();
-  await drawer.waitFor({ state: "detached" });
-  await app(() => window.__v3.app.getState().discardProposal?.());
-  await undoToast().catch(() => {});
-  if ((await hash()) !== h0) { await page.locator("header").getByRole("button", { name: "Undo" }).click(); await page.waitForTimeout(100); }
-  check("Undo of the sick call returns the exact state", (await hash()) === h0);
-}
-
-// ---- 8b. Out sick tomorrow, and for several days
-{
-  const w = await world();
-  const TOM = "2026-10-07", END = "2026-10-09";
-  const ev = evaluate(w.state, TODAY, { range: { from: TOM, to: END } });
+  const ev = evaluate(w.state, TODAY, { range: { from: first, to: last } });
   const off = (d) => new Set(Object.values(w.state.unavailability).filter((u) => (u.status === "Approved" || u.status === "Actual") && u.first <= d && d <= u.last).map((u) => u.pharmacistId));
-  const solo = Object.values(w.state.assignments).find((a) => a.date === TOM && !off(TOM).has(a.pharmacistId) && (ev.cells[`${a.storeId}|${TOM}`]?.covered ?? 0) === 1 && (ev.cells[`${a.storeId}|${TOM}`]?.required ?? 0) === 1);
-  check("(setup) someone is the only pharmacist at a store tomorrow", !!solo);
+  const solo = Object.values(w.state.assignments).find((a) => a.date === first && !off(first).has(a.pharmacistId) && (ev.cells[`${a.storeId}|${first}`]?.covered ?? 0) === 1 && (ev.cells[`${a.storeId}|${first}`]?.required ?? 0) === 1);
+  check(`(setup) someone is the only pharmacist at a store ${label}`, !!solo);
   const h0 = await hash();
-  await page.locator(".w-controls").getByRole("button", { name: "Out sick" }).click();
+  await page.locator(".w-controls").getByRole("button", { name: "Add time off" }).click();
   const drawer = page.locator("[data-add-drawer]");
-  await drawer.getByRole("group", { name: "Which day" }).getByRole("button", { name: "Tomorrow" }).click();
-  await drawer.getByRole("group", { name: "How many days" }).getByRole("button", { name: "3 days" }).click();
-  check("the form says the dates it covers", /Oct 7/.test(await drawer.innerText()) && /Oct 9/.test(await drawer.innerText()));
-  await drawer.getByLabel("Who is out sick?").selectOption(solo.pharmacistId);
-  check("looking saves nothing", (await hash()) === h0);
-  await drawer.getByRole("button", { name: "Mark out sick" }).click();
+  check("there is one form: no Out sick tab", (await drawer.getByRole("button", { name: "Out sick" }).count()) === 0);
+  await drawer.getByLabel("Who").selectOption(solo.pharmacistId);
+  await drawer.getByLabel("First day").fill(first);
+  if (last !== first) await drawer.getByLabel("Last day").fill(last);
+  await drawer.getByRole("group", { name: "Kind" }).getByRole("button", { name: "Sick" }).click();
+  check("sick defaults to Approved", (await drawer.getByRole("group", { name: "Status" }).getByRole("button", { name: "Approved" }).getAttribute("aria-pressed")) === "true");
+  check(`it says what that would leave uncovered before saving (${label})`, /Saving this opens [A-Z0-9]+ on \w{3} \w{3} \d+/.test(await drawer.locator("[data-add-preview]").innerText()));
+  check("nothing is saved by looking", (await hash()) === h0);
+  await drawer.getByRole("button", { name: "Add time off" }).click();
   const w2 = await world();
-  const rec = Object.values(w2.state.unavailability).find((u) => u.pharmacistId === solo.pharmacistId && u.type === "Sick" && u.first === TOM);
-  check("tomorrow, three days: one Approved Sick record Oct 7 to Oct 9 in one change set", rec?.status === "Approved" && rec.last === END && w2.journal.changeSets.length === w.journal.changeSets.length + 1, JSON.stringify(rec));
-  check("the cover list is grouped by the day each store is left short", (await drawer.locator("[data-sick-day]").count()) >= 1 && (await drawer.locator(`[data-sick-day="${TOM}"] [data-open-store="${solo.storeId}"]`).count()) === 1);
+  const rec = Object.values(w2.state.unavailability).find((u) => u.pharmacistId === solo.pharmacistId && u.type === "Sick" && u.first === first);
+  check(`${label}: one Approved Sick record in one change set`, rec?.status === "Approved" && rec.last === last && w2.journal.changeSets.length === w.journal.changeSets.length + 1, JSON.stringify(rec));
+  check("it immediately shows the store they leave short", (await drawer.locator(`[data-open-store="${solo.storeId}"]`).count()) >= 1);
+  check("with people who could cover, and a Find cover button", (await drawer.locator(`[data-open-store="${solo.storeId}"] [data-caller]`).count()) >= 1 && (await drawer.locator(`[data-open-store="${solo.storeId}"]`).first().getByRole("button", { name: /^Find cover for/ }).count()) === 1);
+  if (last === first) {
+    await drawer.locator(`[data-open-store="${solo.storeId}"]`).first().getByRole("button", { name: /^Find cover for/ }).click();
+    await page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 90000 });
+    check("Find cover shows ways to cover", (await drawer.getByRole("region", { name: "Cover options" }).count()) === 1);
+  } else check("the cover list is grouped by the day each store is left short", (await drawer.locator("[data-sick-day]").count()) >= 1);
   await drawer.getByRole("button", { name: "Done" }).click();
   await drawer.waitFor({ state: "detached" });
   await app(() => window.__v3.app.getState().discardProposal?.());
   await page.locator("header").getByRole("button", { name: "Undo" }).click(); await page.waitForTimeout(100);
-  check("Undo returns the exact state", (await hash()) === h0);
+  check(`Undo of the sick call returns the exact state (${label})`, (await hash()) === h0);
 }
 
 // ---- 9. the compact Someone's out form shows the preview too

@@ -56,7 +56,6 @@ function Controls() {
           className="h-8 w-40 rounded-md border border-edge bg-white px-2 text-sm" />
         <div className="ml-auto flex items-center gap-2">
           <button type="button" className="w-btn" disabled={locked} onClick={() => useTimeOffUi.getState().openAdd("add", useApp.getState().selection?.date, useApp.getState().selection?.pharmacistId)}>Add time off</button>
-          <button type="button" className="w-btn" disabled={locked} onClick={() => useTimeOffUi.getState().openAdd("sick", undefined, useApp.getState().selection?.pharmacistId)}>Out sick</button>
           <button type="button" className="w-btn" aria-expanded={key} aria-controls="sheet-key" onClick={() => setKey((k) => !k)}>Key</button>
         </div>
       </div>

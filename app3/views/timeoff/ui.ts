@@ -3,7 +3,7 @@ import { create } from "zustand";
 import type { ISODate } from "@domain";
 
 export type Tab = "waiting" | "approved" | "declined";
-export type AddMode = "add" | "sick";
+export type AddMode = "add";
 
 const KEY = "hs-timeoff-tab";
 const readTab = (): Tab | null => {

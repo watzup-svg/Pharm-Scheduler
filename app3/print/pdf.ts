@@ -82,19 +82,29 @@ function openBox(doc: jsPDF, o: PrintOptions, cx: number, cy: number, size: numb
   doc.rect(cx - size / 2, cy - size / 2, size, size, "FD");
 }
 
-type Item = { box: true } | { box: false; label: string };
+type Item = { box: true } | { box: false; label: string; full?: string };
 
-function itemsOf(d: PrintDay): Item[] {
-  return [...d.initials.map((label): Item => ({ box: false, label })), ...Array.from({ length: d.open }, (): Item => ({ box: true }))];
+/** Initials, with the person's whole name alongside when the legend knows exactly one name for them (drawn instead of the initials when there is room). */
+function itemsOf(d: PrintDay, names?: Map<string, string>): Item[] {
+  return [...d.initials.map((label): Item => ({ box: false, label, ...(names?.get(label) ? { full: names.get(label)! } : {}) })), ...Array.from({ length: d.open }, (): Item => ({ box: true }))];
 }
 
 /** Stack initials and open boxes inside a cell, one per line; two per line when there is no room. */
-function drawItems(doc: jsPDF, o: PrintOptions, items: Item[], x: number, y: number, w: number, h: number, maxFont: number, minLine: number) {
-  if (!items.length) return;
-  const lay = itemLayout(items.length, h, maxFont, minLine);
+function drawItems(doc: jsPDF, o: PrintOptions, itemsIn: Item[], x: number, y: number, w: number, h: number, maxFont: number, minLine: number, minFullFont = 0) {
+  if (!itemsIn.length) return;
+  const lay = itemLayout(itemsIn.length, h, maxFont, minLine);
   const { perLine, lines, lineH } = lay;
   let font = lay.font;
   doc.setFont("helvetica", "bold");
+  // Whole names when every person in the cell has one and the longest fits its column at a readable size; otherwise initials.
+  let items = itemsIn;
+  if (minFullFont > 0 && itemsIn.every((it) => it.box || it.full)) {
+    const colW0 = w / perLine;
+    let f = font;
+    const widest = (size: number) => { doc.setFontSize(size); return Math.max(0, ...itemsIn.map((it) => (it.box ? 0 : doc.getTextWidth(safe(it.full!))))); };
+    while (f > minFullFont && widest(f) > colW0 - 0.08) f -= 0.25;
+    if (f >= minFullFont && widest(f) <= colW0 - 0.08) { items = itemsIn.map((it) => (it.box ? it : { box: false as const, label: it.full! })); font = f; }
+  }
   // Keep every label inside its column.
   const colW = w / perLine;
   for (const it of items) {
@@ -175,6 +185,7 @@ function drawKey(doc: jsPDF, o: PrintOptions, x: number, yBase: number, showOpen
 function drawStore(doc: jsPDF, p: StorePage, o: PrintOptions, box: Box) {
   const m = margins(o);
   const s = scale(o);
+  const nameOf = new Map(p.legend.filter((l) => l.names.length === 1).map((l) => [l.initials, l.names[0]!] as [string, string]));
   const kicker = `STORE SCHEDULE${p.state ? ` - ${p.state}` : ""}${p.part ? ` - PAGE ${p.part.n} OF ${p.part.of}` : ""}`;
   drawHeader(doc, o, kicker, p.title, p.revisionLine, p.period, box, box.x + m.left, m.right);
 
@@ -221,7 +232,7 @@ function drawStore(doc: jsPDF, p: StorePage, o: PrintOptions, box: Box) {
         return;
       }
       doc.text(safe(cell.label), x + 0.06, y + 0.17);
-      const items = itemsOf(cell);
+      const items = itemsOf(cell, nameOf);
       if (cell.closed) {
         const label = items.length ? "Closed" : "CLOSED";
         doc.setFont("helvetica", "bold");
@@ -229,13 +240,13 @@ function drawStore(doc: jsPDF, p: StorePage, o: PrintOptions, box: Box) {
         text(doc, o, MUTED);
         if (items.length) {
           doc.text(label, x + colW - 0.06, y + 0.17, { align: "right" });
-          drawItems(doc, o, items, x, y + 0.24, colW, rowH - 0.3, 14 * s, 0.17);
+          drawItems(doc, o, items, x, y + 0.24, colW, rowH - 0.3, 14 * s, 0.17, 8);
         } else {
           doc.text(label, x + colW / 2, y + rowH / 2 + 0.06, { align: "center" });
         }
         return;
       }
-      drawItems(doc, o, items, x, y + 0.24, colW, rowH - 0.3, 16 * s, 0.17);
+      drawItems(doc, o, items, x, y + 0.24, colW, rowH - 0.3, 16 * s, 0.17, 8);
     });
   });
 

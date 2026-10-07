@@ -98,7 +98,7 @@ export type Chip = {
   /** Plain words for the tooltip and the accessible name. */
   words: string;
 };
-export type Block = "good" | "open" | "closed" | "away" | "req" | "declined" | "none";
+export type Block = "good" | "open" | "closed" | "away" | "req" | "declined" | "work" | "none";
 export type CellModel = {
   axis: "store" | "pharmacist";
   r: number;

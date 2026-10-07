@@ -34,6 +34,18 @@ export function explainSelection(state: DomainState, ev: Evaluation, sel: Sel | 
   return null;
 }
 
+/** Why a person is not available that day, in words: on vacation, out sick, off, or not on the roster. Dates and the note come from the time-off record. */
+function whyAway(state: DomainState, pharmacistId: string, date: ISODate, storeId: string): { phrase: string; when: string; note: string } {
+  const ph = state.pharmacists[pharmacistId];
+  if (ph && ((ph.activeFrom !== undefined && ph.activeFrom > date) || (ph.inactiveFrom !== undefined && ph.inactiveFrom <= date))) return { phrase: "not on the roster that day", when: "", note: "" };
+  const u = Object.values(state.unavailability).find((x) => x.pharmacistId === pharmacistId && x.first <= date && date <= x.last && (x.status === "Approved" || x.status === "Actual") && (!x.scopeStoreId || x.scopeStoreId === storeId));
+  if (!u) return { phrase: "not available", when: "", note: "" };
+  const d = (x: ISODate) => `${MONTHS[Number(x.slice(5, 7)) - 1]!.slice(0, 3)} ${Number(x.slice(8, 10))}`;
+  const when = u.first === u.last ? d(u.first) : `${d(u.first)} to ${d(u.last)}`;
+  const phrase = u.type === "Vacation" ? "on vacation" : u.type === "Sick" ? "out sick" : u.type === "Turned-down" ? "not working at this store" : "off";
+  return { phrase, when, note: u.note ?? "" };
+}
+
 /** One sentence per thing wrong with one placement, worst first. */
 function problemsOf(state: DomainState, ev: Evaluation, a: { id: string; pharmacistId: string; storeId: string; date: ISODate }) {
   const st = state.stores[a.storeId];
@@ -44,7 +56,7 @@ function problemsOf(state: DomainState, ev: Evaluation, a: { id: string; pharmac
     if (r.verdict !== "Fail" || r.overridden) continue;
     switch (r.ruleId) {
       case "licensing": out.push({ rule: r.ruleId, sentence: `${who} is not licensed for ${st?.state ? `${st.state} ` : ""}${code}`, note: `Not licensed${st?.state ? ` in ${st.state}` : ""}. Does not count`, tone: "bad" }); break;
-      case "availability": out.push({ rule: r.ruleId, sentence: `${who} is scheduled at ${code} but is not available that day`, note: `${r.detail || "Not available"}. Does not count`, tone: "bad" }); break;
+      case "availability": { const w = whyAway(state, a.pharmacistId, a.date, a.storeId); out.push({ rule: r.ruleId, sentence: `${who} is scheduled at ${code} but is ${w.phrase}${w.when ? ` (${w.when})` : ""}`, note: `${w.phrase[0]!.toUpperCase()}${w.phrase.slice(1)}${w.when ? `, ${w.when}` : ""}${w.note ? ` · ${w.note}` : ""}. Does not count`, tone: "bad" }); break; }
       case "double-booking": {
         const others = Object.values(state.assignments).filter((x) => x.id !== a.id && x.pharmacistId === a.pharmacistId && x.date === a.date).map((x) => state.stores[x.storeId]?.code ?? x.storeId);
         out.push({ rule: r.ruleId, sentence: `${who} is booked at two stores: ${[code, ...others].join(" and ")}`, note: `Also at ${others.join(", ") || "another store"}. Does not count`, tone: "bad" });

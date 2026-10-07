@@ -90,7 +90,6 @@ export function DayInspector() {
 
       <div className="flex flex-wrap gap-1.5 px-3 py-3">
         <Btn onClick={() => useTimeOffUi.getState().openAdd("add", date, pid)} disabled={locked}>Add time off for {shortName(p.name, 18)}</Btn>
-        <Btn onClick={() => useTimeOffUi.getState().openAdd("sick", date, pid)} disabled={locked}>Out sick</Btn>
       </div>
     </div>
   );
