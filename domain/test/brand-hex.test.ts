@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+// @ts-expect-error plain JS helper without types
 import { decodePng } from "../../e2e/support/png.mjs";
 import { HEX_RATIO, HEX_SHOULDER, hexPoints } from "../../app3/ui/hexShape.ts";
 
