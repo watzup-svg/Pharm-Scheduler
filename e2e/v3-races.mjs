@@ -323,7 +323,7 @@ if (CHROMIUM) await sc("Save repeatedly and during Build", async () => {
   const h = judge(w, base).hash;
   await S.page.reload({ waitUntil: "load" });
   await S.page.waitForFunction(() => window.__bootResult !== undefined, null, { timeout: 20000 });
-  await S.page.waitForSelector('[role="gridcell"]', { timeout: 20000 });
+  await S.page.waitForSelector('[role="gridcell"], [data-overview]', { timeout: 20000 });
   const w2 = await readWorld(S.page);
   check("reload after the saves restores the same state hash and change sets", judge(w2, base).hash === h && w2.journal.changeSets.length === w.journal.changeSets.length, `${w2.journal.changeSets.length} vs ${w.journal.changeSets.length}`);
   await done(S);

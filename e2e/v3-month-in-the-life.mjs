@@ -394,7 +394,7 @@ const savedCs = log.at(-1).cs;
 await step("reload right after saving: boot restores the same state hash", async () => {
   await page.reload({ waitUntil: "load" });
   await page.waitForFunction(() => window.__v3 && window.__bootResult !== undefined, null, { timeout: 20000 });
-  await page.waitForSelector('[role="gridcell"]', { timeout: 20000 });
+  await page.waitForSelector('[role="gridcell"], [data-overview]', { timeout: 20000 });
   const boot = await app(() => window.__bootResult);
   if (boot !== "world") throw new Error(`boot said ${boot}`);
   if (state.tellTab) await showToTell();

@@ -421,7 +421,7 @@ class Runner {
         return this.btnIn("left", (b) => /^(Undo|Redo|Revert|Keep as it|Show why|Hide why|Checkpoint now)/.test(b.name));
       }
       case "view": {
-        const v = rng.pick(["Schedule", "Plan", "Time off", "Setup", "Print", "Schedule", "Schedule", "Setup"]);
+        const v = rng.pick(["Schedule", "Plan", "Time off", "Setup", "Print", "Schedule", "Schedule", "Setup", "Overview"]);
         if (v === "Plan") return { t: "store", view: "plan" };
         return this.tabBtn(v);
       }
