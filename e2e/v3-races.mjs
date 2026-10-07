@@ -589,7 +589,7 @@ if (CHROMIUM) await sc("pagehide during edits", async () => {
   const boot = await page2.evaluate(() => window.__bootResult);
   let w2 = null;
   if (boot === "world") w2 = await readWorld(page2);
-  else if (boot === "recovery") { await page2.getByRole("button", { name: "Use the newer browser copy" }).click(); await page2.waitForSelector('[role="gridcell"]', { timeout: 20000 }); w2 = await readWorld(page2); }
+  else if (boot === "recovery") { await page2.getByRole("button", { name: "Use the newer browser copy" }).click(); await page2.waitForSelector('[role="gridcell"], [data-overview]', { timeout: 20000 }); w2 = await readWorld(page2); }
   check("a new tab after the hide finds both edits (no file was ever saved)", !!w2 && w2.journal.changeSets.length === 2 && judge(w2, base).hash === h, `${boot}: ${w2?.journal.changeSets.length}`);
   check("no page errors on the new tab", errs2.length === 0, errs2.join(" | "));
   await S.ctx.close();

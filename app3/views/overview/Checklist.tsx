@@ -30,7 +30,7 @@ export function Checklist({ items }: { items: ChecklistItem[] }) {
             <Hex done={it.done} current={i === next} n={i + 1} />
             <div className="min-w-0 flex-1">
               <p className={cx("text-sm", it.done ? "text-muted" : "font-medium")}><span className="sr-only">{it.done ? "Done: " : "To do: "}</span>{it.label}</p>
-              <p className={cx("text-xs", it.done ? "text-muted/80" : "text-muted")}>{it.detail}</p>
+              <p className={cx("text-xs", it.done ? "text-muted" : "text-muted")}>{it.detail}</p>
             </div>
             {!it.done && <button type="button" onClick={() => goWhere(it.where)} aria-label={`${VERB[it.where.to]}: ${it.label}`} className="h-8 shrink-0 rounded-md px-3 text-sm font-medium text-ink ring-1 ring-inset ring-edge hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">{VERB[it.where.to]}</button>}
           </li>

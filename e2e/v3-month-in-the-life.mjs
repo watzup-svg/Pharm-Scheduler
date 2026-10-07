@@ -417,7 +417,7 @@ await step("edit, reload without saving: recovery offers the newer browser copy,
   await dlg.waitFor();
   if (!/Newer changes were found in this browser/.test(await dlg.innerText())) throw new Error("recovery dialog text");
   await dlg.getByRole("button", { name: "Use the newer browser copy" }).click();
-  await page.waitForSelector('[role="gridcell"]', { timeout: 20000 });
+  await page.waitForSelector('[role="gridcell"], [data-overview]', { timeout: 20000 });
   const w = await readWorld(page);
   if (judge(w, base).hash !== beforeReload) throw new Error("the recovered state is not the state before the reload");
 });
