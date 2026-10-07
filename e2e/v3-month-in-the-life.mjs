@@ -298,7 +298,7 @@ await step("start a what-if from Plan (via search), edit it, discard it", async 
   const before = await cs();
   await page.keyboard.press("/");
   await page.getByRole("dialog", { name: "Search" }).waitFor();
-  await page.getByLabel("Search stores, people, screens").fill("Plan");
+  await page.getByLabel("Search stores, people, screens").fill("next weeks");
   await page.keyboard.press("Enter");
   await page.getByRole("table", { name: "Open shifts by week" }).waitFor();
   await page.getByLabel("What-if name").fill("Close one store");

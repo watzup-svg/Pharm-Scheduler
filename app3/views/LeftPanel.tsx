@@ -4,6 +4,7 @@ import { cx } from "../ui/primitives.tsx";
 import { Queue } from "./chrome/Queue.tsx";
 import { History } from "./chrome/History.tsx";
 import { RequestList } from "./timeoff/RequestList.tsx";
+import { MonthRail } from "./ahead/MonthRail.tsx";
 
 export function LeftPanel() {
   const world = useApp((s) => s.world);
@@ -12,7 +13,8 @@ export function LeftPanel() {
   const setTab = useApp((s) => s.setLeftTab);
   if (!world) return null;
   const tabs: { id: LeftTab; label: string }[] = [
-    { id: "queue", label: view === "timeoff" ? "Requests" : "Queue" },
+    ...(view === "ahead" ? [{ id: "months" as const, label: "Months" }] : []),
+    { id: "queue", label: view === "timeoff" ? "Requests" : view === "ahead" ? "Issues" : "Queue" },
     { id: "history", label: "History" },
   ];
   return (
@@ -37,6 +39,7 @@ export function LeftPanel() {
         <button type="button" aria-label="Close the list" data-tip="Hide the list | You can open it again from the edge" onClick={() => useApp.getState().setDrawer(false)} className="my-1 ml-auto mr-1 rounded-md px-2 text-sm text-muted hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">Hide ‹</button>
       </div>
       <div role="tabpanel" id="left-tabpanel" aria-labelledby={`left-tab-${tab}`} className="min-h-0 flex-1">
+        {tab === "months" && view === "ahead" && <MonthRail />}
         {tab === "queue" && (view === "timeoff" ? <RequestList /> : <Queue />)}
         {tab === "history" && <History />}
       </div>

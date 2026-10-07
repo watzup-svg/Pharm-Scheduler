@@ -16,6 +16,7 @@ import { getPersist } from "../persist-bridge.ts";
 const TABS: { id: Screen; label: string; also?: Screen }[] = [
   { id: "overview", label: "Overview" },
   { id: "wall", label: "Schedule", also: "plan" },
+  { id: "ahead", label: "Plan ahead" },
   { id: "timeoff", label: "Time off" },
   { id: "print", label: "Print" },
   { id: "setup", label: "Setup" },

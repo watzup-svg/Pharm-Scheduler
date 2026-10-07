@@ -21,7 +21,8 @@ import { Notice } from "./ui/Notice.tsx";
 import { SaveDialogs } from "./views/SaveControls.tsx";
 import { HoverNotes } from "./ui/notes.tsx";
 import { SearchPalette } from "./ui/SearchPalette.tsx";
-import { ScheduleHero, SetupHero, PrintHero, TimeOffHero } from "./views/hero/Heroes.tsx";
+import { AheadHero, ScheduleHero, SetupHero, PrintHero, TimeOffHero } from "./views/hero/Heroes.tsx";
+import { Ahead } from "./views/ahead/Ahead.tsx";
 
 // Shell: one top row; the schedule fills the middle under one header band; the Inspector docks on the right; the
 // queue / history live in a drawer on the left that is closed until asked for; the Proposal Bar sits
@@ -58,12 +59,14 @@ export function App() {
           <ErrorBoundary name={`the ${view} screen`} resetKey={view} probe>
             {view === "overview" && <OverviewHero />}
             {(view === "wall" || view === "plan") && <ScheduleHero />}
+            {view === "ahead" && <AheadHero />}
             {view === "setup" && <SetupHero />}
             {view === "timeoff" && <TimeOffHero />}
             {view === "print" && <PrintHero />}
             <div className="relative min-h-0 flex-1 overflow-auto">
               {view === "overview" && <Overview />}
               {view === "wall" && <Wall />}
+              {view === "ahead" && <Ahead />}
               {view === "plan" && <Plan />}
               {view === "timeoff" && <TimeOff />}
               {view === "setup" && <Setup />}
@@ -71,10 +74,10 @@ export function App() {
             </div>
           </ErrorBoundary>
         </main>
-        {(view === "wall" || view === "plan") && (
+        {(view === "wall" || view === "plan" || view === "ahead") && (
           <aside aria-label="Inspector" className="relative flex w-[336px] shrink-0 flex-col overflow-y-auto border-l border-line bg-cream">
             {(outForm || !!world.session.scenario) && <SomeonesOut compact showForm={outForm} onClose={() => useApp.getState().setOutForm(false)} />}
-            {view === "wall" && <ErrorBoundary name="the inspector"><Inspector /></ErrorBoundary>}
+            {(view === "wall" || view === "ahead") && <ErrorBoundary name="the inspector"><Inspector /></ErrorBoundary>}
           </aside>
         )}
         {view === "timeoff" && (

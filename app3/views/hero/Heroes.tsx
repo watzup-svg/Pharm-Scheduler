@@ -11,6 +11,10 @@ import { Hero, type Tile } from "./Hero.tsx";
 import { MonthDial } from "./MonthDial.tsx";
 import { LicenceRings, PaperStack } from "./Graphics.tsx";
 import { explainTimeOff } from "../timeoff/explain.ts";
+import { useAheadMonth } from "../ahead/Ahead.tsx";
+import { KIND_WORD } from "../ahead/MonthRail.tsx";
+import { monthName, monthStatus, nextSteps } from "../ahead/lib.ts";
+import { niceDate } from "../wall/model.ts";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const monthLabel = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
@@ -133,6 +137,32 @@ export function PrintHero() {
   const days = dateRange(win.from, win.to).length;
   const tiles: Tile[] = [{ kind: "open", n: open, word: "open shifts print as boxes" }, { kind: "pinned", n: snaps.length, word: plural(snaps.length, "posting").replace(/^\d+ /, "") }];
   return <Hero label="Post and print" lead={stores} leadWord={`store pages · ${days} days`} tiles={tiles} graphic={<PaperStack pages={stores} />} />;
+}
+
+/** Plan ahead's header: a selected day is explained like on the Schedule; otherwise it is the month itself: where it stands, and what to do next. */
+export function AheadHero() {
+  const world = useApp((s) => s.world);
+  const asOf = useApp((s) => s.asOf);
+  const sel = useApp((s) => s.selection);
+  const vs = useViewState();
+  const ev = useEvaluation();
+  const month = useAheadMonth();
+  const st = useMemo(() => (world ? monthStatus(world, month, asOf) : null), [world, month, asOf]);
+  const ex = useMemo<Explain | null>(() => {
+    if (!world || !vs || !st) return null;
+    if (sel && ev) { const e = explainSelection(vs.state, ev, sel, asOf); if (e) return e; }
+    const code = (id: string) => world.state.stores[id]?.code ?? id;
+    const closed = st.closedDays.length ? `Closed days: ${st.closedDays.slice(0, 4).map((d) => `${d.note} (${niceDate(d.date)})`).join(", ")}${st.closedDays.length > 4 ? ` and ${st.closedDays.length - 4} more` : ""}.` : null;
+    return {
+      mark: st.kind === "ready" || st.kind === "posted" ? null : "open",
+      tone: st.kind === "ready" || (st.kind === "posted" && st.editedSince === 0) ? "ok" : st.kind === "empty" ? "warn" : "warn",
+      headline: `${monthName(month)}: ${KIND_WORD[st.kind].toLowerCase()}`,
+      context: st.kind === "empty" ? "Draft · nothing scheduled yet" : `${st.kind === "posted" ? `Posted as revision ${st.rev}` : "Draft, not posted"} · ${st.filled} of ${st.needed} shifts filled${st.open ? `, ${st.open} open` : ""}`,
+      more: [...nextSteps(st, code), ...(closed ? [closed] : [])],
+    };
+  }, [world, vs, ev, sel, st, asOf, month]);
+  if (!world) return null;
+  return <InfoHero ex={ex} label={`${monthName(month)} plan`} emptyTitle="Plan ahead" emptyText="Pick a month on the left." />;
 }
 
 export function TimeOffHero() {

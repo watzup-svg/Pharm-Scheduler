@@ -29,6 +29,7 @@ Every test is a plain Node or Playwright script: deterministic, no network, no m
 | `node e2e/v3-print-browser.mjs` | The browser print path: sheet size, clipping, page counts, text, stable second print | 17 s |
 | `node e2e/v3-hostile-text.mjs` | About 24 hostile strings in every text field shown on every screen, print and PDF, then saved and reopened | 25 s |
 | `node e2e/v3-hero.mjs` | Schedule hero: icon, headline, context and people for each kind of cell and list row; no buttons; "No cell selected" | 3 s |
+| `node e2e/v3-ahead.mjs` | Plan ahead: month list with statuses, open any month, Build and Post a month, edit after posting and see the change counted, post the next revision | 40 s |
 | `npm run size:v3` | Bundle size budget and dependency licences | 2 s |
 | `npm run build:repro` | Two builds are byte-identical | 15 s |
 | `npm run perf:baseline` | Domain timings vs `scripts/perf-baseline.json` (fails on more than 40% and 150 ms slower; `UPDATE=1` to re-baseline) | 21 s |

@@ -11,11 +11,11 @@ import { record as diag, setContext } from "./diagnostics.ts";
 import { describeEdits } from "./copy.ts";
 
 /** The screens. Travel, Rules and Checks are tabs inside Setup; setView still accepts their old names and routes there. */
-export type Screen = "overview" | "wall" | "plan" | "timeoff" | "setup" | "print";
+export type Screen = "overview" | "wall" | "ahead" | "plan" | "timeoff" | "setup" | "print";
 export type SetupTab = "stores" | "pharmacists" | "patterns" | "holidays" | "dates" | "travel" | "rules" | "checks";
 export type View = Screen | "travel" | "rules" | "checks";
 export type Axis = "store" | "pharmacist";
-export type LeftTab = "queue" | "history";
+export type LeftTab = "queue" | "history" | "months";
 export type Selection = { storeId?: string; pharmacistId?: string; date: ISODate } | null;
 export type Notice = { id: number; kind: "info" | "ok" | "error"; text: string; /** A change set this line can undo. */ undoId?: string };
 
@@ -149,12 +149,13 @@ export const useApp = create<AppState>((set, get) => {
     setView: (v) => {
       if (v === "travel" || v === "rules" || v === "checks") return set({ view: "setup", setupTab: v });
       const cur = get();
-      // The Time off screen is built around its request list, so the left panel opens with it, and goes back to how it was when you leave.
-      if (v === "timeoff" && cur.view !== "timeoff") { listWasOpen = cur.drawer; return set({ view: v, drawer: true }); }
-      if (v !== "timeoff" && cur.view === "timeoff" && listWasOpen === false) { listWasOpen = null; return set({ view: v, drawer: false }); }
-      return set({ view: v });
-    },
-    setSetupTab: (setupTab) => set({ setupTab }),
+      // Time off and Plan ahead are built around their left list, so it opens with them and goes back to how it was when you leave.
+      const listy = (x: Screen) => x === "timeoff" || x === "ahead";
+      if (listy(v) && !listy(cur.view)) { listWasOpen = cur.drawer; return set({ view: v, drawer: true, ...(v === "ahead" ? { leftTab: "months" as const } : cur.leftTab === "months" ? { leftTab: "queue" as const } : {}) }); }
+      if (listy(v)) return set({ view: v, ...(v === "ahead" ? { leftTab: "months" as const } : cur.leftTab === "months" ? { leftTab: "queue" as const } : {}) });
+      if (listy(cur.view) && listWasOpen === false) { listWasOpen = null; return set({ view: v, drawer: false, ...(cur.leftTab === "months" ? { leftTab: "queue" as const } : {}) }); }
+      return set({ view: v, ...(cur.leftTab === "months" ? { leftTab: "queue" as const } : {}) });
+    },    setSetupTab: (setupTab) => set({ setupTab }),
     setDrawer: (drawer, tab) => set(tab ? { drawer, leftTab: tab } : { drawer }),
     setOutForm: (outForm) => set({ outForm }),
     setAxis: (axis) => set({ axis }),
