@@ -341,7 +341,6 @@ await step("edit after posting: Print says what changed since revision 1", async
   await header.getByRole("button", { name: "Schedule" }).click();
   await page.getByRole("group", { name: "How much to show" }).getByRole("button", { name: "Month" }).click();
   await page.locator(`[role="gridcell"][data-store="${a.storeId}"][data-date="${a.date}"]`).click();
-  await inspector.getByRole("button", { name: /^Details/ }).first().click();
   await inspector.getByRole("button", { name: "Remove", exact: true }).first().click();
   const w2 = await readWorld(page);
   if (w2.journal.changeSets.length !== w.journal.changeSets.length + 1) throw new Error("the removal was not committed");

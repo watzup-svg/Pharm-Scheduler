@@ -33,37 +33,26 @@ function useScheduleHero() {
 /** The Schedule's header: it explains whatever is selected (a day at a store, or a person's day) in plain words: a big picture in the issue's colour, a headline, the store and date, and who is involved. Nothing to click here; the month dial stays at the right. */
 const CHIP_BG = { bad: "#f0c4ba", warn: "#f2da8f", ok: "#6fb78d" } as const; // the same colours as the blocks on the wall (wall.css)
 const CHIP_INK = { bad: "var(--color-illegal)", warn: "var(--color-warn)", ok: "var(--color-ok)" } as const;
-const DOT = { bad: "#f0c4ba", warn: "#f2da8f", quiet: "#9fd3b4", ok: "#9fd3b4" } as const;
 
-/** The informational band: a big picture in the issue's colour, a headline, context, extra lines and the people involved. Nothing to click. */
+/** The informational band: a big picture in the issue's colour, a large centred headline, one line of context, and a few full sentences of detail. Nothing to click. */
 function InfoHero({ ex, label, emptyTitle, emptyText, extra }: { ex: Explain | null; label: string; emptyTitle: string; emptyText: string; extra?: Record<string, string | number> }) {
   const icon = ex?.mark ? MARKS[ex.mark].icon : ex ? "asis" : null;
   return (
-    <section aria-label={label} data-explain={ex ? ex.tone : "none"} {...Object.fromEntries(Object.entries(extra ?? {}).map(([k, v]) => [`data-${k}`, v]))} className="hero-band relative mx-3 mt-2 flex min-h-[104px] items-center gap-5 overflow-hidden rounded-xl bg-night px-5 py-3 text-cream shadow-[0_8px_20px_-14px_rgba(32,24,32,0.7)]">
-      <span aria-hidden className="grid size-16 shrink-0 place-items-center rounded-2xl" style={ex ? { background: CHIP_BG[ex.tone], color: CHIP_INK[ex.tone] } : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", outline: "1px dashed rgba(255,255,255,0.3)", outlineOffset: -1 }}>
-        {icon ? <Pic icon={icon} className="size-9" /> : <Pic icon="unverified" className="size-8" />}
+    <section aria-label={label} data-explain={ex ? ex.tone : "none"} {...Object.fromEntries(Object.entries(extra ?? {}).map(([k, v]) => [`data-${k}`, v]))} className="hero-band relative mx-3 mt-2 grid min-h-[120px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-5 overflow-hidden rounded-xl bg-night px-5 py-4 text-cream shadow-[0_8px_20px_-14px_rgba(32,24,32,0.7)]">
+      <span aria-hidden className="grid size-[72px] shrink-0 place-items-center rounded-2xl" style={ex ? { background: CHIP_BG[ex.tone], color: CHIP_INK[ex.tone] } : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", outline: "1px dashed rgba(255,255,255,0.3)", outlineOffset: -1 }}>
+        {icon ? <Pic icon={icon} className="size-10" /> : <Pic icon="unverified" className="size-9" />}
       </span>
-      <div className="min-w-0 flex-1" aria-live="polite">
+      <div className="min-w-0 text-center" aria-live="polite">
         {ex ? (
           <>
-            <h2 className="text-[26px] font-semibold leading-tight tracking-tight text-[#f7e9e4]" data-hero-headline>{ex.headline}</h2>
-            <p className="mt-0.5 text-sm text-cream/70" data-hero-context>{ex.context}</p>
-            {ex.more.length > 0 && <ul className="mt-1 space-y-0.5 text-sm text-cream/85">{ex.more.map((m) => <li key={m}>{m}</li>)}</ul>}
-            {ex.people.length > 0 && (
-              <ul aria-label="People involved" className="mt-2 flex flex-wrap gap-1.5">
-                {ex.people.map((pp, i) => (
-                  <li key={pp.name + i} className="inline-flex items-center gap-2 rounded-full bg-white/10 py-1 pl-2.5 pr-3 text-sm ring-1 ring-inset ring-white/10">
-                    <span aria-hidden className="size-2.5 rounded-full" style={{ background: DOT[pp.tone] }} />
-                    <b className="font-semibold">{pp.name}</b><span className="text-cream/70">{pp.note}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <h2 className="text-[32px] font-semibold leading-tight tracking-tight text-[#f7e9e4]" data-hero-headline>{ex.headline}</h2>
+            <p className="mt-1 text-base text-cream/70" data-hero-context>{ex.context}</p>
+            {ex.more.length > 0 && <div className="mx-auto mt-2 max-w-[62rem] space-y-1 text-[15px] leading-snug text-cream/85" data-hero-detail>{ex.more.map((m) => <p key={m}>{m}</p>)}</div>}
           </>
         ) : (
           <>
-            <h2 className="text-[26px] font-semibold leading-tight tracking-tight text-cream/80" data-hero-headline>{emptyTitle}</h2>
-            <p className="mt-0.5 text-sm text-cream/60" data-hero-context>{emptyText}</p>
+            <h2 className="text-[32px] font-semibold leading-tight tracking-tight text-cream/80" data-hero-headline>{emptyTitle}</h2>
+            <p className="mt-1 text-base text-cream/60" data-hero-context>{emptyText}</p>
           </>
         )}
       </div>

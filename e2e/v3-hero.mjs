@@ -33,7 +33,8 @@ const pid = await page.evaluate((s) => Object.values(window.__v3.app.getState().
 const cells = page.locator(`.w-cell[data-date="${sel.date}"][data-icon="double"]`);
 check("every cell of the double booking shows the red block", (await cells.count()) >= 2 && (await rgb(cells.first().locator(".w-block"))) === "rgb(240, 196, 186)", `${await cells.count()} ${await rgb(cells.first().locator(".w-block"))}`);
 void pid;
-check("the header lists who is involved with what is true of each", (await hero.getByRole("list", { name: "People involved" }).locator("li").count()) >= 1);
+check("the header adds full sentences of context under the headline", (await hero.locator("[data-hero-detail] p").count()) >= 1 && (await hero.getByRole("list", { name: "People involved" }).count()) === 0);
+check("the headline is centred and large", (await hero.locator("[data-hero-headline]").evaluate((e) => getComputedStyle(e.parentElement).textAlign === "center" && parseFloat(getComputedStyle(e).fontSize) >= 30)));
 
 // a warning: yellow block, yellow header chip, plain words
 const drive = left.locator(".q-row[data-sev='warn']", { hasText: "min drive" }).first();
@@ -62,7 +63,7 @@ check("a fine cell says Covered", /is covered/.test(await headline()) && (await 
   for (const c of cells) {
     if (!c.store) continue;
     await page.locator(`.w-cell[data-store="${c.store}"][data-date="${c.date}"]`).click();
-    const lines = [await headline(), ...(await hero.locator("ul:not([aria-label]) li").allInnerTexts())].map((x) => x.trim()).filter(Boolean);
+    const lines = [await headline(), ...(await hero.locator("[data-hero-detail] p").allInnerTexts())].map((x) => x.trim()).filter(Boolean);
     const dupe = lines.find((l, i) => lines.indexOf(l) !== i);
     const drive = lines.filter((l) => /long drive/i.test(l));
     if (dupe || drive.length > 1) { bad = `${c.store} ${c.date}: ${dupe ?? drive.join(" | ")}`; break; }

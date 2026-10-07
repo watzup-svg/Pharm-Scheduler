@@ -14,7 +14,8 @@ const get = (fn, arg) => page.evaluate(fn, arg);
 const settle = async () => { await page.waitForTimeout(100); await page.waitForFunction(() => !window.__v3.app.getState().busy); await page.waitForTimeout(100); };
 const status = async () => (await insp.getByTestId("cell-status").innerText()).trim();
 const select = async (sel) => { await get((s) => window.__v3.app.getState().select(s), sel); await settle(); };
-const openDetails = async (scope = insp) => { const b = scope.getByRole("button", { name: "Details" }).first(); if ((await b.getAttribute("aria-expanded")) !== "true") await b.click(); };
+const openDetails = async (scope = insp) => { const b = scope.getByRole("button", { name: /^(Details|Why)/ }).first(); if (!(await b.count())) return; if ((await b.getAttribute("aria-expanded")) !== "true") await b.click(); };
+const openAssignMore = async () => { const b = insp.getByRole("button", { name: "More actions", exact: true }).first(); if ((await b.getAttribute("aria-expanded")) !== "true") await b.click(); };
 const openMore = async () => { const b = insp.getByRole("button", { name: "More for this day" }); if ((await b.getAttribute("aria-expanded")) !== "true") await b.click(); };
 const controlCount = () => get(() => { const a = document.querySelector('aside[aria-label="Inspector"]'); return [...a.querySelectorAll("button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])")].filter((e) => e.getBoundingClientRect().width > 0).length; });
 const commit = (edits) => get((e) => window.__v3.app.getState().commit(e), edits);
@@ -61,15 +62,17 @@ check("selection kept after commit", await get(() => { const s = window.__v3.app
 const placed = await get((c) => Object.values(window.__v3.app.getState().world.state.assignments).filter((a) => a.storeId === c.storeId && a.date === c.date).map((a) => ({ id: a.id, p: a.pharmacistId, src: a.source, agreed: a.agreed })), cell);
 check("a manual unconfirmed assignment was written", placed.length === 1 && placed[0].src === "manual" && !placed[0].agreed, JSON.stringify(placed));
 const row1 = insp.locator("section", { hasText: "Working here" });
-check("Details starts collapsed on a row", (await row1.getByRole("button", { name: "Details" }).getAttribute("aria-expanded")) === "false" && (await row1.getByRole("button", { name: "Remove" }).count()) === 0);
+check("a row shows its actions up front: Swap and Remove; Pin and the partial-day note sit under More", (await row1.getByRole("button", { name: "Remove", exact: true }).count()) === 1 && (await row1.getByRole("button", { name: "Swap to someone else" }).count()) === 1 && (await row1.getByRole("button", { name: "Pin", exact: true }).count()) === 0 && (await row1.getByRole("button", { name: "More actions", exact: true }).first().getAttribute("aria-expanded")) === "false");
+check("a row carries its context: who placed it, agreed or not, and the home store", /Placed by|From the pattern|Scheduled by/.test(await row1.innerText()) && /Home store/.test(await row1.innerText()));
 check("a covered cell shows no Next step", (await insp.getByRole("button", { name: "Find cover" }).count()) === 0 && (await rows.count()) === 0);
 await openDetails();
-check("row says it is not confirmed yet", /Not confirmed yet/.test(await insp.innerText()));
+check("row says it is not confirmed yet", /not confirmed yet/i.test(await insp.innerText()));
 void placedLabel;
 
 // row actions: agreed, pin, partial note
 await insp.getByRole("button", { name: "Mark agreed" }).click(); await settle();
 check("Mark agreed", await get((id) => window.__v3.app.getState().world.state.assignments[id].agreed, placed[0].id));
+await openAssignMore();
 await insp.getByRole("button", { name: "Pin", exact: true }).click(); await settle();
 check("Pin", await get((id) => window.__v3.app.getState().world.state.assignments[id].pinned, placed[0].id));
 check("Unpin is offered", await insp.getByRole("button", { name: "Unpin", exact: true }).isVisible());

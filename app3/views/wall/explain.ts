@@ -1,12 +1,11 @@
-// What is going on in one store-day (or one person-day), said in plain words for the header band: a headline, a line of context, and the
-// people involved with what is true of each. Pure; the same facts the colours and pictures on the wall come from (see storeLook in model.ts).
-import { weekday, type DomainState, type Evaluation, type ISODate } from "@domain";
+// What is going on in one store-day (or one person-day), said in plain words for the header band: a headline, a line of context, and a few full
+// sentences of detail (each fact once). Pure; the same facts the colours and pictures on the wall come from (see storeLook in model.ts).
+import { choicesFor, weekday, type DomainState, type Evaluation, type ISODate } from "@domain";
 import { buildCellView, dropSuperseded } from "../../derive.ts";
-import type { MarkKind, MarkTone } from "../../ui/icons.tsx";
+import type { MarkKind } from "../../ui/icons.tsx";
 import { RULE_MARK } from "../../ui/icons.tsx";
 import { storeLook } from "./model.ts";
 
-export type Involved = { name: string; note: string; tone: MarkTone | "ok" };
 export type Explain = {
   /** The picture, or null for "all is well". */
   mark: MarkKind | null;
@@ -15,9 +14,8 @@ export type Explain = {
   headline: string;
   /** Store, weekday and date. */
   context: string;
-  /** Other things also wrong in the same place, one short line each. */
+  /** Full sentences of detail: what else is true there, why, and what it means. Each fact appears once. */
   more: string[];
-  people: Involved[];
 };
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -46,31 +44,77 @@ function whyAway(state: DomainState, pharmacistId: string, date: ISODate, storeI
   return { phrase, when, note: u.note ?? "" };
 }
 
-/** One sentence per thing wrong with one placement, worst first. */
-function problemsOf(state: DomainState, ev: Evaluation, a: { id: string; pharmacistId: string; storeId: string; date: ISODate }) {
+type Problem = { rule: string; sentence: string; detail: string; tone: "bad" | "warn" };
+
+/** Ends a sentence once, even when the last word already ends in a full stop ("Quin Q."). */
+const stop = (t: string) => (t.endsWith(".") ? t : `${t}.`);
+const list = (xs: string[]) => (xs.length <= 1 ? xs[0] ?? "" : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+
+/** One sentence per thing wrong with one placement, each with a sentence of why and what it means, worst first. */
+function problemsOf(state: DomainState, ev: Evaluation, a: { id: string; pharmacistId: string; storeId: string; date: ISODate }): Problem[] {
   const st = state.stores[a.storeId];
-  const who = state.pharmacists[a.pharmacistId]?.name ?? a.pharmacistId;
+  const ph = state.pharmacists[a.pharmacistId];
+  const who = ph?.name ?? a.pharmacistId;
+  const first = who.split(" ")[0] ?? who;
   const code = st?.code ?? a.storeId;
-  const out: { rule: string; sentence: string; note: string; tone: "bad" | "warn" }[] = [];
+  const base = ph?.baseStoreId ? state.stores[ph.baseStoreId] : undefined;
+  const out: Problem[] = [];
   const results = ev.assignments[a.id]?.results ?? [];
   const failing = dropSuperseded(results.filter((x) => x.verdict === "Fail" && !x.overridden).map((x) => x.ruleId));
   for (const r of results) {
     if (r.verdict !== "Fail" || r.overridden || !failing.includes(r.ruleId)) continue;
     switch (r.ruleId) {
-      case "licensing": out.push({ rule: r.ruleId, sentence: `${who} is not licensed for ${st?.state ? `${st.state} ` : ""}${code}`, note: `Not licensed${st?.state ? ` in ${st.state}` : ""}. Does not count`, tone: "bad" }); break;
-      case "availability": { const w = whyAway(state, a.pharmacistId, a.date, a.storeId); out.push({ rule: r.ruleId, sentence: `${who} is scheduled at ${code} but is ${w.phrase}${w.when ? ` (${w.when})` : ""}`, note: `${w.phrase[0]!.toUpperCase()}${w.phrase.slice(1)}${w.when ? `, ${w.when}` : ""}${w.note ? ` · ${w.note}` : ""}. Does not count`, tone: "bad" }); break; }
-      case "double-booking": {
-        const others = Object.values(state.assignments).filter((x) => x.id !== a.id && x.pharmacistId === a.pharmacistId && x.date === a.date).map((x) => state.stores[x.storeId]?.code ?? x.storeId);
-        out.push({ rule: r.ruleId, sentence: `${who} is booked at two stores: ${[code, ...others].join(" and ")}`, note: `Also at ${others.join(", ") || "another store"}. Does not count`, tone: "bad" });
+      case "licensing": {
+        const held = ph?.licenses ? Object.keys(ph.licenses).sort() : [];
+        out.push({ rule: r.ruleId, tone: "bad", sentence: `${who} is not licensed for ${st?.state ? `${st.state} ` : ""}${code}`, detail: `${first} ${held.length ? `holds a licence in ${list(held)}` : "has no licence recorded"}, but ${st?.name ?? code} is ${st?.state ? `in ${st.state}` : "in another state"}, so ${first} does not count toward this shift.` });
         break;
       }
-      case "closure": out.push({ rule: r.ruleId, sentence: `${who} is placed at ${st?.name ?? code}, which is closed that day`, note: "Store is closed. Does not count", tone: "bad" }); break;
-      case "travel-hard": case "travel-soft": out.push({ rule: r.ruleId, sentence: `${who} has a ${r.ruleId === "travel-hard" ? "very " : ""}long drive to ${code} (${(/\d+/.exec(r.detail || "") ?? [""])[0] ? `${(/\d+/.exec(r.detail))![0]} minutes` : "over the limit"})`, note: `${r.detail || "Long drive"}. Still counts`, tone: "warn" }); break;
-      case "consecutive-days": out.push({ rule: r.ruleId, sentence: `${who} would work ${r.detail?.toLowerCase().replace(/^day /, "day ") || "too many days in a row"}`, note: `${r.detail || "Many days in a row"}. Still counts`, tone: "warn" }); break;
-      default: out.push({ rule: r.ruleId, sentence: `${who}: ${r.detail || r.ruleId}`, note: r.detail || r.ruleId, tone: "warn" });
+      case "availability": {
+        const w = whyAway(state, a.pharmacistId, a.date, a.storeId);
+        out.push({ rule: r.ruleId, tone: "bad", sentence: `${who} is scheduled at ${code} but is ${w.phrase}`, detail: `${first} is ${w.phrase}${w.when ? ` (${w.when})` : ""}${w.note ? `, noted as "${w.note}"` : ""}, so ${first} does not count toward this shift. Pick someone who is available, or cover another way.` });
+        break;
+      }
+      case "double-booking": {
+        const others = Object.values(state.assignments).filter((x) => x.id !== a.id && x.pharmacistId === a.pharmacistId && x.date === a.date).map((x) => state.stores[x.storeId]?.code ?? x.storeId);
+        out.push({ rule: r.ruleId, tone: "bad", sentence: `${who} is booked at two stores: ${[code, ...others].join(" and ")}`, detail: `${first} cannot work both on the same day, so neither shift counts until one of them is moved.` });
+        break;
+      }
+      case "closure": {
+        const note = state.dateOverrides[`${a.storeId}|${a.date}`]?.note;
+        out.push({ rule: r.ruleId, tone: "bad", sentence: `${who} is placed at ${st?.name ?? code}, which is closed that day`, detail: `${st?.name ?? code} is closed${note ? ` (${note})` : ""}, so ${first}'s name there does not count. Remove ${first} or reopen the store.` });
+        break;
+      }
+      case "travel-hard": case "travel-soft": {
+        const mins = /\d+/.exec(r.detail || "")?.[0];
+        const hard = r.ruleId === "travel-hard";
+        out.push({ rule: r.ruleId, tone: "warn", sentence: `${who} has a ${hard ? "very " : ""}long drive to ${code}${mins ? ` (${mins} minutes)` : ""}`, detail: `${first}'s home store is ${base ? `${base.name} (${base.code})` : "not recorded"}. Drives over ${state.config.travelSoftMinutes} minutes are flagged and over ${state.config.travelHardMinutes} are very long. ${first} still counts toward the shift.` });
+        break;
+      }
+      case "consecutive-days":
+        out.push({ rule: r.ruleId, tone: "warn", sentence: `${who} would work ${r.detail?.toLowerCase().replace(/^day /, "day ") || "too many days in a row"}`, detail: `The limit is ${state.config.maxConsecutiveDays} days in a row. ${first} still counts toward the shift.` });
+        break;
+      default: out.push({ rule: r.ruleId, tone: "warn", sentence: `${who}: ${r.detail || r.ruleId}`, detail: "" });
     }
   }
   return out.sort((x, y) => (x.tone === y.tone ? 0 : x.tone === "bad" ? -1 : 1));
+}
+
+/** The sentences for a list of problems: the first one is the headline, so only its detail is added; later ones bring their own sentence. */
+function problemLines(ps: Problem[]): string[] {
+  const out: string[] = [];
+  ps.forEach((p, i) => { if (i > 0) out.push(`${p.sentence}.`); if (p.detail) out.push(p.detail); });
+  return out;
+}
+
+/** "14 people could cover. The best fit is Fenn Ritter, who is free that day." Only for a day still ahead. */
+function coverLine(state: DomainState, storeId: string, date: ISODate, asOf: ISODate): string | null {
+  if (date < asOf) return null;
+  const options = choicesFor(state, storeId, date, asOf).filter((c) => c.counts && !c.unavailable);
+  if (!options.length) return "Nobody is free to cover it.";
+  const best = options[0]!;
+  const name = state.pharmacists[best.pharmacistId]?.name ?? best.pharmacistId;
+  const how = best.currently === "off" ? "who is free that day" : `who is at ${state.stores[best.currently.split(",")[0]!]?.code ?? best.currently} that day${best.leavesShort ? " (moving them would leave that store short)" : ""}`;
+  return `${options.length} ${n(options.length, "pharmacist", "pharmacists")} could cover. The best fit is ${name}, ${how}${best.travelMinutes ? `, ${best.travelMinutes} minutes away` : ""}.`;
 }
 
 function explainStoreDay(state: DomainState, ev: Evaluation, storeId: string, date: ISODate, asOf: ISODate): Explain {
@@ -80,57 +124,57 @@ function explainStoreDay(state: DomainState, ev: Evaluation, storeId: string, da
   const context = `${st.name} (${st.code}) · ${longDate(date)}`;
   const placed = Object.values(state.assignments).filter((a) => a.storeId === storeId && a.date === date).sort((a, b) => a.placedSeq - b.placedSeq);
   const nameOf = (id: string) => state.pharmacists[id]?.name ?? id;
-  const people: Involved[] = [];
   const more: string[] = [];
   let headline = "";
   let mark: MarkKind | null = look.chip;
   let tone: Explain["tone"] = look.iconTone === "bad" ? "bad" : look.iconTone === "warn" ? "warn" : "ok";
-
-  const issues = placed.flatMap((a) => problemsOf(state, ev, a).map((p) => ({ ...p, a })));
-  for (const a of placed) {
-    const ps = issues.filter((i) => i.a.id === a.id);
-    const counts = ev.assignments[a.id]?.counts ?? false;
-    // The issue itself is said once, above; the pill only says whether this person still counts.
-    const note = ps.length ? (counts ? "Still counts" : "Does not count") : !a.agreed ? "Not confirmed yet" : a.pinned ? "Pinned in place" : a.partialNote ? `Part day: ${a.partialNote}` : counts ? "Working" : "Does not count";
-    people.push({ name: nameOf(a.pharmacistId), note, tone: ps[0]?.tone ?? (!a.agreed ? "warn" : "ok") });
-  }
+  const issues = placed.flatMap((a) => problemsOf(state, ev, a));
+  const counted = ev.cells[`${storeId}|${date}`]?.covered ?? 0;
+  const hereLine = placed.length ? stop(`Scheduled here: ${list(placed.map((a) => nameOf(a.pharmacistId)))}`) : "Nobody is scheduled here.";
 
   if (v.closed && !placed.length) {
-    return { mark: null, tone: "ok", headline: `${st.name} is closed`, context, more: [], people: [] };
+    const note = state.dateOverrides[`${storeId}|${date}`]?.note;
+    return { mark: null, tone: "ok", headline: `${st.name} is closed`, context, more: [note ? `Closed that day: ${note}.` : `${st.name} does not open on ${DAYS[weekday(date)]}s.`] };
   }
   if (v.open > 0) {
-    const got = v.required - v.open;
     headline = `${st.name} needs ${v.open} more ${n(v.open, "pharmacist", "pharmacists")}`;
-    if (v.required > 1) more.push(`${got} of ${v.required} are here`);
-    else if (!placed.length) more.push("Nobody is scheduled");
-    for (const i of issues) more.push(i.sentence);
+    more.push(v.required > 1 ? `${v.required - v.open} of ${v.required} needed are covered. ${hereLine}` : hereLine);
+    more.push(...problemLines([{ rule: "", tone: "bad", sentence: "", detail: "" }, ...issues]).map((x) => x));
+    const cl = coverLine(state, storeId, date, asOf);
+    if (cl) more.push(cl);
     mark = "open"; tone = "bad";
   } else if (issues.length) {
     headline = issues[0]!.sentence;
-    for (const i of issues.slice(1)) more.push(i.sentence);
+    more.push(...problemLines(issues));
+    more.push(`The shift itself is covered: ${counted} of ${v.required} needed. ${hereLine}`);
     mark = RULE_MARK[issues[0]!.rule] ?? mark; tone = issues[0]!.tone;
-    if (v.required > 0 && (ev.cells[`${storeId}|${date}`]?.covered ?? 0) >= v.required) more.unshift("The shift itself is covered");
   } else if (look.chip === "unverified") {
-    headline = `Some checks for ${st.name} can't be finished`; more.push("A licence or drive time isn't recorded"); mark = "unverified"; tone = "warn";
+    headline = `Some checks for ${st.name} can't be finished`; mark = "unverified"; tone = "warn";
+    more.push("A licence or drive time for someone here is not recorded, so the schedule cannot confirm they are allowed to work this shift. Add it in Setup.", hereLine);
   } else if (look.chip === "unconfirmed") {
-    headline = `${placed.filter((a) => !a.agreed).map((a) => nameOf(a.pharmacistId)).join(" and ") || "Someone"} has not confirmed ${st.name}`; mark = "unconfirmed"; tone = "warn";
+    const names = placed.filter((a) => !a.agreed).map((a) => nameOf(a.pharmacistId));
+    headline = `${list(names) || "Someone"} has not confirmed ${st.name}`; mark = "unconfirmed"; tone = "warn";
+    more.push(`${list(names)} ${names.length === 1 ? "has" : "have"} been placed but ${names.length === 1 ? "has" : "have"} not agreed to this shift yet. The shift counts as covered until they say no.`, hereLine);
   } else {
     headline = placed.length ? `${st.name} is covered` : `${st.name} needs nobody`;
-    if (v.acceptedShort > 0) more.push(`Running ${v.acceptedShort} short on purpose`);
-    if (v.locum > 0) more.push(v.locum > 1 ? `${v.locum} locums cover` : "A locum covers");
+    more.push(hereLine);
+    if (v.acceptedShort > 0) more.push(`You chose to run ${v.acceptedShort} short on purpose.`);
+    if (v.locum > 0) more.push(v.locum > 1 ? `${v.locum} locums cover this day.` : "A locum covers this day.");
     tone = "ok";
   }
-  return { mark, tone, headline, context, more, people };
+  return { mark, tone, headline, context, more: more.filter(Boolean) };
 }
 
 function explainPersonDay(state: DomainState, ev: Evaluation, pid: string, date: ISODate, asOf: ISODate): Explain {
   const p = state.pharmacists[pid]!;
   const placed = Object.values(state.assignments).filter((a) => a.pharmacistId === pid && a.date === date).sort((a, b) => a.placedSeq - b.placedSeq);
   const context = `${p.name} · ${longDate(date)}`;
-  if (!placed.length) return { mark: null, tone: "ok", headline: `${p.name} is not scheduled`, context, more: [], people: [] };
+  const base = p.baseStoreId ? state.stores[p.baseStoreId] : undefined;
   const code = (id: string) => state.stores[id]?.code ?? id;
+  const homeLine = `${p.name.split(" ")[0]}'s home store is ${base ? `${base.name} (${base.code})` : "not recorded"}${p.licenses ? `, licensed in ${list(Object.keys(p.licenses).sort()) || "no state"}` : ""}.`;
+  if (!placed.length) return { mark: null, tone: "ok", headline: `${p.name} is not scheduled`, context, more: [homeLine] };
   const issues = date < asOf ? [] : placed.flatMap((a) => problemsOf(state, ev, a));
-  const people: Involved[] = placed.map((a) => ({ name: state.stores[a.storeId]?.name ?? code(a.storeId), note: problemsOf(state, ev, a).length ? (ev.assignments[a.id]?.counts ? "Still counts" : "Does not count") : "Working", tone: problemsOf(state, ev, a)[0]?.tone ?? "ok" }));
-  if (issues.length) return { mark: RULE_MARK[issues[0]!.rule] ?? null, tone: issues[0]!.tone, headline: issues[0]!.sentence, context, more: issues.slice(1).map((i) => i.sentence), people };
-  return { mark: null, tone: "ok", headline: `${p.name} works at ${placed.map((a) => state.stores[a.storeId]?.name ?? code(a.storeId)).join(" and ")}`, context, more: [], people };
+  const where = list(placed.map((a) => state.stores[a.storeId]?.name ?? code(a.storeId)));
+  if (issues.length) return { mark: RULE_MARK[issues[0]!.rule] ?? null, tone: issues[0]!.tone, headline: issues[0]!.sentence, context, more: [...problemLines(issues), `Scheduled at ${where}.`, homeLine] };
+  return { mark: null, tone: "ok", headline: `${p.name} works at ${where}`, context, more: [homeLine] };
 }

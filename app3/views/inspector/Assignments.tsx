@@ -50,6 +50,7 @@ function AssignmentRow({ ctx, a, swapping, onSwap }: { ctx: Ctx; a: CellAssignme
   const { state, ev, lock, storeId, date } = ctx;
   const [mode, setMode] = useState<Mode>(null);
   const [open, setOpen] = useState(false);
+  const [more, setMore] = useState(false);
   const detailsId = useId();
   const [note, setNote] = useState(a.partialNote ?? "");
   const results = ev.assignments[a.id]?.results ?? [];
@@ -57,6 +58,10 @@ function AssignmentRow({ ctx, a, swapping, onSwap }: { ctx: Ctx; a: CellAssignme
   const shown = results.filter((r, i, all) => r.verdict === "Fail" || (r.verdict === "Unknown" && all.findIndex((x) => x.verdict === "Unknown" && x.detail === r.detail) === i));
   const hasBlock = a.blocks.length > 0;
   const chip = mainChip(a, results, shown);
+  const ph = state.pharmacists[a.pharmacistId];
+  const base = ph?.baseStoreId ? state.stores[ph.baseStoreId] : undefined;
+  const drive = base && base.id !== storeId ? state.travel[`${base.id}|${storeId}`]?.minutes : undefined;
+  const homeLine = base ? (base.id === storeId ? `Home store: ${base.name}` : `Home store: ${base.name} (${base.code})${drive !== undefined ? ` · ${drive} min drive here` : ""}`) : null;
   const label = (verb: string) => `${verb} ${a.name} at ${codeOf(state, storeId)}`;
 
   const unpin = () => {
@@ -68,36 +73,36 @@ function AssignmentRow({ ctx, a, swapping, onSwap }: { ctx: Ctx; a: CellAssignme
     <div>
       <div className="flex items-center justify-between gap-2">
         <span className="min-w-0 truncate text-sm font-semibold" title={a.name}>{shortName(a.name, 26)}</span>
-        <DisclosureButton label="Details" open={open} controls={detailsId} onClick={() => setOpen(!open)} />
+        {shown.length > 0 && <DisclosureButton label="Why" open={open} controls={detailsId} onClick={() => setOpen(!open)} />}
       </div>
-      <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
-        {chip && <span className="inline-flex items-center gap-1.5 text-ink"><StateMark kind={chip.kind} size={16} />{chip.word}</span>}
-        {a.source !== "manual" && <span>{SOURCE_WORDS[a.source]}</span>}
-        {a.partialNote ? <span>Partial day: <span className="text-ink">{a.partialNote}</span></span> : null}
-      </p>
-      {open && (
+      {chip && <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-ink"><StateMark kind={chip.kind} size={16} />{chip.word}</p>}
+      <ul className="mt-1 flex flex-col gap-0.5 text-xs text-muted" aria-label="About this placement">
+        <li>{a.source === "manual" ? "Placed by you" : SOURCE_WORDS[a.source]} · {a.agreed ? "agreed" : "not confirmed yet"}{a.pinned ? " · pinned" : ""}</li>
+        {homeLine && <li>{homeLine}</li>}
+        {a.partialNote ? <li>Partial day: <span className="text-ink">{a.partialNote}</span></li> : null}
+      </ul>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {!a.agreed && <Act tone="ink" disabled={!!lock} title={lock ?? "They have said yes"} onClick={() => commitEdits([{ t: "update", assignmentId: a.id, patch: { agreed: true } }], label("Marked agreed:"))}>Mark agreed</Act>}
+        <Act disabled={!!lock} title={lock ?? undefined} onClick={() => onSwap(swapping ? null : a.id)} pressed={swapping}>Swap to someone else</Act>
+        <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "remove", assignmentId: a.id }], label("Removed"))}>Remove</Act>
+        <Act aria-label="More actions" aria-expanded={more} pressed={more} onClick={() => setMore(!more)}>{"⋯"} More</Act>
+      </div>
+      {more && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5" role="group" aria-label="More actions">
+          {a.pinned
+            ? <Act disabled={!!lock} title={lock ?? "The engine will not move this person"} onClick={unpin}>{hasBlock ? "Unpin and repair" : "Unpin"}</Act>
+            : <Act disabled={!!lock} title={lock ?? "Keeps the engine from moving this person"} onClick={() => commitEdits([{ t: "update", assignmentId: a.id, patch: { pinned: true } }], label("Pinned"))}>Pin</Act>}
+          {a.agreed && <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "update", assignmentId: a.id, patch: { agreed: false } }], label("Marked unconfirmed:"))}>Mark unconfirmed</Act>}
+          <Act disabled={!!lock} title={lock ?? undefined} onClick={() => { setNote(a.partialNote ?? ""); setMode(mode === "note" ? null : "note"); }} pressed={mode === "note"}>
+            {a.partialNote ? "Edit partial-day note" : "Add partial-day note"}
+          </Act>
+        </div>
+      )}
+      {open && shown.length > 0 && (
         <div id={detailsId} className="mt-1.5">
-          <div>
-            {shown.length > 0 && (
-              <ul className="mb-2 flex flex-col gap-1.5">
-                {shown.map((r) => <FailureLine key={r.ruleId} ctx={ctx} a={a} r={r} />)}
-              </ul>
-            )}
-            <div className="flex flex-wrap gap-1.5">
-              <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "remove", assignmentId: a.id }], label("Removed"))}>Remove</Act>
-              {a.pinned
-                ? <Act disabled={!!lock} title={lock ?? "The engine will not move this person"} onClick={unpin}>{hasBlock ? "Unpin and repair" : "Unpin"}</Act>
-                : <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "update", assignmentId: a.id, patch: { pinned: true } }], label("Pinned"))}>Pin</Act>}
-              <Act disabled={!!lock} title={lock ?? undefined} onClick={() => commitEdits([{ t: "update", assignmentId: a.id, patch: { agreed: !a.agreed } }], label(a.agreed ? "Marked unconfirmed:" : "Marked agreed:"))}>
-                {a.agreed ? "Mark unconfirmed" : "Mark agreed"}
-              </Act>
-              <Act disabled={!!lock} title={lock ?? undefined} onClick={() => { setNote(a.partialNote ?? ""); setMode(mode === "note" ? null : "note"); }} pressed={mode === "note"}>
-                {a.partialNote ? "Edit partial-day note" : "Add partial-day note"}
-              </Act>
-              <Act disabled={!!lock} title={lock ?? undefined} onClick={() => onSwap(swapping ? null : a.id)} pressed={swapping}>Swap to someone else</Act>
-            </div>
-            <p className="mt-1.5 text-xs text-muted">{a.agreed ? "Agreed." : "Not confirmed yet."}{a.pinned ? " Pinned." : ""}</p>
-          </div>
+          <ul className="flex flex-col gap-1.5">
+            {shown.map((r) => <FailureLine key={r.ruleId} ctx={ctx} a={a} r={r} />)}
+          </ul>
         </div>
       )}
 
