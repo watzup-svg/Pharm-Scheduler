@@ -5,10 +5,12 @@ import { useApp } from "../store.ts";
 import { useEvaluation, useGhosts, useViewState, useWindowDates } from "../derive.ts";
 import { Controls } from "./wall/Controls.tsx";
 import { Grid, type RowDef } from "./wall/Grid.tsx";
+import { DayView } from "./wall/DayView.tsx";
+import { useWallUi } from "./wall/ui.ts";
 import { HexBadge } from "../ui/HexBadge.tsx";
 import { shortName } from "../names.ts";
 import {
-  activePharmacists, activeStores, buildPharmacistModels, buildStoreModels, coverageByDay, indexByCell, indexByPharmacist, openByStore, rowStatus,
+  activePharmacists, activeStores, buildPharmacistModels, buildStoreModels, indexByCell, indexByPharmacist, openByStore, rowStatus,
 } from "./wall/model.ts";
 
 /** A stable colour for a person: one of the eight palette tokens, by a hash of the id. */
@@ -27,13 +29,14 @@ export function Wall() {
   const ev = useEvaluation();
   const ghosts = useGhosts();
   const dates = useWindowDates();
+  const day = useWallUi((s) => s.day);
 
   const proposal = !!world?.session.proposal;
   const scenario = !!vs?.scenario;
   const readOnly = proposal || scenario;
 
   const rows = useMemo<RowDef[]>(() => {
-    if (!vs || !ev) return [];
+    if (!vs || !ev || day) return [];
     const { state } = vs;
     if (axis === "store") {
       const stores = activeStores(state, win);
@@ -46,7 +49,8 @@ export function Wall() {
           key: s.id,
           label: `${s.code} ${s.name}${n ? `, ${n} open` : ""}`,
           tip: `${s.code} · ${s.name} | ${n ? `${n} ${n === 1 ? "needs" : "need"} more this month` : status === "closed" ? "Closed this month" : "Covered this month"}`,
-          head: <HexBadge label={s.code} status={status} size={26} className="pointer-events-none" />,
+          // The dot only appears when something in the window still needs fixing.
+          head: <HexBadge label={s.code} status={status === "fix" ? "fix" : status === "closed" ? "closed" : "none"} size={26} className="pointer-events-none" />,
           cells: models[i]!,
         };
       });
@@ -69,31 +73,28 @@ export function Wall() {
         tip: `${p.name} | ${days} ${days === 1 ? "day" : "days"} in view`,
         head: (
           <span className="w-person">
-            <span className="w-disc" aria-hidden="true" style={{ background: paletteVar(p.id) }}>{p.initials}</span>
+            <span className="w-disc" aria-hidden="true" style={{ background: paletteVar(p.id) }} />
             <span className="w-pname">{shortName(p.name, 12)}</span>
           </span>
         ),
         cells: models[i]!,
       };
     });
-  }, [vs, ev, axis, win, dates, asOf, ghosts, readOnly]);
-
-  const cover = useMemo(() => (vs && ev ? coverageByDay(ev, activeStores(vs.state, win), dates) : new Map()), [vs, ev, win, dates]);
+  }, [vs, ev, axis, win, dates, asOf, ghosts, readOnly, day]);
 
   if (!world || !vs || !ev) return null;
   return (
     <div className="flex h-full min-h-0 flex-col bg-cream">
       <Controls preview={proposal} whatIf={scenario} ghosts={ghosts.size > 0} />
       <div className="w-scroll">
-        <Grid
+        {day ? <DayView date={day} /> : <Grid
           rows={rows}
           dates={dates}
           axis={axis}
           asOf={asOf}
-          cover={cover}
           corner={axis === "store" ? "Stores" : "People"}
           ariaLabel={axis === "store" ? "Schedule by store" : "Schedule by pharmacist"}
-        />
+        />}
       </div>
     </div>
   );

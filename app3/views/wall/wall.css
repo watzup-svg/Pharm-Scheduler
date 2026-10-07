@@ -6,7 +6,12 @@
   overflow: auto;
 }
 .w-grid {
-  --w-line: var(--color-line);
+  /* Softer grid lines: the blocks carry the picture, the lines only keep the rows apart. */
+  --w-line: color-mix(in srgb, var(--color-line) 55%, transparent);
+  --w-good: var(--color-ok-lite);
+  --w-good-past: color-mix(in srgb, var(--color-ok-lite) 38%, white);
+  --w-open: #f0c4ba;
+  --w-open-past: color-mix(in srgb, #f0c4ba 45%, white);
   position: relative;
   font-size: 13px;
   line-height: 1.2;
@@ -90,14 +95,20 @@
 }
 .w-asof-head {
   background: var(--color-fill);
-  box-shadow: inset 0 3px 0 var(--color-brand);
+  box-shadow: inset 0 2px 0 var(--color-brand);
+}
+.w-day-btn {
+  cursor: pointer;
+}
+.w-day-btn:hover {
+  background-color: var(--color-fill);
 }
 .w-asof-head .w-today,
 .w-asof-head .w-num {
   color: var(--color-brand);
 }
 .w-wkend {
-  background-color: rgb(28 25 23 / 0.035);
+  background-color: rgb(28 25 23 / 0.02);
 }
 /* Past days are quieter by colour (muted ink is 4.9:1 or better on every cell tint), never by opacity, which dropped the marks below 4.5:1. */
 .w-day.w-past .w-dow,
@@ -131,7 +142,7 @@
   container-type: inline-size;
 }
 .w-cell.w-wkend {
-  background-color: rgb(28 25 23 / 0.035);
+  background-color: rgb(28 25 23 / 0.02);
 }
 .w-cell.w-asof {
   border-left: 2px solid var(--color-brand);
@@ -347,64 +358,181 @@
   font-weight: 600;
 }
 
-/* chips and shapes for state: the picture says what, the shape says where it shows at a glance */
+/* The block: colour says whether the shift is covered; the one small picture on it says what still needs a look. */
+.w-block {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-self: stretch;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  margin: 1px;
+  border-radius: 6px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.w-block[data-block="good"] {
+  background: var(--w-good, var(--color-ok-lite));
+}
+.w-block[data-block="open"] {
+  background: var(--w-open, #f0c4ba);
+}
+.w-block[data-block="closed"] {
+  background-color: color-mix(in srgb, var(--color-shut) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-edge) 40%, transparent);
+}
+/* Time off on the people rows: approved is pink and hatched, asked for is yellow. */
+.w-block[data-block="away"] {
+  background-color: var(--w-open, #f0c4ba);
+  background-image: repeating-linear-gradient(135deg, transparent 0 5px, rgb(140 58 47 / 0.28) 5px 6px);
+}
+.w-block[data-block="req"] {
+  background: var(--color-warn-bg);
+}
+.w-past .w-block[data-block="good"] {
+  background: var(--w-good-past, #c4e1d1);
+}
+.w-past .w-block[data-block="open"] {
+  background: var(--w-open-past, #f7e2dd);
+}
+.w-pblock {
+  flex-flow: row wrap;
+  padding: 0 2px;
+  color: var(--color-ink);
+}
+.w-pblock .w-chip {
+  font-weight: 700;
+}
 .w-pic {
   display: inline-flex;
   align-items: center;
-  gap: 1px;
 }
-.w-picn {
+.w-pic-corner {
+  position: absolute;
+  right: -3px;
+  top: -5px;
+}
+.w-frac {
   font-size: 13px;
   font-weight: 700;
-  color: var(--color-illegal);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
 }
-.w-cell[data-shape]::after {
-  content: "";
+/* A preview: a dashed outline round the block and a small + or − badge. */
+.w-cell[data-ghost] .w-block {
+  outline: 2px dashed var(--color-ink);
+  outline-offset: -2px;
+}
+.w-ghost {
   position: absolute;
-  inset: 2px;
-  pointer-events: none;
-  border-radius: 5px;
+  right: 1px;
+  top: 0;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.3);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 15px;
 }
-.w-cell[data-shape="open"]::after {
-  border: 1.5px dashed var(--color-illegal);
+.w-block[draggable="true"] {
+  cursor: grab;
 }
-.w-cell[data-shape="twice"]::after {
-  border: 2px solid var(--color-illegal);
-  border-radius: 999px;
+.w-sw {
+  display: inline-flex;
+  width: 34px;
+  height: 22px;
+  flex: none;
 }
-.w-cell[data-shape="licence"]::after {
-  border: 2px dotted var(--color-illegal);
+.w-sw .w-block {
+  margin: 0;
 }
 
-/* day coverage bars under the date header */
-.w-cover .w-corner {
-  min-height: 12px;
-  padding: 0 8px;
-  font-weight: 500;
-  font-size: 13px;
-  line-height: 14px;
+/* The Day view: one date, a big tile per store. */
+.d-wrap {
+  padding: 16px 20px 28px;
 }
-.w-bar {
+.d-title {
+  margin: 0 0 14px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.d-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.d-tile {
+  display: flex;
+  width: 100%;
+  min-height: 112px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-align: left;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.d-tile[data-block="good"] {
+  background: var(--color-ok-lite);
+}
+.d-tile[data-block="open"] {
+  background: #f0c4ba;
+}
+.d-tile[data-block="closed"] {
+  min-height: 64px;
+  background-color: color-mix(in srgb, var(--color-shut) 45%, transparent);
+  color: var(--color-muted);
+}
+.d-tile:hover {
+  filter: brightness(0.97);
+}
+.d-tile:focus-visible,
+.d-sel {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+.d-past[data-block="good"] {
+  background: color-mix(in srgb, var(--color-ok-lite) 38%, white);
+}
+.d-past[data-block="open"] {
+  background: color-mix(in srgb, #f0c4ba 45%, white);
+}
+.d-head {
   display: flex;
   align-items: center;
-  padding: 0 3px;
-  border-left: 1px solid var(--w-line);
+  gap: 8px;
+  min-width: 0;
 }
-.w-bar-t {
-  display: block;
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--color-line);
+.d-store {
+  min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
 }
-.w-bar:not([data-need="0"]) .w-bar-t {
-  background: var(--color-illegal);
+.d-names {
+  display: flex;
+  flex-direction: column;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
 }
-.w-bar-got {
-  display: block;
-  height: 100%;
-  background: var(--color-ok);
+.d-reason,
+.d-call {
+  font-size: 13px;
+  line-height: 1.3;
+}
+.d-call {
+  margin-top: auto;
 }
 
 /* strips, controls and the key */
@@ -469,35 +597,8 @@
   color: var(--color-ink);
   font-size: 13px;
 }
-.w-key-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 16px;
-}
-.w-key-shapes {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--color-line);
-  grid-template-columns: 1fr 1fr 1fr;
-}
 .w-key-item {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.w-key-ini {
-  display: inline-block;
-  min-width: 22px;
-  font-weight: 700;
-}
-.w-key-shape {
-  display: inline-block;
-  flex: none;
-  width: 22px;
-  height: 16px;
-  border-radius: 4px;
-}
-.w-key-shape.k-open { border: 1.5px dashed var(--color-illegal); }
-.w-key-shape.k-twice { border: 2px solid var(--color-illegal); border-radius: 999px; }
-.w-key-shape.k-licence { border: 2px dotted var(--color-illegal); }
-.w-key-shape.k-closed { border: 1px solid var(--color-edge); }

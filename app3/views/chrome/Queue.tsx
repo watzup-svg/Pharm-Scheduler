@@ -1,10 +1,12 @@
 // Queue: what needs a look in the window, serious first. Click a row to see it on the wall.
+import { useState } from "react";
 import { useApp } from "../../store.ts";
 import { useIssues, type Issue } from "../../derive.ts";
 import { cx, GLYPH } from "../../ui/primitives.tsx";
 import { RepairOptions } from "./RepairOptions.tsx";
 import { fmtDate, fmtShort, goTo } from "./shared.tsx";
 
+const TOP = 5;
 const GROUPS: { kind: Issue["kind"]; title: string; glyph: string }[] = [
   { kind: "open", title: "Needs coverage", glyph: GLYPH.open },
   { kind: "violation", title: "Problems", glyph: GLYPH.serious },
@@ -15,7 +17,12 @@ export function Queue() {
   const win = useApp((s) => s.window);
   const asOf = useApp((s) => s.asOf);
   const sel = useApp((s) => s.selection);
-  const issues = useIssues();
+  const all = useIssues();
+  const [seeAll, setSeeAll] = useState(false);
+  // Open spots first, then broken rules, then warnings: the drawer shows the top few; the rest sit behind "See all".
+  const rank = (i: Issue) => GROUPS.findIndex((g) => g.kind === i.kind);
+  const ordered = all.slice().sort((a, b) => rank(a) - rank(b));
+  const issues = seeAll ? all : ordered.slice(0, TOP);
 
   return (
     <div className="px-3 py-2.5">
@@ -51,6 +58,9 @@ export function Queue() {
           </section>
         );
       })}
+      {all.length > TOP && (
+        <button type="button" onClick={() => setSeeAll(!seeAll)} aria-expanded={seeAll} className="mt-3 rounded px-1 py-0.5 text-sm font-semibold underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-ink">{seeAll ? "Show fewer" : `See all ${all.length}`}</button>
+      )}
     </div>
   );
 }

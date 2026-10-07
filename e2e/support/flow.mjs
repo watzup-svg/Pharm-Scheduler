@@ -101,7 +101,8 @@ export function readVisible(page) {
     const out = { open: null, waiting: 0, toTellEntries: null, toTellPeople: null, view: window.__v3.app.getState().view };
     const hero = document.querySelector("section.hero-band");
     if (hero && /summary/.test(hero.getAttribute("aria-label") ?? "") && (out.view === "wall" || out.view === "plan")) {
-      for (const el of hero.querySelectorAll("button, span")) {
+      if (hero.hasAttribute("data-open")) out.open = Number(hero.getAttribute("data-open"));
+      else for (const el of hero.querySelectorAll("button, span")) {
         const t = (el.textContent ?? "").replace(/\s+/g, " ").trim();
         if (/^\d+\s*need cover$/.test(t)) { out.open = num(t); break; }
       }

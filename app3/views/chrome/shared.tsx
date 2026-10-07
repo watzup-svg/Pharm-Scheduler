@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { addDays, daysInMonth, toDayNumber, weekday, type ChangeSet, type DomainState, type Edit, type Evaluation, type ISODate, type World } from "@domain";
 import { useApp } from "../../store.ts";
 import type { Issue } from "../../derive.ts";
+import { useWallUi } from "../wall/ui.ts";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -45,6 +46,8 @@ export function goTo(storeId: string, date: ISODate): void {
     }
   }
   s.select({ storeId, date });
+  // In the Day view the page follows the problem to its date.
+  if (useWallUi.getState().day) useWallUi.getState().setDay(date);
   if (s.view !== "wall") s.setView("wall");
 }
 
@@ -83,12 +86,17 @@ type Chrome = {
   setRepairOrigin(o: "queue" | "out"): void;
   panel: "keys" | "improve" | null;
   setPanel(p: Chrome["panel"]): void;
+  /** The Icon guide (File menu, and the Key's "What do these mean?"). */
+  guide: boolean;
+  setGuide(open: boolean): void;
 };
 export const useChrome = create<Chrome>((set) => ({
   repairOrigin: "queue",
   setRepairOrigin: (repairOrigin) => set({ repairOrigin }),
   panel: null,
   setPanel: (panel) => set({ panel }),
+  guide: false,
+  setGuide: (guide) => set({ guide }),
 }));
 
 export type Counts = { open: number; problems: number; warnings: number };
@@ -103,10 +111,9 @@ export function countsOf(issues: Issue[], ev: Evaluation | null): Counts {
   return { open, problems, warnings };
 }
 
-/** Next/previous serious issue (open or problem) after the selected cell, wrapping around. */
+/** Next / previous unresolved problem (a gap, a broken rule or a warning) after the selected cell, from the as-of date on, wrapping around. The issues are already limited to that. */
 export function stepIssue(issues: Issue[], state: DomainState, dir: 1 | -1): Issue | undefined {
-  const list = issues.filter((i) => i.severity === "serious");
-  const pool = list.length ? list : issues;
+  const pool = issues;
   if (!pool.length) return undefined;
   const sel = useApp.getState().selection;
   const key = (i: { date: ISODate; storeId: string }) => `${i.date}|${codeOf(state, i.storeId)}`;
@@ -115,4 +122,12 @@ export function stepIssue(issues: Issue[], state: DomainState, dir: 1 | -1): Iss
   if (dir === 1) return pool.find((i) => key(i) > cur) ?? pool[0];
   for (let i = pool.length - 1; i >= 0; i--) if (key(pool[i]!) < cur) return pool[i];
   return pool[pool.length - 1];
+}
+
+/** Move the selection to the next or previous problem. Says so when there is none. */
+export function stepProblem(issues: Issue[], state: DomainState, dir: 1 | -1): boolean {
+  const next = stepIssue(issues, state, dir);
+  if (!next) { useApp.getState().say("info", "No problems to step through."); return false; }
+  goTo(next.storeId, next.date);
+  return true;
 }

@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { dateRange, RULES, type DomainState } from "@domain";
 import { useApp } from "../../store.ts";
 import { evaluateCached, useEvaluation, useIssues, useViewState } from "../../derive.ts";
-import { countsOf, stepIssue, goTo } from "../chrome/shared.tsx";
+import { countsOf, stepProblem } from "../chrome/shared.tsx";
 import { Pic } from "../../ui/icons.tsx";
 import { plural } from "../../copy.ts";
 import { Hero, HeroBtn, type Tile } from "./Hero.tsx";
@@ -34,28 +34,39 @@ function openOut() {
   a.setOutForm(true);
 }
 
+/** The Schedule's header: one calm line. "3 shifts need cover · 5 problems", then Fix (next problem) and Someone's out. The month dial stays at the right. */
 export function ScheduleHero() {
   const { issues, vs, win, counts, awayCount, unverified } = useScheduleHero();
   const goQueue = () => useApp.getState().setDrawer(true, "queue");
-  const fix = () => { if (!vs) return; const next = stepIssue(issues, vs.state, 1); if (next) goTo(next.storeId, next.date); };
-  const tiles: Tile[] = [
-    { kind: "open", n: counts.open, word: "need cover", onClick: goQueue, tip: "Needs cover | Stores with fewer pharmacists than they need | Open the list" },
-    { kind: "double", n: counts.problems + counts.warnings, word: counts.problems + counts.warnings === 1 ? "problem" : "problems", onClick: goQueue, tip: `Problems | ${counts.problems} that stop someone counting, ${counts.warnings} warnings (long drives, many days in a row)${unverified ? `, ${unverified} cannot be fully checked` : ""} | Open the list` },
-    { kind: "away", n: awayCount, word: "out", onClick: openOut, tip: "Time off | Records that touch this period | Someone’s out" },
-  ];
-  const label = monthLabel(win.from);
+  const step = (dir: 1 | -1) => { if (vs) stepProblem(issues, vs.state, dir); };
+  const problems = counts.problems + counts.warnings;
+  void awayCount;
+  const tipOpen = "Needs cover | Shifts with fewer pharmacists than the store needs | Open the list";
+  const tipProblems = `Problems | ${counts.problems} that stop someone counting, ${counts.warnings} warnings (long drives, many days in a row)${unverified ? `, ${unverified} cannot be fully checked` : ""} | Open the list`;
+  const num = "text-2xl font-semibold leading-none tracking-tight text-[#f3dcd6]";
+  const link = "inline-flex items-baseline gap-1.5 rounded-md px-1.5 py-1 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white";
   return (
-    <Hero
-      label={label}
-      lead={counts.open}
-      leadWord={counts.open === 1 ? "store needs cover" : "stores need cover"}
-      tiles={tiles}
-      actions={<>
-        <HeroBtn tone="light" onClick={fix} disabled={!issues.length}>Fix →</HeroBtn>
+    <section aria-label={`${monthLabel(win.from)} summary`} data-open={counts.open} data-problems={problems} className="hero-band relative mx-3 mt-2 flex h-14 items-center gap-3 overflow-hidden rounded-xl bg-night px-4 text-cream shadow-[0_8px_20px_-14px_rgba(32,24,32,0.7)]">
+      <p className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap text-sm text-cream/80" aria-live="polite">
+        {counts.open > 0 ? (
+          <button type="button" onClick={goQueue} data-tip={tipOpen} className={link}><b className={num}>{counts.open}</b><span>{counts.open === 1 ? "shift needs cover" : "shifts need cover"}</span></button>
+        ) : (
+          <span className="px-1.5">{problems > 0 ? "All shifts covered" : "Everything is covered"}</span>
+        )}
+        {problems > 0 && <>
+          <span aria-hidden className="text-cream/40">·</span>
+          <button type="button" onClick={goQueue} data-tip={tipProblems} className={link}><b className={num}>{problems}</b><span>{problems === 1 ? "problem" : "problems"}</span></button>
+        </>}
+      </p>
+      <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-0.5">
+          <HeroBtn tone="ghost" onClick={() => step(-1)} disabled={!issues.length} title="Previous problem | Press Shift+N" aria-label="Previous problem">‹</HeroBtn>
+          <HeroBtn tone="light" onClick={() => step(1)} disabled={!issues.length} title="Next problem | Press N" aria-label="Fix: next problem">Fix →</HeroBtn>
+        </div>
         <HeroBtn tone="away" onClick={openOut}><Pic icon="timeOff" className="size-4" /> Someone’s out</HeroBtn>
-      </>}
-      graphic={<MonthDial />}
-    />
+        <MonthDial size={44} />
+      </div>
+    </section>
   );
 }
 

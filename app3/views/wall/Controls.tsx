@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useApp, type Axis } from "../../store.ts";
-import { MARKS, StateMark, type MarkKind } from "../../ui/icons.tsx";
+import { addDays } from "@domain";
 import { ToolsMenu } from "../../ui/ToolsMenu.tsx";
+import { useChrome } from "../chrome/shared.tsx";
+import { KeyPanelBody } from "./Key.tsx";
+import { useWallUi } from "./ui.ts";
 import { widthKind, windowFor, type WidthKind } from "./model.ts";
 
 const WIDTHS: { kind: Exclude<WidthKind, "custom" | "4w">; label: string }[] = [
@@ -14,11 +17,18 @@ export function Controls({ preview, whatIf, ghosts }: { preview: boolean; whatIf
   const asOf = useApp((s) => s.asOf);
   const axis = useApp((s) => s.axis);
   const setAxis = useApp((s) => s.setAxis);
+  const day = useWallUi((u) => u.day);
+  const setDay = useWallUi((u) => u.setDay);
   const kind = widthKind(win);
   const [key, setKey] = useState(false);
 
+  // Leaving the Day view lands on a window that holds that day.
+  const show = (k: Exclude<WidthKind, "custom" | "4w">) => { const x = windowFor(k, day ?? asOf); useApp.getState().setWindow(x.from, x.to); setDay(null); };
+  const showDay = () => setDay(useApp.getState().selection?.date ?? (asOf >= win.from && asOf <= win.to ? asOf : win.from));
+
   const goToday = () => {
     const st = useApp.getState();
+    if (day) { setDay(asOf); return; }
     if (asOf < win.from || asOf > win.to) {
       const k: Exclude<WidthKind, "custom"> = kind === "custom" ? "2w" : kind;
       st.setWindow(windowFor(k, asOf).from, windowFor(k, asOf).to);
@@ -31,34 +41,34 @@ export function Controls({ preview, whatIf, ghosts }: { preview: boolean; whatIf
     <div className="relative shrink-0">
       <div className="w-controls flex items-center gap-x-3 border-b border-line bg-cream px-3 py-1">
         <div className="flex items-center gap-1" role="group" aria-label="Move the window">
-          <button type="button" className="w-btn" onClick={() => useApp.getState().shiftWindow(-7)} aria-label="Previous week">{"‹"}</button>
+          <button type="button" className="w-btn" onClick={() => (day ? setDay(addDays(day, -1)) : useApp.getState().shiftWindow(-7))} aria-label={day ? "Previous day" : "Previous week"}>{"‹"}</button>
           <button type="button" className="w-btn" onClick={goToday}>Today</button>
-          <button type="button" className="w-btn" onClick={() => useApp.getState().shiftWindow(7)} aria-label="Next week">{"›"}</button>
+          <button type="button" className="w-btn" onClick={() => (day ? setDay(addDays(day, 1)) : useApp.getState().shiftWindow(7))} aria-label={day ? "Next day" : "Next week"}>{"›"}</button>
         </div>
         <div className="w-seg" role="group" aria-label="How much to show">
           {WIDTHS.map((w) => (
-            <button key={w.kind} type="button" aria-pressed={kind === w.kind} onClick={() => { const x = windowFor(w.kind, asOf); useApp.getState().setWindow(x.from, x.to); }}>{w.label}</button>
+            <button key={w.kind} type="button" aria-pressed={!day && kind === w.kind} onClick={() => show(w.kind)}>{w.label}</button>
           ))}
+          <button type="button" aria-pressed={!!day} onClick={showDay}>Day</button>
         </div>
-        <div className="w-seg" role="group" aria-label="Rows">
-          {(["store", "pharmacist"] as Axis[]).map((a) => (
-            <button key={a} type="button" aria-pressed={axis === a} onClick={() => setAxis(a)}>{a === "store" ? "Stores" : "People"}</button>
-          ))}
-        </div>
+        {!day && (
+          <div className="w-seg" role="group" aria-label="Rows">
+            {(["store", "pharmacist"] as Axis[]).map((a) => (
+              <button key={a} type="button" aria-pressed={axis === a} onClick={() => setAxis(a)}>{a === "store" ? "Stores" : "People"}</button>
+            ))}
+          </div>
+        )}
         <div className="ml-auto flex items-center gap-2">
           <button type="button" className="w-btn" aria-expanded={key} aria-controls="wall-key" onClick={() => setKey((k) => !k)}>Key</button>
           <ToolsMenu />
         </div>
       </div>
-      {key && <KeyPanel axis={axis} ghosts={ghosts} onClose={() => setKey(false)} />}
+      {key && <KeyPanel axis={axis} ghosts={ghosts && !day} onClose={() => setKey(false)} />}
       {preview && <div role="status" className="w-strip"><b>Preview:</b> nothing is saved until you accept.</div>}
       {whatIf && <div role="status" className="w-strip"><b>What-if</b> (not saved).</div>}
     </div>
   );
 }
-
-const STORE_MARKS: MarkKind[] = ["open", "closure", "double", "licence", "away", "drive", "streak", "unverified", "short", "covering", "pinned", "locum", "unconfirmed"];
-const PERSON_MARKS: MarkKind[] = ["double", "away", "drive", "streak", "licence"];
 
 function KeyPanel({ axis, ghosts, onClose }: { axis: Axis; ghosts: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -73,37 +83,11 @@ function KeyPanel({ axis, ghosts, onClose }: { axis: Axis; ghosts: boolean; onCl
     document.addEventListener("keydown", esc, true);
     return () => { document.removeEventListener("pointerdown", down); document.removeEventListener("keydown", esc, true); };
   }, [onClose]);
-  const kinds = axis === "store" ? STORE_MARKS : PERSON_MARKS;
-  const Shape = ({ cls, children }: { cls: string; children: string }) => <span className="w-key-item"><span className={`w-key-shape ${cls}`} aria-hidden="true" />{children}</span>;
   return (
     <div ref={ref} id="wall-key" role="region" aria-label="Key" className="w-keypanel">
-      <div className="w-key-grid">
-        {kinds.map((k) => (
-          <span key={k} className="w-key-item"><StateMark kind={k} size={16} /><span><b>{MARKS[k].name}</b> <span className="text-muted">{MARKS[k].meaning}</span></span></span>
-        ))}
-      </div>
-      <div className="w-key-grid w-key-shapes">
-        {axis === "store" ? (
-          <>
-            <span className="w-key-item"><b className="w-key-ini">AB</b> working</span>
-            <span className="w-key-item"><b className="w-key-ini w-unc">AB</b> not confirmed</span>
-            <span className="w-key-item"><b className="w-key-ini w-struck">AB</b> does not count</span>
-            <Shape cls="k-open">Dashed outline: needs more</Shape>
-            <Shape cls="k-twice">Ring: two places</Shape>
-            <Shape cls="k-licence">Dotted: licence</Shape>
-            <Shape cls="k-closed hatch">Hatched: closed</Shape>
-          </>
-        ) : (
-          <>
-            <span className="w-key-item"><b className="w-key-ini">EST</b> store they work at</span>
-            <span className="w-key-item"><b className="w-key-ini">OFF</b> away (approved)</span>
-            <span className="w-key-item"><b className="w-key-ini">Req</b> away requested, not approved</span>
-            <span className="w-key-item"><b className="w-key-ini">{"–"}</b> not scheduled</span>
-            <Shape cls="k-twice">Ring: two places</Shape>
-          </>
-        )}
-        {ghosts && <span className="w-key-item"><b className="w-key-ini">+</b> would be added <b className="w-key-ini">{"−"}</b> would be removed</span>}
-      </div>
+      <KeyPanelBody axis={axis} />
+      {ghosts && <p className="mt-2 text-muted">A dashed outline with + or {"−"}: a preview would add or take away people there.</p>}
+      <button type="button" className="mt-2 font-semibold underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-ink" onClick={() => { onClose(); useChrome.getState().setGuide(true); }}>What do these mean?</button>
     </div>
   );
 }
