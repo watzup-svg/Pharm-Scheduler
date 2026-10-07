@@ -7,7 +7,8 @@ import { useIssues } from "../derive.ts";
 import { Btn, cx } from "../ui/primitives.tsx";
 import { BrandMark } from "../ui/brand.tsx";
 import { SaveControls } from "./SaveControls.tsx";
-import { goTo, isTyping, stepIssue, undoTarget } from "./chrome/shared.tsx";
+import { isTyping, stepProblem, undoTarget, useChrome } from "./chrome/shared.tsx";
+import { IconGuide } from "./chrome/IconGuide.tsx";
 import { fmtDate } from "../copy.ts";
 import { copyDiagnostics } from "../diagnostics.ts";
 import { getPersist } from "../persist-bridge.ts";
@@ -32,7 +33,7 @@ function togglePref(key: string, cls: string) {
 
 const SHORTCUTS: [string, string][] = [
   ["/ or Ctrl+K", "Search stores, people and screens"],
-  ["n and p", "Next and previous problem"],
+  ["N and Shift+N", "Next and previous problem"],
   ["Esc", "Close the drawer or discard a preview"],
   ["Ctrl+Z", "Undo the newest change"],
   ["Ctrl+S", "Save"],
@@ -57,9 +58,10 @@ function useShortcuts(issues: ReturnType<typeof useIssues>) {
         else if (s.drawer) { e.preventDefault(); s.setDrawer(false); }
         return;
       }
-      if (e.key === "n" || e.key === "p") {
-        const next = stepIssue(issues, w.state, e.key === "n" ? 1 : -1);
-        if (next) { e.preventDefault(); goTo(next.storeId, next.date); }
+      // N = next problem, Shift+N (or P) = previous. Only problems from the as-of date on.
+      if (e.key === "n" || e.key === "N" || e.key === "p") {
+        e.preventDefault();
+        stepProblem(issues, w.state, e.key === "n" ? 1 : -1);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -98,6 +100,7 @@ export function TopBar() {
       <Menu.Separator className="my-1 h-px bg-line" />
       <Menu.Item className={item} onSelect={() => togglePref(PREF.large, "text-large")}>Larger text</Menu.Item>
       <Menu.Item className={item} onSelect={() => togglePref(PREF.contrast, "contrast")}>High contrast</Menu.Item>
+      <Menu.Item className={item} onSelect={() => useChrome.getState().setGuide(true)}>Icon guide…</Menu.Item>
       <Menu.Item className={item} onSelect={() => setPanel("keys")}>Keyboard shortcuts</Menu.Item>
       <Menu.Item className={item} onSelect={() => void copyDiagnostics().then((ok) => useApp.getState().say(ok ? "ok" : "info", ok ? "Diagnostics copied." : "Could not copy automatically."))}>Copy diagnostics</Menu.Item>
     </>
@@ -126,6 +129,7 @@ export function TopBar() {
           <Btn aria-label="Undo" disabled={!target} data-tip={target ? `Undo | ${target.label}` : "Nothing to undo"} onClick={() => { if (target) useApp.getState().undo(target.id); }}>↶ Undo</Btn>
         </div>
       </div>
+      <IconGuide />
       {panel === "asof" && (
         <div className="flex items-center gap-3 border-t border-line bg-paper px-3 py-2 text-sm" role="region" aria-label="As of">
           <label htmlFor="asof" className="font-medium">As of</label>

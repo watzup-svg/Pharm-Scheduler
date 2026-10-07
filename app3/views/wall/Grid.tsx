@@ -2,30 +2,55 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { weekday, type ISODate } from "@domain";
 import { useApp } from "../../store.ts";
 import { todayISO } from "../../clock.ts";
-import { GLYPH, cx } from "../../ui/primitives.tsx";
-import { StateMark } from "../../ui/icons.tsx";
+import { cx } from "../../ui/primitives.tsx";
+import { BlockMark } from "../../ui/icons.tsx";
 import { DOW_LETTER, MONTH_LONG, dayNum, monthIndex, niceDate, type CellModel, type Chip } from "./model.ts";
+import { drag, useWallUi } from "./ui.ts";
 
 export type RowDef = { key: string; head: ReactNode; label: string; tip: string; cells: CellModel[] };
 
-export type DayCover = { need: number; got: number };
-
-function ChipView({ ch, axis, drag }: { ch: Chip; axis: CellModel["axis"]; drag: boolean }) {
+/** People axis: the store code. Italic with a dashed underline = not confirmed; + and − = what a preview would add or take away. */
+function CodeView({ ch }: { ch: Chip }) {
   const sign = ch.kind === "add" ? "+" : ch.kind === "rem" ? "−" : "";
   return (
-    <span
-      className={cx("w-chip", ch.kind === "add" && "w-add", ch.kind === "rem" && "w-rem", ch.unconfirmed && "w-unc", ch.struck && ch.kind === "in" && "w-struck", drag && ch.kind === "in" && "w-drag", axis === "pharmacist" && "w-code")}
-      draggable={drag && ch.kind === "in" ? true : undefined}
-      data-aid={ch.assignmentId}
-    >
+    <span className={cx("w-chip w-code", ch.kind === "add" && "w-add", ch.kind === "rem" && "w-rem", ch.unconfirmed && "w-unc")}>
       {sign}{ch.text}
       {ch.half && <sup className="w-sup" aria-hidden="true">{"½"}</sup>}
     </span>
   );
 }
 
+/** The coloured block. Store axis: no text at all, only the picture of the worst thing still wrong, a count, a "1/2". People axis: the store code. */
+function Block({ m }: { m: CellModel }) {
+  if (m.block === "none") return null;
+  const store = m.axis === "store";
+  return (
+    <span
+      className={cx("w-block", m.block === "closed" && "hatch", m.block === "away" && "hatch", !store && "w-pblock")}
+      data-block={m.block}
+      draggable={store && m.hasDrag ? true : undefined}
+      data-aid={store && m.hasDrag ? m.dragAid : undefined}
+    >
+      {!store && m.chips.map((ch, i) => (
+        <span key={ch.key} className="w-item">
+          {i > 0 && <span className="w-dot" aria-hidden="true">{"·"}</span>}
+          <CodeView ch={ch} />
+        </span>
+      ))}
+      {m.chip && (
+        <span className={cx("w-pic", !store && "w-pic-corner")}>
+          <BlockMark kind={m.chip} tone={m.iconTone ?? undefined} n={m.chipN} size={store ? 22 : 18} />
+        </span>
+      )}
+      {store && m.frac && <span className="w-frac" aria-hidden="true">{m.frac}</span>}
+      {store && (m.ghostAdd > 0 || m.ghostRem > 0) && (
+        <span className="w-ghost" aria-hidden="true">{m.ghostAdd > 0 ? `+${m.ghostAdd}` : ""}{m.ghostRem > 0 ? `\u2212${m.ghostRem}` : ""}</span>
+      )}
+    </span>
+  );
+}
+
 const Cell = memo(function Cell({ m, selected, tab }: { m: CellModel; selected: boolean; tab: boolean }) {
-  const closedStore = m.axis === "store" && m.closed && m.chips.length === 0;
   return (
     <div
       role="gridcell"
@@ -37,29 +62,17 @@ const Cell = memo(function Cell({ m, selected, tab }: { m: CellModel; selected: 
       data-date={m.date}
       data-store={m.storeId}
       data-pid={m.pharmacistId}
-      data-kind={closedStore ? "closed" : m.hatchedAway ? "away" : undefined}
-      data-shape={m.shape ?? undefined}
+      data-block={m.block}
+      data-icon={m.chip ?? undefined}
+      data-sev={m.iconTone ?? undefined}
+      data-ghost={m.ghostAdd || m.ghostRem ? "" : undefined}
+      data-kind={m.block === "closed" ? "closed" : m.block === "away" ? "away" : undefined}
       data-tip={m.tip}
       data-tip-tone={m.tone === "plain" ? undefined : m.tone}
       data-tip-mark={m.chip ?? undefined}
-      className={cx("w-cell", m.past && "w-past", m.weekend && "w-wkend", m.asOfCol && "w-asof", closedStore && "hatch w-closed", m.hatchedAway && "hatch w-away", selected && "w-sel")}
+      className={cx("w-cell", m.past && "w-past", m.weekend && "w-wkend", m.asOfCol && "w-asof", selected && "w-sel")}
     >
-      <span className="w-body">
-        {m.chips.map((ch, i) => (
-          <span key={ch.key} className="w-item">
-            {i > 0 && <span className="w-dot" aria-hidden="true">{"·"}</span>}
-            <ChipView ch={ch} axis={m.axis} drag={m.hasDrag} />
-          </span>
-        ))}
-        {m.locum > 0 && <span className="w-tag w-loc">{GLYPH.locum}{m.locum > 1 ? m.locum : ""}</span>}
-        {m.axis === "pharmacist" && m.word && <span className={cx("w-word", m.word === "OFF" && "w-off", m.word === "–" && "w-none")}>{m.word}</span>}
-        {m.chip && (
-          <span className="w-pic">
-            <StateMark kind={m.chip} size={16} />
-            {m.chipN > 1 && <b className="w-picn" aria-hidden="true">{m.chipN}</b>}
-          </span>
-        )}
-      </span>
+      <Block m={m} />
     </div>
   );
 });
@@ -94,7 +107,7 @@ function monthBands(dates: ISODate[]): { key: string; from: number; span: number
   return out;
 }
 
-export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { rows: RowDef[]; dates: ISODate[]; axis: "store" | "pharmacist"; asOf: ISODate; corner: string; ariaLabel: string; cover: Map<ISODate, DayCover> }) {
+export function Grid({ rows, dates, axis, asOf, corner, ariaLabel }: { rows: RowDef[]; dates: ISODate[]; axis: "store" | "pharmacist"; asOf: ISODate; corner: string; ariaLabel: string }) {
   const LAB = axis === "store" ? LAB_STORE : LAB_PERSON;
   const selection = useApp((s) => s.selection);
   const ref = useRef<HTMLDivElement>(null);
@@ -250,7 +263,7 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { ro
   };
 
   // Direct manipulation: drag an initials chip to another store on the same day. One commit; the domain decides.
-  const dragRef = useRef<{ aid: string; date: string; store: string } | null>(null);
+  const dragRef = drag;
   const overRef = useRef<HTMLElement | null>(null);
   const clearOver = () => { overRef.current?.removeAttribute("data-over"); overRef.current = null; };
   const onDragStart = (e: DragEvent) => {
@@ -259,7 +272,7 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { ro
     if (!chip || !el || !el.dataset.store || !chip.getAttribute("draggable")) { e.preventDefault(); return; }
     dragRef.current = { aid: chip.dataset.aid!, date: el.dataset.date!, store: el.dataset.store };
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", chip.textContent ?? "");
+    e.dataTransfer.setData("text/plain", "move");
   };
   const droppable = (el: HTMLElement | null) => !!(el && dragRef.current && el.dataset.store && el.dataset.date === dragRef.current.date && el.dataset.store !== dragRef.current.store);
   const onDragOver = (e: DragEvent) => {
@@ -322,24 +335,11 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, cover }: { ro
                 key={d}
                 role="columnheader"
                 aria-label={`${niceDate(d)}${isAsOf ? (asOf === today ? ", today" : ", as of date") : d < asOf ? ", past" : ""}`}
-                className={cx("w-day", (wd === 0 || wd === 6) && "w-wkend", d < asOf && "w-past", isAsOf && "w-asof w-asof-head", dayNum(d) === 1 && "w-first")}
+                onClick={() => useWallUi.getState().setDay(d)}
+                className={cx("w-day", (wd === 0 || wd === 6) && "w-wkend", d < asOf && "w-past", isAsOf && "w-asof w-asof-head", dayNum(d) === 1 && "w-first", "w-day-btn")}
               >
                 {isAsOf ? <span className="w-today">{asOf === today ? "Today" : "As of"}</span> : <span className="w-dow">{DOW_LETTER[wd]}</span>}
                 <span className="w-num">{dayNum(d)}</span>
-              </div>
-            );
-          })}
-        </div>
-        <div className="w-hrow w-cover" role="row" style={{ gridTemplateColumns: tpl }}>
-          <div className="w-corner w-cover-l" role="rowheader">Covered</div>
-          {dates.map((d) => {
-            const v = cover.get(d) ?? { need: 0, got: 0 };
-            const note = v.need === 0 ? `${niceDate(d)} | Nothing needed` : `${niceDate(d)} | ${v.got} of ${v.need} covered`;
-            return (
-              <div key={d} role="cell" className="w-bar" aria-label={note.replace(" | ", ": ")} data-tip={note} data-tip-tone={v.need > 0 && v.got < v.need ? "bad" : undefined} data-need={v.need} data-got={v.got}>
-                <span className="w-bar-t" aria-hidden="true">
-                  {v.need > 0 && <span className="w-bar-got" style={{ width: `${(100 * v.got) / v.need}%` }} data-full={v.got >= v.need ? "" : undefined} />}
-                </span>
               </div>
             );
           })}

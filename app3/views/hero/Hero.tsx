@@ -54,7 +54,7 @@ export function Hero({ label, lead, leadWord, tiles, actions, graphic }: { label
 }
 
 /** The buttons on the band. Ghost on dark; the "away" one is yellow with the palm, as in the old app. */
-export function HeroBtn({ children, onClick, tone = "ghost", disabled, title }: { children: ReactNode; onClick?: () => void; tone?: "light" | "ghost" | "away"; disabled?: boolean; title?: string }) {
+export function HeroBtn({ children, onClick, tone = "ghost", disabled, title, "aria-label": ariaLabel }: { children: ReactNode; onClick?: () => void; tone?: "light" | "ghost" | "away"; disabled?: boolean; title?: string; "aria-label"?: string }) {
   const t = tone === "light" ? "bg-white text-ink hover:bg-cream" : tone === "away" ? "bg-warn-bg text-warn ring-1 ring-inset ring-warn/40 hover:brightness-95" : "text-cream ring-1 ring-inset ring-white/25 hover:bg-white/10";
-  return <button type="button" onClick={onClick} disabled={disabled} data-tip={title} className={cx("inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white", t)}>{children}</button>;
+  return <button type="button" onClick={onClick} disabled={disabled} data-tip={title} aria-label={ariaLabel} className={cx("inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white", t)}>{children}</button>;
 }

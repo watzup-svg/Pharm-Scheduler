@@ -20,8 +20,9 @@ try {
   const text = await grid.innerText();
   check("open spot picture chip appears", (await page.locator('.w-cell [data-statemark="open"]').count()) > 0);
   void text;
-  check("initials appear", (await page.locator(".w-chip").count()) > 20);
-  check("closed hatched cell appears", (await page.locator('.w-cell.hatch[data-kind="closed"]').count()) > 0);
+  check("green blocks dominate: most store cells are covered and carry no picture", (await page.locator('.w-cell[data-store][data-block="good"]:not([data-icon])').count()) > (await cells.count()) / 2);
+  check("no initials in store cells (a cell holds at most a count like 1/2 or a +/- badge)", (await page.locator('.w-cell[data-store]').evaluateAll((els) => els.filter((e) => !/^[\d/+\u2212\s]*$/.test(e.textContent ?? "")).length)) === 0);
+  check("closed hatched cell appears", (await page.locator('.w-cell[data-block="closed"] .w-block.hatch').count()) > 0);
   check("as-of column is marked with the word Today", (await page.locator(".w-asof-head .w-today").innerText()) === "Today");
   check("month label in the header", (await page.locator(".w-month").first().innerText()).includes("October 2026"));
   // One control line, no permanent legend
@@ -38,14 +39,14 @@ try {
   });
   check("header area has 15 or fewer interactive elements (was about 25)", hdrCount <= 15, `${hdrCount}`);
   check("hex badges on store rows", (await page.locator('[role="rowheader"] [role="img"]').count()) === 16);
-  check("coverage bar row under the dates, one bar per day", (await page.locator(".w-cover .w-bar").count()) === 31);
-  check("coverage bar has a note", /\d+ of \d+ covered/.test((await page.locator(".w-bar[data-need]:not([data-need='0'])").first().getAttribute("data-tip")) ?? ""));
+  check("no coverage bar under the dates and no 'Covered' row label", (await page.locator(".w-cover, .w-bar").count()) === 0 && (await grid.getByText("Covered", { exact: true }).count()) === 0);
+  check("store dot only on rows with something to fix (not on all rows)", (await page.locator('[role="rowheader"] [role="img"][aria-label$="needs fixing"]').count()) < 16);
   check("row label note has the name", /·.*\|/.test((await page.locator(".w-label").first().getAttribute("data-tip")) ?? ""));
   await page.getByRole("button", { name: "Tools", exact: true }).click();
   check("Tools menu has Build / Improve / Cover all open", (await page.getByRole("menuitem", { name: /^Build/ }).count()) === 1 && (await page.getByRole("menuitem", { name: /^Improve/ }).count()) === 1 && (await page.getByRole("menuitem", { name: /^Cover all open/ }).count()) === 1);
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Key", exact: true }).click();
-  check("Key opens the legend panel", (await page.locator("#wall-key").count()) === 1 && (await page.locator("#wall-key [data-statemark]").count()) > 5);
+  check("Key opens the legend panel with colours and a 'What do these mean?' link", (await page.locator("#wall-key").count()) === 1 && (await page.locator("#wall-key [data-block]").count()) >= 3 && (await page.locator("#wall-key").getByRole("button", { name: "What do these mean?" }).count()) === 1);
   await page.keyboard.press("Escape");
   check("Esc closes the Key", (await page.locator("#wall-key").count()) === 0);
   await page.getByRole("button", { name: "Key", exact: true }).click();
@@ -141,8 +142,9 @@ try {
   await page.getByRole("group", { name: "Rows" }).getByRole("button", { name: "People" }).click();
   check("axis toggle: pharmacist rows", (await page.locator('[role="rowheader"]').count()) === 20 + 0 || (await page.locator('[role="row"]').count()) > 20, `${await page.locator('[role="row"]').count()} rows`);
   const ptext = await grid.innerText();
-  check("pharmacist axis shows OFF for approved absence", ptext.includes("OFF"));
-  check("people rows have a coloured initials disc", (await page.locator('[role="rowheader"] .w-disc').count()) > 10);
+  check("pharmacist axis shows approved time off as a pink hatch, with no OFF text", (await page.locator('.w-cell[data-pid] .w-block[data-block="away"].hatch').count()) > 0 && !ptext.includes("OFF"));
+  check("pharmacist axis cells are green with the store code", (await page.locator('.w-cell[data-pid] .w-block[data-block="good"]').count()) > 20);
+  check("people rows have a coloured dot (no initials)", (await page.locator('[role="rowheader"] .w-disc').count()) > 10);
   check("pharmacist axis shows store codes", /\bEST\b|\bCAT\b|\bSIL\b/.test(ptext));
   await page.locator('[role="gridcell"][data-r="2"][data-c="9"]').click();
   const psel = await st(() => window.__v3.app.getState().selection);
@@ -189,12 +191,12 @@ try {
   if (rm?.has) {
     await page.waitForTimeout(150);
     check("proposal shows 'nothing is saved' strip", (await page.locator("main").getByText("nothing is saved until you accept").count()) === 1);
-    check("ghosts: added initials drawn with a dashed outline and +", (await page.locator(".w-chip.w-add").count()) > 0);
-    const addText = await page.locator(".w-chip.w-add").first().innerText();
-    check("ghost add text starts with +", addText.startsWith("+"), addText);
+    check("ghosts: a cell with a preview has a dashed outline and a +/- badge, not initials", (await page.locator(".w-cell[data-ghost] .w-ghost").count()) > 0);
+    const addText = await page.locator(".w-cell[data-ghost] .w-ghost").first().innerText();
+    check("ghost badge starts with + or \u2212", /^[+\u2212]\d/.test(addText), addText);
     await page.screenshot({ path: path.join(shots, "wall-ghosts.png") });
     // Read-only while the proposal is open: no draggable chips
-    check("chips are not draggable while previewing", (await page.locator('.w-chip[draggable="true"]').count()) === 0);
+    check("blocks are not draggable while previewing", (await page.locator('.w-block[draggable="true"]').count()) === 0);
     await st(() => window.__v3.app.getState().discardProposal());
     await page.waitForTimeout(100);
     check("preview strip goes away after discard", (await page.locator("main").getByText("nothing is saved until you accept").count()) === 0);
