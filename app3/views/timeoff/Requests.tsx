@@ -58,7 +58,7 @@ export function Requests({ locked }: { locked: boolean }) {
       <li key={u.id} data-unavail={u.id} onMouseEnter={() => light(u)} onMouseLeave={() => light(null)} onFocus={() => light(u)} onBlur={() => light(null)}
         className="flex items-start justify-between gap-3 rounded-xl bg-cream px-4 py-3 ring-1 ring-line">
         <div className="min-w-0">
-          <p className="flex items-baseline gap-2"><b className="truncate font-semibold" title={who(u)}>{shortName(who(u), 26)}</b><span className="shrink-0 text-sm tabular-nums text-muted">{span(u)}</span></p>
+          <p className="flex items-baseline gap-2"><b className="truncate font-semibold" title={who(u)}>{who(u)}</b><span className="shrink-0 text-sm tabular-nums text-muted">{span(u)}</span></p>
           <p className="truncate text-sm text-muted">{u.type}{u.note ? ` · ${u.note}` : ""}</p>
           {tab === "waiting" && <Consequence state={state} u={u} cells={opens.get(u.id) ?? []} />}
         </div>

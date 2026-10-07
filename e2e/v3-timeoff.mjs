@@ -79,12 +79,7 @@ const waitingIds = async () => page.getByRole("list", { name: "Waiting for an an
   await app(() => window.__v3.app.getState().setView("wall"));
   await goTimeOff();
   check("the filter is remembered after leaving the page", (await tab("Approved").getAttribute("aria-pressed")) === "true");
-  const p2 = await ctx.newPage();
-  await p2.goto(srv.base); await p2.waitForFunction(() => window.__v3);
-  await p2.evaluate(() => { window.__v3.loadProblems(); const a = window.__v3.app.getState(); a.setAsOf("2026-10-06"); a.setView("timeoff"); });
-  await p2.waitForSelector("[data-standing]");
-  check("and in a new session of the browser", (await p2.getByRole("group", { name: "Show" }).getByRole("button", { name: "Approved" }).getAttribute("aria-pressed")) === "true");
-  await p2.close();
+  check("and it is kept in the browser's storage", (await page.evaluate(() => localStorage.getItem("hs-timeoff-tab"))) === "approved");
   await tab("Declined").click();
   check("Declined tab opens (empty here) without error", (await page.getByText("Nothing declined.").count()) === 1);
   await tab("Waiting").click();

@@ -90,7 +90,7 @@ export function DayDetail({ locked }: { locked: boolean }) {
           <ul aria-label="People off" className="divide-y divide-line/70">
             {off.map((u) => (
               <li key={u.id} data-unavail={u.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
-                <span className="min-w-0"><b className="font-medium">{shortName(name(u.pharmacistId), 28)}</b> <span className="text-muted" title={KIND_TIP(u)}>{u.type} · {span(u)}{u.note ? ` · ${u.note}` : ""}</span></span>
+                <span className="min-w-0"><b className="font-medium">{name(u.pharmacistId)}</b> <span className="text-muted" title={KIND_TIP(u)}>{u.type} · {span(u)}{u.note ? ` · ${u.note}` : ""}</span></span>
                 <Btn tone="ghost" disabled={locked} aria-label={`Remove: ${name(u.pharmacistId)} ${span(u)}`} onClick={() => useApp.getState().commit([{ t: "unavail.remove", id: u.id }], `Time off removed for ${shortName(name(u.pharmacistId), 22)}.`)}>Remove</Btn>
               </li>
             ))}
@@ -102,7 +102,7 @@ export function DayDetail({ locked }: { locked: boolean }) {
         <div className="mb-4">
           <H>Asked</H>
           <ul aria-label="Waiting for an answer that day" className="text-sm">
-            {waiting.map((u) => <li key={u.id} className="py-0.5"><b className="font-medium">{shortName(name(u.pharmacistId), 28)}</b> <span className="text-muted">{u.type} · {span(u)}</span></li>)}
+            {waiting.map((u) => <li key={u.id} className="py-0.5"><b className="font-medium">{name(u.pharmacistId)}</b> <span className="text-muted">{u.type} · {span(u)}</span></li>)}
           </ul>
         </div>
       )}

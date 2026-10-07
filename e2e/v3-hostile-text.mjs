@@ -225,7 +225,7 @@ await visit("Inspector: a person on a day with a time-off note", more(view("wall
 await visit("Inspector: a store on a day with a note", more(view("wall", { axis: "store", sel: { storeId: ovNote.storeId, date: ovNote.date } })), FULL_MATCH(ovNote.note) ? [ovNote.note] : []);
 await visit("Inspector: a placed person with a partial-day note", more(view("wall", { axis: "store", sel: { storeId: part.storeId, date: part.date } })), FULL_MATCH(part.note) ? [part.note] : []);
 await visit("Inspector: the same from the people side", more(view("wall", { axis: "pharmacist", sel: { pharmacistId: part.pharmacistId, date: part.date } })));
-await visit("Time off", view("timeoff"), SHORT.filter((h) => FULL_MATCH(h) && Object.values(ph).includes(h)).slice(0, 3));
+await visit("Time off", { ...view("timeoff"), after: () => page.getByRole("group", { name: "Show" }).getByRole("button", { name: "Approved" }).click() }, SHORT.filter((h) => FULL_MATCH(h) && Object.values(ph).includes(h)).slice(0, 3));
 await visit("Time off, new record form open", view("timeoff", { outForm: true }));
 await visit("Print", view("print"));
 // Every sheet of the preview, then the real Download PDF button.
