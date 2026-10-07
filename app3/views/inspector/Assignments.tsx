@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import { RULE_BY_ID, type RuleResult } from "@domain";
 import type { CellAssignment } from "../../derive.ts";
 import { useApp } from "../../store.ts";
+import { drag } from "../wall/ui.ts";
 import { RULE_WORDS } from "../../copy.ts";
 import { StateMark, RULE_MARK, type MarkKind } from "../../ui/icons.tsx";
 import { shortName } from "../../names.ts";
@@ -16,7 +17,11 @@ export function Assignments({ ctx, swapId, onSwap }: { ctx: Ctx; swapId: string 
   return (
     <ul className="flex flex-col gap-1.5">
       {cv.assignments.map((a) => (
-        <li key={a.id} className="rounded-md bg-white px-2 py-1.5 ring-1 ring-line" aria-label={a.name}>
+        <li key={a.id} className="rounded-md bg-white px-2 py-1.5 ring-1 ring-line" aria-label={a.name}
+          data-drag-aid={a.id}
+          draggable={!ctx.lock || undefined}
+          onDragStart={(e) => { drag.current = { aid: a.id, date: ctx.date, store: ctx.storeId }; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", "move"); }}
+          onDragEnd={() => { drag.current = null; document.querySelector("[data-over]")?.removeAttribute("data-over"); }}>
           <AssignmentRow ctx={ctx} a={a} swapping={swapId === a.id} onSwap={onSwap} />
         </li>
       ))}

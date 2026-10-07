@@ -65,3 +65,30 @@ export const RULE_MARK: Record<string, MarkKind> = {
   closure: "closure", licensing: "licence", availability: "away", "double-booking": "double",
   "travel-soft": "drive", "travel-hard": "drive", "consecutive-days": "streak",
 };
+
+// ---- Block marks: the small picture on a coloured block of the schedule ----
+// Colour of the block says whether the shift is covered. The picture says what is still wrong, and its colour follows how serious that is:
+// red = a rule is broken, amber = take a look, quiet green = for information only. This table is also what the Icon guide prints.
+export type MarkTone = "bad" | "warn" | "quiet";
+export const MARK_TONE: Record<MarkKind, MarkTone> = {
+  open: "bad", closure: "bad", double: "bad", licence: "bad", away: "bad",
+  waiting: "warn", drive: "warn", streak: "warn", unverified: "warn", unconfirmed: "warn",
+  short: "quiet", covering: "quiet", pinned: "quiet", locum: "quiet",
+};
+export const TONE_TITLE: Record<MarkTone, { title: string; line: string }> = {
+  bad: { title: "Red", line: "A rule is broken, or the shift needs cover." },
+  warn: { title: "Amber", line: "Worth a look. The shift still counts as covered." },
+  quiet: { title: "Quiet green", line: "For information only. Nothing to fix." },
+};
+const TONE_INK: Record<MarkTone, string> = { bad: "text-illegal", warn: "text-warn", quiet: "text-ok" };
+
+/** The picture on a block: a small white pill with the icon in its severity colour, and a number when more than one is missing. Decorative; the cell's own name says it in words. */
+export function BlockMark({ kind, tone, n, size = 20, className }: { kind: MarkKind; tone?: MarkTone; n?: number; size?: number; className?: string }) {
+  const t = tone ?? MARK_TONE[kind];
+  return (
+    <span data-statemark={kind} data-tone={t} aria-hidden className={cx("inline-flex shrink-0 items-center justify-center gap-0.5 rounded-md bg-white px-[3px] shadow-[0_0_0_1px_rgba(0,0,0,0.14)]", TONE_INK[t], className)} style={{ height: size, minWidth: size }}>
+      <Pic icon={MARKS[kind].icon} style={{ width: Math.round(size * 0.72), height: Math.round(size * 0.72) }} />
+      {n !== undefined && n > 1 && <b className="pr-px text-[13px] leading-none">{n}</b>}
+    </span>
+  );
+}
