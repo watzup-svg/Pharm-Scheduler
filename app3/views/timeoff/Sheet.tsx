@@ -1,6 +1,7 @@
 // The Time off sheet: pharmacists down the side, days across. Same grid as the Schedule, so the keyboard, the window and the selection behave the same.
 import "../wall/wall.css";
 import { useMemo, useState } from "react";
+import type { ISODate } from "@domain";
 import { useApp } from "../../store.ts";
 import { useViewState, useWindowDates } from "../../derive.ts";
 import { shortName } from "../../names.ts";
@@ -49,7 +50,7 @@ function Controls() {
         <input type="search" aria-label="Find a person" placeholder="Find a person" value={filter} onChange={(e) => useTimeOffUi.getState().setFilter(e.target.value)}
           className="h-8 w-40 rounded-md border border-edge bg-white px-2 text-sm" />
         <div className="ml-auto flex items-center gap-2">
-          <button type="button" className="w-btn" disabled={locked} onClick={() => useTimeOffUi.getState().openAdd("add", useApp.getState().selection?.date, useApp.getState().selection?.pharmacistId)}>Add time off</button>
+          <button type="button" className="w-btn whitespace-nowrap" disabled={locked} onClick={() => useTimeOffUi.getState().openAdd("add", useApp.getState().selection?.date, useApp.getState().selection?.pharmacistId)}>Add time off</button>
           <button type="button" className="w-btn" aria-expanded={key} aria-controls="sheet-key" onClick={() => setKey((k) => !k)}>Key</button>
         </div>
       </div>
@@ -69,6 +70,7 @@ export function Sheet() {
   const win = useApp((s) => s.window);
   const asOf = useApp((s) => s.asOf);
   const filter = useTimeOffUi((s) => s.filter).trim().toLowerCase();
+  const range = useTimeOffUi((s) => s.range);
   const vs = useViewState();
   const dates = useWindowDates();
   const state = vs?.state;
@@ -77,7 +79,7 @@ export function Sheet() {
     if (!state) return [];
     const people = activePharmacists(state, win).filter((p) => !filter || p.name.toLowerCase().includes(filter));
     const byP = indexRecords(state);
-    const models = buildSheetRows(state, people, dates, asOf, byP, indexByPharmacist(state));
+    const models = buildSheetRows(state, people, dates, asOf, byP, indexByPharmacist(state), range);
     return people.map((p, i) => {
       const mine = (byP.get(p.id) ?? []).filter((u) => u.last >= win.from && u.first <= win.to);
       const off = mine.filter((u) => kindOf(u) === "approved").length;
@@ -96,14 +98,20 @@ export function Sheet() {
         cells: models[i]!,
       };
     });
-  }, [state, win, dates, asOf, filter]);
+  }, [state, win, dates, asOf, filter, range]);
 
+  // Dragging (or shift-clicking) across a person's days opens the Add form in the right-hand column, filled in with those days.
+  const onRange = (pid: string, first: ISODate, last: ISODate) => {
+    useApp.getState().select({ pharmacistId: pid, date: first });
+    useTimeOffUi.getState().openAdd("add", first, pid, last);
+    useTimeOffUi.getState().setRange({ pid, first, last });
+  };
   if (!state) return null;
   return (
     <div className="flex h-full min-h-0 flex-col bg-cream">
       <Controls />
       <div className="w-scroll">
-        {rows.length ? <Grid rows={rows} dates={dates} axis="pharmacist" asOf={asOf} corner="People" ariaLabel="Time off by pharmacist" dayButtons={false} /> : <p className="p-4 text-sm text-muted">Nobody matches that name.</p>}
+        {rows.length ? <Grid rows={rows} dates={dates} axis="pharmacist" asOf={asOf} corner="People" ariaLabel="Time off by pharmacist" dayButtons={false} onRange={onRange} /> : <p className="p-4 text-sm text-muted">Nobody matches that name.</p>}
       </div>
     </div>
   );

@@ -21,9 +21,13 @@ type TimeOffUi = {
   /** A day and a person to start the Add drawer on (from the selected cell). */
   addDate: ISODate | null;
   addPid: string | null;
+  addLast: ISODate | null;
+  /** The days dragged across on the sheet (one person's row), highlighted until the form closes. */
+  range: { pid: string; first: ISODate; last: ISODate } | null;
   setTab(t: Tab): void;
   setFilter(f: string): void;
-  openAdd(mode: AddMode | null, date?: ISODate, pid?: string): void;
+  openAdd(mode: AddMode | null, date?: ISODate, pid?: string, last?: ISODate): void;
+  setRange(r: TimeOffUi["range"]): void;
 };
 
 export const useTimeOffUi = create<TimeOffUi>((set) => ({
@@ -32,9 +36,12 @@ export const useTimeOffUi = create<TimeOffUi>((set) => ({
   add: null,
   addDate: null,
   addPid: null,
+  addLast: null,
+  range: null,
   setTab: (tab) => { writeTab(tab); set({ tab }); },
   setFilter: (filter) => set({ filter }),
-  openAdd: (add, date, pid) => set({ add, addDate: date ?? null, addPid: pid ?? null }),
+  openAdd: (add, date, pid, last) => set({ add, addDate: date ?? null, addPid: pid ?? null, addLast: last ?? null, ...(add === null ? { range: null } : {}) }),
+  setRange: (range) => set({ range }),
 }));
 
 export const shiftMonth = (ym: string, by: number): string => {

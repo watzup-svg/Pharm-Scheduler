@@ -146,6 +146,8 @@ export type CellModel = {
   tone: "bad" | "off" | "ok" | "plain";
   /** Time off sheet: draw the picture in the middle like the store axis, and say where in a multi-day request this day sits. */
   centered?: boolean;
+  /** Time off sheet: this day is inside the range being added. */
+  picked?: boolean;
   run?: "single" | "start" | "mid" | "end";
 };
 

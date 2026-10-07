@@ -679,3 +679,18 @@
   filter: saturate(1.4) brightness(1.05);
   box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--color-ink);
 }
+
+/* Time off sheet: the days being picked (while dragging) or being added (while the form is open). */
+.w-cell.w-picking::after,
+.w-cell[data-picked]::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: 5;
+  pointer-events: none;
+  border-radius: 6px;
+  background: rgba(32, 24, 32, 0.12);
+  outline: 2px dashed var(--color-ink);
+  outline-offset: -2px;
+}
+[aria-label="Time off by pharmacist"] { user-select: none; }

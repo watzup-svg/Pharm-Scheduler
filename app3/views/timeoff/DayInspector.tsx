@@ -8,6 +8,7 @@ import { shortName } from "../../names.ts";
 import { Btn, Section } from "../../ui/primitives.tsx";
 import { RepairOptions } from "../chrome/RepairOptions.tsx";
 import { useChrome } from "../chrome/shared.tsx";
+import { AddForm } from "./AddForm.tsx";
 import { Cover } from "./Cover.tsx";
 import { opensIfApprovedAll, monthLoads, span, useWhyLocked } from "./lib.ts";
 import { Consequence } from "./RequestList.tsx";
@@ -19,13 +20,22 @@ export function DayInspector() {
   const asOf = useApp((s) => s.asOf);
   const sel = useApp((s) => s.selection);
   const why = useWhyLocked();
+  const adding = useTimeOffUi((s) => s.add !== null);
+  const addKey = useTimeOffUi((s) => `${s.addPid}|${s.addDate}|${s.addLast}`);
   const state = world?.state;
   const pid = sel && !sel.storeId ? sel.pharmacistId : undefined;
   const date = sel?.date;
   const p = state && pid ? state.pharmacists[pid] : undefined;
   const recs = useMemo(() => (state && pid && date ? recordsOn(indexRecords(state).get(pid), date) : []), [state, pid, date]);
   const short = useMemo(() => (state && pid && date ? monthLoads(state, asOf, date.slice(0, 7)).find((l) => l.date === date)?.short.filter((s) => s.offIds.includes(pid)) ?? [] : []), [state, asOf, pid, date]);
-  if (!state || !p || !pid || !date) return <p className="p-3 text-sm text-muted">Select a person's day on the sheet, or a request on the list, to see details here.</p>;
+  const form = adding ? (
+    <section aria-label="Add time off" data-add-form className="border-b border-line bg-paper px-3 py-3">
+      <div className="mb-2 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Add time off</h2>
+        <button type="button" onClick={() => useTimeOffUi.getState().openAdd(null)} className="text-xs text-muted underline focus-visible:outline-2 focus-visible:outline-ink" aria-label="Close the form">Close</button></div>
+      <AddForm key={addKey} onDone={() => useTimeOffUi.getState().openAdd(null)} />
+    </section>
+  ) : null;
+  if (!state || !p || !pid || !date) return <>{form}{!form && <p className="p-3 text-sm text-muted">Drag across a person's days on the sheet to add time off, or click a day or a request on the list to see details here.</p>}</>;
 
   const locked = !!why;
   const code = (id: string) => state.stores[id]?.code ?? id;
@@ -38,6 +48,7 @@ export function DayInspector() {
 
   return (
     <div data-day-inspector={`${pid}|${date}`}>
+      {form}
       <header className="border-b border-line px-3 py-2.5">
         <div className="flex items-center gap-2">
           <h2 className="min-w-0 flex-1 truncate text-base font-semibold" title={p.name}>{p.name}</h2>
@@ -88,9 +99,9 @@ export function DayInspector() {
         </Section>
       )}
 
-      <div className="flex flex-wrap gap-1.5 px-3 py-3">
+      {!adding && <div className="flex flex-wrap gap-1.5 px-3 py-3">
         <Btn onClick={() => useTimeOffUi.getState().openAdd("add", date, pid)} disabled={locked}>Add time off for {shortName(p.name, 18)}</Btn>
-      </div>
+      </div>}
     </div>
   );
 }

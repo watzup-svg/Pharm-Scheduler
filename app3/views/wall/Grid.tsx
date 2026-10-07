@@ -68,6 +68,7 @@ const Cell = memo(function Cell({ m, selected, tab }: { m: CellModel; selected: 
       data-icon={m.chip ?? undefined}
       data-sev={m.iconTone ?? undefined}
       data-faded={m.faded ? "" : undefined}
+      data-picked={m.picked ? "" : undefined}
       data-ghost={m.ghostAdd || m.ghostRem ? "" : undefined}
       data-kind={m.block === "closed" ? "closed" : m.block === "away" ? "away" : undefined}
       data-tip={m.tip}
@@ -111,7 +112,7 @@ function monthBands(dates: ISODate[]): { key: string; from: number; span: number
   return out;
 }
 
-export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = true }: { rows: RowDef[]; dates: ISODate[]; axis: "store" | "pharmacist"; asOf: ISODate; corner: string; ariaLabel: string; dayButtons?: boolean }) {
+export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = true, onRange }: { rows: RowDef[]; dates: ISODate[]; axis: "store" | "pharmacist"; asOf: ISODate; corner: string; ariaLabel: string; dayButtons?: boolean; onRange?: (pharmacistId: string, first: ISODate, last: ISODate) => void }) {
   const LAB = axis === "store" ? LAB_STORE : LAB_PERSON;
   const selection = useApp((s) => s.selection);
   const ref = useRef<HTMLDivElement>(null);
@@ -228,9 +229,57 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = 
     else if (el.dataset.pid) st.select({ pharmacistId: el.dataset.pid, date });
   }, []);
 
+  // Dragging across one person's days (the Time off sheet): the days light up as the pointer moves, and letting go hands the range back.
+  const rangeDrag = useRef<{ pid: string; c0: number; r: number; c1: number; moved: boolean } | null>(null);
+  const justDragged = useRef(false);
+  const paintRange = (r: number, a: number, b: number) => {
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    ref.current?.querySelectorAll<HTMLElement>(".w-picking").forEach((e) => e.classList.remove("w-picking"));
+    for (let c = lo; c <= hi; c++) ref.current?.querySelector<HTMLElement>(`[data-r="${r}"][data-c="${c}"]`)?.classList.add("w-picking");
+  };
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (!onRange || e.button !== 0) return;
+    const el = cellOf(e.target);
+    if (!el || !el.dataset.pid) return;
+    rangeDrag.current = { pid: el.dataset.pid, c0: Number(el.dataset.c), r: Number(el.dataset.r), c1: Number(el.dataset.c), moved: false };
+  };
+  const onPointerOver = (e: React.PointerEvent) => {
+    const d = rangeDrag.current;
+    if (!d) return;
+    const el = cellOf(e.target);
+    if (!el || Number(el.dataset.r) !== d.r) return;
+    const c = Number(el.dataset.c);
+    if (c === d.c1 && !d.moved) return;
+    d.c1 = c;
+    if (c !== d.c0) d.moved = true;
+    if (d.moved) paintRange(d.r, d.c0, c);
+  };
+  useEffect(() => {
+    const up = () => {
+      const d = rangeDrag.current;
+      rangeDrag.current = null;
+      ref.current?.querySelectorAll<HTMLElement>(".w-picking").forEach((e) => e.classList.remove("w-picking"));
+      if (!d || !d.moved || !onRange) return;
+      justDragged.current = true;
+      setTimeout(() => { justDragged.current = false; }, 0);
+      const lo = Math.min(d.c0, d.c1), hi = Math.max(d.c0, d.c1);
+      if (dates[lo] && dates[hi]) onRange(d.pid, dates[lo]!, dates[hi]!);
+    };
+    window.addEventListener("pointerup", up);
+    return () => window.removeEventListener("pointerup", up);
+  }, [onRange, dates]);
+
   const onClick = (e: MouseEvent) => {
+    if (justDragged.current) return;
     const el = cellOf(e.target);
     if (!el) return;
+    // Shift-click extends from the selected day to this one, along the same person's row.
+    const sel0 = useApp.getState().selection;
+    if (onRange && e.shiftKey && el.dataset.pid && sel0?.pharmacistId === el.dataset.pid && !sel0.storeId && el.dataset.date) {
+      const [a, b] = [sel0.date, el.dataset.date as ISODate].sort();
+      onRange(el.dataset.pid, a!, b!);
+      return;
+    }
     setActive({ r: Number(el.dataset.r), c: Number(el.dataset.c) });
     selectCell(el);
   };
@@ -314,6 +363,8 @@ export function Grid({ rows, dates, axis, asOf, corner, ariaLabel, dayButtons = 
       onFocus={(e) => { if (e.target === e.currentTarget) { want.current = { focus: true, reveal: true }; setActive({ ...cur }); } }}
       style={{ minWidth: LAB + nCols * COL, ["--w-lab" as string]: `${LAB}px` }}
       onClick={onClick}
+      onPointerDown={onPointerDown}
+      onPointerOver={onPointerOver}
       onKeyDown={onKeyDown}
       onDragStart={onDragStart}
       onDragOver={onDragOver}

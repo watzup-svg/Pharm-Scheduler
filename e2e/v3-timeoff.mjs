@@ -129,6 +129,34 @@ const waitingIds = async () => left.getByRole("list", { name: "Waiting for an an
   await app(() => window.__v3.app.getState().select(null));
 }
 
+// ---- 5b. dragging across a person's days fills in the Add form on the right (no pop-up)
+{
+  const w = await world();
+  const row = 4;
+  const info = await page.locator(`[role="gridcell"][data-r="${row}"][data-c="7"], [role="gridcell"][data-r="${row}"][data-c="10"]`).evaluateAll((els) => els.map((e) => ({ pid: e.getAttribute("data-pid"), date: e.getAttribute("data-date"), block: e.getAttribute("data-block") })));
+  const [c0, c1] = [page.locator(`[role="gridcell"][data-r="${row}"][data-c="7"]`), page.locator(`[role="gridcell"][data-r="${row}"][data-c="10"]`)];
+  const b0 = await c0.boundingBox(), b1 = await c1.boundingBox();
+  await page.mouse.move(b0.x + b0.width / 2, b0.y + b0.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b1.x + b1.width / 2, b1.y + b1.height / 2, { steps: 8 });
+  check("while dragging, the days light up", (await page.locator(".w-cell.w-picking").count()) === 4);
+  await page.mouse.up();
+  const form = right.locator("[data-add-form]");
+  await form.waitFor();
+  check("letting go opens the Add form in the right column, with the days and the person filled in", (await form.getByLabel("First day").inputValue()) === info[0].date && (await form.getByLabel("Last day").inputValue()) === info[1].date && (await form.getByLabel("Who").inputValue()) === info[0].pid, JSON.stringify(info));
+  check("no pop-up dialog is used", (await page.getByRole("dialog").count()) === 0);
+  check("the picked days stay marked on the sheet while the form is open", (await page.locator(".w-cell[data-picked]").count()) === 4);
+  const h0 = await hash();
+  await form.getByRole("button", { name: "Cancel" }).click();
+  check("Cancel closes the form and clears the marks", (await form.count()) === 0 && (await page.locator(".w-cell[data-picked]").count()) === 0 && (await hash()) === h0);
+  // shift-click extends from the selected day along the same row
+  await c0.click();
+  await c1.click({ modifiers: ["Shift"] });
+  check("shift-click along the same row opens the form for those days too", (await right.locator("[data-add-form]").count()) === 1 && (await right.locator("[data-add-form]").getByLabel("Last day").inputValue()) === info[1].date);
+  await right.locator("[data-add-form]").getByRole("button", { name: "Cancel" }).click();
+  void w;
+}
+
 // ---- 6. the Add drawer: preview before saving, and the month reflects the new absence
 {
   const w = await world();
@@ -139,7 +167,7 @@ const waitingIds = async () => left.getByRole("list", { name: "Waiting for an an
   const solo = Object.values(w.state.assignments).find((a) => a.date === date && !offIds.has(a.pharmacistId) && (ev.cells[`${a.storeId}|${date}`]?.counted ?? 0) === (ev.cells[`${a.storeId}|${date}`]?.required ?? 0) && (ev.cells[`${a.storeId}|${date}`]?.required ?? 0) === 1);
   check("(setup) found a pharmacist who is the only one at a store on 14 Oct", !!solo);
   await page.locator(".w-controls").getByRole("button", { name: "Add time off" }).click();
-  const drawer = page.locator("[data-add-drawer]");
+  const drawer = page.locator("[data-add-form]");
   await drawer.waitFor();
   await drawer.getByLabel("Who").selectOption(solo.pharmacistId);
   await drawer.getByLabel("First day").fill(date);
@@ -177,7 +205,7 @@ const waitingIds = async () => left.getByRole("list", { name: "Waiting for an an
   }
   check("click a day opens its details with the stores it leaves short", !!pick);
   const hero = await page.locator("section.hero-band").innerText();
-  check("the header names the person and says the store is short", /Still scheduled at/.test(hero), hero.replace(/\s+/g, " ").slice(0, 200));
+  check("the header names the person and says the store is short", /still scheduled at/i.test(hero), hero.replace(/\s+/g, " ").slice(0, 200));
   const first = right.locator("[data-open-store]").first();
   const callers = first.locator("[data-caller]");
   check("it lists who could be called, with the Schedule's pictures", (await callers.count()) >= 1 && (await callers.first().locator("[data-tag]").count()) >= 1);
@@ -207,7 +235,7 @@ for (const [label, first, last] of [["today", TODAY, TODAY], ["three days from t
   check(`(setup) someone is the only pharmacist at a store ${label}`, !!solo);
   const h0 = await hash();
   await page.locator(".w-controls").getByRole("button", { name: "Add time off" }).click();
-  const drawer = page.locator("[data-add-drawer]");
+  const drawer = page.locator("[data-add-form]");
   check("there is one form: no Out sick tab", (await drawer.getByRole("button", { name: "Out sick" }).count()) === 0);
   await drawer.getByLabel("Who").selectOption(solo.pharmacistId);
   await drawer.getByLabel("First day").fill(first);

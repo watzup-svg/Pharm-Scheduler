@@ -141,5 +141,5 @@ export function TimeOffHero() {
   const sel = useApp((s) => s.selection);
   const ex = useMemo(() => (vs ? explainTimeOff(vs.state, sel, asOf) : null), [vs, sel, asOf]);
   if (!vs) return null;
-  return <InfoHero ex={ex} label="Time off summary" emptyTitle="No day selected" emptyText="Pick a person's day on the sheet, or a request on the list, to see what it does to the stores." />;
+  return <InfoHero ex={ex} label="Time off summary" emptyTitle="No day selected" emptyText="Click a person's day, or a request on the list, to see what it does to the stores. Drag across a person's days to add time off." />;
 }

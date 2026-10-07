@@ -1,6 +1,5 @@
-// The Add drawer: one form for any time off (vacation, sick, other), with what it would leave uncovered shown before saving. An approved record then lists the stores it leaves short, with who could cover.
-import { useId, useMemo, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+// The Add form (it lives in the right-hand column of the Time off screen): one form for any time off (vacation, sick, other), with what it would leave uncovered shown before saving. An approved record then lists the stores it leaves short, with who could cover.
+import { useEffect, useId, useMemo, useState } from "react";
 import { addDays, dateRange, type ISODate, type UnavailStatus, type UnavailType } from "@domain";
 import { useApp } from "../../store.ts";
 import { evaluateCached } from "../../derive.ts";
@@ -36,7 +35,7 @@ function useActive() {
   return useMemo(() => (state ? Object.values(state.pharmacists).filter((p) => p.inactiveFrom === undefined || p.inactiveFrom > asOf).sort((a, b) => a.name.localeCompare(b.name, "en")) : []), [state, asOf]);
 }
 
-function AddForm({ onDone }: { onDone: () => void }) {
+export function AddForm({ onDone }: { onDone: () => void }) {
   const uid = useId();
   const state = useApp((s) => s.world!.state);
   const asOf = useApp((s) => s.asOf);
@@ -46,7 +45,7 @@ function AddForm({ onDone }: { onDone: () => void }) {
   const why = useWhyLocked();
   const [pid, setPid] = useState(seedPid ?? "");
   const [first, setFirst] = useState<ISODate>(seedDate ?? asOf);
-  const [last, setLast] = useState("");
+  const [last, setLast] = useState<string>(useTimeOffUi.getState().addLast ?? "");
   const [type, setType] = useState<UnavailType>("Vacation");
   const [status, setStatus] = useState<UnavailStatus | null>(null);
   const [note, setNote] = useState("");
@@ -54,6 +53,8 @@ function AddForm({ onDone }: { onDone: () => void }) {
   const who = pid && people.some((p) => p.id === pid) ? pid : people[0]?.id ?? "";
   const effStatus: UnavailStatus = status ?? (type === "Vacation" ? "Requested" : "Approved");
   const lastDay = last || first;
+  // The sheet highlights the days the form covers, so editing a date moves the highlight.
+  useEffect(() => { if (who && first && lastDay >= first) useTimeOffUi.getState().setRange({ pid: who, first, last: lastDay }); }, [who, first, lastDay]);
   const bad = !who ? "Choose who is out." : !first ? "Choose the first day." : lastDay < first ? "The last day is before the first day." : "";
   const rec = useMemo(() => (bad ? null : { pharmacistId: who, first, last: lastDay, status: effStatus, type }), [bad, who, first, lastDay, effStatus, type]);
   const save = (e: React.FormEvent) => {
@@ -112,7 +113,7 @@ function AddForm({ onDone }: { onDone: () => void }) {
 type Marked = { who: string; first: ISODate; last: ISODate };
 
 /** After an approved record is saved: the stores that person leaves short on each of those days, each with who could cover (read from the live schedule, so Undo makes them disappear). */
-function CoverPanel({ marked, onDone }: { marked: Marked; onDone: () => void }) {
+export function CoverPanel({ marked, onDone }: { marked: Marked; onDone: () => void }) {
   const state = useApp((s) => s.world!.state);
   const asOf = useApp((s) => s.asOf);
   const why = useWhyLocked();
@@ -160,25 +161,4 @@ function CoverPanel({ marked, onDone }: { marked: Marked; onDone: () => void }) 
       </div>
     );
   }
-}
-
-export function AddDrawer() {
-  const mode = useTimeOffUi((s) => s.add);
-  const openAdd = useTimeOffUi((s) => s.openAdd);
-  const open = mode !== null;
-  const close = () => openAdd(null);
-  return (
-    <Dialog.Root open={open} onOpenChange={(o) => { if (!o) close(); }}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Dialog.Content aria-describedby={undefined} data-add-drawer className="fixed right-0 top-0 z-50 flex h-full w-[440px] max-w-[94vw] flex-col overflow-y-auto bg-paper p-5 shadow-2xl ring-1 ring-line">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <Dialog.Title className="text-lg font-semibold">Add time off</Dialog.Title>
-            <Dialog.Close aria-label="Close" className="rounded-md px-2 py-1 text-sm text-muted hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">Close ✕</Dialog.Close>
-          </div>
-          <AddForm key="add" onDone={close} />
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
 }

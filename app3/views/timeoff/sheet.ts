@@ -33,7 +33,7 @@ const statusWord = (k: Kind) => (k === "approved" ? "approved" : k === "waiting"
 const range = (u: { first: ISODate; last: ISODate }) => (u.first === u.last ? niceDate(u.first) : `${niceDate(u.first)} to ${niceDate(u.last)}`);
 
 export function buildSheetRows(
-  state: DomainState, people: Pharmacist[], dates: ISODate[], asOf: ISODate, byP: Map<string, Unavailability[]>, byPD: Map<string, Assignment[]>,
+  state: DomainState, people: Pharmacist[], dates: ISODate[], asOf: ISODate, byP: Map<string, Unavailability[]>, byPD: Map<string, Assignment[]>, pickedRange: { pid: string; first: ISODate; last: ISODate } | null = null,
 ): CellModel[][] {
   return people.map((p, r) => dates.map((date, c) => {
     const recs = recordsOn(byP.get(p.id), date);
@@ -82,7 +82,7 @@ export function buildSheetRows(
       chips: [], open: 0, short: 0, locum: 0, marker: null, label, hasDrag: false, block, chip: showChip ? chip : null, iconTone,
       chipN: 0, frac: showChip || kind === "approved" || block === "work" ? frac : null, people: asg.length, ghostAdd: 0, ghostRem: 0, names: [name], reason: "",
       tip: [`${shortName(name, 24)} · ${niceDate(date)}`, ...(lines.length ? lines : ["No time off"])].join(" | "),
-      tone, centered: true, ...(run ? { run } : {}),
+      tone, centered: true, ...(run ? { run } : {}), ...(pickedRange && pickedRange.pid === p.id && date >= pickedRange.first && date <= pickedRange.last ? { picked: true } : {}),
     } satisfies CellModel;
   }));
 }
