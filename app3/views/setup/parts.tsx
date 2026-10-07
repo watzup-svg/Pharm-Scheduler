@@ -86,10 +86,12 @@ export function ListMenu({ name, build }: { name: string; build: () => ListData 
   const say = useApp((s) => s.say);
   const [fallback, setFallback] = useState<string | null>(null);
   const details = useRef<HTMLDetailsElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const copy = async (kind: "text" | "CSV") => {
     const data = build();
     const text = kind === "CSV" ? listCsv(data) : listText(data);
     if (details.current) details.current.open = false;
+    setMenuOpen(false);
     try {
       await navigator.clipboard.writeText(text);
       setFallback(null);
@@ -101,12 +103,12 @@ export function ListMenu({ name, build }: { name: string; build: () => ListData 
   };
   return (
     <>
-      <details ref={details} className="relative" data-list-menu>
+      <details ref={details} className="relative" data-list-menu onToggle={(e) => setMenuOpen(e.currentTarget.open)}>
         <summary aria-label={`Copy the ${name} list`} className="inline-flex h-8 cursor-pointer list-none items-center rounded-md px-3 text-sm font-medium text-ink hover:bg-fill focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink [&::-webkit-details-marker]:hidden">Copy list</summary>
-        <div className="absolute right-0 z-20 mt-1 flex w-44 flex-col rounded-md bg-white p-1 shadow-lg ring-1 ring-line">
+        {menuOpen && <div className="absolute right-0 z-20 mt-1 flex w-44 flex-col rounded-md bg-white p-1 shadow-lg ring-1 ring-line">
           <button type="button" onClick={() => copy("text")} className="h-8 rounded px-2 text-left text-sm hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">As plain text</button>
           <button type="button" onClick={() => copy("CSV")} className="h-8 rounded px-2 text-left text-sm hover:bg-fill focus-visible:outline-2 focus-visible:outline-ink">As CSV</button>
-        </div>
+        </div>}
       </details>
       {fallback !== null && (
         <div className="basis-full">

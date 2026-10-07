@@ -79,11 +79,11 @@ export function HolidaysTab() {
           const todo = holidayToggle(st, date, h.label);
           const on = rows.length > 0 && holidaySummary(rows).closed + holidaySummary(rows).shut === rows.length;
           return (
-            <li key={h.key} data-holiday={h.key} data-date={date} className={cx(past && "opacity-60")}>
+            <li key={h.key} data-holiday={h.key} data-date={date}>
               <div className="grid grid-cols-[8rem_minmax(0,1fr)_minmax(10rem,14rem)_auto_auto] items-center gap-x-4 px-3 py-2.5">
-                <span className="text-sm tabular-nums" data-tip={h.observed ? `${dayLabel(h.date)} | Falls on a weekend | Observed ${dayLabel(h.observed)}` : undefined}>{dayLabel(date)}</span>
+                <span className="text-sm tabular-nums text-ink" data-tip={h.observed ? `${dayLabel(h.date)} | Falls on a weekend | Observed ${dayLabel(h.observed)}` : undefined}>{dayLabel(date)}</span>
                 <span className="min-w-0">
-                  <span className="font-semibold">{h.label}</span>
+                  <span className={cx("font-semibold", past && "font-normal text-muted")}>{h.label}</span>
                   {h.observed && <span className="ml-2 text-xs text-muted">{observed ? `on ${dayLabel(h.date)}` : `observed ${dayLabel(h.observed)}`}</span>}
                 </span>
                 <span className={cx("text-sm", set ? "font-semibold text-ok" : "text-muted")} data-holiday-status>{set && <span aria-hidden>{GLYPH.ok} </span>}{text}</span>
