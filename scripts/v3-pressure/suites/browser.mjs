@@ -26,7 +26,7 @@ const B = {
   loadRender: 8000, // setWorld of the big world until the grid is on screen
   viewSwitch: 1500, // one click on a top-bar tab until two frames after
   cellClick: 600,
-  keyStep: 500,
+  keyStep: 800, // one key press (the slowest single press in the run, so one noisy sample under load counts: normal is 270-360 ms, measured alone and in parallel)
   wallChange: 1000, // a wall control (week, month, People / Stores) until two frames after
   // At the largest size (60 stores x 250 people) the app itself stalls 600-870 ms while Build runs and its result is drawn (measured on the code from before the
   // suggestion work too), so these sit above that. An engine on the main thread would stall for the whole Build (7 s), which is what they are here to catch.
