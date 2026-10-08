@@ -404,7 +404,7 @@ add("fault-offline", 90_000, async (ctx) => {
 });
 
 // ---- soak ----
-add("soak", pick3(L, 360_000, 900_000, 2_400_000), async (ctx) => {
+add("soak", pick3(L, 360_000, 900_000, 600_000), async (ctx) => {
   const N = pick3(L, 400, 2000, 6000);
   const world = genWorld({ seed: 9, stores: 18, kind: "normal", start: "2026-10-01", days: 31 });
   const E = await open({ world });

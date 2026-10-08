@@ -27,6 +27,7 @@ const cell = std.locator('[role="gridcell"][data-r="3"][data-c="12"]');
 const pid = await cell.getAttribute("data-pid");
 const before = await get((id) => Object.values(window.__v3.app.getState().world.state.standing).filter((t) => t.pharmacistId === id).map((t) => ({ id: t.id, wd: t.recurrence.weekdays.join(), store: t.storeId })), pid);
 await cell.click();
+await builder.locator("[data-editing]").waitFor({ timeout: 5000 }).catch(() => {}); // the editor loads the person on the next render
 check("clicking a day loads that person into the editor, with a banner", (await builder.locator("[data-editing]").count()) === 1 && (await builder.getByLabel("Pharmacist", { exact: true }).inputValue()) === pid);
 const paintedBefore = await builder.locator("[data-paint]:not([data-paint=''])").count();
 check("their weekly pattern is painted on the grid", paintedBefore >= 3, String(paintedBefore));
@@ -37,9 +38,11 @@ const closedDay = await get((sid) => { const st = window.__v3.app.getState().wor
 check("(setup) the home store is closed on some weekday", closedDay !== null, String(closedDay));
 await builder.locator(`[data-week="0"][data-day="${closedDay}"]`).click();
 const alert = builder.getByRole("alert", { name: "Problems with this pattern" });
+await alert.waitFor({ timeout: 3000 }).catch(() => {});
 check("painting a day the store is closed raises an alert that says so", (await alert.count()) === 1 && /never open on/.test(await alert.innerText()), await alert.innerText().catch(() => ""));
 check("the painted day is marked on the grid", (await builder.locator(`[data-week="0"][data-day="${closedDay}"][data-warn="closed"]`).count()) === 1);
 await builder.locator(`[data-week="0"][data-day="${closedDay}"]`).click();
+await alert.waitFor({ state: "detached", timeout: 3000 }).catch(() => {});
 check("clearing it removes the alert", (await alert.count()) === 0);
 
 // 4. Save replaces their pattern in one change set; Undo puts it back
