@@ -56,6 +56,9 @@ await get((t) => window.__v3.app.getState().commit([{ t: "remove", assignmentId:
 check("the month is still Posted, and now says how many days changed", /changed since posting/.test(await left.locator('[data-month="2026-11"]').innerText()) && /Edited since posting/.test(await bar.innerText()), await bar.innerText());
 check("Post revision 2 is now offered", await bar.getByRole("button", { name: /Post revision 2/ }).isEnabled());
 check("the header says to post and tell people", /Post revision 2 and tell/.test(await page.locator("[data-hero-detail]").innerText()), await page.locator("[data-hero-detail]").innerText());
+const fixFirst = bar.getByRole("button", { name: "Fix first open shift" });
+check("a month with an open shift offers to fix the first one", (await fixFirst.count()) === 1);
+if (await fixFirst.count()) { await fixFirst.click(); check("it selects an open day in the month, so the best people show", await get(() => { const sel = window.__v3.app.getState().selection; return !!sel && sel.date >= "2026-11-01" && sel.date <= "2026-11-30"; }) && /Needs/.test(await right.innerText())); }
 await bar.getByRole("button", { name: /Post revision 2/ }).click();
 await page.waitForFunction(() => window.__v3.app.getState().world.journal.snapshots.length >= 2);
 check("posting revision 2 clears the count", /rev 2/.test(await left.locator('[data-month="2026-11"]').innerText()) && !/changed since posting/.test(await left.locator('[data-month="2026-11"]').innerText()));

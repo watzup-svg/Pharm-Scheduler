@@ -37,7 +37,7 @@ export function Queue() {
     <div className="px-3 py-2.5">
       <RepairOptions where="queue" />
       <p className="text-xs text-muted">{fmtShort(win.from < asOf ? asOf : win.from)} to {fmtShort(win.to)}</p>
-      {issues.length === 0 && <p className="mt-3 text-sm">Nothing needs attention.</p>}
+      {issues.length === 0 && <p className="mt-3 text-sm" data-queue-empty><span aria-hidden className="text-ok">✓</span> Nothing needs attention. Every shift is covered and no rule is broken from {fmtShort(win.from < asOf ? asOf : win.from)} to {fmtShort(win.to)}. Plan ahead shows the months after.</p>}
       {GROUPS.map((g) => {
         const rows = issues.filter((i) => i.kind === g.kind);
         if (!rows.length) return null;

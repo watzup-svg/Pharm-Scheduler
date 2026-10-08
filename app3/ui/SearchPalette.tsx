@@ -4,6 +4,7 @@ import { cmp } from "@domain";
 import { useApp } from "../store.ts";
 import { goTo, isTyping } from "../views/chrome/shared.tsx";
 import { fmtDate } from "../copy.ts";
+import { evaluateCached } from "../derive.ts";
 
 type Item = { id: string; label: string; hint: string; run: () => void };
 
@@ -31,6 +32,12 @@ export function SearchPalette() {
     for (const id of Object.keys(world.state.stores).sort(cmp)) { const st = world.state.stores[id]!; out.push({ id: `s${id}`, label: `${st.code} ${st.name}`, hint: "Store", run: () => { s.setAxis("store"); goTo(id, s.selection?.date ?? asOf); } }); }
     for (const id of Object.keys(world.state.pharmacists).sort(cmp)) { const p = world.state.pharmacists[id]!; out.push({ id: `p${id}`, label: p.name, hint: "Pharmacist", run: () => { s.setAxis("pharmacist"); s.setView("wall"); s.select({ pharmacistId: id, date: asOf }); } }); }
     for (const [v, l] of [["overview", "Overview"], ["wall", "Schedule"], ["ahead", "Plan ahead"], ["plan", "Plan (next weeks)"], ["timeoff", "Time off"], ["print", "Print"], ["setup", "Setup"], ["travel", "Travel and mileage"], ["rules", "Rules"], ["checks", "Setup check"]] as const) out.push({ id: `v${v}`, label: l, hint: "Go to", run: () => s.setView(v) });
+    // "Cover CLA Tue Oct 20": opens that open day, where the best people and the wider search are already waiting.
+    if (open) {
+      const ev = evaluateCached(world.state, asOf, { range: s.window });
+      const gaps = Object.values(ev.cells).filter((c) => c.date >= asOf && c.open > 0).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : cmp(a.storeId, b.storeId))).slice(0, 40);
+      for (const g of gaps) out.push({ id: `c${g.storeId}|${g.date}`, label: `Cover ${world.state.stores[g.storeId]?.code ?? g.storeId} ${fmtDate(g.date)}`, hint: "Action", run: () => goTo(g.storeId, g.date) });
+    }
     out.push({ id: "a-out", label: "Someone's out", hint: "Action", run: () => { s.setView("wall"); s.setOutForm(true); } });
     out.push({ id: "a-fix", label: "Show the queue", hint: "Action", run: () => s.setDrawer(true, "queue") });
     out.push({ id: "a-hist", label: "History", hint: "Action", run: () => s.setDrawer(true, "history") });

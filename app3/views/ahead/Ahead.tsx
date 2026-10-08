@@ -8,6 +8,7 @@ import { KindChip, openMonth } from "./MonthRail.tsx";
 import { monthName, monthStatus, nextMonthFrom, shiftYm } from "./lib.ts";
 import { useAheadUi } from "./ui.ts";
 import { useMemo } from "react";
+import { evaluateCached } from "../../derive.ts";
 
 export function useAheadMonth(): string {
   const asOf = useApp((s) => s.asOf);
@@ -24,6 +25,12 @@ export function Ahead() {
   // Opening the screen shows the month: the grid's window follows it.
   useEffect(() => { openMonth(month); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const s = useMemo(() => (world ? monthStatus(world, month, asOf) : null), [world, month, asOf]);
+  // The first open shift in the month: "Fix it" selects that day, where the Inspector already offers the best people and the wider search.
+  const firstOpen = useMemo(() => {
+    if (!world || !s || s.open === 0) return null;
+    const ev = evaluateCached(world.state, asOf, { range: { from: s.from, to: s.to } });
+    return Object.values(ev.cells).filter((c) => c.date >= asOf && c.date >= s.from && c.date <= s.to && c.open > 0).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.storeId < b.storeId ? -1 : 1))[0] ?? null;
+  }, [world, s, asOf]);
   if (!world || !s) return null;
   const locked = proposal || !!world.session.scenario && !world.session.scenario.parked;
   const post = () => useApp.getState().post({ from: s.from, to: s.to });
@@ -42,6 +49,7 @@ export function Ahead() {
             : "Draft: not posted yet, so nobody has been told."}
         </span>
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          {firstOpen && <Btn onClick={() => useApp.getState().select({ storeId: firstOpen.storeId, date: firstOpen.date })} title="Select the first open shift, to see who could cover it" data-testid="ahead-fix-first">Fix first open shift</Btn>}
           <Btn tone={s.kind === "empty" || s.open > 0 ? "ink" : "quiet"} disabled={locked || !!busy} onClick={() => useApp.getState().runBuild({ from: s.from, to: s.to })} title="Place the usual patterns and fill what is left, for this month. Nothing changes until you accept.">Build this month</Btn>
           <Btn disabled={locked || !!busy} onClick={() => useApp.getState().runImprove()} title="Look for a better arrangement of this month. Nothing changes until you accept.">Improve</Btn>
           <Btn tone={s.kind === "ready" || (s.kind === "posted" && s.editedSince > 0) ? "ink" : "quiet"} disabled={locked || s.kind === "empty" || (s.kind === "posted" && s.editedSince === 0)} onClick={post} title={s.kind === "posted" ? `Saves a new copy of the month as revision ${(s.rev ?? 0) + 1}` : "Saves a copy of this month. You can keep editing afterwards."}>

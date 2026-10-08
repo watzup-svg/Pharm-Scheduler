@@ -71,7 +71,8 @@ export function App() {
     <div className="flex h-screen min-w-[1280px] flex-col bg-paper text-ink">
       <TopBar />
       <div className="flex min-h-0 flex-1">
-        {drawer ? (
+        {/* The list (problems, history) belongs where the schedule is; Setup and Print have nothing for it to show, so no edge there. */}
+        {view === "setup" || view === "print" ? null : drawer ? (
           <aside aria-label="Left panel" className="relative w-[300px] shrink-0 overflow-y-auto border-r border-line bg-cream">
             <ErrorBoundary name="the list"><LeftPanel /></ErrorBoundary>
           </aside>

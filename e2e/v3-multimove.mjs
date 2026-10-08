@@ -44,6 +44,12 @@ check("nobody is offered for two stores on one day", new Set(rowsInfo.map((r) =>
 await page.getByRole("button", { name: /^Preview .* at EST$/ }).click();
 check("Preview on a queue row opens the proposal bar and selects the day", await get(() => !!window.__v3.app.getState().world.session.proposal && window.__v3.app.getState().selection?.date === "2026-10-09"));
 await get(() => window.__v3.app.getState().discardProposal());
+// Search: "Cover EST Fri Oct 9" selects that open day.
+await page.keyboard.press("Control+k");
+await page.getByRole("dialog", { name: "Search" }).getByRole("textbox").fill("Cover EST");
+check("search offers Cover for an open day", (await page.getByRole("option", { name: /Cover EST Fri Oct 9/ }).count()) === 1);
+await page.keyboard.press("Enter");
+check("choosing it selects that day", await get(() => window.__v3.app.getState().selection?.date === "2026-10-09"));
 check("no page errors", errors.length === 0, JSON.stringify(errors));
 await browser.close(); await srv.close?.();
 process.exit(failed() ? 1 : 0);
