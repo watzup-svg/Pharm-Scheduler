@@ -33,6 +33,8 @@ export async function serveV3() {
  * the test starts on ("wall" by default, so tests about the Schedule keep working; pass "overview" for the home screen, or null to leave it). */
 export async function openApp(browser, base, { practice = true, size = { width: 1366, height: 800 }, context, view = "wall" } = {}) {
   const page = await (context ?? browser).newPage({ viewport: size });
+  // The practice month is October 2026; pin "today" so tests do not depend on the day they run (REAL_CLOCK=1 to use the real one).
+  if (!process.env.REAL_CLOCK) await page.clock.setFixedTime(new Date(2026, 9, 7, 10, 0, 0));
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });

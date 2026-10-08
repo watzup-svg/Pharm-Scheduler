@@ -131,9 +131,9 @@ await step("open a gap, Find cover, preview option 1, Accept", async () => {
     const all = inspector.getByRole("button", { name: /^Show all \d+/ });
     if (await all.count()) await all.click();
     // the wider search starts by itself when the cell is selected
-    await page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && (a.repairResult || a.notice?.kind === "error"); }, null, { timeout: 90000 });
+    await page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && (a.cellRepair || a.notice?.kind === "error"); }, null, { timeout: 90000 });
     const preview = inspector.getByRole("button", { name: "Preview option 1", exact: true });
-    if ((await preview.count()) === 0) { await app(() => window.__v3.app.setState({ repairResult: null })); continue; }
+    if ((await preview.count()) === 0) { await app(() => window.__v3.app.setState({ cellRepair: null })); continue; }
     await preview.click();
     const bar = page.getByRole("region", { name: "Proposal" });
     await bar.waitFor();

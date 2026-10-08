@@ -13,7 +13,7 @@ import { OptionEffect } from "../chrome/OptionEffect.tsx";
  */
 export function MultiMovePlans({ ctx, swapAssignmentId }: { ctx: Ctx; swapAssignmentId?: string | null }) {
   const { state, lock, storeId, date, asOf } = ctx;
-  const rr = useApp((s) => s.repairResult);
+  const rr = useApp((s) => s.cellRepair);
   const running = useApp((s) => s.busy);
   const [near, setNear] = useState(false);
   const past = date < asOf;

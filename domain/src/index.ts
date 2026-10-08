@@ -6,6 +6,7 @@ export { api, NotImplementedError } from "./api.ts";
 export { evaluate, evalDelta, makeCtx, requiredFor, indexRequirements, type EvalCtx } from "./coverage.ts";
 export { RULES, RULE_BY_ID, PRESENCE_RULES, type RuleDef } from "./rules.ts";
 export { choicesFor, prepareChoices, judgeChoice, type Choice, type ChoiceBase } from "./choices.ts";
+export { bestSuggestion, costsOf, describeDetail, describeMove, editsFor, suggestionFor, type Cost, type CostKind, type Suggestion } from "./suggest.ts";
 export { checkIntegrity, type IntegrityIssue } from "./integrity.ts";
 export { applyScratch, stateHash, journalHash, ENGINE_VERSION } from "./changeset.ts";
 export { seedWorld, emptySession, DEFAULT_CONFIG, type Seed } from "./seed.ts";

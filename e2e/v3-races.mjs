@@ -158,7 +158,7 @@ await sc("triple Find cover, double Preview and Accept", async () => {
   await delay(S, 500);
   const r0 = await diagCount(S, /action: repair \d+ gap/g);
   await clickFind(S, { clickCount: 3 });
-  await S.page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && a.repairResult; }, null, { timeout: 60000 });
+  await S.page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && a.cellRepair; }, null, { timeout: 60000 });
   await delay(S, 0);
   check("Find cover: a triple click starts one search", (await diagCount(S, /action: repair \d+ gap/g)) - r0 === 1, `${(await diagCount(S, /action: repair \d+ gap/g)) - r0}`);
   const preview = inspector(S).getByRole("button", { name: "Preview option 1", exact: true });
@@ -253,7 +253,7 @@ await sc("edit during Find cover", async () => {
   await header(S).getByRole("button", { name: "Undo" }).click();
   await delay(S, 0);
   const w = await verdict(S, "Undo during Find cover: the stale result is dropped", []);
-  check("no cover options kept for a schedule that no longer exists", !(await get(S, () => window.__v3.app.getState().repairResult)));
+  check("no cover options kept for a schedule that no longer exists", !(await get(S, () => window.__v3.app.getState().cellRepair || window.__v3.app.getState().repairResult)));
   check("exactly seed + undo in History", (await kinds(S)).join() === "manual,manual,undo", (await kinds(S)).join());
   check("the stale notice names Find cover", /changed while Find cover ran/.test(await notice(S)), await notice(S));
   void w;
@@ -397,7 +397,7 @@ await sc("view switching during Find cover", async () => {
   await get(S, () => { const a = window.__v3.app; a.getState().setView("plan"); a.getState().setView("wall"); });
   await delay(S, 0);
   await verdict(S, "Find cover while switching screens 12 times: result arrives, nothing breaks", []);
-  check("the result is kept and no proposal opened by itself", !!(await get(S, () => window.__v3.app.getState().repairResult)) && !(await hasProposal(S)));
+  check("the result is kept and no proposal opened by itself", !!(await get(S, () => window.__v3.app.getState().cellRepair)) && !(await hasProposal(S)));
   await done(S);
 });
 await sc("Build finishing on the Print screen", async () => {
@@ -521,7 +521,7 @@ if (CHROMIUM) await sc("worker killed mid-search", async () => {
   await clickCell(S, g);
   await clickFind(S);
   await get(S, () => window.__v3.killWorker());
-  await S.page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && (a.repairResult || a.notice); }, null, { timeout: 60000 });
+  await S.page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && (a.cellRepair || a.repairResult || a.notice); }, null, { timeout: 60000 });
   // (the open cell's own wider search must not be holding the engine when the Builds start)
   await get(S, () => window.__v3.app.getState().select(null));
   await S.page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 60000 });

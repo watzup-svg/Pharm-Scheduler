@@ -44,10 +44,14 @@ function Pill({ c }: { c: Cell }) {
   );
 }
 
-export function OptionEffect({ edits }: { edits: Edit[] }) {
+/** `lead`: the store the DM is looking at, listed first. */
+export function OptionEffect({ edits, lead }: { edits: Edit[]; lead?: string }) {
   const state = useApp((s) => s.world?.state);
   const asOf = useApp((s) => s.asOf);
-  const rows = useMemo(() => (state ? effectOf(state, asOf, edits) : null), [state, asOf, edits]);
+  const rows = useMemo(() => {
+    const r = state ? effectOf(state, asOf, edits) : null;
+    return r && lead ? r.slice().sort((a, b) => Number(b.storeId === lead) - Number(a.storeId === lead)) : r;
+  }, [state, asOf, edits, lead]);
   if (!state || !rows || !rows.length) return null;
   const dates = new Set(rows.map((r) => r.date));
   return (
@@ -61,7 +65,6 @@ export function OptionEffect({ edits }: { edits: Edit[] }) {
             <Pill c={r.before} />
             <span aria-hidden className="text-muted">{"→"}</span>
             <Pill c={r.after} />
-            {worse && <span className="font-semibold text-illegal">left short</span>}
           </li>
         );
       })}

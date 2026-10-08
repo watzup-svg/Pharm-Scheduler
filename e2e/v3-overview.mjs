@@ -22,7 +22,7 @@ const home = async () => { await page.locator("header").getByRole("button", { na
 const idle = () => page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 120000 });
 
 // ---- what the domain says
-const ASOF = "2026-10-06", FROM = "2026-10-01", TO = "2026-10-31";
+const ASOF = "2026-10-07", FROM = "2026-10-01", TO = "2026-10-31";
 function domainFacts(state) {
   const ev = evaluate(state, ASOF, { range: { from: FROM, to: TO } });
   const open = Object.values(ev.cells).filter((c) => c.date >= ASOF && c.date <= TO && c.open > 0).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -121,7 +121,7 @@ let wrong = thin.filter((t) => t.st !== expectState(byCode[t.code], t.date));
 check("every tick's colour matches evaluate", wrong.length === 0, wrong.slice(0, 4).map((t) => `${t.code} ${t.date} ${t.st} vs ${expectState(byCode[t.code], t.date)}`).join("; "));
 const seen = new Set(thin.map((t) => t.st));
 check("all four tick kinds occur in this month (covered, needs cover, rule broken, closed)", ["ok", "open", "break", "closed"].every((s) => seen.has(s)), [...seen].join(","));
-check("open ticks equal the domain's open cells that are not broken", thin.filter((t) => t.st === "open").length === [...new Set(Object.values(d.ev.cells).filter((c) => c.open > 0 && !d.cellBreak.has(`${c.storeId}|${c.date}`)).map((c) => `${c.storeId}|${c.date}`))].length);
+check("open ticks equal the domain's open cells that are not broken", thin.filter((t) => t.st === "open").length === [...new Set(Object.values(d.ev.cells).filter((c) => c.date >= FROM && c.date <= TO && c.open > 0 && !d.cellBreak.has(`${c.storeId}|${c.date}`)).map((c) => `${c.storeId}|${c.date}`))].length);
 // a day and a store jump
 const openTick = thin.find((t) => t.st === "open" && t.date >= ASOF);
 await page.locator(`[data-store-row="${openTick.code}"] [data-date="${openTick.date}"]`).click();

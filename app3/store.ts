@@ -11,6 +11,8 @@ import { record as diag, setContext } from "./diagnostics.ts";
 import { describeEdits } from "./copy.ts";
 
 /** The screens. Travel, Rules and Checks are tabs inside Setup; setView still accepts their old names and routes there. */
+export type RepairState = { gaps: { storeId: string; date: ISODate }[]; wider: boolean; result: RepairResult; /** Set when the search was for a swap: the placement taken out first. */ swap?: string; };
+
 export type Screen = "overview" | "wall" | "ahead" | "plan" | "timeoff" | "setup" | "print";
 export type SetupTab = "stores" | "pharmacists" | "patterns" | "holidays" | "dates" | "travel" | "rules" | "checks";
 export type View = Screen | "travel" | "rules" | "checks";
@@ -40,7 +42,9 @@ export type AppState = {
   leftTab: LeftTab;
   selection: Selection;
   notice: Notice | null;
-  repairResult: { gaps: { storeId: string; date: ISODate }[]; wider: boolean; result: RepairResult; /** Set when the search was for a swap: the placement taken out first. */ swap?: string; /** Shown inside the Inspector only, not in the queue. */ inline?: boolean } | null;
+  /** The Inspector's own automatic wider search, kept apart so it never replaces the options the DM asked for from the queue or Time off. */
+  cellRepair: RepairState | null;
+  repairResult: RepairState | null;
   /** When a file opened read-only because the data is inconsistent. */
   readOnlyProblems: string[] | null;
   /** Name of the search running right now (Build, Improve, Find cover), or null. */
@@ -78,6 +82,8 @@ export type AppState = {
   /** Stop the search that is running; nothing changes. */
   cancelEngine(): void;
   previewRepair(option: RepairOption): void;
+  /** Open the preview bar for a single suggestion (the same proposal a cover option makes). */
+  previewEdits(edits: Edit[], explanation: string[]): void;
   acceptProposal(): boolean;
   discardProposal(): void;
 
@@ -126,7 +132,7 @@ export const useApp = create<AppState>((set, get) => {
       get().say("error", r.reason);
       return false;
     }
-    set({ world: r.world, repairResult: null });
+    set({ world: r.world, repairResult: null, cellRepair: null });
     diag("action", `${r.changeSet.kind} ${r.changeSet.id} (${r.changeSet.events.length} events)`);
     record(r.world, r.changeSet);
     // What happened, in a sentence, with Undo beside it (undo and revert lines carry none).
@@ -149,6 +155,7 @@ export const useApp = create<AppState>((set, get) => {
     selection: null,
     notice: null,
     repairResult: null,
+    cellRepair: null,
     readOnlyProblems: null,
     busy: null,
 
@@ -248,16 +255,23 @@ export const useApp = create<AppState>((set, get) => {
       try {
         const result = lift(await callEngine<RepairResult>({ op: "repair", world: w1, gaps, opts: { wider }, asOf: s.asOf }, { signal }));
         if (!same(w0)) { stale("Find cover"); return; }
-        set({ repairResult: { gaps, wider, result, ...(swap ? { swap } : {}), ...(inline ? { inline } : {}) } });
+        set({ [inline ? "cellRepair" : "repairResult"]: { gaps, wider, result, ...(swap ? { swap } : {}) } } as Partial<AppState>);
         // The closest option costs a full-depth search, so it is fetched after the answer is on screen, only when there is no clean option.
         if (result.status === "none") {
           const full = lift(await callEngine<RepairResult>({ op: "repair", world: w1, gaps, opts: { wider, showNearMiss: true }, asOf: s.asOf }, { signal }));
-          const cur = get().repairResult;
-          if (same(w0) && cur && cur.gaps === gaps) set({ repairResult: { gaps, wider, result: full, ...(swap ? { swap } : {}), ...(inline ? { inline } : {}) } });
+          const cur = inline ? get().cellRepair : get().repairResult;
+          if (same(w0) && cur && cur.gaps === gaps) set({ [inline ? "cellRepair" : "repairResult"]: { gaps, wider, result: full, ...(swap ? { swap } : {}) } } as Partial<AppState>);
         }
       } catch (e) { failure("Find cover", e); } finally { abort = null; set({ busy: null }); }
     },
     cancelEngine: () => { if (abort) { diag("action", "search cancelled by user"); abort.abort(); } },
+    previewEdits: (edits, explanation) => {
+      const w = world();
+      const p: Proposal = { kind: "repair", label: "Repair", edits, explanation, stateHash: api.stateHash(w.state), engineVersion: "v3.0" };
+      const o = api.openProposal(w, p);
+      if ("refused" in o) { get().say("error", o.reason); return; }
+      set({ world: o });
+    },
     previewRepair: (option) => {
       const w = world();
       const p: Proposal = {
