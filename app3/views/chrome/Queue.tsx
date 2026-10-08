@@ -1,11 +1,7 @@
 // Queue: what needs a look in the window, serious first. Click a row to see it on the wall. Each row wears the colour of its issue (rose = needs cover or a rule is broken, yellow = take a look), the same colours as the schedule.
 import { useMemo, useState } from "react";
 import { useApp } from "../../store.ts";
-import { greedyBest } from "../../suggestions.ts";
-import type { Suggestion } from "@domain";
-import { shortName } from "../../names.ts";
-import { Act } from "../inspector/ui.tsx";
-import { useLock } from "../inspector/lib.ts";
+import { SuggestionRow, useGreedy } from "./SuggestionRow.tsx";
 import { useIssues, type Issue } from "../../derive.ts";
 import { cx, GLYPH } from "../../ui/primitives.tsx";
 import { BlockMark, RULE_MARK, type MarkKind } from "../../ui/icons.tsx";
@@ -20,31 +16,6 @@ const GROUPS: { kind: Issue["kind"]; title: string; glyph: string }[] = [
   { kind: "warning", title: "Warnings", glyph: GLYPH.warning },
 ];
 
-/** The best single person for an open day, in a few lines, with a Preview that opens the same proposal bar a cover option does. */
-function SuggestionRow({ storeId, date, sg }: { storeId: string; date: string; sg: Suggestion | null | undefined }) {
-  const state = useApp((s) => s.world?.state);
-  const lock = useLock();
-  if (!state || sg === undefined) return null;
-  if (!sg) return <p className="px-2.5 pb-2 pl-[44px] text-sm text-muted" data-queue-suggestion="none">Nobody can cover this alone. Open the day for plans with several moves.</p>;
-  const c = sg.choice;
-  const name = state.pharmacists[c.pharmacistId]?.name ?? c.pharmacistId;
-  const longDrive = sg.costs.some((x) => x.kind === "drive");
-  const other = sg.costs.filter((x) => x.kind !== "drive");
-  return (
-    <div className="pb-2 pl-[44px] pr-2.5" data-queue-suggestion={sg.clean ? "clean" : "costs"}>
-      <div className="flex items-center justify-between gap-2">
-        <b className="min-w-0 truncate text-sm">Best: {shortName(name, 22)}</b>
-        <Act tone="ink" disabled={!!lock} title={lock ?? undefined} aria-label={`Preview ${name} at ${state.stores[storeId]?.code ?? storeId}`} onClick={() => { goTo(storeId, date); useApp.getState().previewEdits(sg.edits, [sg.sentence]); }} className="shrink-0">Preview</Act>
-      </div>
-      <p className="text-sm text-ink/80">
-        {sg.detail.replace(/\.$/, "")}
-        {c.travelMinutes ? <span className={longDrive ? "font-semibold text-[#6b5400]" : ""}> · {c.travelMinutes} min drive</span> : null}
-      </p>
-      {other.length > 0 && <p className="text-sm text-muted">Costs: {other.map((x) => x.text).join(" · ")}</p>}
-    </div>
-  );
-}
-
 export function Queue() {
   const win = useApp((s) => s.window);
   const asOf = useApp((s) => s.asOf);
@@ -57,12 +28,10 @@ export function Queue() {
   const ordered = all.slice().sort((a, b) => rank(a) - rank(b));
   const issues = seeAll ? all : ordered.slice(0, TOP);
   // One suggestion per open day, in date order, each assuming the ones before it were accepted.
-  const state = useApp((s) => s.world?.state);
-  const openList = useMemo(() => all.filter((i) => i.kind === "open").sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)), [all]);
+  const openList = useMemo(() => all.filter((i) => i.kind === "open"), [all]);
   const wanted = new Set(issues.map((i) => i.id));
-  const last = openList.reduce((n, i, k) => (wanted.has(i.id) ? k : n), -1);
-  const sugg = useMemo(() => (state && last >= 0 ? greedyBest(state, asOf, openList.slice(0, last + 1)) : []), [state, asOf, openList, last]);
-  const suggFor = (id: string) => { const k = openList.findIndex((i) => i.id === id); return k >= 0 && k < sugg.length ? sugg[k] : undefined; };
+  const sugg = useGreedy(openList, (i) => wanted.has(i.id));
+  const suggFor = (id: string) => sugg.get(id);
 
   return (
     <div className="px-3 py-2.5">

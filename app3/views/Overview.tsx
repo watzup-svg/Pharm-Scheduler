@@ -8,6 +8,7 @@ import { NextUp } from "./overview/NextUp.tsx";
 import { Checklist } from "./overview/Checklist.tsx";
 import { StartNextMonth } from "./overview/StartNextMonth.tsx";
 import { Welcome } from "./overview/Welcome.tsx";
+import { Changed, ComingUp } from "./overview/Briefing.tsx";
 
 export function Overview() {
   const world = useApp((s) => s.world);
@@ -27,6 +28,7 @@ export function Overview() {
           <h2 id="ov-month" className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Stores, day by day</h2>
           <ThinMonth state={vs.state} ev={m.ev} ym={m.ym} asOf={m.asOf} />
         </section>
+        <div className="grid grid-cols-2 gap-4"><Changed /><ComingUp /></div>
         <StartNextMonth ym={m.ym} asOf={m.asOf} next={next} />
       </div>
       <div className="flex flex-col gap-8">
