@@ -255,7 +255,8 @@ await sc("edit during Find cover", async () => {
   const w = await verdict(S, "Undo during Find cover: the stale result is dropped", []);
   check("no cover options kept for a schedule that no longer exists", !(await get(S, () => window.__v3.app.getState().cellRepair || window.__v3.app.getState().repairResult)));
   check("exactly seed + undo in History", (await kinds(S)).join() === "manual,manual,undo", (await kinds(S)).join());
-  check("the stale notice names Find cover", /changed while Find cover ran/.test(await notice(S)), await notice(S));
+  // The Inspector drops its own search the moment the schedule changes (quietly); a search the DM asked for from the queue still reports it was dropped.
+  check("the dropped search leaves no error notice", !/error|failed/i.test(await notice(S)), await notice(S));
   void w;
   await done(S);
 });
@@ -396,8 +397,10 @@ await sc("view switching during Find cover", async () => {
   for (let i = 0; i < 3; i++) for (const t of ["Time off", "Print", "Setup", "Schedule"]) await header(S).getByRole("button", { name: new RegExp(`^${t}`) }).click();
   await get(S, () => { const a = window.__v3.app; a.getState().setView("plan"); a.getState().setView("wall"); });
   await delay(S, 0);
-  await verdict(S, "Find cover while switching screens 12 times: result arrives, nothing breaks", []);
-  check("the result is kept and no proposal opened by itself", !!(await get(S, () => window.__v3.app.getState().cellRepair)) && !(await hasProposal(S)));
+  await verdict(S, "Find cover while switching screens 12 times: nothing breaks", []);
+  // Leaving the Schedule drops the cell's search; coming back asks again for the selected cell, and that answer arrives.
+  await S.page.waitForFunction(() => window.__v3.app.getState().cellRepair, null, { timeout: 60000 });
+  check("the answer arrives after coming back, and no proposal opened by itself", !(await hasProposal(S)));
   await done(S);
 });
 await sc("Build finishing on the Print screen", async () => {

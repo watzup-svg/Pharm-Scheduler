@@ -30,12 +30,14 @@ export function MultiMovePlans({ ctx, swapAssignmentId }: { ctx: Ctx; swapAssign
     if (lock || past) return;
     let t: ReturnType<typeof setTimeout>;
     const tryRun = () => {
-      if (useApp.getState().busy) { t = setTimeout(tryRun, 500); return; }
+      if (useApp.getState().busy) { t = setTimeout(tryRun, 150); return; }
       setAsked(true);
       run();
     };
-    t = setTimeout(tryRun, 350);
-    return () => clearTimeout(t);
+    // A remembered answer is shown straight away; a new search waits a moment so that arrowing past cells does not start one for each.
+    t = setTimeout(tryRun, useApp.getState().hasCellResult(storeId, date, prefix) ? 0 : 350);
+    // Moving to another cell (or the schedule changing) drops this cell's search, so the next one starts at once.
+    return () => { clearTimeout(t); useApp.getState().cancelInline(); };
   }, [state, storeId, date, swapKey, lock, past]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const options = (mine && rr ? rr.result.options : []).filter((o) => !(removedPid && o.edits.some((e) => e.t === "place" && e.pharmacistId === removedPid && e.storeId === storeId && e.date === date)));
@@ -46,7 +48,7 @@ export function MultiMovePlans({ ctx, swapAssignmentId }: { ctx: Ctx; swapAssign
         <p className="text-xs"><b>Plans with several moves.</b> Where nobody above fits, this tries moving a few people around, and may ask someone on a day off to take an extra shift. Nothing changes until you accept.</p>
         <Act disabled={!!lock || past || !!running} title={lock ?? (past ? "This day has passed" : undefined)} onClick={run}>Search again</Act>
       </div>
-      {(searching || (asked && !mine && running)) && <p className="mt-1.5 text-xs text-muted" data-multimove-status="searching">Looking for plans…</p>}
+      {(searching || (asked && !mine && running)) && <p className="mt-1.5 text-xs text-muted" data-multimove-status="searching">Looking for plans… a busy day can take a couple of seconds.</p>}
       {running && <div className="mt-1.5"><Act onClick={() => useApp.getState().cancelEngine()}>Cancel</Act></div>}
       {mine && rr && (
         <div className="mt-2">

@@ -2,7 +2,7 @@
 // All writes go through api.commit (or a proposal/scenario) so the domain stays the only gate.
 import { create } from "zustand";
 import {
-  addDays, api, applyScratch, weekday, type ChangeSet, type Edit, type ISODate, type Proposal, type RepairOption, type RepairResult, type World,
+  addDays, api, applyScratch, weekday, type ChangeSet, type DomainState, type Edit, type ISODate, type Proposal, type RepairOption, type RepairResult, type World,
 } from "@domain";
 import { getPersist } from "./persist-bridge.ts";
 import { todayISO } from "./clock.ts";
@@ -81,6 +81,10 @@ export type AppState = {
   runRepair(gaps: { storeId: string; date: ISODate }[], wider?: boolean, prefix?: Edit[], inline?: boolean): Promise<void>;
   /** Stop the search that is running; nothing changes. */
   cancelEngine(): void;
+  /** Stop the Inspector's own automatic search (it was for a cell the DM has moved away from). Never touches a search the DM asked for. */
+  cancelInline(): void;
+  /** True when the wider search for this cell (or swap) is already remembered for the current schedule. */
+  hasCellResult(storeId: string, date: ISODate, prefix?: Edit[]): boolean;
   previewRepair(option: RepairOption): void;
   /** Open the preview bar for a single suggestion (the same proposal a cover option makes). */
   previewEdits(edits: Edit[], explanation: string[]): void;
@@ -119,6 +123,9 @@ export const useApp = create<AppState>((set, get) => {
   let abort: AbortController | null = null;
   const same = (w0: World) => { const w = get().world; return !!w && (w === w0 || api.stateHash(w.state) === api.stateHash(w0.state)); };
   let quietCancel = false;
+  let abortIsInline = false;
+  // Wider-search answers for the Inspector, remembered per schedule: going back to a cell shows its plans at once. Dropped with the state they were made from.
+  const cellCache = new WeakMap<DomainState, Map<string, RepairResult>>();
   const failure = (what: string, e: unknown) => {
     if (isCancel(e)) { diag("engine", `${what} cancelled`); if (quietCancel) { quietCancel = false; return; } get().say("info", `${what} stopped. Nothing changed.`); return; }
     diag("error", `${what}: ${String((e as Error)?.message ?? e)}`);
@@ -247,8 +254,13 @@ export const useApp = create<AppState>((set, get) => {
         w1 = { ...w0, state: st };
       }
       const swap = prefix?.length ? JSON.stringify(prefix) : undefined;
+      const cacheKey = inline ? `${wider}|${swap ?? ""}|${gaps.map((g) => `${g.storeId}@${g.date}`).join(",")}` : "";
+      const cached = inline ? cellCache.get(w0.state)?.get(cacheKey) : undefined;
+      if (cached) { set({ cellRepair: { gaps, wider, result: cached, ...(swap ? { swap } : {}) } }); return; }
+      const remember = (r: RepairResult) => { if (!inline) return; let m = cellCache.get(w0.state); if (!m) cellCache.set(w0.state, (m = new Map())); m.set(cacheKey, r); };
       const lift = (r: RepairResult): RepairResult => (!prefix?.length ? r : { ...r, options: r.options.map((o) => ({ ...o, edits: [...prefix, ...o.edits] })), ...(r.nearMiss ? { nearMiss: { ...r.nearMiss, edits: [...prefix, ...r.nearMiss.edits] } } : {}) });
       abort = new AbortController();
+      abortIsInline = inline;
       const signal = abort.signal;
       diag("action", `repair ${gaps.length} gap(s)${wider ? " wider" : ""}`);
       set({ busy: "Find cover" });
@@ -256,14 +268,17 @@ export const useApp = create<AppState>((set, get) => {
         const result = lift(await callEngine<RepairResult>({ op: "repair", world: w1, gaps, opts: { wider }, asOf: s.asOf }, { signal }));
         if (!same(w0)) { stale("Find cover"); return; }
         set({ [inline ? "cellRepair" : "repairResult"]: { gaps, wider, result, ...(swap ? { swap } : {}) } } as Partial<AppState>);
+        remember(result);
         // The closest option costs a full-depth search, so it is fetched after the answer is on screen, only when there is no clean option.
         if (result.status === "none") {
           const full = lift(await callEngine<RepairResult>({ op: "repair", world: w1, gaps, opts: { wider, showNearMiss: true }, asOf: s.asOf }, { signal }));
           const cur = inline ? get().cellRepair : get().repairResult;
-          if (same(w0) && cur && cur.gaps === gaps) set({ [inline ? "cellRepair" : "repairResult"]: { gaps, wider, result: full, ...(swap ? { swap } : {}) } } as Partial<AppState>);
+          if (same(w0) && cur && cur.gaps === gaps) { set({ [inline ? "cellRepair" : "repairResult"]: { gaps, wider, result: full, ...(swap ? { swap } : {}) } } as Partial<AppState>); remember(full); }
         }
       } catch (e) { failure("Find cover", e); } finally { abort = null; set({ busy: null }); }
     },
+    hasCellResult: (storeId, date, prefix) => { const st = get().world?.state; if (!st) return false; const swap = prefix?.length ? JSON.stringify(prefix) : ""; return !!cellCache.get(st)?.has(`true|${swap}|${storeId}@${date}`); },
+    cancelInline: () => { if (abort && abortIsInline) { quietCancel = true; diag("engine", "cell search dropped (moved away)"); abort.abort(); } },
     cancelEngine: () => { if (abort) { diag("action", "search cancelled by user"); abort.abort(); } },
     previewEdits: (edits, explanation) => {
       const w = world();
