@@ -102,7 +102,7 @@ if (build.status === "ok") {
   }
   await run("perf baseline", "node", ["scripts/v3-perf-baseline.mjs"], { timeoutMs: 10 * 60_000 });
   if (!quick) {
-    await run("random-click stress", "node", ["--experimental-strip-types", "--no-warnings", "stress/v3-monkey.mjs"], { env: { SEEDS: level === "low" ? "6" : "12", ACTIONS: "150" }, timeoutMs: 30 * 60_000 });
+    await run("random-click stress", "node", ["stress/v3-monkey-parallel.mjs"], { env: { SEEDS: level === "low" ? "6" : "12", ACTIONS: "150" }, timeoutMs: 30 * 60_000 });
     await run(`pressure test (${level})`, "npm", ["run", "pressure:v3", "--", "--level", level], { timeoutMs: 60 * 60_000 });
   } else {
     results.push({ name: "random-click stress", status: "skip", secs: 0, log: "", detail: "--quick", out: "" });

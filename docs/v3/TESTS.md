@@ -42,3 +42,8 @@ Every test is a plain Node or Playwright script: deterministic, no network, no m
 | `npm run check:all` (`:quick`) | Everything above in the right order, with one report in `test-logs/check-all-latest/REPORT.md` | 10 min (5 quick) |
 
 Conventions: a browser test prints `ok` / `FAIL` lines through `e2e/v3-lib.mjs` (`check`, `failed`) and exits non-zero on failure; `scripts/v3-e2e.mjs` picks up any `e2e/v3-*.mjs` by name. Do not weaken a check to make it pass.
+
+
+## Running in parallel
+
+`node scripts/v3-e2e.mjs` runs the browser files three at a time (`E2E_JOBS=1` for one by one). The files that depend on timing, pixels or the disk (`races`, `resilience`, `scale-keyboard`, `month-in-the-life`, `visual`, `layout`, `windows`, `persist`, `print-browser`) run alone, one after another, once the parallel ones are done. The random-click stress runs its seeds three at a time (`stress/v3-monkey-parallel.mjs`, `STRESS_JOBS=1` for one by one). On a 4-core machine this takes the medium run from about 22 minutes to about 13. If a test fails only when run in parallel, rerun it alone before trusting the failure either way.
