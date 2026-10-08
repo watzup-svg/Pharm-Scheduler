@@ -1,5 +1,5 @@
 // evaluate(): the single place that decides what counts. Everything else asks this.
-import { cmp, dateOk, dateRange, fromDayNumber, toDayNumber, weekday } from "./dates.ts";
+import { cmp, dateOk, dateRange, toDayNumber, weekday } from "./dates.ts";
 import type { EvalOptions } from "./api-types.ts";
 import type {
   Assignment, AssignmentEval, CellCoverage, DomainState, Evaluation, ISODate, Override, RuleResult, Verdict,
@@ -60,7 +60,15 @@ function indexUnavailability(state: DomainState, includeRequested: boolean): Una
 }
 
 /** Everything about a state that does not depend on which assignments exist. Reusable while only assignments change (search). */
-export type EvalCtx = { reqIdx: ReqIndex; unavByP: UnavIndex; ovByAR: Map<string, Override> };
+export type EvalCtx = { reqIdx: ReqIndex; unavByP: UnavIndex; ovByAR: Map<string, Override>; /** What each store needs on each day, worked out once per context (the state's requirements do not change while a context is in use). */ reqMemo: Map<string, Map<ISODate, number>> };
+
+function requiredMemo(state: DomainState, ctx: EvalCtx, storeId: string, date: ISODate): number {
+  let m = ctx.reqMemo.get(storeId);
+  if (!m) ctx.reqMemo.set(storeId, (m = new Map()));
+  let n = m.get(date);
+  if (n === undefined) m.set(date, (n = requiredFor(state, ctx.reqIdx, storeId, date)));
+  return n;
+}
 
 export function makeCtx(state: DomainState, opts: EvalOptions = {}): EvalCtx {
   const ovByAR = new Map<string, Override>();
@@ -68,53 +76,79 @@ export function makeCtx(state: DomainState, opts: EvalOptions = {}): EvalCtx {
     const o = state.overrides[oid]!;
     ovByAR.set(`${o.assignmentId}|${o.ruleId}`, o);
   }
-  return { reqIdx: indexRequirements(state), unavByP: indexUnavailability(state, opts.includeRequested === true), ovByAR };
+  return { reqIdx: indexRequirements(state), unavByP: indexUnavailability(state, opts.includeRequested === true), ovByAR, reqMemo: new Map() };
 }
+
+/** Where each rule's result sits in an assignment's results: alphabetical by rule id, as the sorted list always was. */
+const SLOT: Record<string, number> = { availability: 0, closure: 1, "consecutive-days": 2, "double-booking": 3, licensing: 4, "travel-hard": 5, "travel-soft": 6 };
+const RULE_SLOTS = 7;
 
 /** Rule results for every assignment of one pharmacist (their own list is all that double booking and day runs need). */
 function evalPharmacist(state: DomainState, ctx: EvalCtx, list: Assignment[], emit: (a: Assignment) => boolean): AssignmentEval[] {
   const cfg = state.config;
-  const byDate = new Map<ISODate, Assignment[]>();
-  for (const a of list) (byDate.get(a.date) ?? byDate.set(a.date, []).get(a.date)!).push(a);
-  const groupResolved = new Map<ISODate, boolean>();
-  for (const [d, members] of byDate) {
-    if (members.length < 2) continue;
-    const sorted = members.slice().sort((a, b) => a.placedSeq - b.placedSeq || cmp(a.id, b.id));
-    const sig = sorted.map((m) => m.storeId).sort(cmp).join(",");
-    let resolved = true;
-    for (const m of sorted.slice(1)) {
-      const o = ctx.ovByAR.get(`${m.id}|double-booking`);
-      if (!o || o.signature !== sig) resolved = false;
+  // The search judges one date of a pharmacist at a time, so what shares a date with an emitted assignment is looked up when asked for
+  // (a plain scan of the list) rather than laying out every date of the month first. A full evaluation emits nearly everything and builds the table once.
+  const emitted = list.filter(emit);
+  const few = emitted.length <= 3;
+  let byDateAll: Map<ISODate, Assignment[]> | null = null;
+  const membersOn = (date: ISODate): Assignment[] => {
+    if (few) return list.filter((x) => x.date === date);
+    if (!byDateAll) { byDateAll = new Map(); for (const a of list) (byDateAll.get(a.date) ?? byDateAll.set(a.date, []).get(a.date)!).push(a); }
+    return byDateAll.get(date) ?? [];
+  };
+  const groupMemo = new Map<ISODate, boolean | undefined>();
+  const groupResolvedOn = (d: ISODate): boolean | undefined => {
+    if (groupMemo.has(d)) return groupMemo.get(d);
+    const members = membersOn(d);
+    let out: boolean | undefined;
+    if (members.length >= 2) {
+      const sorted = members.slice().sort((a, b) => a.placedSeq - b.placedSeq || cmp(a.id, b.id));
+      const sig = sorted.map((m) => m.storeId).sort(cmp).join(",");
+      let resolved = true;
+      for (const m of sorted.slice(1)) {
+        const o = ctx.ovByAR.get(`${m.id}|double-booking`);
+        if (!o || o.signature !== sig) resolved = false;
+      }
+      out = resolved;
     }
-    groupResolved.set(d, resolved);
-  }
-  const runInfo = new Map<ISODate, { index: number; length: number }>();
-  const days = [...byDate.keys()].map(toDayNumber).sort((x, y) => x - y);
-  let start = 0;
-  for (let i = 0; i <= days.length; i++) {
-    if (i === days.length || (i > 0 && days[i]! !== days[i - 1]! + 1)) {
-      const length = i - start;
-      for (let j = start; j < i; j++) runInfo.set(fromDayNumber(days[j]!), { index: j - start, length });
-      start = i;
-    }
-  }
+    groupMemo.set(d, out);
+    return out;
+  };
+  // Runs of consecutive days are only looked up for the dates that are emitted (the search asks for one date at a time), by walking out from that
+  // day in a set of day numbers, instead of laying out every run of the pharmacist's whole list.
+  let daySet: Set<number> | null = null;
+  const runMemo = new Map<number, { index: number; length: number }>();
+  const runOf = (date: ISODate): { index: number; length: number } => {
+    const dn = toDayNumber(date);
+    const hit = runMemo.get(dn);
+    if (hit) return hit;
+    if (!daySet) { daySet = new Set<number>(); for (const x of list) daySet.add(toDayNumber(x.date)); }
+    let lo = dn;
+    while (daySet.has(lo - 1)) lo--;
+    let hi = dn;
+    while (daySet.has(hi + 1)) hi++;
+    const length = hi - lo + 1;
+    for (let j = lo; j <= hi; j++) runMemo.set(j, { index: j - lo, length });
+    return runMemo.get(dn)!;
+  };
   const out: AssignmentEval[] = [];
-  for (const a of list) {
-    if (!emit(a)) continue;
+  for (const a of emitted) {
     const store = state.stores[a.storeId];
     const ph = state.pharmacists[a.pharmacistId];
-    const results: RuleResult[] = [];
-    const required = requiredFor(state, ctx.reqIdx, a.storeId, a.date);
-    results.push(required === 0 ? result("closure", "Fail", "closed", "Store is closed that day") : result("closure", "Pass", "open", "Store is open"));
+    // Results are laid out in rule-id order as they are made, so no sort is needed.
+    const results: RuleResult[] = new Array(RULE_SLOTS);
+    const put = (r: RuleResult) => { results[SLOT[r.ruleId]!] = r; };
+    const required = requiredMemo(state, ctx, a.storeId, a.date);
+    put(required === 0 ? result("closure", "Fail", "closed", "Store is closed that day") : result("closure", "Pass", "open", "Store is open"));
 
-    if (!ph || !store) results.push(result("licensing", "Unknown", "unrecorded", "Missing pharmacist or store"));
-    else if (store.state === null) results.push(result("licensing", "NotApplicable", "", "Store state not recorded"));
-    else if (!ph.licenses) results.push(result("licensing", "Unknown", `${ph.id}|${store.state}|unrecorded`, "Licensing not recorded"));
-    else if (!(store.state in ph.licenses)) results.push(result("licensing", "Fail", `${ph.id}|${store.state}|none`, `Not licensed in ${store.state}`));
+    if (!ph || !store) put(result("licensing", "Unknown", "unrecorded", "Missing pharmacist or store"));
+    else if (store.state === null) put(result("licensing", "NotApplicable", "", "Store state not recorded"));
+    else if (!ph.licenses) put(result("licensing", "Unknown", `${ph.id}|${store.state}|unrecorded`, "Licensing not recorded"));
+    else if (!(store.state in ph.licenses)) put(result("licensing", "Fail", `${ph.id}|${store.state}|none`, `Not licensed in ${store.state}`));
     else {
       const exp = ph.licenses[store.state];
-      if (exp !== null && exp !== undefined && exp < a.date) results.push(result("licensing", "Fail", `${ph.id}|${store.state}|expired`, `License expired ${exp}`));
-      else results.push(result("licensing", "Pass", `${ph.id}|${store.state}|ok`, "Licensed"));
+      if (exp !== null && exp !== undefined && exp < a.date) put(result("licensing", "Fail", `${ph.id}|${store.state}|expired`, `License expired ${exp}`));
+      else put(result("licensing", "Pass", `${ph.id}|${store.state}|ok`, "Licensed"));
     }
 
     {
@@ -124,53 +158,54 @@ function evalPharmacist(state: DomainState, ctx: EvalCtx, list: Assignment[], em
       let off = false;
       for (const u of ctx.unavByP.get(a.pharmacistId) ?? []) if (u.first <= a.date && a.date <= u.last && (u.scope === undefined || u.scope === a.storeId)) off = true;
       if (off) why.push("unavailable");
-      results.push(why.length ? result("availability", "Fail", why.join(","), "Not available") : result("availability", "Pass", "", "Available"));
+      put(why.length ? result("availability", "Fail", why.join(","), "Not available") : result("availability", "Pass", "", "Available"));
     }
 
     {
-      const members = byDate.get(a.date) ?? [a];
-      if (members.length < 2) results.push(result("double-booking", "NotApplicable", "", "Only one assignment"));
+      const members = membersOn(a.date);
+      if (members.length < 2) put(result("double-booking", "NotApplicable", "", "Only one assignment"));
       else {
         const sorted = members.slice().sort((x, y) => x.placedSeq - y.placedSeq || cmp(x.id, y.id));
         const sig = sorted.map((m) => m.storeId).sort(cmp).join(",");
-        if (groupResolved.get(a.date) && sorted[0]!.id === a.id) results.push(result("double-booking", "Pass", sig, "Earliest placed; the others are overridden"));
-        else results.push(result("double-booking", "Fail", sig, "Booked at two stores"));
+        if (groupResolvedOn(a.date) && sorted[0]!.id === a.id) put(result("double-booking", "Pass", sig, "Earliest placed; the others are overridden"));
+        else put(result("double-booking", "Fail", sig, "Booked at two stores"));
       }
     }
 
     for (const [id, limit] of [["travel-soft", cfg.travelSoftMinutes], ["travel-hard", cfg.travelHardMinutes]] as const) {
-      if (!ph || ph.baseStoreId === null) results.push(result(id, "NotApplicable", "", "No base store"));
-      else if (ph.baseStoreId === a.storeId) results.push(result(id, "Pass", "0", "At base store"));
+      if (!ph || ph.baseStoreId === null) put(result(id, "NotApplicable", "", "No base store"));
+      else if (ph.baseStoreId === a.storeId) put(result(id, "Pass", "0", "At base store"));
       else {
         const pair = state.travel[`${ph.baseStoreId}|${a.storeId}`];
-        if (!pair) results.push(result(id, "Unknown", "unknown", "Drive time not known"));
-        else if (pair.minutes > limit) results.push(result(id, "Fail", String(pair.minutes), `${pair.minutes} min drive`));
-        else results.push(result(id, "Pass", String(pair.minutes), `${pair.minutes} min drive`));
+        if (!pair) put(result(id, "Unknown", "unknown", "Drive time not known"));
+        else if (pair.minutes > limit) put(result(id, "Fail", String(pair.minutes), `${pair.minutes} min drive`));
+        else put(result(id, "Pass", String(pair.minutes), `${pair.minutes} min drive`));
       }
     }
 
     {
-      const info = runInfo.get(a.date);
-      if (info && info.index >= cfg.maxConsecutiveDays) results.push(result("consecutive-days", "Fail", String(info.length), `Day ${info.index + 1} in a row`));
-      else results.push(result("consecutive-days", "Pass", String(info?.length ?? 1), "Within the limit"));
+      const info = runOf(a.date);
+      if (info && info.index >= cfg.maxConsecutiveDays) put(result("consecutive-days", "Fail", String(info.length), `Day ${info.index + 1} in a row`));
+      else put(result("consecutive-days", "Pass", String(info?.length ?? 1), "Within the limit"));
     }
 
     let unresolved = false;
     let unknown = false;
     for (const r of results) {
       const def = RULE_BY_ID[r.ruleId];
-      const o = ctx.ovByAR.get(`${a.id}|${r.ruleId}`);
       // A row for a non-overridable rule (licensing, I-1) can only come from loaded data: commit refuses to create one. It never resolves a Fail.
-      if (r.verdict === "Fail" && o && def?.overridable !== false) {
-        if (o.signature === r.signature) r.overridden = r.ruleId === "double-booking" ? groupResolved.get(a.date) === true : true;
-        else r.outdated = true;
+      if (r.verdict === "Fail" && def?.overridable !== false) {
+        const o = ctx.ovByAR.get(`${a.id}|${r.ruleId}`);
+        if (o) {
+          if (o.signature === r.signature) r.overridden = r.ruleId === "double-booking" ? groupResolvedOn(a.date) === true : true;
+          else r.outdated = true;
+        }
       }
       if (def?.kind === "presence") {
         if (r.verdict === "Fail" && !r.overridden) unresolved = true;
         if (r.verdict === "Unknown") unknown = true;
       }
     }
-    results.sort((x, y) => cmp(x.ruleId, y.ruleId));
     const counts = !unresolved;
     out.push({ assignmentId: a.id, results, counts, unverified: counts && unknown });
   }
@@ -183,7 +218,7 @@ export type AsgIndex = { ofPharmacist(id: string): Iterable<Assignment>; onDate(
 function buildCell(state: DomainState, ctx: EvalCtx, evals: Record<string, AssignmentEval>, storeId: string, date: ISODate, onDate?: Iterable<Assignment>): CellCoverage {
   const c = state.cellCounts[cellKey(storeId, date)];
   const cell: CellCoverage = {
-    storeId, date, required: requiredFor(state, ctx.reqIdx, storeId, date), counted: 0, unverified: 0,
+    storeId, date, required: requiredMemo(state, ctx, storeId, date), counted: 0, unverified: 0,
     locum: c?.locum ?? 0, acceptedShort: c?.acceptedShort ?? 0, covered: 0, open: 0, surplus: 0,
   };
   for (const a of onDate ?? Object.values(state.assignments)) {
@@ -242,18 +277,20 @@ export function evaluate(state: DomainState, asOf: ISODate, opts: EvalOptions = 
 }
 
 /** Re-judge only what changed (with `only`, just the assignments it accepts, such as one date: right when they kept the same set of days, as a move between stores does): the listed pharmacists' assignments (their double booking and day runs) and the listed cells. Used by search; the rest is reused from `prev`. */
-export function evalDelta(state: DomainState, ctx: EvalCtx, prev: Evaluation, pharmacists: string[], cellKeys: string[], idx?: AsgIndex, only?: (a: Assignment) => boolean): Evaluation {
-  // Prototype chaining instead of copying: the search only reads by key, and each node adds a few entries over its parent's.
-  const assignments: Record<string, AssignmentEval> = Object.create(prev.assignments);
+export function evalDelta(state: DomainState, ctx: EvalCtx, prev: Evaluation, pharmacists: string[], cellKeys: string[], idx?: AsgIndex, only?: (a: Assignment) => boolean, flat = false): Evaluation {
+  // Prototype chaining instead of copying: callers only read by key, and each result adds a few entries over its parent's. When the parent is small (a search over a day or two)
+  // a plain copy is faster, because V8 is slow to make every parent into a prototype; `flat` asks for the copy.
+  const assignments: Record<string, AssignmentEval> = flat ? { ...prev.assignments } : Object.create(prev.assignments);
   const wanted = new Set(pharmacists);
   const lists = new Map<string, Assignment[]>();
   if (idx) for (const ph of wanted) lists.set(ph, [...idx.ofPharmacist(ph)]);
   else for (const a of Object.values(state.assignments)) if (wanted.has(a.pharmacistId)) (lists.get(a.pharmacistId) ?? lists.set(a.pharmacistId, []).get(a.pharmacistId)!).push(a);
   for (const l of lists.values()) {
-    l.sort((x, y) => cmp(x.id, y.id));
+    // A list read from the caller's index is judged as it comes: nothing in the results depends on the order (the order of the keys in the result object is not read by the callers that pass an index).
+    if (!idx) l.sort((x, y) => cmp(x.id, y.id));
     for (const e of evalPharmacist(state, ctx, l, only ?? (() => true))) assignments[e.assignmentId] = e;
   }
-  const cells: Record<string, CellCoverage> = Object.create(prev.cells);
+  const cells: Record<string, CellCoverage> = flat ? { ...prev.cells } : Object.create(prev.cells);
   for (const k of new Set(cellKeys)) {
     const [storeId, date] = k.split("|") as [string, ISODate];
     cells[k] = buildCell(state, ctx, assignments, storeId, date, idx?.onDate(date));

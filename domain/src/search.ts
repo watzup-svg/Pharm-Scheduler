@@ -101,7 +101,9 @@ export function makePrep(base: DomainState, range: { from: ISODate; to: ISODate 
   const onDate2 = (d: ISODate) => [...(byDate.get(d)?.values() ?? none)];
   const set = (a: Assignment) => { work.assignments[a.id] = a; put(byPh, a.pharmacistId, a); put(byDate, a.date, a); };
   const del = (a: Assignment) => { delete work.assignments[a.id]; byPh.get(a.pharmacistId)?.delete(a.id); byDate.get(a.date)?.delete(a.id); };
-  return { base, from: range.from, to: range.to, ctx, byPh, byDate, basePh, none, workIdx, baseIdx, baseEv, baseFailsFor, onDatesOf, work, onDate2, set, del, put };
+  // A search over a day or two keeps small evaluations, which are cheaper to copy than to chain (see evalDelta).
+  const flat = rangeDates.length <= 3;
+  return { base, flat, from: range.from, to: range.to, ctx, byPh, byDate, basePh, none, workIdx, baseIdx, baseEv, baseFailsFor, onDatesOf, work, onDate2, set, del, put };
 }
 
 type Leaf = { option: RepairOption; clean: boolean; key: string; sortKey: string[]; tuple: [string, string, string][] };
@@ -211,7 +213,7 @@ function searchCore(base: DomainState, gaps: Gap[], scope: Scope, asOf: ISODate,
         const undo = applyInPlace(c.edit, onDate);
         if (!undo) continue;
         try {
-        const ev2 = evalDelta(state, ctx, evc, [c.ph], c.from ? [ck(head.storeId, head.date), ck(c.from, head.date)] : [ck(head.storeId, head.date)], workIdx, c.from ? (a) => a.date === head.date : undefined);
+        const ev2 = evalDelta(state, ctx, evc, [c.ph], c.from ? [ck(head.storeId, head.date), ck(c.from, head.date)] : [ck(head.storeId, head.date)], workIdx, c.from ? (a) => a.date === head.date : undefined, P.flat);
         const mine = c.fromAsg ? state.assignments[c.fromAsg] : onDate2(head.date).find((a) => a.pharmacistId === c.ph && a.storeId === head.storeId);
         const me = mine && ev2.assignments[mine.id];
         if (!me) continue;

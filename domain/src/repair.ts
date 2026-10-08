@@ -7,7 +7,7 @@ import type { ISODate } from "./types.ts";
 export const SCOPE_DEFAULT: Scope = { chain: 3, changed: 4, offDuty: false };
 export const SCOPE_WIDER: Scope = { chain: 5, changed: 8, offDuty: true };
 export const MAX_GAPS = 5;
-export const WIDER_BUDGET_FACTOR = 10;
+export const WIDER_BUDGET_FACTOR = 20;
 
 export function repair(world: World, gaps: Gap[], opts: RepairOpts, asOf: ISODate): RepairResult {
   const state = world.state;
