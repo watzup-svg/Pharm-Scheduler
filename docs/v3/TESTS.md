@@ -31,6 +31,7 @@ Every test is a plain Node or Playwright script: deterministic, no network, no m
 | `node e2e/v3-hero.mjs` | Schedule hero: icon, headline, context and people for each kind of cell and list row; no buttons; "No cell selected" | 3 s |
 | `node e2e/v3-ahead.mjs` | Plan ahead: month list with statuses, open any month, Build and Post a month, edit after posting and see the change counted, post the next revision | 40 s |
 | `node e2e/v3-unity.mjs` | One product: at most one black main action per screen, the shared page frame and pill selector, store badges and person discs in lists, one guide button opening the part for the current screen | 12 s |
+| `node e2e/v3-multimove.mjs` | The wider (multi-move) search runs by itself for an open cell and for Swap in; swap plans start with the removal | 15 s |
 | `node e2e/v3-patterns.mjs` | Patterns: the typical month, click a day to edit a pattern, the alert when a pattern does not fit the stores, replace-and-undo | 10 s |
 | `npm run size:v3` | Bundle size budget and dependency licences | 2 s |
 | `npm run build:repro` | Two builds are byte-identical | 15 s |

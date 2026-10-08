@@ -40,7 +40,6 @@ check("open cell says Needs 1 more", (await status()) === "Needs 1 more", await 
 const rows = insp.locator('ul[aria-label="Who can work here"] > li');
 check("best three candidates render", (await rows.count()) === 3, String(await rows.count()));
 check("Show all N is offered", await insp.getByRole("button", { name: /^Show all \d+/ }).isVisible());
-check("Search wider is hidden until the full list is open", (await insp.getByRole("button", { name: "Search wider" }).count()) === 0);
 check("each candidate has a one-line consequence and a button", (await rows.locator("button").count()) === 3 && /(Free|At \w+ today|Not|Drive)/.test(await rows.first().innerText()), await rows.first().innerText());
 check("no separate Find cover button any more", (await insp.getByRole("button", { name: "Find cover", exact: true }).count()) === 0, String(await insp.getByRole("button", { name: "Find cover" }).evaluateAll((e) => e.map((x) => x.outerHTML.slice(0, 120)))));
 check("Details and More for this day start collapsed", (await insp.getByRole("button", { name: "More for this day" }).getAttribute("aria-expanded")) === "false");
@@ -199,13 +198,13 @@ await get(({ c, s2People }) => {
 }, { c: cell, s2People });
 await settle();
 { const all = insp.getByRole("button", { name: /^Show all \d+/ }); if (await all.count()) await all.click(); }
-await insp.getByRole("button", { name: "Search wider" }).click(); await settle();
+await page.waitForSelector("[data-multimove-status='done'], [data-multimove-status='none'], [data-multimove] ol", { timeout: 60000 }); await settle();
 const options = insp.locator("ol > li");
 const nOpt = await options.count();
 if (false) console.log(await get((c) => JSON.stringify(Object.values(window.__v3.app.getState().world.state.assignments).filter((a) => a.date === c.date && ["S2", "S10"].includes(a.storeId))) + JSON.stringify(window.__v3.app.getState().repairResult?.result).slice(0, 300), cell));
 const resText = await insp.innerText();
 check("Find cover shows options or a plain message", nOpt > 0 || /No solution|Cannot evaluate|Search limit|Nothing/.test(resText), resText.slice(0, 200));
-check("Search wider carries the day-off caveat", await insp.getByRole("button", { name: "Search wider" }).isVisible() && /day off to take extra shifts/.test(resText));
+check("the wider search runs by itself and carries the day-off caveat", /day off to take an extra shift/.test(resText));
 await page.screenshot({ path: shot });
 if (nOpt > 0) {
   check("each option shows before and after for every store it touches", (await options.first().locator("[data-effect] li").count()) >= 1 && /→/.test(await options.first().locator("[data-effect]").innerText()));
@@ -214,11 +213,10 @@ if (nOpt > 0) {
   check("Preview opens a proposal", await get(() => !!window.__v3.app.getState().world.session.proposal));
   check("Inspector says to accept or discard first", /Accept or discard the preview first/.test(await insp.innerText()));
   check("Place buttons are disabled while previewing", (await insp.locator('button[aria-label^="Place: "]:not([disabled]), button[aria-label^="Move here: "]:not([disabled])').count()) === 0);
-  check("steppers and Find cover are disabled while previewing", await insp.getByRole("button", { name: "More: Accept being short" }).isDisabled() && await insp.getByRole("button", { name: "Search wider" }).isDisabled());
+  check("steppers and Find cover are disabled while previewing", await insp.getByRole("button", { name: "More: Accept being short" }).isDisabled() && await insp.getByRole("button", { name: "Search again" }).isDisabled());
   await get(() => window.__v3.app.getState().discardProposal()); await settle();
-  check("controls come back after discarding", await insp.getByRole("button", { name: "Search wider" }).isEnabled());
+  check("controls come back after discarding", await insp.getByRole("button", { name: "Search again" }).isEnabled());
 } else check("(no options to preview)", false);
-await insp.getByRole("button", { name: "Clear these results" }).click(); await settle();
 
 // 8. pharmacist day
 const ph = await get(() => {

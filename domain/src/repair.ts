@@ -6,7 +6,10 @@ import type { ISODate } from "./types.ts";
 
 export const SCOPE_DEFAULT: Scope = { chain: 3, changed: 4, offDuty: false };
 export const SCOPE_WIDER: Scope = { chain: 5, changed: 8, offDuty: true };
+export const SCOPE_MEDIUM: Scope = { chain: 4, changed: 6, offDuty: true };
 export const MAX_GAPS = 5;
+export const SCOPE_DEFAULT_OFFDUTY: Scope = { chain: 3, changed: 4, offDuty: true };
+export const WIDER_BUDGET_FACTOR = 60;
 
 export function repair(world: World, gaps: Gap[], opts: RepairOpts, asOf: ISODate): RepairResult {
   const state = world.state;
@@ -22,7 +25,16 @@ export function repair(world: World, gaps: Gap[], opts: RepairOpts, asOf: ISODat
   const base: RepairResult = { status: "options", message: "", options: [], excludedUnknownTravel: [], gapsUsed: used, gapsDropped: dropped };
   if (!used.length) return { ...base, message: "Nothing to repair." };
 
-  const out = searchGaps(state, used, opts.wider ? SCOPE_WIDER : SCOPE_DEFAULT, asOf, state.config.searchNodeLimit, opts.showNearMiss === true);
+  // The wider search looks further (longer chains, more people), so it is given more room before it stops.
+  const budget = state.config.searchNodeLimit * (opts.wider ? WIDER_BUDGET_FACTOR : 1);
+  let out = searchGaps(state, used, opts.wider ? SCOPE_WIDER : SCOPE_DEFAULT, asOf, budget, opts.showNearMiss === true);
+  // The longest chains can run out of room on a busy day. Rather than give up, try slightly shorter chains, which finish.
+  if (opts.wider && out.clean.length === 0 && out.limitHit) {
+    for (const sc of [SCOPE_MEDIUM, SCOPE_DEFAULT_OFFDUTY]) {
+      const shorter = searchGaps(state, used, sc, asOf, budget, opts.showNearMiss === true);
+      if (shorter.clean.length) { out = shorter; break; }
+    }
+  }
   const r: RepairResult = { ...base, excludedUnknownTravel: out.excludedUnknownTravel, ...(out.limitHit ? { limitHit: true } : {}) };
   if (out.clean.length) {
     r.options = out.clean.slice(0, 3);

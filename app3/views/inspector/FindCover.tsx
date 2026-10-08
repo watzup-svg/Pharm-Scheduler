@@ -1,5 +1,5 @@
-// "Find cover": ask the domain's repair for options for this open day, show them in plain words, and preview one. Nothing is applied here.
-import { useState } from "react";
+// Plans with several moves: the domain's wider repair, run automatically for an open day (or a swap), shown in plain words with a before and after for every store it touches. Nothing is applied here.
+import { useEffect, useMemo, useState } from "react";
 import type { RepairOption } from "@domain";
 import { useApp } from "../../store.ts";
 import { Chip } from "../../ui/primitives.tsx";
@@ -7,44 +7,63 @@ import { codeOf, nameOf, numWord, plural, type Ctx } from "./lib.ts";
 import { Act } from "./ui.tsx";
 import { OptionEffect } from "../chrome/OptionEffect.tsx";
 
-export function SearchWider({ ctx }: { ctx: Ctx }) {
+/**
+ * Plans with several moves for this day (or for this day once a swap has taken someone out): searched automatically as soon as the day is open,
+ * so the DM does not have to ask. People on a day off may be asked to take an extra shift; nothing changes until a plan is accepted.
+ */
+export function MultiMovePlans({ ctx, swapAssignmentId }: { ctx: Ctx; swapAssignmentId?: string | null }) {
   const { state, lock, storeId, date, asOf } = ctx;
   const rr = useApp((s) => s.repairResult);
+  const running = useApp((s) => s.busy);
   const [near, setNear] = useState(false);
   const past = date < asOf;
-  const mine = !!rr && rr.wider && rr.gaps.some((g) => g.storeId === storeId && g.date === date);
-  const [busy, setBusy] = useState(false);
-  const running = useApp((s) => s.busy);
-  // The search runs in the page; let "Searching..." paint first, since a wider search can take a while.
-  const run = () => {
-    setNear(false);
-    setBusy(true);
-    setTimeout(() => { try { useApp.getState().runRepair([{ storeId, date }], true); } finally { setBusy(false); } }, 30);
-  };
+  const prefix = useMemo(() => (swapAssignmentId ? [{ t: "remove" as const, assignmentId: swapAssignmentId }] : undefined), [swapAssignmentId]);
+  const swapKey = prefix ? JSON.stringify(prefix) : undefined;
+  const removedPid = swapAssignmentId ? state.assignments[swapAssignmentId]?.pharmacistId : undefined;
+  const mine = !!rr && rr.wider && rr.swap === swapKey && rr.gaps.some((g) => g.storeId === storeId && g.date === date);
+  const [asked, setAsked] = useState(false);
+  const run = () => { setNear(false); void useApp.getState().runRepair([{ storeId, date }], true, prefix, true); };
 
+  // Ask automatically once the day (or the swap) is on screen and nothing else is running; ask again when the schedule changes.
+  useEffect(() => {
+    setAsked(false);
+    if (lock || past) return;
+    let t: ReturnType<typeof setTimeout>;
+    const tryRun = () => {
+      if (useApp.getState().busy) { t = setTimeout(tryRun, 500); return; }
+      setAsked(true);
+      run();
+    };
+    t = setTimeout(tryRun, 350);
+    return () => clearTimeout(t);
+  }, [state, storeId, date, swapKey, lock, past]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const options = (mine && rr ? rr.result.options : []).filter((o) => !(removedPid && o.edits.some((e) => e.t === "place" && e.pharmacistId === removedPid && e.storeId === storeId && e.date === date)));
+  const searching = !!running && !mine;
   return (
-    <div className="mt-3 rounded-md bg-fill p-2 text-sm">
-      <p className="text-xs">Nobody above fits? Searching wider tries plans with several moves, and may ask people on their day off to take extra shifts. Nothing changes until you accept.</p>
-      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        <Act tone="ink" disabled={!!lock || past || busy} title={lock ?? (past ? "This day has passed" : undefined)} onClick={run}>{busy ? "Searching..." : "Search wider"}</Act>
-        {running && <Act onClick={() => useApp.getState().cancelEngine()}>Cancel</Act>}
+    <div className="mt-3 rounded-md bg-fill p-2 text-sm" data-multimove aria-live="polite">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs"><b>Plans with several moves.</b> Where nobody above fits, this tries moving a few people around, and may ask someone on a day off to take an extra shift. Nothing changes until you accept.</p>
+        <Act disabled={!!lock || past || !!running} title={lock ?? (past ? "This day has passed" : undefined)} onClick={run}>Search again</Act>
       </div>
+      {(searching || (asked && !mine && running)) && <p className="mt-1.5 text-xs text-muted" data-multimove-status="searching">Looking for plans…</p>}
+      {running && <div className="mt-1.5"><Act onClick={() => useApp.getState().cancelEngine()}>Cancel</Act></div>}
       {mine && rr && (
-        <div className="mt-2" aria-live="polite">
+        <div className="mt-2">
           {rr.gaps.length > 1 && <p className="mb-1 text-xs text-muted">This search looked at {numWord(rr.gaps.length)} open days together.</p>}
-          {rr.result.message && <p>{rr.result.message}</p>}
-          {rr.result.status === "options" && rr.result.options.length > 0 && (
+          {rr.result.message && <p data-multimove-status="done">{rr.result.message}</p>}
+          {options.length > 0 && (
             <ol className="mt-1 flex flex-col gap-2">
-              {rr.result.options.map((o, i) => <Option key={i} ctx={ctx} option={o} n={i + 1} />)}
+              {options.map((o, i) => <Option key={i} ctx={ctx} option={o} n={i + 1} />)}
             </ol>
           )}
-          {rr.result.options.length === 0 && rr.result.status === "none" && <p className="mt-1 text-muted">Nothing fits without breaking a rule.</p>}
+          {options.length === 0 && rr.result.status !== "limit" && rr.result.status !== "cannot-evaluate" && <p className="mt-1 text-muted" data-multimove-status="none">No plan with several moves fits without breaking a rule.</p>}
           {rr.result.excludedUnknownTravel.length > 0 && (
             <p className="mt-2 text-xs text-muted">
               Not considered: drive time not known ({[...new Set(rr.result.excludedUnknownTravel.map((x) => `${state.pharmacists[x.pharmacistId]?.initials ?? x.pharmacistId} to ${codeOf(state, x.storeId)}`))].join(", ")}).
             </p>
           )}
-          {rr.result.nearMiss && (
+          {rr.result.nearMiss && options.length === 0 && (
             <div className="mt-2">
               <Act pressed={near} onClick={() => setNear(!near)}>{near ? "Hide the closest option" : "Show the closest option"}</Act>
               {near && (
@@ -55,7 +74,6 @@ export function SearchWider({ ctx }: { ctx: Ctx }) {
               )}
             </div>
           )}
-          <div className="mt-2"><Act onClick={() => useApp.setState({ repairResult: null })}>Clear these results</Act></div>
         </div>
       )}
     </div>

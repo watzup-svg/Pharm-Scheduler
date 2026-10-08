@@ -130,7 +130,7 @@ await step("open a gap, Find cover, preview option 1, Accept", async () => {
     await page.locator(`[role="gridcell"][data-store="${g.storeId}"][data-date="${g.date}"]`).click();
     const all = inspector.getByRole("button", { name: /^Show all \d+/ });
     if (await all.count()) await all.click();
-    await inspector.getByRole("button", { name: "Search wider", exact: true }).click();
+    // the wider search starts by itself when the cell is selected
     await page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && (a.repairResult || a.notice?.kind === "error"); }, null, { timeout: 90000 });
     const preview = inspector.getByRole("button", { name: "Preview option 1", exact: true });
     if ((await preview.count()) === 0) { await app(() => window.__v3.app.setState({ repairResult: null })); continue; }

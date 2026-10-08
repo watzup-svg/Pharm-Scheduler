@@ -9,7 +9,7 @@ import { Section } from "../../ui/primitives.tsx";
 import { Assignments } from "./Assignments.tsx";
 import { CellControls } from "./CellControls.tsx";
 import { Choices } from "./Choices.tsx";
-import { SearchWider } from "./FindCover.tsx";
+import { MultiMovePlans } from "./FindCover.tsx";
 import { numWord, useLock, weekdayName, type Ctx } from "./lib.ts";
 import { Act, Disclosure } from "./ui.tsx";
 
@@ -60,7 +60,10 @@ export function StoreCell({ storeId, date }: { storeId: string; date: ISODate })
             </div>
           )}
           {(swapping || !hideNext) && (
-            <Choices key={swapId ?? "add"} ctx={ctx} replace={swapping} onDone={() => setSwapId(null)} footer={swapping ? undefined : <SearchWider ctx={ctx} />} />
+            <>
+              <Choices key={swapId ?? "add"} ctx={ctx} replace={swapping} onDone={() => setSwapId(null)} />
+              <MultiMovePlans key={swapId ?? "add"} ctx={ctx} swapAssignmentId={swapping?.id ?? null} />
+            </>
           )}
         </Section>
       )}

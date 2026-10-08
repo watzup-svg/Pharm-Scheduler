@@ -87,7 +87,11 @@ async function optionGap(S) {
 async function clickFind(S, opts) {
   const all = inspector(S).getByRole("button", { name: /^Show all \d+/ });
   if (await all.count()) await all.click();
-  await inspector(S).getByRole("button", { name: "Search wider", exact: true }).click(opts);
+  // The wider search starts by itself; wait until it has settled, then ask again by hand.
+  const again = inspector(S).getByRole("button", { name: "Search again", exact: true });
+  await again.waitFor({ state: "visible" });
+  await S.page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 90000 }).catch(() => {});
+  await again.click(opts);
 }
 
 /** The common verdict. `extra` lists scenario-specific problems already found. */
@@ -239,13 +243,18 @@ await sc("edit during Find cover", async () => {
   await li.getByRole("button").click();
   await S.page.locator('aside[aria-label="Inspector"]').locator(`[data-unavail="${id}"]`).getByRole("button", { name: /^Approve/ }).click();
   const st = await get(S, (u) => window.__v3.app.getState().world.state.unavailability[u].status, id);
-  check("Approve during Find cover is refused (record unchanged, notice says wait)", st === "Requested" && /Wait for Find cover to finish/.test(await notice(S)), `${st} / ${await notice(S)}`);
+  // A cover search is only a suggestion: acting on the schedule stops it quietly instead of making the DM wait.
+  check("Approve during Find cover goes through and stops the search quietly", st === "Approved" && !/stopped|Wait for/.test(await notice(S)) && (await get(S, () => !window.__v3.app.getState().busy)), `${st} / ${await notice(S)}`);
+  await header(S).getByRole("button", { name: /^Schedule/ }).click();
+  await clickCell(S, g);
+  await clickFind(S);
+  await S.page.waitForFunction(() => window.__v3.app.getState().busy === "Find cover");
   // (b) Undo is not blocked: it changes the schedule, so the search result must be dropped
   await header(S).getByRole("button", { name: "Undo" }).click();
   await delay(S, 0);
   const w = await verdict(S, "Undo during Find cover: the stale result is dropped", []);
   check("no cover options kept for a schedule that no longer exists", !(await get(S, () => window.__v3.app.getState().repairResult)));
-  check("exactly seed + undo in History", (await kinds(S)).join() === "manual,undo", (await kinds(S)).join());
+  check("exactly seed + undo in History", (await kinds(S)).join() === "manual,manual,undo", (await kinds(S)).join());
   check("the stale notice names Find cover", /changed while Find cover ran/.test(await notice(S)), await notice(S));
   void w;
   await done(S);
@@ -513,6 +522,9 @@ if (CHROMIUM) await sc("worker killed mid-search", async () => {
   await clickFind(S);
   await get(S, () => window.__v3.killWorker());
   await S.page.waitForFunction(() => { const a = window.__v3.app.getState(); return !a.busy && (a.repairResult || a.notice); }, null, { timeout: 60000 });
+  // (the open cell's own wider search must not be holding the engine when the Builds start)
+  await get(S, () => window.__v3.app.getState().select(null));
+  await S.page.waitForFunction(() => !window.__v3.app.getState().busy, null, { timeout: 60000 });
   // three deaths in a row: the engine keeps working (in the page when the worker cannot be trusted)
   for (let i = 0; i < 4; i++) {
     const ok = await get(S, async () => { const a = window.__v3.app.getState(); const p = a.runBuild(); window.__v3.killWorker(); await p; const b = window.__v3.app.getState(); const had = !!b.world.session.proposal; if (had) b.discardProposal(); return { busy: window.__v3.app.getState().busy, notice: b.notice?.kind ?? "" }; });

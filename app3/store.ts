@@ -40,7 +40,7 @@ export type AppState = {
   leftTab: LeftTab;
   selection: Selection;
   notice: Notice | null;
-  repairResult: { gaps: { storeId: string; date: ISODate }[]; wider: boolean; result: RepairResult } | null;
+  repairResult: { gaps: { storeId: string; date: ISODate }[]; wider: boolean; result: RepairResult; /** Set when the search was for a swap: the placement taken out first. */ swap?: string; /** Shown inside the Inspector only, not in the queue. */ inline?: boolean } | null;
   /** When a file opened read-only because the data is inconsistent. */
   readOnlyProblems: string[] | null;
   /** Name of the search running right now (Build, Improve, Find cover), or null. */
@@ -73,7 +73,8 @@ export type AppState = {
   // engine
   runBuild(range?: { from: ISODate; to: ISODate }): Promise<void>;
   runImprove(includeNext14?: boolean): Promise<void>;
-  runRepair(gaps: { storeId: string; date: ISODate }[], wider?: boolean): Promise<void>;
+  /** `prefix`: edits to try first (a swap takes the placement out); every option then starts with them, so Preview applies the whole plan. */
+  runRepair(gaps: { storeId: string; date: ISODate }[], wider?: boolean, prefix?: Edit[], inline?: boolean): Promise<void>;
   /** Stop the search that is running; nothing changes. */
   cancelEngine(): void;
   previewRepair(option: RepairOption): void;
@@ -111,8 +112,9 @@ export const useApp = create<AppState>((set, get) => {
   // One search at a time; Cancel aborts it. The result is used only if the schedule is still the one that was sent.
   let abort: AbortController | null = null;
   const same = (w0: World) => { const w = get().world; return !!w && (w === w0 || api.stateHash(w.state) === api.stateHash(w0.state)); };
+  let quietCancel = false;
   const failure = (what: string, e: unknown) => {
-    if (isCancel(e)) { diag("engine", `${what} cancelled`); get().say("info", `${what} stopped. Nothing changed.`); return; }
+    if (isCancel(e)) { diag("engine", `${what} cancelled`); if (quietCancel) { quietCancel = false; return; } get().say("info", `${what} stopped. Nothing changed.`); return; }
     diag("error", `${what}: ${String((e as Error)?.message ?? e)}`);
     get().say("error", String((e as Error)?.message ?? e));
   };
@@ -179,7 +181,9 @@ export const useApp = create<AppState>((set, get) => {
     commit: (edits, label) => {
       const ro = blocked();
       if (ro) { get().say("error", ro); return false; }
-      if (get().busy) { get().say("info", `Wait for ${get().busy} to finish.`); return false; }
+      // A cover search is only a suggestion, so acting on the cell stops it rather than making the DM wait.
+      if (get().busy === "Find cover") { quietCancel = true; get().cancelEngine(); }
+      else if (get().busy) { get().say("info", `Wait for ${get().busy} to finish.`); return false; }
       const w0 = world();
       return apply(api.commit(w0, edits, { kind: "manual", ...(label ? { label } : {}) }), label ?? describeEdits(w0.state, edits));
     },
@@ -225,23 +229,31 @@ export const useApp = create<AppState>((set, get) => {
         if ("refused" in o) get().say("error", o.reason); else set({ world: o });
       } catch (e) { failure("Improve", e); } finally { abort = null; set({ busy: null }); }
     },
-    runRepair: async (gaps, wider = false) => {
+    runRepair: async (gaps, wider = false, prefix, inline = false) => {
       const s = get();
       if (s.busy) return;
       const w0 = world();
+      let w1 = w0;
+      if (prefix?.length) {
+        const st = applyScratch(w0.state, prefix);
+        if ("refused" in st) return;
+        w1 = { ...w0, state: st };
+      }
+      const swap = prefix?.length ? JSON.stringify(prefix) : undefined;
+      const lift = (r: RepairResult): RepairResult => (!prefix?.length ? r : { ...r, options: r.options.map((o) => ({ ...o, edits: [...prefix, ...o.edits] })), ...(r.nearMiss ? { nearMiss: { ...r.nearMiss, edits: [...prefix, ...r.nearMiss.edits] } } : {}) });
       abort = new AbortController();
       const signal = abort.signal;
       diag("action", `repair ${gaps.length} gap(s)${wider ? " wider" : ""}`);
       set({ busy: "Find cover" });
       try {
-        const result = await callEngine<RepairResult>({ op: "repair", world: w0, gaps, opts: { wider }, asOf: s.asOf }, { signal });
+        const result = lift(await callEngine<RepairResult>({ op: "repair", world: w1, gaps, opts: { wider }, asOf: s.asOf }, { signal }));
         if (!same(w0)) { stale("Find cover"); return; }
-        set({ repairResult: { gaps, wider, result } });
+        set({ repairResult: { gaps, wider, result, ...(swap ? { swap } : {}), ...(inline ? { inline } : {}) } });
         // The closest option costs a full-depth search, so it is fetched after the answer is on screen, only when there is no clean option.
         if (result.status === "none") {
-          const full = await callEngine<RepairResult>({ op: "repair", world: w0, gaps, opts: { wider, showNearMiss: true }, asOf: s.asOf }, { signal });
+          const full = lift(await callEngine<RepairResult>({ op: "repair", world: w1, gaps, opts: { wider, showNearMiss: true }, asOf: s.asOf }, { signal }));
           const cur = get().repairResult;
-          if (same(w0) && cur && cur.gaps === gaps) set({ repairResult: { gaps, wider, result: full } });
+          if (same(w0) && cur && cur.gaps === gaps) set({ repairResult: { gaps, wider, result: full, ...(swap ? { swap } : {}), ...(inline ? { inline } : {}) } });
         }
       } catch (e) { failure("Find cover", e); } finally { abort = null; set({ busy: null }); }
     },

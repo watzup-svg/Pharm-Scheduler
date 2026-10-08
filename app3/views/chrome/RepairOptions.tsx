@@ -8,7 +8,7 @@ export function RepairOptions({ where }: { where: "queue" | "out" }) {
   const rr = useApp((s) => s.repairResult);
   const world = useApp((s) => s.world);
   const origin = useChrome((s) => s.repairOrigin);
-  if (!rr || !world || origin !== where || world.session.proposal) return null;
+  if (!rr || !world || origin !== where || rr.inline || world.session.proposal) return null;
   const r = rr.result;
   const state = world.state;
   const used = r.gapsUsed.map((g) => `${codeOf(state, g.storeId)} ${fmtDate(g.date)}`).join(", ");
