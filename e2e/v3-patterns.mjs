@@ -56,6 +56,14 @@ await page.waitForTimeout(200);
 const restored = await get((id) => Object.values(window.__v3.app.getState().world.state.standing).filter((t) => t.pharmacistId === id).map((t) => t.recurrence.weekdays.join()), pid);
 check("Undo puts the old pattern back", restored.length === before.length && restored[0] === before[0].wd);
 
+// 9. An empty start date (found by the random-click stress): a clear message, no crash.
+{
+  const n0 = errors.length;
+  await builder.getByLabel("Applies from").fill("");
+  await builder.getByRole("button", { name: "Add pattern" }).click();
+  await page.waitForTimeout(200);
+  check("an empty Applies from date shows a message and does not crash", errors.length === n0 && (await page.getByText("Pick the first date the pattern applies.").count()) >= 1, errors.slice(n0).join(" | "));
+}
 check("no console errors", errors.length === 0, errors.join(" | "));
 await b.close(); s.close();
 process.exit(failed() ? 1 : 0);

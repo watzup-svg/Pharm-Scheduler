@@ -280,7 +280,7 @@ function PatternBuilder({ load }: { load: { pid: string; date: ISODate; n: numbe
   };
   const anyError = Object.values(errors).some(Boolean);
   const pats = useMemo(() => (phId && isValidDate(from) ? patternsFromGrid(cells, cycle, from, phId, nth) : { work: [], off: [] }), [cells, cycle, from, phId, nth]);
-  const offEnd = to || addDays(from, HORIZON_WEEKS * 7 - 1);
+  const offEnd = to || addDays(isValidDate(from) ? from : asOf, HORIZON_WEEKS * 7 - 1);
 
   // A four-week picture of what this gives: work days with their store code, usual days off in rose, and what to look at.
   type Day = { date: ISODate; kind?: "work" | "off"; code?: string; issue?: string; text?: string };

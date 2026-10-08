@@ -97,7 +97,7 @@ const PICKER_SHIM = `
       return {
         root: !!(q('#root') && q('#root').children.length),
         main: !!q('main') && q('main').children.length > 0,
-        inspector: !!q('aside[aria-label=Inspector]'),
+        inspector: !!q('aside[aria-label=Inspector]') || !!q('button[aria-label="Open the details panel"]'), // a folded panel is a valid state: its tab is there
         grid: !!q('[role=grid]') || !!q('section[aria-label="One day"]'), // the Day view shows tiles, not a grid
         gridRows: document.querySelectorAll('[role=row]').length,
         text: (q('main') && q('main').innerText || '').slice(0, 200),
