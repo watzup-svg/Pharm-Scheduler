@@ -22,10 +22,10 @@ const scale = [1, 5, 15][L];
 const STRIP = ["--experimental-strip-types", "--no-warnings"];
 // soft = the suite stops starting new cases after this many seconds (reported as "not started"); the hard timeout kills it.
 const SUITES = [
-  { name: "browser", file: "suites/browser.mjs", soft: [170, 700, 1500][L], what: "monkey, 120-store UI, fault injection, memory soak (Chromium)" },
+  { name: "browser", file: "suites/browser.mjs", soft: [170, 700, 2000][L], what: "monkey, 120-store UI, fault injection, memory soak (Chromium)" },
   { name: "search-soak", file: "suites/search-soak.ts", soft: [80, 380, 1100][L], what: "Build / Repair / Improve over generated months" },
   { name: "domain-fuzz", file: "suites/domain-fuzz.ts", soft: [60, 300, 1400][L], what: "random edits, undo/redo, checkpoints on 18/60/120 stores" },
-  { name: "hostile-files", file: "suites/hostile-files.ts", soft: [60, 260, 700][L], what: "damaged save files must be refused or load clean" },
+  { name: "hostile-files", file: "suites/hostile-files.ts", soft: [60, 260, 900][L], what: "damaged save files must be refused or load clean" },
   { name: "persistence-torture", file: "suites/persistence-torture.ts", soft: [50, 220, 1200][L], what: "failed writes, full storage, kills, stale copies" },
   { name: "determinism", file: "suites/determinism.ts", soft: [45, 200, 600][L], what: "same input => same hashes, in process and in a fresh one" },
 ];
