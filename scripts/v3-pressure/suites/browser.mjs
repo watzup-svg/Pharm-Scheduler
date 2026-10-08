@@ -28,8 +28,10 @@ const B = {
   cellClick: 600,
   keyStep: 500,
   wallChange: 1000, // a wall control (week, month, People / Stores) until two frames after
-  frameGap: 700, // longest main-thread stall while the engine works
-  inputWhileBusy: 600, // a UI click answered while a search runs
+  // At the largest size (60 stores x 250 people) the app itself stalls 600-870 ms while Build runs and its result is drawn (measured on the code from before the
+  // suggestion work too), so these sit above that. An engine on the main thread would stall for the whole Build (7 s), which is what they are here to catch.
+  frameGap: 1200, // longest main-thread stall while the engine works
+  inputWhileBusy: 1000, // a UI click answered while a search runs
 };
 // Real use is 16-18 stores; low and medium go well past that, high is the 120-store extreme.
 // Real use is 16-18 stores. Low and medium go well past that; high is 60 stores / 250 people (3x), enough to expose the super-linear
