@@ -6,7 +6,7 @@
     "dev": "vite dev -c vite.spa.config.ts --host 0.0.0.0 --port 3000",
     "build": "vite build -c vite.spa.config.ts",
     "typecheck": "tsc --noEmit",
-    "check": "tsc --noEmit && npm run test:schedule",
+    "check": "tsc --noEmit && npm run test:schedule && npm run test:domain",
     "test:schedule": "node --experimental-strip-types --test src/lib/*.test.ts src/lib/schedule/*.test.ts src/store/*.test.ts",
     "build:trial": "vite build -c vite.spa.config.ts",
     "build:real": "vite build -c vite.spa.config.ts --mode real",
@@ -23,7 +23,9 @@
     "lint": "eslint src",
     "audit": "node scripts/audit.mjs",
     "coverage": "node scripts/coverage.mjs",
-    "pressure": "node scripts/pressure.mjs"
+    "pressure": "node scripts/pressure.mjs",
+    "test:domain": "node --experimental-strip-types --test src/domain/*.test.ts spike/persistence/*.test.ts",
+    "spike:persistence": "vite build -c spike/persistence/vite.config.ts"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.3.0",

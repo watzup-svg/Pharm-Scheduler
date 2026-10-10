@@ -4,3 +4,4 @@ dist-spa
 dist-real
 test-logs
 dist
+dist-persistence-spike

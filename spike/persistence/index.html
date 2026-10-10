@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Persistence spike</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 16px; max-width: 900px; color: #1b1b1b; background: #fff; }
+  button, input { font: inherit; margin: 2px 4px 2px 0; padding: 4px 8px; }
+  pre { background: #f4f4f4; padding: 8px; overflow: auto; max-height: 260px; }
+  .row { margin: 8px 0; }
+  .warn { color: #8a4b00; }
+  h1 { font-size: 18px; }
+  @media (prefers-color-scheme: dark) { body { background: #151515; color: #e8e8e8; } pre { background: #222; } }
+</style>
+</head>
+<body>
+<h1>Persistence spike (not the app)</h1>
+<p>Throwaway page for Phase 1. It keeps a small database in memory, copies every change to this browser, and saves to a file you choose.</p>
+<div class="row" id="status" aria-live="polite">Starting…</div>
+<div class="row">
+  <button id="new">New database</button>
+  <button id="edit1">Add 1 edit</button>
+  <button id="edit100">Add 100 edits</button>
+  <button id="cp">Checkpoint</button>
+  <button id="revert">Revert to last checkpoint</button>
+</div>
+<div class="row">
+  <button id="open">Open file…</button>
+  <button id="save">Save</button>
+  <button id="saveas">Save As…</button>
+  <label><input type="checkbox" id="auto"> Autosave to the file 2 s after a change</label>
+</div>
+<div class="row" id="fallback">
+  <span>No file access in this browser? </span>
+  <input type="file" id="upload" accept=".hspdb">
+  <button id="download">Save a copy (download)</button>
+</div>
+<div class="row"><button id="recover">Recover from this browser…</button> <span id="recoverIds"></span></div>
+<pre id="log"></pre>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>
