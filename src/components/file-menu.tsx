@@ -1,3 +1,4 @@
+import { BrandBadgeGray } from "@/components/brand-mark";
 import { Check, ChevronDown, CircleHelp, Copy, FilePlus2, FlaskConical, FolderOpen, History, Redo2, RotateCcw, Save, Table2, Undo2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { confirmAction } from "@/components/confirm";
@@ -187,10 +188,16 @@ export function FileMenu() {
             </p>
             {dirty ? <p className="font-medium text-warn">Unsaved changes</p> : null}
             {typeof __BUILD__ !== "undefined" ? (
-              <p data-build-stamp className="mt-1 border-t border-line pt-1">
-                {__BUILD__.kind} build · {new Date(__BUILD__.at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                {__BUILD__.sha ? ` · ${__BUILD__.sha}` : ""}
-              </p>
+              <div className="mt-1 flex items-center gap-2 border-t border-line pt-1.5">
+                <BrandBadgeGray />
+                <div>
+                  <p>Hi-School Pharmacy scheduler</p>
+                  <p data-build-stamp>
+                    {__BUILD__.kind} build · {new Date(__BUILD__.at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                    {__BUILD__.sha ? ` · ${__BUILD__.sha}` : ""}
+                  </p>
+                </div>
+              </div>
             ) : null}
           </div>
           <DropdownMenuSeparator />

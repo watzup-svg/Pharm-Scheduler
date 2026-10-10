@@ -10,6 +10,7 @@ A month scheduler for pharmacists only, used by one non-technical district manag
 - **The rules engine is pure.** `src/lib/schedule/` has no React and no browser code and is tested without one.
 - **`placeName` (`src/lib/schedule/place.ts`) is the only write gate** for names in the grid. Drag, swap, bulk and paste all go through it.
 - **Hard problems block printing:** an open store-day with nobody, the same person at two stores on one date, a name on a closed day, a pharmacist not licensed in the store's state. Time off, covering away and "left as is" are warnings only.
+- **Press-and-hold only when there is no undo.** Undoable actions are a normal click with an Undo toast (`announce()`); a `HoldButton` must carry a `// no-undo:` comment (guard in `house-rules.test.ts`). No screen uses one today. Flag any destructive click that has no Undo.
 - Rules are not changed unless the owner asks. Please flag rule questions as questions, not as fixes.
 
 ## Where to look

@@ -1,6 +1,6 @@
 // Grok's fill-logic cases (reviewed 2026-10-02), as Joe adopted them: a long drive is offered up to 150 minutes and ranked last,
-// "leave this store closed" is offered when nobody can reach, a plan may open ONE follow-on hole (shown honestly), a chain is
-// at most three moves, and the Cathlamet to Clatskanie ferry is a 60-minute leg that says ferry. Real stores and the measured drive table.
+// "leave this store closed" is offered when nobody can cover without uncovering a store, a plan is a CLOSED chain (it never leaves
+// another store bare; Joe, 2026-10-03, replacing the earlier "one follow-on hole" rule), a chain is at most three moves, and the Cathlamet to Clatskanie ferry is a 60-minute leg that says ferry. Real stores and the measured drive table.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { coverPlans, type CoverPlan } from "./cover-plan.ts";
@@ -29,7 +29,6 @@ function scenario(opts: { bare: string[]; extra?: { p: Person; at?: string }[]; 
   return doc;
 }
 const who = (p: CoverPlan) => p.moves.map((m) => `${m.name}>${m.to}`);
-const opens = (p: CoverPlan) => (p as unknown as { opens?: string[] }).opens ?? [];
 const closeCard = (r: unknown) => Boolean((r as { leaveClosed?: boolean }).leaveClosed);
 
 describe("Grok's fill cases", () => {
@@ -47,13 +46,11 @@ describe("Grok's fill cases", () => {
     assert.ok(!plans[0]!.moves.some((m) => m.name === "Local MOL"));
   });
 
-  it("3. Estacada's own is out; the only spare is 3 hours away, a solo neighbor 33 minutes away: the neighbor is shown, honestly opening its own hole", () => {
+  it("3. Estacada's own is out; the only spare is 3 hours away, a solo neighbor 33 minutes away: the neighbor is NOT offered (it would leave its store bare), so the leave-closed card is", () => {
     const doc = scenario({ bare: ["EST"], extra: [{ p: person("Far Spare", "FLO"), at: "FLO" }] });
     const { plans } = coverPlans(doc, "EST", DAY);
-    assert.ok(plans.length > 0, "never a blank list");
-    const near = plans.find((p) => p.moves.some((m) => m.to === "EST" && m.minutes != null && m.minutes <= 40));
-    assert.ok(near, "the short move is offered");
-    assert.ok(opens(near!).length === 1, "and it says which store it leaves bare");
+    assert.equal(plans.length, 0, "no closed chain exists");
+    assert.equal(closeCard(coverPlans(doc, "EST", DAY)), true);
     assert.ok(!plans.some((p) => p.moves.some((m) => m.name === "Far Spare")), "3 hours is past the 2.5-hour cutoff");
   });
 

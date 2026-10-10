@@ -37,6 +37,7 @@ export function EmptyArt({ kind, className }: { kind: ArtKind; className?: strin
   const red = "#c8102e";
   return (
     <svg viewBox="0 0 120 84" aria-hidden className={cn("mx-auto h-20 w-auto", className)}>
+      <path d="M26 4h68l20 38-20 38H26L6 42 26 4Z" fill="none" stroke={soft} strokeWidth="1.5" />
       <rect x="6" y="66" width="108" height="4" rx="2" fill={soft} />
       {kind === "people" ? (
         <>
@@ -86,7 +87,7 @@ export function EmptyArt({ kind, className }: { kind: ArtKind; className?: strin
   );
 }
 
-/** One faint hexagon behind the instrument at the right of the dark page headers, fading out before it reaches the numbers. Decoration only. */
+/** One faint hexagon, proportioned like the logo hexagon (long flat top and bottom, short pointed sides), behind the instrument at the right of the dark page headers, fading out before it reaches the numbers. Decoration only. */
 export function HexPattern({ className }: { className?: string }) {
   return (
     <svg
@@ -98,7 +99,7 @@ export function HexPattern({ className }: { className?: string }) {
         className,
       )}
     >
-      <path d="M28 2h56l26 46.5L84 95H28L2 48.5 28 2Z" fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="1.2" />
+      <path d="M18 2h76l16 46.5L94 95H18L2 48.5 18 2Z" fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="1.4" strokeLinejoin="miter" />
     </svg>
   );
 }

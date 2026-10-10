@@ -84,8 +84,8 @@ export type ViewState = {
   /** Set by "Print this store" so the Print page opens on it. */
   printTarget: PrintTarget;
   /** Which tab Time off was on, so coming back lands in the same place. */
-  timeOffTab: "requests" | "calendar" | "list" | null;
-  setTimeOffTab: (tab: "requests" | "calendar" | "list") => void;
+  timeOffFilter: "waiting" | "approved" | "declined" | null;
+  setTimeOffFilter: (f: "waiting" | "approved" | "declined") => void;
   /** Page scroll to restore when the Schedule comes back. */
   scrollY: number;
   /** Set by a jump from another page; the Schedule scrolls to `focus` once and clears it. */
@@ -164,8 +164,8 @@ export const useViewStore = create<ViewState>((set, get) => ({
   lastName: "",
   clip: null,
   printTarget: null,
-  timeOffTab: null,
-  setTimeOffTab: (tab) => set({ timeOffTab: tab }),
+  timeOffFilter: null,
+  setTimeOffFilter: (f) => set({ timeOffFilter: f }),
   scrollY: 0,
   pendingScroll: false,
 

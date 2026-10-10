@@ -9,6 +9,43 @@ Newest first. One short block per batch: what changed, where to look, what was c
 - Saved file: new optional `needsTwo` (store code to day numbers). Old files open unchanged. Marks belong to that month's file and are not carried into next month.
 - Engine change, opt-in: nothing changes for a month with no marks. Checked: unit tests (rule, accept, file round trip, rename/remove store), one browser group (Chromium). WebKit, printers and touch not checked.
 
+## Fill suggestions are closed chains
+- Joe's rule (2026-10-03): a suggestion that fills one store by leaving another bare is a bug, so it is gone. The old "plan may open one hole" path (and its "Leaves <store> with no pharmacist" line) is deleted. Every plan is a closed chain of 1 to 3 moves: the first person fills the hole, each next person fills the store the last one left, and the chain stops only when nobody left a covered store empty (the last mover was free, or was a second pharmacist, or was replaced by the next move).
+- A plan must also lower the number of empty stores that day, so a preview of 3 → 3 is refused and never shown.
+- When no closed chain exists the card says "Nobody can cover <store> without uncovering a store" and offers Close the store as the manager's own action. No partial chains, no "fixed next pass".
+- Unchanged: the write gate (`placeName`), the 150-minute cap, over 90 minutes sorts last, floats cost less, mileage is the extra for the move, MAX_CHAIN 3, the manager still places every name.
+- Checked: unit tests (new `closed-chains.test.ts`: Estacada, near vs far spare, John Day, two holes one free pharmacist, Cathlamet ferry, float with no clock, 3 → 3 rejected, the whole demo month), `npm run fill -- --level medium` (updated to require closed chains and a falling empty count). Not checked: `--level high`, touch, iOS Safari.
+
+## No more press-and-hold on anything you can undo
+- Rule: press-and-hold is only for an action with no undo. All seven holds (Remove on a time-off entry, Remove and "Schedule on N more days" in the day panel, Keep at a store, Leave as is, Leave N as is, Approve N safe) were undoable, so they are now plain clicks with the Undo toast. "Approve N safe" is now one undo step instead of one per request. `HoldButton` stays for a future non-undoable action and must be marked `// no-undo:` (guard test).
+- Checked: unit tests, browser groups that used the holds. Not checked: touch, iOS Safari.
+
+## Time off: holidays on the month
+- A holiday sits on its day on the Time off month: the name in the corner and "closed N" for the stores it shuts (hover lists them). If a pharmacist is still named at a shut store, the day is brick and clicking it opens that day on the Schedule. Under the month, one line adds "Next holiday". District closures (weather, short-staffed) are not shown here.
+- Display only. Checked: unit tests for the holiday days, time off browser group, laptop screenshot. Not checked: touch, iOS Safari.
+
+## Time off: a queue and one month
+- The three tabs and the lanes strip are gone. The page is two columns: on the left three filters (To approve, Approved, Declined), on the right one sticky month, the only calendar on the page. To approve opens first when anything waits.
+- To approve: one row per request (name, dates as a range, a brick dot if a store would be bare). The selected row opens into its slip. Approved and Declined rows keep Edit, Undo approval / Reopen, and the hold to remove, and still show "Still on ... prints yellow" with Show on schedule.
+- The month shows how many are off each day (approved solid, waiting dashed and lighter, brick ring where a store would be bare). Hover names them. Click a day to list only what covers it (click again or the chip to clear). The open slip's days are outlined. One line under it: the busiest day. The day details (who is free to call, Add for this day) open under the month.
+- The header picture is three bars (To approve, Approved, Declined) instead of a mini calendar; the header box and size are unchanged.
+- When nothing waits, To approve says "Nothing to approve" and the month takes the width. On a phone the month sits above the queue.
+- Display only. No rule, status or placement change. Checked: unit, full browser suite (time off, pages, small month, next month updated for the new page), laptop and phone screenshots. Not checked: touch, iOS Safari, printers.
+
+## Time off: requests as slips
+- Each request is now a slip with four facts: the reason (and when it was asked), the dates in words, who else is out those days (by name), and what the stores do ("Every store stays covered", or the bare store and days in brick with "no one free" when that's true). The month strip inside each request is gone; the lanes above still show the month.
+- Find cover moved onto the bare store (one per store, opens its first bare day); Approve is only Approve and stays on the page.
+- Display only: no rule, status or placement change. Checked: unit, time off browser group, laptop screenshot. Not checked: phone, touch, iOS Safari.
+## Day panel: someone placed on approved time off
+- The panel for a person who is placed on a day they have approved time off now shows three actions: Find cover, Remove, and Reject time off. Change person and Swap with are gone there. Reject time off marks that time-off entry declined (the whole entry; the button names its dates when it spans several days), so she stops counting as off and stays on the schedule. Undo is in the toast. Other states (sick, requested, no time off) keep their buttons. Display and button change only; no rules touched.
+- Checked: 388 unit, 552 browser (new group "reject time off"), screenshot at laptop width. Not checked: real touch, iPhone Safari.
+
+## Time off: clearer approval, and Undo approval
+- Requests: one line says "These are waiting for a yes or a no." Approve is a plain one-click button and stays on the page; its toast offers Undo approval for about 6 seconds. Find cover appears only when approving would leave a store empty (it approves, then opens that day). Decline asks first. "Approve anyway" is gone. The header count reads "To approve".
+- Add drawer: the choices are now "Put it on the schedule" (default) and "Ask me first". Sick is still approved straight away, and the Someone's out button says "Records sick as approved."
+- List: approved rows (Sick too) have Undo approval next to Edit. It sets the entry back to requested: it returns to Requests, stops counting as time off, and nobody already placed is moved. Remove is still the hold. No new status.
+- Checked: unit tests for Undo approval and Sick in the list, browser group for Approve, Undo approval, Decline confirm, Sick row. Not checked: real touch, iOS Safari.
+
 ## Store tag note lists the pharmacists
 - Right-clicking a store tag in the header's day strip now also lists who is scheduled there that day, one name per row in day-panel order, or "No one scheduled" for an open store with nobody. Display only. Checked in Chromium (e2e header links, hover rules); WebKit and touch not checked.
 
@@ -25,6 +62,7 @@ Newest first. One short block per batch: what changed, where to look, what was c
 - Months you already saved keep the stores and numbers they were saved with. Open one and the old stores (and their placeholder numbers) are still there; nothing is changed or removed behind your back. Distances to a saved store that is no longer on the list fall back to address estimates.
 
 ## Fill suggestions: longer reach, a leave-closed choice, honest follow-on holes
+- Superseded 2026-10-03: the follow-on-hole rule below no longer applies; plans are closed chains (see the entry at the top).
 - Fill plans now reach up to 2.5 hours (was 2). Long drives (over 90 minutes) still rank last among plans that leave no gap. A plan is at most three moves.
 - When no one can reach a store within 2.5 hours (John Day, for example), the card says so and offers "Close <store> today…" with the usual reasons. Leaving a store closed is always your choice; nothing is closed for you.
 - A plan may take the only pharmacist from one nearby store to fill a hole. It says so ("Leaves <store> with no pharmacist. It will get its own suggestions, or you can close it."), ranks after plans that leave no gap, and the new hole then gets its own suggestions as usual. Never more than one new hole per plan.

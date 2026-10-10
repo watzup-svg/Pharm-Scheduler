@@ -37,20 +37,21 @@ describe("plan preview (dry run)", () => {
     assert.equal(JSON.stringify(doc), snap);
   });
 
-  it("names the store a plan leaves empty, and a two-pharmacist day it leaves short", () => {
-    const base = scenario(["EST"]);
-    const doc = { ...base, stores: base.stores.map((s) => (s.code === "MOL" ? { ...s, twoPharmacistDays: [3] } : s)) }; // Wednesday
-    const plan = coverPlans(doc, "EST", DAY, 8).plans.find((p) => p.opens.includes("MOL"));
-    assert.ok(plan, "a plan that leaves Molalla bare is offered");
-    const pv = previewPlan(doc, plan!, DAY);
-    assert.ok(pv.ok);
-    assert.deepEqual(pv.opened, [{ store: "MOL", day: DAY }]);
-    assert.equal(pv.holes[1], pv.holes[0], "one hole filled, one opened");
+  it("a plan that moves the only pharmacist out of a covered store is rejected (3 → 3 style), and is never offered", () => {
+    const doc = scenario(["EST"]);
+    const moves = coverPlans(scenario(["EST"], [{ p: person("Sil Spare", "SIL"), at: "SIL" }]), "EST", DAY, 8).plans.flatMap((p) => p.moves);
+    const molMove = moves.find((m) => m.name === "Local MOL" && m.to === "EST");
+    assert.ok(molMove, "the chain exists once Molalla can be backfilled");
+    const gap = previewPlan(doc, { moves: [molMove!] }, DAY); // the same move without the backfill just moves the gap
+    assert.equal(gap.ok, false);
+    assert.equal(gap.holes[0], gap.holes[1], "no fewer empty shifts: rejected");
+    assert.match(gap.problem ?? "", /no pharmacist|not reduce/);
+    assert.ok(!coverPlans(doc, "EST", DAY, 8).plans.some((p) => p.moves.some((m) => m.name === "Local MOL")));
   });
 
   it("says why when the copy refuses", () => {
     const doc = scenario(["EST"]);
-    const bad = previewPlan(doc, { moves: [{ name: "Nobody Here", float: false, from: null, origin: null, to: "EST", minutes: 10, miles: 1, estimated: false, mileage: { paidMiles: 0, dollars: 0 } as never, extra: { paidMiles: 0, dollars: 0 }, fillsTarget: true }], opens: [] }, DAY);
+    const bad = previewPlan(doc, { moves: [{ name: "Nobody Here", float: false, from: null, origin: null, to: "EST", minutes: 10, miles: 1, estimated: false, mileage: { paidMiles: 0, dollars: 0 } as never, extra: { paidMiles: 0, dollars: 0 }, fillsTarget: true }] }, DAY);
     assert.equal(bad.ok, false);
     assert.ok(bad.problem);
   });

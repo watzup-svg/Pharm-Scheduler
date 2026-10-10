@@ -1,4 +1,4 @@
-import { daysInMonth, isoDate } from "./calendar.ts";
+import { daysInMonth, holidayMatches, isoDate, todayParts } from "./calendar.ts";
 import { getCell } from "./grid.ts";
 import { isOpenDay } from "./place.ts";
 import { isApproved, timeOffDates } from "./pto.ts";
@@ -23,6 +23,15 @@ export function isWaiting(doc: ScheduleDoc, t: TimeOff): boolean {
   if (t.status !== "requested") return false;
   const first = isoDate(doc.year, doc.month, 1);
   return timeOffDates(t).some((d) => d >= first);
+}
+
+/**
+ * Approved time off for this person that covers this day, as the rows the store can change. Sick calls are not
+ * time off she approved, so they are left out; the day panel only offers "Reject time off" for these rows.
+ */
+export function approvedOffOn(doc: ScheduleDoc, name: string, day: number): TimeOffEntry[] {
+  const date = isoDate(doc.year, doc.month, day);
+  return entriesOf(doc).filter((e) => e.t.name === name && e.status === "approved" && !/sick/i.test(e.t.note) && e.dates.includes(date));
 }
 
 /** Undecided requests whose dates are all before the month on screen. */
@@ -164,3 +173,49 @@ export function groupByDates(entries: TimeOffEntry[]): { key: string; dates: str
 }
 
 export { isApproved };
+
+export type HolidayDay = {
+  day: number;
+  /** Holiday names that fall on the day, once each. */
+  labels: string[];
+  /** Stores a holiday shuts that day. */
+  closed: string[];
+  /** The first cell where a pharmacist is still named at a store the holiday shuts, if any. */
+  scheduled: { store: string; slot: (typeof RPH_SLOTS)[number]; day: number; name: string } | null;
+};
+
+/** Days of the month that have a holiday (calendar or district closure), who they shut, and whether anyone is still named there. */
+export function holidayDays(doc: ScheduleDoc): HolidayDay[] {
+  const out: HolidayDay[] = [];
+  const calendar = doc.holidays.filter((h) => !h.closure);
+  for (let day = 1; day <= daysInMonth(doc.year, doc.month); day++) {
+    const date = isoDate(doc.year, doc.month, day);
+    const labels: string[] = [];
+    const closed: string[] = [];
+    let scheduled: HolidayDay["scheduled"] = null;
+    for (const store of doc.stores) {
+      const h = holidayMatches(calendar, store.code, date);
+      if (!h) continue;
+      closed.push(store.code);
+      if (!labels.includes(h.label)) labels.push(h.label);
+      if (!scheduled) {
+        for (const slot of RPH_SLOTS) {
+          const name = getCell(doc.grid, store.code, slot, day).trim();
+          if (name) {
+            scheduled = { store: store.code, slot, day, name };
+            break;
+          }
+        }
+      }
+    }
+    if (closed.length) out.push({ day, labels, closed, scheduled });
+  }
+  return out;
+}
+
+/** The next holiday day in the month on screen: from today when this is the current month, else the first one. */
+export function nextHoliday(doc: ScheduleDoc, days = holidayDays(doc)): HolidayDay | null {
+  const t = todayParts();
+  const from = t.year === doc.year && t.month === doc.month ? t.day : 1;
+  return days.find((h) => h.day >= from) ?? null;
+}

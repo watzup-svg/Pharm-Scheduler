@@ -24,6 +24,7 @@ import { applyNextMonthPlan, type NextMonthPlan } from "../lib/schedule/next-mon
 import { setNeedsTwo as setNeedsTwoFn } from "../lib/schedule/needs-two.ts";
 import { keepOpenPtoDates, normalizeTimeOff, timeOffDates } from "../lib/schedule/pto.ts";
 import { driveKey } from "../lib/schedule/geo.ts";
+import { safeToApprove } from "../lib/schedule/impact.ts";
 import { duplicateDates } from "../lib/schedule/timeoff-view.ts";
 import { createSample, SAMPLE_FILE_NAME } from "../lib/schedule/sample.ts";
 import { blankMonthWithStores } from "../lib/schedule/stores.ts";
@@ -190,6 +191,8 @@ export type ScheduleState = {
   /** Change one entry's person, days or note. One undo step. */
   updateTimeOff: (index: number, patch: { name?: string; dates?: string[]; note?: string }) => string | null;
   setTimeOffStatus: (index: number, status: TimeOffStatus) => void;
+  /** Approve each listed request that still leaves every store covered, one at a time, in one undo step. Returns how many were approved. */
+  approveSafeTimeOff: (indexes: number[]) => number;
   /** Log the days as sick time off and take the person off those shifts, in one undo step. */
   callInSick: (name: string, days: number[], note?: string) => void;
   /** Accept problems instead of fixing them (one undo step). Licenses cannot be accepted. */
@@ -205,7 +208,7 @@ export type ScheduleState = {
   /** Place several names at once (for "Fill the month"), refusing what typing would refuse. One undo step. */
   placeMany: (list: { store: string; slot: SlotId; day: number; name: string }[]) => number;
   /** Apply a cover plan as one undoable step. Returns "ok", or the reason it was refused (nothing changes then). */
-  applyCoverPlan: (moves: CoverMove[], day: number, opens?: string[]) => string;
+  applyCoverPlan: (moves: CoverMove[], day: number) => string;
   /** Add holidays in one undo step. Ones already there (same date and store) are skipped. Returns how many were added. */
   addHolidays: (list: Holiday[]) => number;
   /** Paste a spreadsheet block. One undo step. Never overwrites. */
@@ -541,8 +544,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     return placed;
   },
 
-  applyCoverPlan: (moves, day, opens) => {
-    const res = applyCoverPlanDoc(get().doc, { moves, opens }, day);
+  applyCoverPlan: (moves, day) => {
+    const res = applyCoverPlanDoc(get().doc, { moves }, day);
     if (!res.ok) return res.problem ?? "That plan can't be applied";
     withUndo(set, get, () => res.doc);
     return "ok";
@@ -550,6 +553,22 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
   callInSick: (name, days, note) => {
     withUndo(set, get, (d) => callInSickDoc(d, name, days, note));
+  },
+
+  approveSafeTimeOff: (indexes) => {
+    let n = 0;
+    withUndo(set, get, (d) => {
+      let cur = d;
+      for (const i of indexes) {
+        const t = cur.timeOff[i];
+        if (!t || !safeToApprove(cur, t.name, timeOffDates(t))) continue;
+        const { status: _drop, ...rest } = t;
+        cur = { ...cur, timeOff: cur.timeOff.map((x, j) => (j === i ? rest : x)) };
+        n += 1;
+      }
+      return cur;
+    });
+    return n;
   },
 
   setTimeOffStatus: (index, status) => {
