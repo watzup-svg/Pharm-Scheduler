@@ -19,7 +19,7 @@ export function DropdownMenuContent({
         sideOffset={sideOffset}
         tabIndex={0}
         className={cn(
-          "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-44 overflow-y-auto rounded-lg bg-cream p-1 text-ink shadow-[0_0_0_1px_var(--color-line),0_12px_32px_-12px_rgba(28,25,23,0.25)]",
+          "z-50 max-h-[calc(100dvh-5rem)] min-w-44 overflow-y-auto rounded-lg bg-cream p-1 text-ink shadow-[0_0_0_1px_var(--color-line),0_12px_32px_-12px_rgba(28,25,23,0.25)]",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           className,
         )}

@@ -60,7 +60,11 @@ export default async function run(slice = 0, slices = 1) {
     }
     const { page } = await open(browser, "schedule", size);
     await page.getByRole("button", { name: /Show the first/ }).first().click();
-    await page.waitForTimeout(500);
+    // The panel slides in over 200ms from 24px to the right; measure only once every finite animation has ended (a fixed wait raced it on a loaded WebKit runner).
+    await page.evaluate(() => Promise.race([
+      Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {}))),
+      new Promise((done) => setTimeout(done, 5000)),
+    ]));
     const r = await page.evaluate(probe, '[role="dialog"]');
     if (r.missing) check(`day panel opens @${width}`, false);
     else {
