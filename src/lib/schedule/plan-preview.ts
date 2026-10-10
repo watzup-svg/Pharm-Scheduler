@@ -24,11 +24,11 @@ export function previewPlan(doc: ScheduleDoc, plan: Pick<CoverPlan, "moves">, da
   if (!res.ok) return { ok: false, problem: res.problem, holes: [before.holes, before.holes], opened: [], shortened: [] };
   const after = evaluate(res.doc);
   const wasHole = new Set(before.issues.filter((i) => i.hole).map(keyOf));
-  const wasShort = new Set(before.issues.filter((i) => i.needsSecond).map(keyOf));
+  const wasShort = new Set(before.issues.filter((i) => i.needsSecond || i.second).map(keyOf));
   return {
     ok: true,
     holes: [before.holes, after.holes],
     opened: after.issues.filter((i) => i.hole && !wasHole.has(keyOf(i))).map((i) => ({ store: i.store, day: i.day })),
-    shortened: after.issues.filter((i) => i.needsSecond && !wasShort.has(keyOf(i))).map((i) => ({ store: i.store, day: i.day })),
+    shortened: after.issues.filter((i) => (i.needsSecond || i.second) && !wasShort.has(keyOf(i))).map((i) => ({ store: i.store, day: i.day })),
   };
 }

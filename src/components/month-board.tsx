@@ -90,10 +90,12 @@ export function MonthBoard() {
         const views: CalendarStore["views"] = {};
         let doubles = 0;
         let licence = 0;
+        let seconds = 0;
         for (let d = 1; d <= days; d++) {
           views[d] = dayView(doc, ev, store.code, d);
           doubles += views[d]!.names.filter((n) => n.double).length;
           licence += views[d]!.names.filter((n) => n.unlicensed).length;
+          if (views[d]!.second) seconds += 1;
         }
         return {
           store,
@@ -102,6 +104,7 @@ export function MonthBoard() {
           leftovers: ev.storeClosed[store.code] ?? 0,
           doubles,
           licence,
+          seconds,
         };
       }),
     [doc, ev, days],
@@ -247,7 +250,7 @@ export function MonthBoard() {
           All
         </Chip>
         {visibleCalendars.map((c) => {
-          const n = c.holes + c.doubles + c.leftovers + c.licence;
+          const n = c.holes + c.doubles + c.leftovers + c.licence + c.seconds;
           return (
             <Chip key={c.store.code} code={c.store.code} current={onIssue.has(c.store.code)} active={tab === c.store.code} onClick={() => setStoreTab(c.store.code)}>
               {tag(c.store.code)}

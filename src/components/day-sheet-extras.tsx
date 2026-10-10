@@ -1,5 +1,5 @@
 import { Mark } from "@/components/icons";
-import { doubleKey, holeKey, leftoverKey } from "@/lib/schedule/rules";
+import { doubleKey, holeKey, leftoverKey, secondKey } from "@/lib/schedule/rules";
 import { announce } from "@/components/undo";
 import { Button } from "@/components/ui/button";
 import { monthName } from "@/lib/schedule/calendar";
@@ -109,5 +109,6 @@ export function OutButton({ name, knownReason }: { name: string; knownReason: bo
 export function acceptKeyFor(step: { kind: string; names: string[]; day: number }, store: string, day: number): string {
   if (step.kind === "double") return doubleKey(step.names[0]!, day);
   if (step.kind === "leftover") return leftoverKey(store, day);
+  if (step.kind === "second") return secondKey(store, day);
   return holeKey(store, day);
 }

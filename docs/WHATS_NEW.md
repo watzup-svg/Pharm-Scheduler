@@ -2,6 +2,13 @@
 
 Newest first. One short block per batch: what changed, where to look, what was checked and what wasn't.
 
+## Mark a store-day as needing two pharmacists
+- In the day panel, "Needs two pharmacists this day" marks that store and day. Also "Every <weekday> this month" and "A range of days…" (closed days are skipped). It is only a mark: nothing is placed for you.
+- A marked day with exactly one pharmacist is a new problem, "Needs a second" (own mark, own count in the header and store calendars, "1/2" on the day cell). It blocks printing like the others, and "Leave as is" works on it. A marked day with nobody is still the normal "No coverage".
+- The older per-weekday "usually two" reminder (Stores > Edit) stays a soft reminder; on a marked day only the new problem shows.
+- Saved file: new optional `needsTwo` (store code to day numbers). Old files open unchanged. Marks belong to that month's file and are not carried into next month.
+- Engine change, opt-in: nothing changes for a month with no marks. Checked: unit tests (rule, accept, file round trip, rename/remove store), one browser group (Chromium). WebKit, printers and touch not checked.
+
 ## Fill suggestions are closed chains
 - Joe's rule (2026-10-03): a suggestion that fills one store by leaving another bare is a bug, so it is gone. The old "plan may open one hole" path (and its "Leaves <store> with no pharmacist" line) is deleted. Every plan is a closed chain of 1 to 3 moves: the first person fills the hole, each next person fills the store the last one left, and the chain stops only when nobody left a covered store empty (the last mover was free, or was a second pharmacist, or was replaced by the next move).
 - A plan must also lower the number of empty stores that day, so a preview of 3 → 3 is refused and never shown.

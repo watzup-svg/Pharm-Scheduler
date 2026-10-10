@@ -1,11 +1,11 @@
 import { monthName, weekdayShort } from "./calendar.ts";
 import { shortStoreName } from "./fix.ts";
-import { doubleKey, evaluate, holeKey, leftoverKey } from "./rules.ts";
+import { doubleKey, evaluate, holeKey, leftoverKey, secondKey } from "./rules.ts";
 import type { Accepted, Evaluation, ScheduleDoc } from "./types.ts";
 
 export type AcceptedItem = {
   key: string;
-  kind: "hole" | "leftover" | "double";
+  kind: "hole" | "leftover" | "double" | "second";
   store: string;
   name: string;
   day: number;
@@ -14,7 +14,7 @@ export type AcceptedItem = {
 };
 
 function parseKey(key: string): { kind: AcceptedItem["kind"]; a: string; day: number } | null {
-  const m = /^(hole|leftover|double)\|(.+)\|(\d+)$/.exec(key);
+  const m = /^(hole|leftover|double|second)\|(.+)\|(\d+)$/.exec(key);
   return m ? { kind: m[1] as AcceptedItem["kind"], a: m[2]!, day: Number(m[3]) } : null;
 }
 
@@ -46,6 +46,7 @@ export function openProblemKeys(doc: ScheduleDoc, ev: Evaluation = evaluate(doc)
   for (const i of ev.issues) {
     if (i.hole) out.push(holeKey(i.store, i.day));
     if (i.leftover) out.push(leftoverKey(i.store, i.day));
+    if (i.second) out.push(secondKey(i.store, i.day));
   }
   for (const [d, names] of Object.entries(ev.doubledByDay)) for (const n of names) out.push(doubleKey(n, Number(d)));
   return [...new Set(out)];
@@ -64,7 +65,7 @@ export function acceptedItems(doc: ScheduleDoc, ev: Evaluation = evaluate(doc)):
     } else {
       const store = doc.stores.find((s) => s.code === p.a);
       const nm = shortStoreName(store?.name ?? p.a);
-      out.push({ key: a.key, kind: p.kind, store: p.a, name: "", day: p.day, at: a.at, label: p.kind === "hole" ? `${nm}: no coverage (no pharmacist), ${when}` : `${nm}: name on a closed day, ${when}` });
+      out.push({ key: a.key, kind: p.kind, store: p.a, name: "", day: p.day, at: a.at, label: p.kind === "hole" ? `${nm}: no coverage (no pharmacist), ${when}` : p.kind === "second" ? `${nm}: marked for two pharmacists, one here, ${when}` : `${nm}: name on a closed day, ${when}` });
     }
   }
   return out.sort((x, y) => x.day - y.day || x.label.localeCompare(y.label));

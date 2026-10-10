@@ -22,7 +22,7 @@ describe("next month forecast", () => {
 
   it("names the practice month's November result", () => {
     const f = forecastNextMonth(doc, plan);
-    assert.deepEqual(f, { total: 26, byKind: { hole: 24, double: 2, leftover: 0, license: 0 } });
+    assert.deepEqual(f, { total: 26, byKind: { hole: 24, double: 2, leftover: 0, license: 0, second: 0 } });
     assert.equal(forecastLine("November", f), "November will start with 26 problems to fix: 24 shifts with no coverage and 2 people at two places.");
   });
 
@@ -33,7 +33,7 @@ describe("next month forecast", () => {
   });
 
   it("reads plainly with one kind or none", () => {
-    assert.equal(forecastLine("June", { total: 0, byKind: { hole: 0, double: 0, leftover: 0, license: 0 } }), "June will start with nothing to fix.");
-    assert.equal(forecastLine("June", { total: 1, byKind: { hole: 1, double: 0, leftover: 0, license: 0 } }), "June will start with 1 problem to fix: 1 shift with no coverage.");
+    assert.equal(forecastLine("June", { total: 0, byKind: { hole: 0, double: 0, leftover: 0, license: 0, second: 0 } }), "June will start with nothing to fix.");
+    assert.equal(forecastLine("June", { total: 1, byKind: { hole: 1, double: 0, leftover: 0, license: 0, second: 0 } }), "June will start with 1 problem to fix: 1 shift with no coverage.");
   });
 });

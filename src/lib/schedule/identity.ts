@@ -37,10 +37,10 @@ function recodeKey<T extends Grid | Pattern | DayNotes>(map: T, from: string, to
 }
 
 /** Accepted problems are keyed by store code or person name. When either is renamed the accept must move with it. */
-function rekeyAccepted(doc: ScheduleDoc, from: string, to: string, kinds: ("hole" | "leftover" | "double")[]): ScheduleDoc["accepted"] {
+function rekeyAccepted(doc: ScheduleDoc, from: string, to: string, kinds: ("hole" | "leftover" | "double" | "second")[]): ScheduleDoc["accepted"] {
   if (!doc.accepted?.length || from === to) return doc.accepted;
   return doc.accepted.map((a) => {
-    const m = /^(hole|leftover|double)\|(.+)\|(\d+)$/.exec(a.key);
+    const m = /^(hole|leftover|double|second)\|(.+)\|(\d+)$/.exec(a.key);
     if (!m || !kinds.includes(m[1] as "hole") || m[2] !== from) return a;
     return { ...a, key: `${m[1]}|${to}|${m[3]}` };
   });
@@ -91,10 +91,12 @@ function rekeyDrive(doc: ScheduleDoc, from: string, to: string | null): Pick<Sch
 
 export function applyStore(doc: ScheduleDoc, fromCode: string, store: Store): ScheduleDoc {
   const code = store.code;
-  const accepted = rekeyAccepted(doc, fromCode, code, ["hole", "leftover"]);
-  const { driveMinutes: _old, driveMiles: _oldMiles, ...rest } = doc;
+  const accepted = rekeyAccepted(doc, fromCode, code, ["hole", "leftover", "second"]);
+  const { driveMinutes: _old, driveMiles: _oldMiles, needsTwo: _oldTwo, ...rest } = doc;
+  const needsTwo = doc.needsTwo && Object.hasOwn(doc.needsTwo, fromCode) && fromCode !== code ? Object.fromEntries(Object.entries(doc.needsTwo).map(([k, v]) => [k === fromCode ? code : k, v])) : doc.needsTwo;
   return {
     ...rest,
+    ...(needsTwo ? { needsTwo } : {}),
     ...rekeyDrive(doc, fromCode, code),
     ...(accepted ? { accepted } : {}),
     stores: doc.stores.map((s) => (s.code === fromCode ? store : s)),
@@ -113,9 +115,11 @@ export function removeStoreDoc(doc: ScheduleDoc, code: string): ScheduleDoc {
   delete pattern[code];
   const dayNotes = { ...doc.dayNotes };
   delete dayNotes[code];
-  const { driveMinutes: _old, driveMiles: _oldMiles, ...rest } = doc;
+  const { driveMinutes: _old, driveMiles: _oldMiles, needsTwo: _oldTwo, ...rest } = doc;
+  const needsTwo = Object.fromEntries(Object.entries(doc.needsTwo ?? {}).filter(([k]) => k !== code));
   return {
     ...rest,
+    ...(Object.keys(needsTwo).length ? { needsTwo } : {}),
     ...rekeyDrive(doc, code, null),
     stores: doc.stores.filter((s) => s.code !== code),
     people: doc.people.map((p) => (p.home === code ? { ...p, home: "—" } : p)),

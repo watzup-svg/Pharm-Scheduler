@@ -20,6 +20,7 @@ const STATE_NAME: Record<DayTone, string> = {
   away: "Covered from another store",
   off: "On time off, still scheduled",
   hole: PROBLEM_NAME.hole,
+  second: PROBLEM_NAME.second,
   accepted: "Left as is",
   double: PROBLEM_NAME.double,
   license: PROBLEM_NAME.license,
@@ -27,7 +28,7 @@ const STATE_NAME: Record<DayTone, string> = {
   closed: "Closed",
 };
 
-const ALARM: Partial<Record<DayTone, AlarmKind>> = { hole: "hole", double: "double", leftover: "leftover", license: "license" };
+const ALARM: Partial<Record<DayTone, AlarmKind>> = { hole: "hole", double: "double", leftover: "leftover", license: "license", second: "second" };
 
 const first = (n: string) => n.split(" ")[0] ?? n;
 

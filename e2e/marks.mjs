@@ -1,9 +1,9 @@
 // Every state mark is the same rounded-square chip, in one of four sizes, in its family's colour, on every page.
 import { check, launch, open } from "./lib.mjs";
 
-const FAMILY = { hole: "problem", double: "problem", leftover: "problem", license: "problem", timeOff: "away", sick: "away", appointment: "away", family: "away", waiting: "away", covering: "cover" };
+const FAMILY = { hole: "problem", double: "problem", leftover: "problem", license: "problem", second: "problem", timeOff: "away", sick: "away", appointment: "away", family: "away", waiting: "away", covering: "cover" };
 const BG = { problem: "rgb(239, 216, 210)", away: "rgb(244, 226, 163)", cover: "rgb(220, 235, 226)" };
-const LEGEND = ["hole", "double", "leftover", "license", "timeOff", "waiting", "covering", "asis"];
+const LEGEND = ["hole", "double", "leftover", "license", "second", "timeOff", "waiting", "covering", "asis"];
 
 export default async function run() {
   const browser = await launch();

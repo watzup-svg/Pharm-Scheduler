@@ -29,6 +29,7 @@ function whyText(issue: Omit<DayIssue, "why">): string {
     parts.push(`Not licensed in this state: ${joinNames(issue.unlicensedNames)}. Clear or replace.`);
   }
   if (issue.hole) parts.push("No coverage: no pharmacist. Add one.");
+  if (issue.second) parts.push("Marked to have two pharmacists, but only one is here. Add a second.");
   if (issue.leftover && issue.leftoverNames.length) {
     const rph = issue.leftoverNames.filter((n) => n);
     parts.push(`Closed — clear ${joinNames(rph)}.`);
@@ -70,6 +71,7 @@ function rphNames(doc: ScheduleDoc, store: string, day: number): string[] {
 /** Keys for problems the district manager can accept. Licenses are not among them: nobody may work in a state they are not licensed in. */
 export const holeKey = (store: string, day: number) => `hole|${store}|${day}`;
 export const leftoverKey = (store: string, day: number) => `leftover|${store}|${day}`;
+export const secondKey = (store: string, day: number) => `second|${store}|${day}`;
 export const doubleKey = (name: string, day: number) => `double|${name}|${day}`;
 
 export function evaluate(doc: ScheduleDoc): Evaluation {
@@ -103,6 +105,7 @@ export function evaluate(doc: ScheduleDoc): Evaluation {
   let doubles = 0;
   let unlicensed = 0;
   let short = 0;
+  let seconds = 0;
   let warns = 0;
   let staffWarns = 0;
 
@@ -138,7 +141,14 @@ export function evaluate(doc: ScheduleDoc): Evaluation {
 
       const ptoWhy = Object.fromEntries(ptoNames.map((n) => [n, offKind(doc, n, date)]));
       const soloFloatName: string | null = null;
-      const needsSecond = open && rph.length === 1 && (store.twoPharmacistDays ?? []).includes(weekdaySun0(doc.year, doc.month, day));
+      const marked = open && (doc.needsTwo?.[store.code] ?? []).includes(day);
+      const secondRaw = marked && rph.length === 1;
+      const secondAccepted = secondRaw && acked.has(secondKey(store.code, day));
+      const second = secondRaw && !secondAccepted;
+      if (secondRaw) problemKeys.push(secondKey(store.code, day));
+      if (secondAccepted) accepted += 1;
+      // The weekday "usually two" reminder gives way to a marked day: one signal per store-day.
+      const needsSecond = !marked && open && rph.length === 1 && (store.twoPharmacistDays ?? []).includes(weekdaySun0(doc.year, doc.month, day));
 
       const base = {
         store: store.code,
@@ -153,6 +163,9 @@ export function evaluate(doc: ScheduleDoc): Evaluation {
         doubledAccepted,
         unlicensedNames,
         needsSecond,
+        second,
+        secondAccepted,
+        marked,
         ptoNames,
         ptoWhy,
         soloFloatName,
@@ -173,6 +186,7 @@ export function evaluate(doc: ScheduleDoc): Evaluation {
       if (staffLeftover) staffClosed += 1;
       unlicensed += unlicensedNames.length;
       if (needsSecond) short += 1;
+      if (second) seconds += 1;
       if (ptoNames.length) warns += 1;
     }
   }
@@ -184,9 +198,10 @@ export function evaluate(doc: ScheduleDoc): Evaluation {
     doubles,
     unlicensed,
     short,
+    seconds,
     warns,
     staffWarns,
-    ready: holes + closed + doubles + unlicensed === 0,
+    ready: holes + closed + doubles + unlicensed + seconds === 0,
     accepted,
     problemKeys,
     issues,

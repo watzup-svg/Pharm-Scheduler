@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { useScheduleStore } from "@/store/schedule-store";
 import { useViewStore } from "@/store/view-store";
 import { SlotBlock } from "@/components/day-sheet-slot";
+import { NeedsTwo } from "@/components/needs-two";
 import { acceptKeyFor } from "@/components/day-sheet-extras";
 
 /** The one place a cell is edited. Opens from a calendar day, a problem, or a dashboard row. */
@@ -444,6 +445,8 @@ function SheetBody() {
 
         {open && !view.hole && !view.holeAccepted ? <CloseStoreMenu store={store} day={day} variant="secondary" onDone={finish} /> : null}
         </ActionBar>
+
+        {open ? <NeedsTwo store={store} day={day} /> : null}
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Note on the store poster</span>
