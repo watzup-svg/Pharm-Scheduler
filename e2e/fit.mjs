@@ -1,6 +1,6 @@
 // Fit sweep: every screen and the day panel at phone, tablet and laptop widths. Fails on sideways page scroll, text that is
 // cut off with an ellipsis, anything poking out of its dialog, and tap targets too small to hit on a phone.
-import { check, launch, open } from "./lib.mjs";
+import { check, launch, open, settled } from "./lib.mjs";
 
 const WIDTHS = [320, 360, 390, 430, 768, 1024, 1366];
 const ROUTES = ["", "schedule", "time-off", "people", "stores", "print", "lists", "holidays"];
@@ -60,7 +60,7 @@ export default async function run(slice = 0, slices = 1) {
     }
     const { page } = await open(browser, "schedule", size);
     await page.getByRole("button", { name: /Show the first/ }).first().click();
-    await page.waitForTimeout(500);
+    await settled(page); // the panel slides in over 200ms from 24px to the right
     const r = await page.evaluate(probe, '[role="dialog"]');
     if (r.missing) check(`day panel opens @${width}`, false);
     else {
