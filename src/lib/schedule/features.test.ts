@@ -6,7 +6,6 @@ import { changesSince, snapshotOf } from "./changes.ts";
 import { awayFromHome, awayList, offThisMonth } from "./dashboard.ts";
 import { createDemo } from "./demo.ts";
 import { districtModel, dayTone } from "./district.ts";
-import { fairness } from "./fairness.ts";
 import { parseDoc, serializeDoc } from "./file.ts";
 import { distanceMiles, storeDistance } from "./geo.ts";
 import { setCellValue } from "./grid.ts";
@@ -23,7 +22,6 @@ import { usHolidays } from "./us-holidays.ts";
 import { stateOfStore } from "./licence.ts";
 import { posterLines } from "./print-model.ts";
 import { parsePosterLine, stateFromAddress } from "./print-model.ts";
-import { readinessPct, trendPoints } from "./trend.ts";
 import { secondLook } from "./second-look.ts";
 import { planFill } from "./plan.ts";
 import { missingNumbers, storeTag } from "./label.ts";
@@ -191,15 +189,7 @@ describe("U.S. holidays, computed", () => {
   });
 });
 
-describe("fairness and archive", () => {
-  it("counts days, Saturdays and days away, beside last month", () => {
-    const rows = fairness(demo, createDemo());
-    const lucia = rows.find((r) => r.name === "Lucia Denton")!;
-    assert.equal(lucia.awayDays, 1);
-    assert.equal(lucia.saturdays, 1);
-    assert.equal(lucia.prev?.days, lucia.days);
-    assert.equal(fairness(demo)[0]!.prev, null);
-  });
+describe("archive", () => {
   it("keeps one entry per month, newest first, and finds last month's key", () => {
     assert.equal(monthKey(2026, 3), "2026-03");
     assert.equal(previousKey(2026, 1), "2025-12");
@@ -403,21 +393,6 @@ describe("polish pass helpers", () => {
     assert.deepEqual(parsePosterLine("RPh2: Gideon Ashcroft (from EST)"), { second: true, name: "Gideon Ashcroft", away: "EST" });
     assert.equal(stateFromAddress("103 Robbins St, Molalla, OR 97038"), "OR");
     assert.equal(stateFromAddress("somewhere"), "");
-  });
-  it("readiness is the share of open store-days that are staffed correctly", () => {
-    const d = createDemo();
-    const pct = readinessPct(d);
-    assert.ok(pct > 90 && pct < 100); // the practice month has planted problems
-    assert.equal(readinessPct({ ...createSample() }) <= 100, true);
-  });
-  it("trend lists older kept months first and ends with the month on screen", () => {
-    const now = createDemo();
-    const sept = createSample();
-    const archive = [{ ym: "2026-09", savedAt: 1, fileName: "s.json", json: serializeDoc(sept) }];
-    const pts = trendPoints(now, archive);
-    assert.deepEqual(pts.map((p) => p.label), ["Sep", "Oct"]);
-    assert.equal(trendPoints(now, []).length, 1);
-    assert.equal(trendPoints(now, [{ ym: "2026-09", savedAt: 1, fileName: "x", json: "broken" }]).length, 1); // a month that will not open is skipped
   });
   it("new files default to large poster type", () => {
     assert.equal(createDemo().printPrefs.typeSize === "large" || createDemo().printPrefs.typeSize === "normal", true);

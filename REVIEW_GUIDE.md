@@ -26,12 +26,12 @@ Rules files below are in `src/lib/schedule/` unless a path is given.
 | Sample data | `demo.ts`, `artifacts/HiSchool_Pharmacy_October_2026_DEMO.hisp.json` (fictional people) |
 | UI conventions | `artifacts/COPY_GUIDE.md`, `artifacts/STYLE_GUIDE.md` (partly dated), `src/components/marks.tsx` |
 
-History and intent: `docs/WHATS_NEW.md`, `handoff/HANDOFF_CONTINUE_2026-10-02.md`.
+Current state and how to work: `HANDOFF.md`. History: `docs/WHATS_NEW.md`; old handoffs in `docs/archive/`.
 
 ## Run the checks
 ```
 npm install
-npm run check      # types + 372 unit tests, includes fuzz (about 15 s)
+npm run check      # types + unit tests (about 410), includes fuzz (about 15 s)
 npm run lint
 npm run fill       # fill-suggestion tests, no browser
 npm run e2e        # browser suite (needs Playwright's Chromium; npm run build:trial first)

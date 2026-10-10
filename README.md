@@ -7,7 +7,8 @@ All people and schedules in this repository are fictional sample data. Store nam
 - **Reviewing this code?** Start with [REVIEW_GUIDE.md](REVIEW_GUIDE.md).
 - **Where things live:** [ARCHITECTURE.md](ARCHITECTURE.md).
 - **What changed, newest first:** [docs/WHATS_NEW.md](docs/WHATS_NEW.md).
-- **Latest handoff notes:** [handoff/HANDOFF_CONTINUE_2026-10-02.md](handoff/HANDOFF_CONTINUE_2026-10-02.md).
+- **Taking over? Start here:** [HANDOFF.md](HANDOFF.md) (state, rules, how the owner works, checks, open items).
+- Old handoffs and reviews: [docs/archive/](docs/archive/README.md).
 
 ## Run it
 ```
@@ -16,6 +17,6 @@ npm run dev          # http://localhost:3000
 npm run check        # type check + unit tests (about 15 s)
 npm run build:trial  # dist-spa/spa.html, opens on the sample month
 ```
-`spa.html` in the repo root is an old v86 snapshot kept as the original baseline, not the current build. Build the current one with `npm run build:trial`.
+`spa.html` in the repo root is the Vite entry page, not a build. The build output is `dist-spa/spa.html` (`npm run build:trial`).
 
 Stack: React 19, TanStack Router (hash), Tailwind v4, Zustand, zod, jsPDF. No server, no network calls.
