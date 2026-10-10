@@ -18,6 +18,12 @@ export async function launch() {
   return chromium.launch({ executablePath: CHROME, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
 }
 
+// Resolves once every finite CSS animation has ended (panels slide and fade in over ~200ms). Measuring or scanning mid-animation sees a half-transparent, shifted panel; a fixed wait raced it on a loaded WebKit runner.
+export const settled = (page) => page.evaluate(() => Promise.race([
+  Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {}))),
+  new Promise((done) => setTimeout(done, 5000)),
+]));
+
 export async function open(browser, route, size = { width: 1366, height: 900 }) {
   const page = await browser.newPage({ viewport: size });
   // A real print dialog can crash headless Chromium on some machines (it did on the CI runner); the tests only need the app to ask.

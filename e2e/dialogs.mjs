@@ -1,5 +1,5 @@
 // Accessibility with things open: the day panel, dialogs, menus, forms and the search box, at laptop and phone width.
-import { axeSource, check, launch, open } from "./lib.mjs";
+import { axeSource, check, launch, open, settled } from "./lib.mjs";
 
 // The menu's positioned wrapper sits outside the page landmarks by design (Radix portal); that one best-practice rule is ignored.
 const IGNORE = (x) => x.startsWith("color-contrast:.pointer-events-none") || x.startsWith("region:div[data-radix-popper-content-wrapper");
@@ -8,6 +8,7 @@ export default async function run() {
   const browser = await launch();
   const axe = axeSource();
   const scan = async (p, label) => {
+    await settled(p); // axe reads the colors as drawn, so let the fade-in finish
     await p.evaluate(axe);
     const found = await p.evaluate(async () => (await axe.run(document, { resultTypes: ["violations"] })).violations.flatMap((x) => x.nodes.map((n) => `${x.id}:${n.target.join(" ").slice(0, 60)}`)));
     const bad = found.filter((x) => !IGNORE(x));
