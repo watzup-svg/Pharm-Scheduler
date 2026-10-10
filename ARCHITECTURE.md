@@ -50,7 +50,7 @@ Single-user, offline, pharmacist-only month scheduler. React 19, TanStack Router
 - `npm run e2e -- header-links`: one browser check by name (see `e2e/run.mjs` for names). Run `npm run build:trial` first; the runner serves the build itself.
 - `npm run e2e`: the whole browser suite; once per batch. CI runs the same on every PR.
 - Look at the spot you changed (a screenshot or a hover probe); don't re-check untouched pages.
-- Not covered by any test: real printers, iPhone Safari, real touch. Road times and miles come from a measured table (`lib/schedule/drive-table.ts`), not a live map. Counts today: 372 unit tests (`npm run check`); the browser suite is the groups listed in `e2e/run.mjs`.
+- Not covered by any test: real printers, iPhone Safari, real touch. Road times and miles come from a measured table (`lib/schedule/drive-table.ts`), not a live map. Unit tests run with `npm run check`; the browser suite is the groups listed in `e2e/run.mjs`.
 
 - Everything at once: `npm run all` (or `npm run deep` for the long version); pieces are in `scripts/` (`guards.mjs`, `sweep.mjs`, `screens.mjs`, `builds.mjs`). Details: `e2e/README.md`.
 

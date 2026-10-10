@@ -1,3 +1,5 @@
+> SUPERSEDED by `HANDOFF.md` at the repo root. Kept for history.
+
 # Hi-School Pharmacy scheduler: continue-the-build handoff
 
 Snapshot 2026-10-02, build v86, with an **update note at the end of the day (see section 0)**. This supersedes `handoff/README.md` (kept for history). Outside reviewers: read `REVIEW_GUIDE.md` first.
